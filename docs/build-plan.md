@@ -9,7 +9,7 @@ The order in which Marksy is built with Claude Code, what each milestone must de
 | M0 | Workspace scaffold, first run (`docs/first-run.md`) | `main` | done |
 | M1 | Core: canonical model, grading scales, marks math, HTTP client, i18n package | `m1-core` | done |
 | M2 | Provider `by-eschools` and the probe | `m2-eschools` | done |
-| M3 | Server: schema, collector, planner, seed data | `m3-server` | todo |
+| M3 | Server: schema, collector, planner, seed data | `m3-server` | in progress |
 | M4 | Accounts, families and the read API | `m4-api` | todo |
 | M5a | Web: tokens, shell, login, student pick, Главная, Внимание | `m5a-shell` | todo |
 | M5b | Web: Оценки, Итоги, Предметы, Предмет | `m5b-marks` | todo |

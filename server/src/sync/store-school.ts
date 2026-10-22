@@ -1,0 +1,245 @@
+import { manifestScale } from '@marksy/core';
+import type { AccountInfo, Calendar, FinalMark, ProviderManifest, StudentRef, Subject } from '@marksy/core';
+import { and, eq, notInArray } from 'drizzle-orm';
+import type { Db } from '../db/client';
+import {
+  finalMarks,
+  finalMarksRaw,
+  holidays,
+  MANIFEST_SCALE,
+  schoolYears,
+  studentIdentities,
+  students,
+  studentYears,
+  subjects,
+  terms,
+} from '../db/schema';
+import { normName } from './upsert';
+
+// Students, school years, terms, holidays, subjects and finals: what a run learns before it fetches any week. Every
+// run refreshes them; ids from the provider stay in external_id.
+
+export type StudentRow = typeof students.$inferSelect;
+
+interface AccountRef {
+  id: string;
+  familyId: string;
+  providerId: string;
+}
+
+/** The student rows of this account, created or updated from the provider's account info. */
+export async function storeStudents(db: Db, account: AccountRef, info: AccountInfo): Promise<StudentRow[]> {
+  const out: StudentRow[] = [];
+  for (const s of info.students) {
+    const values = {
+      diaryAccountId: account.id,
+      fullName: s.fullName,
+      givenName: s.givenName ?? null,
+      familyName: s.familyName ?? null,
+      schoolId: s.schoolId ?? null,
+      classExternalId: s.classExternalId ?? null,
+      classLabel: s.className ?? null,
+      grade: s.grade ?? null,
+      gradeLabel: s.gradeLabel ?? null,
+      isActive: true,
+    };
+    const [row] = await db
+      .insert(students)
+      .values({ ...values, familyId: account.familyId, providerId: account.providerId, externalId: s.externalId })
+      .onConflictDoUpdate({ target: [students.familyId, students.providerId, students.externalId], set: values })
+      .returning();
+    await db
+      .insert(studentIdentities)
+      .values({
+        providerId: account.providerId,
+        externalId: s.externalId,
+        studentId: row!.id,
+        familyId: account.familyId,
+      })
+      .onConflictDoNothing();
+    out.push(row!);
+  }
+  // a child the account no longer sees stays in the family with its history, inactive
+  const seen = out.map((s) => s.id);
+  await db
+    .update(students)
+    .set({ isActive: false })
+    .where(and(eq(students.diaryAccountId, account.id), seen.length ? notInArray(students.id, seen) : undefined));
+  return out;
+}
+
+/** The provider's view of a stored student, for the provider's methods. */
+export function studentRef(s: StudentRow): StudentRef {
+  return {
+    externalId: s.externalId,
+    fullName: s.fullName,
+    ...(s.givenName && { givenName: s.givenName }),
+    ...(s.familyName && { familyName: s.familyName }),
+    ...(s.schoolId && { schoolId: s.schoolId }),
+    ...(s.classExternalId && { classExternalId: s.classExternalId }),
+    ...(s.classLabel && { className: s.classLabel }),
+    ...(s.grade !== null && { grade: s.grade }),
+    ...(s.gradeLabel && { gradeLabel: s.gradeLabel }),
+  };
+}
+
+export interface StoredCalendar {
+  schoolYearId: string;
+  /** term external id -> terms.id */
+  termIds: Map<string, string>;
+}
+
+/** student_years.grading_scale_id: a built-in id, MANIFEST_SCALE for an inline manifest scale, null for no marks */
+export function scaleIdOf(manifest: ProviderManifest, calendar: Calendar): string | null {
+  if (calendar.gradingScaleId !== undefined) return calendar.gradingScaleId;
+  return typeof manifest.gradingScale === 'string' ? manifestScale(manifest).id : MANIFEST_SCALE;
+}
+
+export async function storeCalendar(
+  db: Db,
+  manifest: ProviderManifest,
+  student: StudentRow,
+  calendar: Calendar,
+): Promise<StoredCalendar> {
+  return db.transaction(async (tx) => {
+    const y = calendar.schoolYear;
+    const [year] = await tx
+      .insert(schoolYears)
+      .values({
+        studentId: student.id,
+        providerId: student.providerId,
+        externalId: y.externalId,
+        label: y.label,
+        startDate: y.start,
+        endDate: y.end,
+      })
+      .onConflictDoUpdate({
+        target: [schoolYears.studentId, schoolYears.providerId, schoolYears.externalId],
+        set: { label: y.label, startDate: y.start, endDate: y.end },
+      })
+      .returning({ id: schoolYears.id });
+    const schoolYearId = year!.id;
+    const termIds = new Map<string, string>();
+    for (const t of calendar.terms) {
+      const values = { kind: t.kind, index: t.index, label: t.label, startDate: t.start, endDate: t.end };
+      const [row] = await tx
+        .insert(terms)
+        .values({ ...values, schoolYearId, externalId: t.externalId })
+        .onConflictDoUpdate({ target: [terms.schoolYearId, terms.externalId], set: values })
+        .returning({ id: terms.id });
+      termIds.set(t.externalId, row!.id);
+    }
+    // holidays are replaced as a whole: the calendar is the source
+    await tx.delete(holidays).where(eq(holidays.schoolYearId, schoolYearId));
+    if (calendar.holidays?.length) {
+      await tx
+        .insert(holidays)
+        .values(calendar.holidays.map((h) => ({ schoolYearId, startDate: h.from, endDate: h.to })));
+    }
+    const gradingScaleId = scaleIdOf(manifest, calendar);
+    const yearValues = { classLabel: student.classLabel, grade: student.grade, gradingScaleId };
+    await tx
+      .insert(studentYears)
+      .values({ ...yearValues, studentId: student.id, schoolYearId })
+      .onConflictDoUpdate({ target: [studentYears.studentId, studentYears.schoolYearId], set: yearValues });
+    await tx.update(students).set({ gradingScaleId }).where(eq(students.id, student.id));
+    return { schoolYearId, termIds };
+  });
+}
+
+/** Subject external id -> subjects.id */
+export async function storeSubjects(
+  db: Db,
+  student: StudentRow,
+  schoolYearId: string,
+  list: Subject[],
+): Promise<Map<string, string>> {
+  const ids = new Map<string, string>();
+  for (const s of list) {
+    const values = {
+      name: s.name,
+      nameNorm: normName(s.name),
+      teacherName: s.teacherName ?? null,
+      level: s.level ?? null,
+      credits: s.credits ?? null,
+      gradingScheme: s.gradingScheme ?? null,
+    };
+    const [row] = await db
+      .insert(subjects)
+      .values({
+        ...values,
+        studentId: student.id,
+        schoolYearId,
+        providerId: student.providerId,
+        externalId: s.externalId,
+      })
+      .onConflictDoUpdate({
+        target: [subjects.studentId, subjects.schoolYearId, subjects.providerId, subjects.externalId],
+        set: values,
+      })
+      .returning({ id: subjects.id });
+    ids.set(s.externalId, row!.id);
+  }
+  // subjects that only appear in lessons are known too
+  const rows = await db
+    .select({ id: subjects.id, externalId: subjects.externalId })
+    .from(subjects)
+    .where(and(eq(subjects.studentId, student.id), eq(subjects.schoolYearId, schoolYearId)));
+  for (const r of rows) if (!ids.has(r.externalId)) ids.set(r.externalId, r.id);
+  return ids;
+}
+
+/** Finals from the API replace the API rows of this year; manual rows stay. */
+export async function storeFinals(
+  db: Db,
+  student: StudentRow,
+  calendar: StoredCalendar,
+  subjectIds: Map<string, string>,
+  list: FinalMark[],
+  now: Date,
+): Promise<void> {
+  await db.transaction(async (tx) => {
+    await tx
+      .insert(finalMarksRaw)
+      .values({
+        studentId: student.id,
+        familyId: student.familyId,
+        schoolYearId: calendar.schoolYearId,
+        rawJson: list,
+        fetchedAt: now,
+      })
+      .onConflictDoUpdate({
+        target: [finalMarksRaw.studentId, finalMarksRaw.schoolYearId],
+        set: { rawJson: list, fetchedAt: now },
+      });
+    await tx
+      .delete(finalMarks)
+      .where(
+        and(
+          eq(finalMarks.studentId, student.id),
+          eq(finalMarks.schoolYearId, calendar.schoolYearId),
+          eq(finalMarks.source, 'api'),
+        ),
+      );
+    // a final for a term this calendar does not know would land on the year row: skipped until the calendar has it
+    const known = list.filter((f) => f.termExternalId === null || calendar.termIds.has(f.termExternalId));
+    const rows = known.map((f) => ({
+      familyId: student.familyId,
+      studentId: student.id,
+      schoolYearId: calendar.schoolYearId,
+      subjectId: (f.subjectExternalId && subjectIds.get(f.subjectExternalId)) || null,
+      subjectName: f.subjectName,
+      periodId: (f.termExternalId && calendar.termIds.get(f.termExternalId)) || null,
+      role: f.role ?? 'final',
+      label: f.label ?? null,
+      date: f.date ?? null,
+      raw: f.raw,
+      mark: f.value,
+      kind: f.kind,
+      source: 'api' as const,
+      updatedAt: now,
+    }));
+    // a manual row for the same subject and period wins; the API row is dropped
+    if (rows.length) await tx.insert(finalMarks).values(rows).onConflictDoNothing();
+  });
+}
