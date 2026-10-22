@@ -281,6 +281,8 @@ export function defineConformanceSuite(opts: ConformanceOptions): void {
           `sanitize(unsanitised/${name}.json) left these strings unchanged`,
         ).toEqual([]);
       }
+      const routesPath = join(fixturesDir, 'routes.json');
+      if (existsSync(routesPath)) expect(denylistHits(readJson(routesPath), deny), 'fixtures/routes.json').toEqual([]);
       if (existsSync(expectedPath))
         expect(denylistHits(readJson(expectedPath), deny), 'expected/canonical.json').toEqual([]);
     });

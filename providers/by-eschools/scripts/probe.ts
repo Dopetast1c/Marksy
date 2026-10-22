@@ -10,7 +10,7 @@ import { createRunContext, fetchTransport, ProviderError } from '@marksy/core';
 import type { Transport } from '@marksy/core';
 import { dayRange, toISODate } from '../src/dates';
 import { byEschools, currentWeekRange, manifest } from '../src/index';
-import { countLeaks, endpointName, report, sanitisedRoute, sensitiveStrings } from '../src/probe';
+import { countLeaks, endpointName, report, reportable, sanitisedRoute, sensitiveValues } from '../src/probe';
 import { sanitize } from '../src/sanitize';
 
 const root = fileURLToPath(new URL('../../..', import.meta.url));
@@ -21,6 +21,15 @@ interface Recorded {
   url: URL;
   status: number;
   text: string;
+}
+
+/** Parsed JSON, or the text as it is */
+function safeJson(text: string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
 }
 
 async function main(): Promise<number> {
@@ -69,12 +78,7 @@ async function main(): Promise<number> {
       students,
       weeks.map((w) => w.uuid),
     );
-    let raw: unknown = r.text;
-    try {
-      raw = JSON.parse(r.text);
-    } catch {
-      // keep the text
-    }
+    let raw = safeJson(r.text);
     if (name === 'login') raw = { auth_token: '[token]', refresh_token: '[token]' };
     writeFileSync(
       join(rawDir, `${String(i + 1).padStart(2, '0')}-${name ?? 'other'}.json`),
@@ -83,15 +87,20 @@ async function main(): Promise<number> {
     if (name && r.status === 200) named.push({ name, route: sanitisedRoute(r.method, r.url), raw });
   });
 
+  // everything sanitize() does not keep, from every response, every URL and the login itself, is checked against
+  // what is about to be written: the fixtures and the route keys
   const loginRaw = recorded.find((r) => r.method === 'POST');
-  const sensitive = new Set<string>();
-  for (const n of named) for (const s of sensitiveStrings(n.raw, [login, password])) sensitive.add(s);
-  if (loginRaw) for (const s of sensitiveStrings(JSON.parse(loginRaw.text))) sensitive.add(s);
+  const sensitive = sensitiveValues('login', loginRaw ? safeJson(loginRaw.text) : null, [login, password]);
+  for (const n of named) sensitiveValues(n.name, n.raw, [], sensitive);
+  for (const r of recorded) {
+    const ids = [
+      ...r.url.pathname.split('/').filter((s) => s && !/^[a-z_]+$|^v1$/.test(s)),
+      ...r.url.searchParams.values(),
+    ];
+    sensitiveValues('url', { id: ids.map(decodeURIComponent) }, [], sensitive);
+  }
   const sanitised = named.map((n) => ({ ...n, value: sanitize(n.name, n.raw) }));
-  const leaks = countLeaks(
-    sanitised.map((s) => s.value),
-    sensitive,
-  );
+  const leaks = countLeaks([...sanitised.map((s) => s.value), sanitised.map((s) => s.route)], sensitive);
 
   const rawKinds: Record<string, number> = {};
   const rawWorkTypes: Record<string, number> = {};
@@ -101,10 +110,13 @@ async function main(): Promise<number> {
       slots: { type: string | null; lesson_mark: { kind: string; type: string | null } | null }[];
     }[]) {
       for (const slot of day.slots) {
-        rawLessonTypes[String(slot.type)] = (rawLessonTypes[String(slot.type)] ?? 0) + 1;
+        // enum values only: anything that is not UPPER_SNAKE is counted as "other", never printed
+        const count = (m: Record<string, number>, v: unknown) =>
+          (m[reportable(String(v))] = (m[reportable(String(v))] ?? 0) + 1);
+        count(rawLessonTypes, slot.type);
         if (!slot.lesson_mark) continue;
-        rawKinds[slot.lesson_mark.kind] = (rawKinds[slot.lesson_mark.kind] ?? 0) + 1;
-        rawWorkTypes[String(slot.lesson_mark.type)] = (rawWorkTypes[String(slot.lesson_mark.type)] ?? 0) + 1;
+        count(rawKinds, slot.lesson_mark.kind);
+        count(rawWorkTypes, slot.lesson_mark.type);
       }
     }
   }

@@ -167,8 +167,18 @@ export const byEschools: DiaryProvider = {
       { login: true },
     );
     if (res.status !== 200) throw failure(res, 'login', ctx, true);
-    const tokens = driftChecker(ctx.drift, 'login').parse(loginResponse, body(res, 'login', ctx));
-    return { token: tokens.auth_token };
+    let raw: unknown;
+    try {
+      raw = res.json();
+    } catch {
+      raw = null;
+    }
+    const check = driftChecker(ctx.drift, 'login');
+    check.shape(loginResponse, raw);
+    const tokens = loginResponse.safeParse(raw);
+    // a 200 without a token is a refused login too: treating it as an outage would retry a bad password every hour
+    if (!tokens.success) throw new ProviderAuthError('Login answered without a token');
+    return { token: tokens.data.auth_token };
   },
 
   async getAccount(session, ctx) {

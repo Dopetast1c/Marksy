@@ -5,15 +5,15 @@ import { createMemoryDrift } from '../http/run-context';
 import { driftChecker } from './check';
 
 const slot = z.looseObject({
-  lesson_uuid: z.string(),
+  entry_id: z.string(),
   topic: z.string().nullable(),
-  lesson_mark: z.looseObject({ mark: z.string(), kind: z.string() }).nullable(),
+  grade: z.looseObject({ mark: z.string(), kind: z.string() }).nullable(),
 });
 const day = z.looseObject({ date: z.number(), slots: z.array(slot) });
 
 function setup() {
   const drift = createMemoryDrift();
-  return { drift, check: driftChecker(drift, 'lessons') };
+  return { drift, check: driftChecker(drift, 'entries') };
 }
 
 describe('drift checker', () => {
@@ -21,13 +21,13 @@ describe('drift checker', () => {
     const { drift, check } = setup();
     const days = check.items(
       day,
-      [{ date: 1, slots: [{ lesson_uuid: 'a', topic: null, lesson_mark: null, new_flag: true }], extra: 1 }],
+      [{ date: 1, slots: [{ entry_id: 'a', topic: null, grade: null, new_flag: true }], extra: 1 }],
       'days',
     );
     expect(days).toHaveLength(1);
     expect(drift.events).toEqual([
-      { kind: 'unknown_field', endpoint: 'lessons', path: 'days[].slots[].new_flag' },
-      { kind: 'unknown_field', endpoint: 'lessons', path: 'days[].extra' },
+      { kind: 'unknown_field', endpoint: 'entries', path: 'days[].slots[].new_flag' },
+      { kind: 'unknown_field', endpoint: 'entries', path: 'days[].extra' },
     ]);
   });
 
@@ -36,18 +36,18 @@ describe('drift checker', () => {
     const days = check.items(day, [{ date: 1, slots: [] }, { slots: [] }, { date: 'x', slots: [] }], 'days');
     expect(days).toHaveLength(1);
     expect(drift.events).toEqual([
-      { kind: 'missing_field', endpoint: 'lessons', path: 'days[].date' },
-      { kind: 'type_mismatch', endpoint: 'lessons', path: 'days[].date', sample: 'string' },
+      { kind: 'missing_field', endpoint: 'entries', path: 'days[].date' },
+      { kind: 'type_mismatch', endpoint: 'entries', path: 'days[].date', sample: 'string' },
     ]);
   });
 
   it('records a new enum value without failing', () => {
     const { drift, check } = setup();
-    expect(check.known('SINGLE', ['SINGLE', 'DOUBLE'], 'lesson_mark.kind')).toBe(true);
-    expect(check.known(null, ['SINGLE'], 'lesson_mark.kind')).toBe(true);
-    expect(check.known('TRIPLE', ['SINGLE', 'DOUBLE'], 'lesson_mark.kind')).toBe(false);
+    expect(check.known('ALPHA', ['ALPHA', 'BETA'], 'grade.kind')).toBe(true);
+    expect(check.known(null, ['ALPHA'], 'grade.kind')).toBe(true);
+    expect(check.known('GAMMA', ['ALPHA', 'BETA'], 'grade.kind')).toBe(false);
     expect(drift.events).toEqual([
-      { kind: 'new_enum_value', endpoint: 'lessons', path: 'lesson_mark.kind', sample: 'TRIPLE' },
+      { kind: 'new_enum_value', endpoint: 'entries', path: 'grade.kind', sample: 'GAMMA' },
     ]);
   });
 
