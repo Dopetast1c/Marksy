@@ -47,14 +47,20 @@ export const term = z.object({
   label: z.string(),
   start: isoDate,
   end: isoDate,
+  /** The system's own remark about this term (dates that differ for some grades), shown as it is, never parsed */
+  note: z.string().optional(),
 });
 export type Term = z.infer<typeof term>;
+
+/** A break in the school year; a range of days with an optional remark from the system */
+export const holiday = dateRange.extend({ note: z.string().optional() });
+export type Holiday = z.infer<typeof holiday>;
 
 export const calendar = z.object({
   schoolYear: z.object({ externalId: nonEmpty, label: z.string(), start: isoDate, end: isoDate }),
   /** Ordered; empty for systems with continuous assessment. */
   terms: z.array(term),
-  holidays: z.array(dateRange).optional(),
+  holidays: z.array(holiday).optional(),
   /**
    * The grading scale of this student in this school year, when it differs from the manifest default.
    * null: no marks are given this year (early grades, narrative assessment); the UI switches to its no-marks mode.

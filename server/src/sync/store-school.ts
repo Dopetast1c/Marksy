@@ -121,7 +121,14 @@ export async function storeCalendar(
     const schoolYearId = year!.id;
     const termIds = new Map<string, string>();
     for (const t of calendar.terms) {
-      const values = { kind: t.kind, index: t.index, label: t.label, startDate: t.start, endDate: t.end };
+      const values = {
+        kind: t.kind,
+        index: t.index,
+        label: t.label,
+        startDate: t.start,
+        endDate: t.end,
+        note: t.note ?? null,
+      };
       const [row] = await tx
         .insert(terms)
         .values({ ...values, schoolYearId, externalId: t.externalId })
@@ -134,7 +141,9 @@ export async function storeCalendar(
     if (calendar.holidays?.length) {
       await tx
         .insert(holidays)
-        .values(calendar.holidays.map((h) => ({ schoolYearId, startDate: h.from, endDate: h.to })));
+        .values(
+          calendar.holidays.map((h) => ({ schoolYearId, startDate: h.from, endDate: h.to, note: h.note ?? null })),
+        );
     }
     const gradingScaleId = scaleIdOf(manifest, calendar);
     const yearValues = { classLabel: student.classLabel, grade: student.grade, gradingScaleId };
