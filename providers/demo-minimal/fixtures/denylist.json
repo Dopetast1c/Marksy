@@ -1,0 +1,4 @@
+{
+  "strings": ["Riverstone", "Jordan", "Casey", "c-4471", "u-90210"],
+  "patterns": ["[\\w.]+@[\\w.]+", "\\b\\d{7,}\\b"]
+}

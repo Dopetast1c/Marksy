@@ -1,0 +1,23 @@
+{
+  "name": "@marksy/registry",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "The list of diary providers; the only package that imports providers/*",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@marksy/core": "workspace:*",
+    "@marksy/provider-demo-minimal": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.5"
+  }
+}

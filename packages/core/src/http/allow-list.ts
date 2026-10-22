@@ -21,6 +21,11 @@ function matchSegments(pattern: readonly string[], path: readonly string[]): boo
   return (head === '*' || head === path[0]) && matchSegments(rest, path.slice(1));
 }
 
+// Does a path match one pattern, e.g. "/children/*/grades" or "/diary/**"? The query string is ignored.
+export function matchPath(pattern: string, path: string): boolean {
+  return matchSegments(pattern.split('/').filter(Boolean), path.split('?')[0]!.split('/').filter(Boolean));
+}
+
 export function createAllowList(entries: readonly string[]): (method: HttpMethod, path: string) => boolean {
   const rules = entries.map(compile);
   return (method, path) => {

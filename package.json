@@ -23,7 +23,8 @@
     "db:up": "docker compose up -d --wait",
     "db:down": "docker compose down",
     "db:reset": "docker compose down -v && docker compose up -d --wait",
-    "i18n:check": "pnpm --filter @marksy/i18n i18n:check"
+    "i18n:check": "pnpm --filter @marksy/i18n i18n:check",
+    "test:provider": "node scripts/test-provider.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

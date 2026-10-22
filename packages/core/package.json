@@ -5,7 +5,8 @@
   "type": "module",
   "description": "Canonical types, DiaryProvider interface, grading scales, marks math. Country-agnostic.",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./conformance": "./src/conformance/index.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",

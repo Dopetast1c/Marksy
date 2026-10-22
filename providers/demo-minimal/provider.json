@@ -1,0 +1,70 @@
+{
+  "id": "demo-minimal",
+  "name": "Demo gradebook (minimal)",
+  "country": null,
+  "region": null,
+  "scope": "school",
+  "website": "https://demo.example.com",
+  "status": "experimental",
+  "maintainers": [],
+  "languages": { "default": "en", "preferred": ["en"] },
+  "calendar": { "weekStart": 0, "weekend": [5, 6], "schoolDays": [0, 1, 2, 3, 4] },
+  "nameOrder": "given-first",
+  "timezone": "Asia/Jerusalem",
+  "roles": ["parent"],
+  "tenant": null,
+  "auth": {
+    "kind": "password",
+    "fields": [
+      { "key": "login", "label": { "en": "Login", "ru": "Логин" }, "type": "text" },
+      { "key": "password", "label": { "en": "Password", "ru": "Пароль" }, "type": "password" }
+    ]
+  },
+  "gradingScale": "pct-100",
+  "capabilities": {
+    "lessons": false,
+    "futureTimetable": false,
+    "topics": false,
+    "homework": false,
+    "attachments": false,
+    "lessonTypes": false,
+    "marksPerLesson": "none",
+    "unattachedMarks": true,
+    "workTypes": false,
+    "comments": false,
+    "weights": false,
+    "attendance": "none",
+    "terms": "none",
+    "finalMarks": false,
+    "teacherNames": false,
+    "pastYears": false,
+    "homeworkAssignments": false,
+    "behaviour": false,
+    "cohortStats": false,
+    "criteria": false,
+    "targets": false,
+    "exams": false
+  },
+  "network": {
+    "baseUrl": "https://api.demo.example.com",
+    "regionHint": null,
+    "notes": "Fictional: served from fixtures, never from the network"
+  },
+  "limits": {
+    "minLoginIntervalMinutes": 60,
+    "requestDelayMs": [1500, 3000],
+    "maxRequestsPerRun": 40,
+    "syncWindow": "08:00-14:00",
+    "weeklyRescan": "thu 20:00-23:00",
+    "fetchUnit": "term",
+    "authFailureIsFinal": true
+  },
+  "homeworkSemantics": "due-at-lesson",
+  "readOnlyAllowList": [
+    "POST /api/session",
+    "GET /api/me",
+    "GET /api/children/*/year",
+    "GET /api/children/*/courses",
+    "GET /api/children/*/grades"
+  ]
+}
