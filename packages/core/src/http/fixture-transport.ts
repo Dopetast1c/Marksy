@@ -14,14 +14,21 @@ export interface FixtureTransportOptions {
 }
 
 export function createFixtureTransport(opts: FixtureTransportOptions): Transport {
+  // "GET /lessons?week=w1": the query part, when present, must match too (one fixture per week on the same path)
   const routes = Object.entries(opts.routes).map(([route, name]) => {
-    const [method, pattern] = route.split(' ');
-    return { method, pattern: pattern!, name };
+    const [method, target] = route.split(' ');
+    const [pattern, query] = target!.split('?');
+    return { method, pattern: pattern!, query: new URLSearchParams(query ?? ''), name };
   });
   return async (req): Promise<TransportResponse> => {
     opts.log?.push(req);
-    const { pathname } = new URL(req.url);
-    const route = routes.find((r) => r.method === req.method && matchPath(r.pattern, pathname));
+    const { pathname, searchParams } = new URL(req.url);
+    const route = routes.find(
+      (r) =>
+        r.method === req.method &&
+        matchPath(r.pattern, pathname) &&
+        [...r.query].every(([k, v]) => searchParams.get(k) === v),
+    );
     if (!route || !(route.name in opts.fixtures)) return { status: 404, headers: {}, text: '{"error":"not found"}' };
     const body = opts.mutate ? opts.mutate(opts.fixtures[route.name]) : opts.fixtures[route.name];
     return { status: 200, headers: { 'content-type': 'application/json' }, text: JSON.stringify(body) };

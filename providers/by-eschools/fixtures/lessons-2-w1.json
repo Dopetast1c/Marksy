@@ -1,0 +1,50 @@
+[
+  {
+    "day_of_week": 1,
+    "date": 1791147600000,
+    "slots": [
+      {
+        "lesson_uuid": "00000000-0000-4000-8000-000000004022",
+        "lesson_template_id": "00000000-0000-4000-8000-000000006022",
+        "subject_id": "00000000-0000-4000-8000-000000002101",
+        "subject_title": "Математика",
+        "teacher_id": "00000000-0000-4000-8000-000000003101",
+        "type": null,
+        "number": 1,
+        "topic": "Тема урока",
+        "homework": null,
+        "message": "",
+        "start_time": "08:30",
+        "has_attachments_or_links": false,
+        "homework_source_id": null,
+        "lesson_mark": null,
+        "substitution": null
+      }
+    ]
+  },
+  {
+    "day_of_week": 2,
+    "date": 1791234000000,
+    "slots": []
+  },
+  {
+    "day_of_week": 3,
+    "date": 1791320400000,
+    "slots": []
+  },
+  {
+    "day_of_week": 4,
+    "date": 1791406800000,
+    "slots": []
+  },
+  {
+    "day_of_week": 5,
+    "date": 1791493200000,
+    "slots": []
+  },
+  {
+    "day_of_week": 6,
+    "date": 1791579600000,
+    "slots": []
+  }
+]

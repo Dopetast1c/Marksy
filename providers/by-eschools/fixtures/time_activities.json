@@ -1,0 +1,72 @@
+[
+  {
+    "uuid": "00000000-0000-4000-8000-00000000f001",
+    "summary": null,
+    "school_year": "00000000-0000-4000-8000-00000000e001",
+    "title": "FIRST_QUARTER",
+    "description": null,
+    "type": "QUARTER",
+    "start_date": 1788123600000,
+    "end_date": 1793307600000
+  },
+  {
+    "uuid": "00000000-0000-4000-8000-00000000f101",
+    "summary": null,
+    "school_year": "00000000-0000-4000-8000-00000000e001",
+    "title": "AUTUMN_HOLIDAYS",
+    "description": null,
+    "type": "HOLIDAYS",
+    "start_date": 1793394000000,
+    "end_date": 1793998800000
+  },
+  {
+    "uuid": "00000000-0000-4000-8000-00000000f002",
+    "summary": null,
+    "school_year": "00000000-0000-4000-8000-00000000e001",
+    "title": "SECOND_QUARTER",
+    "description": null,
+    "type": "QUARTER",
+    "start_date": 1794085200000,
+    "end_date": 1797973200000
+  },
+  {
+    "uuid": "00000000-0000-4000-8000-00000000f102",
+    "summary": null,
+    "school_year": "00000000-0000-4000-8000-00000000e001",
+    "title": "WINTER_HOLIDAYS",
+    "description": null,
+    "type": "HOLIDAYS",
+    "start_date": 1798059600000,
+    "end_date": 1799442000000
+  },
+  {
+    "uuid": "00000000-0000-4000-8000-00000000f003",
+    "summary": null,
+    "school_year": "00000000-0000-4000-8000-00000000e001",
+    "title": "THIRD_QUARTER",
+    "description": null,
+    "type": "QUARTER",
+    "start_date": 1799528400000,
+    "end_date": 1805403600000
+  },
+  {
+    "uuid": "00000000-0000-4000-8000-00000000f103",
+    "summary": null,
+    "school_year": "00000000-0000-4000-8000-00000000e001",
+    "title": "SPRING_HOLIDAYS",
+    "description": null,
+    "type": "HOLIDAYS",
+    "start_date": 1805490000000,
+    "end_date": 1806094800000
+  },
+  {
+    "uuid": "00000000-0000-4000-8000-00000000f004",
+    "summary": null,
+    "school_year": "00000000-0000-4000-8000-00000000e001",
+    "title": "FOURTH_QUARTER",
+    "description": null,
+    "type": "QUARTER",
+    "start_date": 1806181200000,
+    "end_date": 1811624400000
+  }
+]

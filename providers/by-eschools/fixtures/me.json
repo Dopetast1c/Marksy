@@ -1,0 +1,26 @@
+{
+  "user_id": "00000000-0000-4000-8000-00000000a001",
+  "school_id": null,
+  "school_name": null,
+  "our_school_id": null,
+  "profile_id": null,
+  "person_kind": "PARENT",
+  "full_name": "Родитель",
+  "roles": ["PARENT"],
+  "position": null,
+  "students_for_parent": [
+    {
+      "profile_id": "00000000-0000-4000-8000-00000000c001",
+      "full_name": "Ученик A",
+      "school_id": "00000000-0000-4000-8000-00000000b001"
+    },
+    {
+      "profile_id": "00000000-0000-4000-8000-00000000c002",
+      "full_name": "Ученик B",
+      "school_id": "00000000-0000-4000-8000-00000000b001"
+    }
+  ],
+  "first_name": null,
+  "second_name": null,
+  "last_name": null
+}

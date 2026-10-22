@@ -69,6 +69,8 @@ const PERSONAL_PATTERNS = [
 const PROVIDER_WORDS = /e-?schools/i;
 const PROVIDER_ALLOWED = [
   /^providers\/by-eschools\//,
+  // the registry is the one package that lists providers by id (docs/providers.md 2); it imports, never implements
+  /^packages\/registry\//,
   /^docs\//,
   /^README\.md$/,
   /^CLAUDE\.md$/,

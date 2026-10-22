@@ -143,7 +143,7 @@ function ids(snapshot: CanonicalSnapshot): string[][] {
     s.subjects.map((x) => x.externalId),
     (s.lessons ?? []).map((x) => x.externalId),
     allMarks(s).map((x) => x.externalId),
-    (s.attendance ?? []).map((x) => x.externalId),
+    [...(s.attendance ?? []), ...(s.lessons ?? []).flatMap((l) => l.attendance ?? [])].map((x) => x.externalId),
   ]);
 }
 

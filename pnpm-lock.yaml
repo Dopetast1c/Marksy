@@ -75,6 +75,9 @@ importers:
       '@marksy/core':
         specifier: workspace:*
         version: link:../core
+      '@marksy/provider-by-eschools':
+        specifier: workspace:*
+        version: link:../../providers/by-eschools
       '@marksy/provider-demo-minimal':
         specifier: workspace:*
         version: link:../../providers/demo-minimal
