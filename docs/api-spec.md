@@ -28,7 +28,7 @@ Handoff document for building **Marksy**, a personal grade tracker on top of the
 
 ## 4. Authentication
 
-### 4.1 Login [BUNDLE]
+### 4.1 Login [VERIFIED, first probe]
 
 ```
 POST /api/v1/auth/login/parent
@@ -43,7 +43,7 @@ Response (fields used by the frontend):
 { "auth_token": "<JWT>", "refresh_token": "<JWT>" }
 ```
 
-Not called during verification (to avoid sending credentials from the browser session). Confirm on the first collector run.
+Confirmed by the first `pnpm probe` run: 200 with `auth_token` (and `refresh_token`) for a parent login.
 
 ### 4.2 Using the token [VERIFIED]
 
@@ -132,6 +132,10 @@ The provider's `readOnlyAllowList` (`providers/by-eschools/provider.json`) lists
 
 `students_for_parent[].profile_id` **is** the `{student}` / `{student_id}` used in all diary URLs [VERIFIED]. `school_id` is the `{school_uuid}`.
 
+**Personal data: never stored, never logged** [VERIFIED present in real responses, first probe]. `first_name`, `second_name`, `last_name`, `school_name`, `parent_code`, the top-level `profile_id` and `position` here, `author` on the school year and on marks, and `school` on classes. Marksy maps none of them except as opaque ids where the app needs one (`author` on a mark becomes `authorExternalId`, a teacher id that is never resolved to a name; `school` is not read). `sanitize()` replaces or drops every one of them, and `providers/by-eschools/src/provider.test.ts` checks both `sanitize()` and the committed fixtures field by field (`PERSONAL_FIELDS` in `schemas.ts`). `students_for_parent[].full_name` is mapped (it is the child's name in Family) and never logged.
+
+Also present in real responses and known to the schemas, not read: `roles` (`["PARENT"]`), the top-level `school_id` and `our_school_id` (null for a parent); `summary`, `status` on the school year; `summary`, `school_year` on time activities; `summary`, `graduating_year`, `graduating` on classes; `lesson_template_id`, `homework_source_id` on slots; `summary` on `lesson_mark`.
+
 ### 6.2 `GET /admin/schools/parents/{user_id}` [BUNDLE]
 
 Parent profile. Called by the frontend after login; not needed by the collector (6.1 has everything).
@@ -192,6 +196,8 @@ Array (36 items): every school week.
 ```
 
 Use `time_activity_id` to map weeks (and their marks) to quarters. Pick the current week by `start_ts <= now < end_ts`.
+
+`end_ts` (and `end_date` in 6.4) is local midnight of the **last day** of the range, inclusive [VERIFIED, first probe: weeks span 6 or 7 days]; the mapper reads it that way.
 
 ### 6.6 `GET .../students/{student_id}/classes` [VERIFIED]
 
@@ -389,12 +395,18 @@ Decided and specified in `design.md`: TypeScript, Express 5 + Drizzle + PostgreS
 
 Verified already: auth header format, `/admin/auth/me`, classes, subjects, weeks, lessons, `lesson_mark` shape, timestamp units (ms), no CORS.
 
+Verified by the first `pnpm probe` run (2026-10, one week, two children):
+
+- [x] `POST /auth/login/parent` with `{ login, password }` answers 200 with `auth_token` (4.1).
+- [x] `end_ts` / `end_date` are the last day of the range, inclusive: weeks span 6 or 7 days (6.5).
+- [x] Students' `full_name` has three words (family name, given name, patronymic), as `nameOrder: family-first` assumes.
+- [x] The extra fields listed in 6.1 are present; personal ones are never stored or logged.
+
 Still open:
 
-- [ ] `POST /auth/login/parent` request/response (first real login from the collector).
 - [ ] `PUT /auth/refresh` (only if a refresh chain is used).
 - [ ] `final/whole` populated shape: re-check after 2026-10-30 (end of Q1) and finalise the parser.
-- [ ] Real samples of `DOUBLE`, `ABSENT` and non-null `type` marks: log the first occurrences and confirm 7.2 / 7.3.
+- [ ] Real samples of `DOUBLE`, `ABSENT` and non-null `type` marks: log the first occurrences and confirm 7.2 / 7.3. The first probe read one week with a single `SINGLE` mark; rerun with `--weeks 6`.
 - [ ] Behaviour after token expiry (expected 401).
 - [ ] Whether a student login endpoint exists (`/auth/login/student` or similar in the bundle) and whether a student token reads the same diary routes.
 - [ ] Whether a re-fetched week can return a different `lesson_uuid` for the same slot (timetable edits), which affects removal detection.

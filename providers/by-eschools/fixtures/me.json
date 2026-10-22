@@ -6,9 +6,7 @@
   "profile_id": null,
   "person_kind": "PARENT",
   "full_name": "Родитель",
-  "roles": [
-    "PARENT"
-  ],
+  "roles": ["PARENT"],
   "position": null,
   "students_for_parent": [
     {

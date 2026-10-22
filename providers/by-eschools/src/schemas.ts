@@ -7,6 +7,24 @@ import { z } from 'zod';
 const id = z.string().min(1);
 const ms = z.number();
 const text = z.string().nullable().optional();
+/** A field seen in real responses (first probe, 2026-10) that the mapper does not read. Known, so not drift. */
+const seen = z.unknown().optional();
+/**
+ * Personal data seen in real responses: never stored, never logged, never mapped. sanitize() replaces or drops each
+ * of these (tested in provider.test.ts); the list is the contract for that test.
+ */
+const personal = z.unknown().optional();
+export const PERSONAL_FIELDS = [
+  'first_name',
+  'second_name',
+  'last_name',
+  'school_name',
+  'parent_code',
+  'profile_id',
+  'position',
+  'author',
+  'school',
+] as const;
 
 export const loginResponse = z.looseObject({ auth_token: z.string().min(1), refresh_token: z.string().optional() });
 
@@ -14,22 +32,37 @@ export const meResponse = z.looseObject({
   user_id: id,
   person_kind: z.string().nullable().optional(),
   full_name: text,
+  roles: seen,
+  school_id: seen,
+  our_school_id: seen,
+  profile_id: personal,
+  school_name: personal,
+  position: personal,
+  first_name: personal,
+  second_name: personal,
+  last_name: personal,
+  parent_code: personal,
   students_for_parent: z.array(z.looseObject({ profile_id: id, full_name: z.string(), school_id: id })),
 });
 export type MeResponse = z.infer<typeof meResponse>;
 
 export const schoolYearResponse = z.looseObject({
   uuid: id,
+  summary: seen,
   label: text,
   start_year: z.number().optional(),
   end_year: z.number().optional(),
   start_ts: ms,
   end_ts: ms,
+  status: seen,
+  author: personal,
 });
 export type SchoolYearResponse = z.infer<typeof schoolYearResponse>;
 
 export const timeActivity = z.looseObject({
   uuid: id,
+  summary: seen,
+  school_year: seen,
   title: z.string(),
   description: text,
   type: z.string(),
@@ -51,10 +84,14 @@ export type WeekActivity = z.infer<typeof weekActivity>;
 
 export const schoolClass = z.looseObject({
   uuid: id,
+  summary: seen,
   label: text,
   level: z.number().nullable().optional(),
+  school: personal,
   class_number: text,
   dt_disbanded: z.unknown().optional(),
+  graduating_year: seen,
+  graduating: seen,
 });
 export type SchoolClass = z.infer<typeof schoolClass>;
 
@@ -62,10 +99,12 @@ export const educationalSubject = z.looseObject({ uuid: id, name: z.string().min
 
 export const lessonMark = z.looseObject({
   uuid: id,
+  summary: seen,
   type: z.string().nullable().optional(),
   mark: z.string().nullable().optional(),
   kind: z.string(),
   comment: text,
+  /** the teacher's id; mapped to authorExternalId as an opaque id, never a name */
   author: z.string().nullable().optional(),
 });
 export type LessonMark = z.infer<typeof lessonMark>;
@@ -99,6 +138,8 @@ export const LESSON_TYPES = ['INDEPENDENT_WORK', 'PRACTICAL_WORK', 'LABORATORY_W
 
 export const slot = z.looseObject({
   lesson_uuid: id,
+  lesson_template_id: seen,
+  homework_source_id: seen,
   subject_id: id,
   subject_title: z.string().min(1),
   teacher_id: z.string().nullable().optional(),

@@ -567,9 +567,7 @@
               "lessonExternalId": "00000000-0000-4000-8000-471305d29deb",
               "raw": "7",
               "kind": "numeric",
-              "values": [
-                7
-              ],
+              "values": [7],
               "authorExternalId": "00000000-0000-4000-8000-ec811a054539"
             }
           ]

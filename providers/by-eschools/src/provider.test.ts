@@ -8,7 +8,10 @@ import {
 import type { HttpResponse, ProviderContext } from '@marksy/core';
 import { describe, expect, it } from 'vitest';
 import { byEschools, failure, knownErrorShape } from './index';
+import { readdirSync, readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { FAKE_UUID_PREFIX, fakeUuid, sanitize } from './sanitize';
+import { PERSONAL_FIELDS } from './schemas';
 
 const res = (status: number, text = '', headers: Record<string, string> = {}): HttpResponse => ({
   status,
@@ -152,5 +155,68 @@ describe('sanitize', () => {
       marks: { [fakeUuid(real)]: { q: { mark: expect.stringMatching(/^\d{1,2}$/) } } },
     });
     expect(sanitize('me', out)).toEqual(out);
+  });
+});
+
+describe('personal fields (docs/api-spec.md 6): never stored, never logged, always replaced', () => {
+  // invented values, placed where the first probe saw these fields
+  const value: Record<(typeof PERSONAL_FIELDS)[number], string> = {
+    first_name: 'Ника',
+    second_name: 'Андреевна',
+    last_name: 'Лесная',
+    school_name: 'Средняя школа № 141',
+    parent_code: 'PC-7731',
+    profile_id: '2b8c4d6e-1f3a-4b5c-8d7e-9f0a1b2c3d4e',
+    position: 'Председатель родительского комитета',
+    author: '4d5e6f7a-8b9c-4d0e-9f1a-2b3c4d5e6f7a',
+    school: '5e6f7a8b-9c0d-4e1f-8a2b-3c4d5e6f7a8b',
+  };
+  const samples: [string, Record<string, unknown>][] = [
+    [
+      'me',
+      {
+        user_id: 'u',
+        first_name: value.first_name,
+        second_name: value.second_name,
+        last_name: value.last_name,
+        school_name: value.school_name,
+        parent_code: value.parent_code,
+        profile_id: value.profile_id,
+        position: value.position,
+      },
+    ],
+    ['school_year', { uuid: 'y', author: value.author }],
+    ['classes-1', { uuid: 'c', school: value.school }],
+  ];
+
+  it.each(PERSONAL_FIELDS)('%s is replaced or dropped', (field) => {
+    const [endpoint, raw] = samples.find(([, r]) => field in r)!;
+    const out = sanitize(endpoint, raw) as Record<string, unknown>;
+    expect(JSON.stringify(out)).not.toContain(value[field]);
+    if (field in out) expect(out[field]).not.toBe(raw[field]);
+  });
+
+  it('no committed fixture carries a real value in a personal field', () => {
+    const dir = fileURLToPath(new URL('../fixtures', import.meta.url));
+    const walk = (v: unknown, hits: string[]) => {
+      if (Array.isArray(v)) v.forEach((x) => walk(x, hits));
+      else if (v && typeof v === 'object') {
+        for (const [k, x] of Object.entries(v)) {
+          const ok =
+            x === null ||
+            x === '' ||
+            x === 0 ||
+            x === '[text]' ||
+            (typeof x === 'string' && x.startsWith(FAKE_UUID_PREFIX));
+          if ((PERSONAL_FIELDS as readonly string[]).includes(k) && !ok) hits.push(k);
+          walk(x, hits);
+        }
+      }
+    };
+    for (const f of readdirSync(dir).filter((x) => x.endsWith('.json') && x !== 'denylist.json')) {
+      const hits: string[] = [];
+      walk(JSON.parse(readFileSync(`${dir}/${f}`, 'utf8')), hits);
+      expect(hits, f).toEqual([]);
+    }
   });
 });
