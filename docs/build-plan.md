@@ -124,7 +124,7 @@ Local check: `pnpm install`, `pnpm db:up`, `pnpm check`, `pnpm dev`, then open h
 
 **Read:** `docs/design.md` 5.3, 5.3a, 5.3b, 5.4, 6.1, 6.6; prototype screens Оценки, Итоговые отметки, Предметы, Предмет.
 
-**Deliver:** MarkFilter (Все and Теги with any/all, one shared state), StatBlock, TrendCard, distribution, finals table, subject list with sorting, subject screen with accent colour, settings sheet (goal, colour), «Обратить внимание», «Ближайшие уроки», the class-without-marks variants.
+**Deliver:** MarkFilter (Все and Теги with any/all, one shared state), StatBlock, TrendCard, distribution, finals table, subject list with sorting, subject screen with accent colour, settings sheet (goal, colour), «Обратить внимание», «Ближайшие уроки», the class-without-marks variants. Work and lesson types are almost never set in real data (1 mark of 72, 3 lessons of 306, api-spec 7.3): a work type label appears under a mark only when the diary has one, with no placeholder; the test pencil on chips and every "is this a test" come from the tag «Контрольная» (design.md 6, D50); test with fixtures where every type is null and check that no screen has an empty slot or a dangling separator.
 
 **Done when:** the whole read side of the app (login, pick, Главная, Внимание, Оценки, Итоги, Предметы, Предмет, every child, every period) runs locally on the owner's family and on the seed in a desktop browser and on a phone over the home network with `pnpm dev:lan`. This is the first milestone the owner uses day to day for testing.
 

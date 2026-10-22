@@ -325,7 +325,9 @@ The frontend counts weekly absences as slots with `lesson_mark.kind === "ABSENT"
 
 ### 7.3 Work type enums [BUNDLE]
 
-`lesson_mark.type` (what the mark is for; `null` observed = ordinary classwork). Second probe: 71 marks with `null`, 1 `INDEPENDENT_WORK` [VERIFIED]; teachers rarely set it, so the work-type features (filters, the homework and tests hints) will have little to work on with this school, and tags matter more. `slot.type` seen: 303 `null`, 2 `TEST`, 1 `INDEPENDENT_WORK` [VERIFIED].
+`lesson_mark.type` (what the mark is for; `null` observed = ordinary classwork). `slot.type` is the lesson type (below).
+
+**How often they are set** [VERIFIED, second probe, six weeks, two children]: the work type on **1 mark of 72** (`INDEPENDENT_WORK`; 71 `null`), the lesson type on **3 lessons of 306** (2 `TEST`, 1 `INDEPENDENT_WORK`; 303 `null`). Teachers of this school almost never fill them in. The interface therefore never relies on them: a work type label is shown under a mark only when there is one, with no placeholder for `null`, and tests and other kinds of work are recognised by the family's tags in topics and homework (`design.md` 6, 6.3, `ux-principles.md` D50).
 
 | value | UI label |
 |---|---|
