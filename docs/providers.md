@@ -84,7 +84,11 @@ docs/                   product docs (this file, design.md, api-spec.md, tokens.
     "attendance": "derived",              // separate | derived (from a mark kind) | none
     "terms": "quarter",                   // quarter | trimester | semester | other | none
     "finalMarks": true,                   // official term and year finals
-    "teacherNames": false,
+    "teacherNames": true,                 // teachers of the student's own lessons and subjects
+    "rooms": true,                        // a room on lessons and in the week template
+    "teachingGroups": true,               // the student's subgroup / set / section on split subjects
+    "bellSchedule": true,                 // start and end of every period, so breaks and "now" can be shown (getBellSchedule)
+    "weekTemplate": true,                 // the student's regular week for a term (getWeekTemplate)
     "pastYears": false,                   // can the API return previous school years?
     "homeworkAssignments": false,         // homework as separate items with set/due dates and submission status (UK)
     "behaviour": false,                   // behaviour / achievement points or notes (UK ClassCharts-style)
@@ -103,7 +107,7 @@ docs/                   product docs (this file, design.md, api-spec.md, tokens.
     "minLoginIntervalMinutes": 60,
     "requestDelayMs": [1500, 3000],
     "maxRequestsPerRun": 40,              // one run stops here; unverified weeks wait for the next run (design.md 10.4)
-    "syncWindow": "08:00-14:00",
+    "syncWindow": "08:00-14:00",          // stand-in only: the real window is each child's school day from their timetable (design.md 10.2)
     "weeklyRescan": "fri 20:00-23:00",
     "fetchUnit": "week",                  // week | day | term: the granularity the API hands data out in, i.e. the unit of sync_coverage
     "authFailureIsFinal": true            // true: a 401 stops syncing until credentials change (repeated bad logins can lock the real account)
@@ -167,6 +171,12 @@ export interface DiaryProvider {
   /** Timetable without marks, for days in the future. Optional; falls back to getLessons. */
   getTimetable?(session: Session, student: StudentRef, range: DateRange, ctx: ProviderContext): Promise<Lesson[]>;
 
+  /** The bell schedules that apply to the student's class this school year (capabilities.bellSchedule). */
+  getBellSchedule?(session: Session, student: StudentRef, ctx: ProviderContext): Promise<BellSchedule[]>;
+
+  /** The student's own regular week for the current term (capabilities.weekTemplate): only the student's lessons, never another group's. */
+  getWeekTemplate?(session: Session, student: StudentRef, ctx: ProviderContext): Promise<WeekTemplate | null>;
+
   /** Replace names, ids and free text in a raw response before it is saved as a fixture. */
   sanitize(endpoint: string, raw: unknown): unknown;
 
@@ -185,17 +195,23 @@ export interface ProviderContext {
 }
 ```
 
+**Everything is per student.** Every method takes a `StudentRef` and returns that student's data for the current school year: calendar, subjects, lessons, bells, week template. Nothing is shared between the children of a family, even in the same school: classes differ in shift, bells (grade 1 often has its own) and subgroups, and children may attend different schools. Holidays or terms that apply only to some grades are applied by the provider, so each student's calendar is already correct; a remark the provider cannot apply reliably travels as `note`. School-wide catalogues a system may have (rooms, staff, all bell schedules, the whole class's timetable with every subgroup) stay inside the provider: it resolves them into labels on the student's own records.
+
+**Teachers are third parties.** A provider returns teacher names only for the student's own lessons and subjects (the student's subgroup), never for other groups or the school's staff list. Names live only in the family's database: never in fixtures, logs or drift samples (`sanitize()` replaces them like a student's name).
+
 ### Canonical types (abridged)
 
 ```ts
 export interface AccountInfo { externalUserId: string; displayName: string | null; role: 'parent' | 'student'; students: StudentRef[] }
 export interface StudentRef {
-  externalId: string;
+  externalId: string;                   // the child's own id in the system, the same whichever login lists the child (two parents' logins must
+                                        // give the same id, design.md 7.2); never an id of the login-child relation
   fullName: string;                     // as the system shows it
   givenName?: string; familyName?: string; middleName?: string;   // when the system has separate fields
   displayName?: string;                 // short form for headers and notifications ("Кира", "Yuki"); the core derives it from givenName or the first token of fullName per manifest.nameOrder when absent
   classExternalId?: string;             // the class or year group in the system, when its URLs or data need it (e-schools: every diary URL)
-  schoolId?: string; className?: string; grade?: number; gradeLabel?: string /* "Year 7", "K", "7Д" */
+  schoolId?: string; schoolName?: string; className?: string; grade?: number; gradeLabel?: string /* "Year 7", "K", "7Д" */
+  timezone?: string;                    // the school's IANA zone when it differs from the manifest's (a national system over several zones)
 }
 
 export interface Calendar {
@@ -209,8 +225,12 @@ export interface Term { externalId: string; kind: 'quarter' | 'trimester' | 'sem
 
 export interface Subject {
   externalId: string; name: string;
-  teacherName?: string;
-  level?: 'regular' | 'honors' | 'ap' | 'ib' | 'other';           // US course levels for weighted GPA
+  shortName?: string;                                             // the system's abbreviation, for narrow grids
+  teacherExternalId?: string; teacherName?: string;               // the student's teacher (of the student's group on a split subject)
+  groupLabel?: string;                                            // the student's subgroup / set / section, as the system names it ("2-я подгруппа (мальчики)", "Set 3"); absent when the class is not split
+  level?: 'regular' | 'advanced' | 'honors' | 'ap' | 'ib' | 'other';   // regular is not shown; advanced: post-Soviet "углублённый"; honors / ap / ib: US course levels for weighted GPA
+  levelLabel?: string;                                            // the system's own wording, shown when level is not 'regular'
+  lessonsPerWeek?: number;                                        // from the teaching plan; omitted when the system plans per fortnight or not at all
   credits?: number;                                               // US credit hours
   gradingScheme?: { categories: { key: string; label: string; weight: number }[]; dropLowest?: number };  // US category weights per course (Tests 40 %, Homework 20 %)
 }
@@ -220,12 +240,37 @@ export interface Lesson {
   date: ISODate; slot?: number; startTime?: string; endTime?: string;
   subjectExternalId: string; subjectName: string;
   teacherExternalId?: string; teacherName?: string;
+  room?: string;             // as the timetable shows it ("201", "Лаб. 2", "S12"); from the lesson or the week template
+  groupLabel?: string;       // the student's subgroup when the subject is split
   topic?: string; homework?: string; homeworkDueDate?: ISODate; hasAttachments?: boolean;   // homeworkDueDate when the system states it; otherwise the core assumes the next lesson of the subject
   lessonType?: 'regular' | 'test' | 'lab' | 'practical' | 'excursion' | 'other';
   substituteTeacherName?: string;   // Poland zastępstwo, e-schools substitution
   marks: Mark[];             // zero or more marks given at this lesson
   attendance?: Attendance[]; // attendance that arrives with the lesson (capabilities.attendance = 'derived': e-schools' ABSENT mark cell); never a mark
   cancelled?: boolean;
+}
+
+// The bell schedule of the student's class (capabilities.bellSchedule). Breaks are the gaps between periods.
+export interface BellSchedule {
+  externalId: string;
+  label?: string;                   // the system's title, e.g. a shift or "Year 1"
+  days: number[];                   // ISO weekdays it applies to
+  periods: { slot: number; start: string; end: string }[];   // "HH:MM"; slot numbers as lessons use them (may start at 0)
+  validFrom?: ISODate; validTo?: ISODate;                     // when it applies to part of the year only
+}
+
+// The student's own regular week for a term (capabilities.weekTemplate): what the timetable plans, not what happened.
+export interface WeekTemplate {
+  termExternalId?: string;          // absent = the whole year
+  cycleWeeks: number;               // 1, or 2 for Week A / Week B timetables
+  entries: {
+    cycleWeek: number;              // 1..cycleWeeks
+    weekday: number;                // ISO weekday
+    slot: number; start?: string; end?: string;
+    subjectExternalId: string; subjectName: string;
+    groupLabel?: string; room?: string;
+    teacherExternalId?: string; teacherName?: string;
+  }[];
 }
 
 export interface Mark {
@@ -442,10 +487,11 @@ A snapshot test in `packages/core` locks this table for `by-10`: if a change to 
 
 The scheduler is generic and reads the provider's `limits`:
 
-- hourly runs on school days inside `syncWindow`, with a random offset; scope: the current and the previous week, then whatever was missed since the last success, plus final marks once a day (`design.md` 10.4);
+- hourly runs only during each child's school day (an hour before the first lesson to two hours after the last, from the child's timetable and bells; `syncWindow` only when the day's times are unknown), with a random offset; scope: the current and the previous week, then whatever was missed since the last success, plus final marks once a day (`design.md` 10.4);
 - in the `weeklyRescan` slot, every week of the current term that was not fetched for six days, for change detection;
 - the collector asks for one `fetchUnit` at a time (a week, or the whole term for `term` providers) and counts each as verified only when it was stored completely; the run stops at `maxRequestsPerRun` and the rest waits for the next run;
 - never more than one `login()` per `minLoginIntervalMinutes` per account, shared by scheduled, manual and re-scan runs;
+- a child listed by several accounts (two parents' logins, possibly in two families) is read through one of them only; the others call `getAccount()` once a school day to confirm they still show the child;
 - strictly serial requests, `requestDelayMs` between them, exponential backoff on 429 / 5xx / network errors, stop after three failures until the next slot;
 - the shared HTTP client refuses any request that does not match `readOnlyAllowList`;
 - the collector keeps every read response for 14 days (`raw_responses`, named by the allow-list entry it matched, so no ids in the name); the login response, and every response that arrives while `login()` runs, is never kept; `redactRaw()` drops the personal fields the mapper does not use before a body is stored.
@@ -493,7 +539,7 @@ The first provider shaped the first model, so every e-schools concept was re-exa
 | Four quarters plus holidays | Belarus and the post-Soviet systems; elsewhere trimesters, semesters, or no formal terms | `Term.kind`, `capabilities.terms` | Period presets week / 2 weeks / month always exist; the fourth preset and the Subjects table are named after the term kind ("Триместры", "Семестры"); with `terms: none` both disappear and the quarter goal becomes a year goal or is hidden when there are no finals either |
 | 36 numbered school weeks with uuids | e-schools API chunking | Not in the model; providers chunk ranges as they like | n/a |
 | Six-day week, Mon to Sat | Belarus (many schools); most countries five days | Derived from the data | The schedule shows the days that have lessons; "next school day" skips days without lessons |
-| Lessons with slot number, start time, topic, homework, attachments, substitution | Universal in structure, optional in detail | `Lesson` with every detail optional; `capabilities.lessons`, `futureTimetable`, `topics`, `homework`, `attachments` | No lessons at all: the Расписание tab is hidden, marks are listed by date in the feed and in the subject, tags have nothing to match and the Теги screen is hidden. No future timetable: "tomorrow" and "Обратить внимание" are hidden, watch rules work on homework already seen. No topics or homework: those lines are not rendered; watch rules search only the fields that exist |
+| Lessons with slot number, start time, topic, homework, attachments, substitution | Universal in structure, optional in detail | `Lesson` with every detail optional; `capabilities.lessons`, `futureTimetable`, `topics`, `homework`, `attachments` | No lessons at all: the Расписание tab is hidden (when no child the user sees has lessons; otherwise the tab stays and says so for this child), marks are listed by date in the feed and in the subject, tags have nothing to match and the Теги screen is hidden. No future timetable: "tomorrow" and "Обратить внимание" are hidden, watch rules work on homework already seen. No topics or homework: those lines are not rendered; watch rules search only the fields that exist |
 | Lesson type (test, lab, practical, excursion) | Common in post-Soviet systems; rare elsewhere | `Lesson.lessonType?`, `capabilities.lessonTypes` | No badges; the tag preset "Контрольная" relies on keywords only; "test tomorrow" hints come from work types or tags instead |
 | Exactly one `lesson_mark` per lesson, tied to the lesson | e-schools. Others: several marks per lesson, or a gradebook of assignments with dates and no lessons | `Lesson.marks[]` 0..n, plus `getMarks()` for unattached marks with `date` and subject; `capabilities.marksPerLesson`, `unattachedMarks` | Feed, averages, subjects and goals work on marks by date; the lesson card shows several chips; unattached marks appear in the feed and the subject but not in the schedule |
 | Mark kinds SINGLE, DOUBLE ("7/9"), PASS, EXEMPT, MASTERED, NOT_TAKEN | DOUBLE is Belarusian; pass/exempt exist widely under other names | `Mark.values[]` carries any number of values; `kind` is a small canonical set, everything else is `other` with `raw` shown | Chips show `raw`; non-numeric kinds are excluded from averages everywhere |
@@ -506,7 +552,9 @@ The first provider shaped the first model, so every e-schools concept was re-exa
 | Final marks per quarter and year (`final/whole`) | Common, shape varies; some systems compute a live grade instead | `FinalMark[]` optional; `capabilities.finalMarks` | Quarter and year tables show running averages only, labelled as such; the goal card is hidden (no official final to aim at), the target calculator still works on averages |
 | 10-point scale, marks below 4 highlighted | Belarus | `GradingScale by-10` (section 5) | Another scale, same screens |
 | Grades 1 and 2 without marks | Belarus (and several other countries have unmarked early years) | `student_years.grading_scale_id = none` | The first-grader screens: schedule and homework first, no averages |
-| Behaviour marks, diary signatures, class-teacher messages, bells | e-schools extras | Out of scope; signatures are write endpoints and forbidden | n/a. Class messages may become an "announcements" capability when a second provider has them |
+| Rooms, the student's subgroup, teachers, bell times, a regular weekly timetable, lessons per week, level of study | Universal in idea: UK sets and Week A/B timetables, US sections and periods, Polish groups and "sala", post-Soviet подгруппы and углублённый уровень | `Lesson.room?`, `groupLabel?`, `teacherName?`, `endTime?`; `Subject.groupLabel?`, `teacherName?`, `level?` + `levelLabel?`, `lessonsPerWeek?`; `getBellSchedule()`, `getWeekTemplate()`; `capabilities.rooms`, `teachingGroups`, `teacherNames`, `bellSchedule`, `weekTemplate` | Each detail is simply not shown: no room, no group, no teacher; without bells there is no "сейчас" and no breaks, end times only when lessons carry them; without a week template the subject shows no lessons per week and no «Когда» |
+| Shifts (смены), separate bells for grade 1, a school-wide room list, the class timetable with every subgroup, grade-specific holiday dates written as prose | e-schools | Inside the provider: it picks the student's bells, resolves rooms and the student's group, applies the holidays it can (ADDITIONAL_HOLIDAYS for grades 1 and 2) and passes other remarks as `note` | n/a |
+| Behaviour marks, diary signatures, class-teacher messages | e-schools extras | Out of scope; signatures are write endpoints and forbidden | n/a. Class messages may become an "announcements" capability when a second provider has them |
 | Timestamps in ms, Europe/Minsk | Provider | Mapped to ISO dates; timezone from the manifest | n/a |
 | Russian and Belarusian subject names, "вывучыць верш на памяць" in homework | Data, not model | Shown as the diary sends them; tag presets per interface language | Presets for the family's language; keywords are editable |
 | Homework shown on the lesson it was set at, due at the next lesson | e-schools convention | `homeworkSemantics` in the manifest, `homeworkDueDate` when known | Due dates follow the manifest |
@@ -597,7 +645,8 @@ The remaining assumptions found in the screen audit are now part of the model ra
 |---|---|
 | Week starts on Monday, weekend is Saturday and Sunday | `manifest.calendar { weekStart, weekend, schoolDays }`, falling back to the user's locale. `period.ts` builds the week and 2-week presets from `weekStart`; "next school day" skips `weekend` and days without lessons; tag advice says "в выходные" only for the provider's weekend |
 | One `fullName`, given name first | `givenName / familyName / displayName` on `StudentRef`, `manifest.nameOrder`; the UI shows `displayName` in headers and notifications and `fullName` in Family |
-| A student belongs to one family | Still true for isolation, but the connect flow now looks up `(provider_id, student external_id)` across families: if the child is already followed by another family (the other parent connected their own login), the second parent is offered to **join that family as a parent** (an invite request the admin approves) or to **create a separate family**; both are allowed, duplication is a choice, not an accident (`design.md` 7.2) |
+| A student belongs to one family | A child is not owned by a family. The connect flow looks up `(provider_id, student external id)` across the installation: a child already followed by another family (the other parent connected their own login) is offered to the second parent as **join that family as a parent** (a request the admin approves) or **follow from your own family**; the second shares the one child, the child's diary and own work, and nothing else of either family. Access always comes from a diary login that shows the child (`design.md` 7.1, 7.2) |
+| A family uses one diary system | A family connects as many accounts as it needs, on any providers; capabilities, scale, calendar, bells and the sync window are the selected child's, so two children in different systems each get the interface their diary allows (`design.md` 16) |
 | Student mode assumes a reader | `users.ui_mode: full / simple`; simple mode for the youngest shows today's marks as big chips, "не забыть" with ticks and tomorrow's lessons with homework checkboxes, nothing else (`design.md` 5.7) |
 | Guidance is one culture's common sense | `families.settings.guidance` and `users.settings.guidance`: off hides goals, Что сделать, Обратить внимание and lesson hints; facts (marks, attention, watch items) stay |
 | No data-protection rules | `design.md` 14.1: consent record on connect, retention setting, family export and erasure, per-family encryption keys for hosted instances |

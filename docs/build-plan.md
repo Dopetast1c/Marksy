@@ -10,6 +10,7 @@ The order in which Marksy is built with Claude Code, what each milestone must de
 | M1 | Core: canonical model, grading scales, marks math, HTTP client, i18n package | `m1-core` | done |
 | M2 | Provider `by-eschools` and the probe | `m2-eschools` | done |
 | M3 | Server: schema, collector, planner, seed data | `m3-server` | done |
+| M3a | School details (teachers, subgroups, rooms, bells, the regular week), children across families and systems, the per-child sync window | `m3a-school` | todo |
 | M4 | Accounts, families and the read API | `m4-api` | todo |
 | M5a | Web: tokens, shell, login, student pick, Главная, Внимание | `m5a-shell` | todo |
 | M5b | Web: Оценки, Итоги, Предметы, Предмет | `m5b-marks` | todo |
@@ -104,13 +105,27 @@ Local check: `pnpm install`, `pnpm db:up`, `pnpm check`, `pnpm dev`, then open h
 
 **Done when:** collector tests run against `demo-minimal` and the test database, a re-fetched week with a changed mark produces `mark_history` and `mark_events(changed)`, the planner tests cover window, catch-up, cap and pause, `pnpm db:seed` runs on an empty database, and the owner's `pnpm sync:once` fills the local database without drift errors.
 
+## M3a. School details, shared children, per-child sync window
+
+**Read:** `docs/providers.md` 3 and 4 (capabilities, `getBellSchedule`, `getWeekTemplate`, the per-student rule, `Lesson` and `Subject` fields), `docs/api-spec.md` 6.4, 6.7a, 6.10 and 7.5, `docs/design.md` 2, 7.1, 7.2, 8, 10.2 and 10.4 (new tables, the child/family split, the window, retention), `docs/ux-principles.md` D51, D53, D54, D55.
+
+**Deliver:**
+- Core: the new canonical fields and types with Zod schemas, the five capabilities, `getBellSchedule?` and `getWeekTemplate?` in the interface, conformance checks for them (optional methods, per student, no teacher of another group).
+- `providers/by-eschools`: the reads of 6.7a and 6.10.1 to 6.10.4 in the allow-list and the mapping of 7.5, fetched once a day and cached for the run; ADDITIONAL_HOLIDAYS only for grades 1 and 2; sanitised fixtures (teacher names replaced) and tests. `pnpm probe` reads them too, so the owner refreshes fixtures with one run.
+- Server: `bell_schedules`, `week_templates`, the new columns on `subjects` and `lessons`, migration, collector (once a day, replace on fetch), retention rows.
+- Server, tenancy split (do it now, while the data is small): `students` lose `family_id` and `diary_account_id`; new `family_students`, `student_sources`, `memberships`; `student_identities` without `family_id`, unique per `(provider_id, external_id)`; `users` lose `family_id` and `role`; `user_student_access` gains `family_id`; child-owned tables (design 7.1) lose `family_id`; `families.settings` loses `sync_window`, `low_mark`, `drop_step`, which move to `family_students.settings`; `students.timezone`, `users.timezone`. One migration that carries the existing rows over (each student gets one active link and one active source, each user one membership), with a test on a copy of the seed. Queries of child-owned data go through `family_students`; a helper makes "the children this family may see" the only way in.
+- Collector: the per-child window of 10.2 from the stored timetable and bells (unit tests: two children with different days and shifts, a holiday, a day without times falls back to the manifest), the account window as their union, one read per child through the `active` source with failover, and the daily `getAccount()` check of the other sources that suspends a link when a login no longer shows the child.
+- `demo-full` and `pnpm db:seed`: the same details for the fictional family (two bell schedules, a split subject, rooms, a regular week), matching the prototype; Марк on a second fictional provider with fewer capabilities, and a second fictional family that also follows Марк, so both cases can be built and tested without real data.
+
+**Done when:** conformance passes for every provider with and without the new capabilities; the owner's `pnpm probe` and `pnpm sync:once` fill the new tables for both children (counts only) with different bells for the two classes; no teacher of another subgroup is stored; the privacy check passes on the new fixtures; the migration keeps every existing row reachable for the owner's family (counts before and after); the planner's dry run on the owner's data shows today's window per child and no run outside it except catch-up.
+
 ## M4. Accounts, families and the read API
 
 **Read:** `docs/design.md` 7 (all), 9, 14.1.
 
-**Deliver:** `pnpm dev:connect` (reads the owner's logins from `.env`, runs the same service as «Подключить дневник», idempotent after a database reset), connect a diary with the provider picker (creates the family), Marksy login with argon2id and session cookies, invites with a 48-hour code, roles and student access, family management; credentials encrypted with AES-256-GCM; read routes for providers, overview, marks feed, subjects, subject, schedule, finals, attention, sync status; everything in Swagger.
+**Deliver:** read routes include the school details of M3a (lesson end time, room and group; the subject's teacher, group, level and lessons per week; the child's bells and regular week). `pnpm dev:connect` (reads the owner's logins from `.env`, runs the same service as «Подключить дневник», idempotent after a database reset), connect a diary with the provider picker (creates the family) and add another one from Семья, with the join / follow choice for a child already followed by another family (design 7.2), membership switching for a person in several families, Marksy login with argon2id and session cookies, invites with a 48-hour code, roles and student access, family management; credentials encrypted with AES-256-GCM; read routes for providers, overview, marks feed, subjects, subject, schedule, finals, attention, sync status; everything in Swagger.
 
-**Done when:** every route has Supertest tests including "another family's data is not reachable" and "no session, no data"; no route returns or logs a credential; the owner (after `pnpm dev:connect`) and the seeded demo parent can log in and read data through the `/api` proxy from another device on the home network (session cookie `SameSite=Lax`, `Secure` only when `PUBLIC_URL` is https).
+**Done when:** every route has Supertest tests including "another family's data is not reachable", "a shared child's data is reachable from both families but neither family's tags, rules, members or author names are", "a suspended link serves nothing" and "no session, no data"; no route returns or logs a credential; the owner (after `pnpm dev:connect`) and the seeded demo parent can log in and read data through the `/api` proxy from another device on the home network (session cookie `SameSite=Lax`, `Secure` only when `PUBLIC_URL` is https).
 
 ## M5a. Web: tokens, shell, login, pick, Главная, Внимание
 

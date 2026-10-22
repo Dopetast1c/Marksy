@@ -12,6 +12,7 @@
   --band-ok-bg: #E6E9F2; --band-ok-fg: #4A5572;
   --band-good-bg: #DDF3E4; --band-good-fg: #1F7A45;
   --band-top-bg: #166534; --band-top-fg: #FFFFFF; --band-top-fg-text: #14532D;
+  --holiday-bg: #FFF3CC; --holiday-fg: #8A5A00; --holiday-fill: #F5C543;
   --rail-bg: #E9ECF4; --phone-frame: #17213A;
   --shadow-card: 0 1px 2px rgba(23,33,58,.06), 0 4px 16px rgba(23,33,58,.06);
   --font-display: "Fraunces", Georgia, serif;
@@ -27,6 +28,7 @@
   --band-ok-bg: #262E42; --band-ok-fg: #AEB6CB;
   --band-good-bg: #173A26; --band-good-fg: #6FD39A;
   --band-top-bg: #6FD39A; --band-top-fg: #0F1420; --band-top-fg-text: #9BE7B8;
+  --holiday-bg: #3A3112; --holiday-fg: #F5D06A; --holiday-fill: #C9A227;
   --rail-bg: #0B0F19; --phone-frame: #2A3246;
   --shadow-card: 0 1px 2px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.3);
   color-scheme: dark;
@@ -40,6 +42,7 @@
   --band-ok-bg: #262E42; --band-ok-fg: #AEB6CB;
   --band-good-bg: #173A26; --band-good-fg: #6FD39A;
   --band-top-bg: #6FD39A; --band-top-fg: #0F1420; --band-top-fg-text: #9BE7B8;
+  --holiday-bg: #3A3112; --holiday-fg: #F5D06A; --holiday-fill: #C9A227;
   --rail-bg: #0B0F19; --phone-frame: #2A3246;
   --shadow-card: 0 1px 2px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.3);
   color-scheme: dark;
@@ -394,6 +397,54 @@ button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--accent
 .fbar { display: block; background: hsl(var(--sh, 210) var(--ss, 62%) 50%); border-radius: 0; align-self: stretch; }
 .frow .c { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .frow .t { font-weight: 800; font-size: 15.5px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.frow .fmeta { font-size: 12.5px; color: var(--ink3); margin-top: -1px; }
+.ftime .fend { font-size: 11px; font-weight: 500; color: var(--ink3); opacity: .85; }
+.frow.now { background: color-mix(in oklab, var(--accent-soft) 75%, transparent); border-radius: var(--r-md); margin: 0 -8px; padding-left: 8px; padding-right: 8px; }
+.nowtag { display: inline-block; font-size: 10.5px; font-weight: 800; letter-spacing: .02em; color: var(--accent-ink, #fff); background: var(--accent); padding: 2px 6px; border-radius: 6px; vertical-align: 1px; }
+.nowcard { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: var(--r-lg); background: var(--surface); box-shadow: var(--shadow-card); width: 100%; text-align: left; }
+.nowcard .stripe { align-self: stretch; } .nowcard .main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.nowcard .nk { font-size: 11.5px; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: .05em; }
+.nowcard b { font-size: 16.5px; } .nowcard .ns { font-size: 13px; color: var(--ink2); } .nowcard .chev { color: var(--ink3); }
+.pcnow { display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; color: var(--accent); margin-top: 2px; } .pcnow svg { width: 14px; height: 14px; }
+.card.about { display: flex; flex-direction: column; gap: 7px; }
+.card.about .ar { display: grid; grid-template-columns: 96px 1fr; gap: 10px; font-size: 13.5px; line-height: 1.35; } .card.about .ar .k { color: var(--ink3); }
+.lvl { display: inline-block; font-size: 10.5px; font-weight: 700; color: var(--ink2); background: var(--surface2); padding: 1px 6px; border-radius: 6px; margin-left: 6px; vertical-align: 2px; }
+.entry.slim { padding: 8px 12px; } .entry.slim .ic { width: 28px; height: 28px; }
+.choice { display: flex; gap: 12px; align-items: flex-start; text-align: left; width: 100%; background: var(--surface); border-radius: var(--r-lg); box-shadow: var(--shadow-card); padding: 14px 16px; }
+.choice .rad { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--line); flex: none; margin-top: 1px; }
+.choice[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--accent); } .choice[aria-pressed="true"] .rad { border-color: var(--accent); background: radial-gradient(circle, var(--accent) 0 4px, transparent 5px); }
+.choice .main { display: flex; flex-direction: column; gap: 4px; } .choice b { font-size: 15px; } .choice .s { font-size: 13px; color: var(--ink2); line-height: 1.4; }
+.menu .main .shared { display: block; color: var(--accent); font-weight: 700; }
+.acct-h { display: flex; align-items: baseline; gap: 8px; padding: 2px 2px 0; } .acct-h b { font-size: 14px; } .acct-h span { font-size: 12px; color: var(--ink3); }
+.card.empty.holiday { padding: 18px 16px; background: var(--holiday-bg); box-shadow: none; } .card.empty.holiday .em { background: var(--holiday-fill); color: #3B2A00; } .card.empty.holiday p { color: var(--holiday-fg); }
+/* «Школа» → Звонки: the same rows as the timetable (time axis on the left, bar, words), without subjects */
+.frow.bell { cursor: default; } .frow.bell .fbar { background: color-mix(in oklab, var(--accent) 45%, transparent); }
+.frow.bell .t { font-variant-numeric: tabular-nums; } .frow.bell .fmeta { margin-top: 0; }
+.frow.brk { cursor: default; } .look-split .frow.brk { padding: 6px 0; } .frow.brk .fbar { background: none; border-left: 2px dashed var(--line); width: 0; }
+.frow.brk .c { justify-content: center; } .frow.brk .gapt { font-size: 12.5px; color: var(--ink3); }
+.frow.brk.now .gapt { color: var(--accent); font-weight: 700; }
+/* «Школа» → Четверти: study in the accent, holidays in the fixed sunny holiday colour (tokens.json color.*.holiday) */
+.card.yearnow { display: flex; flex-direction: column; gap: 3px; } .card.yearnow b { font-size: 17px; }
+.ystrip { position: relative; display: flex; height: 26px; border-radius: 8px; overflow: hidden; margin-top: 10px; background: var(--surface2); }
+.ystrip i { position: absolute; top: 0; bottom: 0; display: grid; place-items: center; font-style: normal; font-size: 11px; font-weight: 800; }
+.ystrip i.q { background: var(--accent-soft); color: var(--accent); box-shadow: inset 0 -3px 0 var(--accent); }
+.ystrip i.h { background: var(--holiday-fill); }
+.ystrip .today { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--ink); border-radius: 2px; }
+.ymonths { position: relative; height: 14px; margin-top: 4px; font-size: 10.5px; color: var(--ink3); } .ymonths span { position: absolute; top: 0; }
+.ylegend { display: flex; gap: 14px; margin-top: 8px; font-size: 12px; color: var(--ink2); } .ylegend span { display: inline-flex; align-items: center; gap: 6px; }
+.ylegend i { width: 12px; height: 12px; border-radius: 3px; } .ylegend i.q { background: var(--accent-soft); box-shadow: inset 0 -3px 0 var(--accent); } .ylegend i.h { background: var(--holiday-fill); }
+.yitems { display: flex; flex-direction: column; gap: 8px; }
+.ycard { display: grid; grid-template-columns: 4px 1fr auto; gap: 12px; align-items: center; background: var(--surface); border-radius: var(--r-md); box-shadow: var(--shadow-card); padding: 12px 14px 12px 12px; }
+.ycard .bar { align-self: stretch; border-radius: 2px; background: var(--accent); }
+.ycard .main { display: flex; flex-direction: column; gap: 2px; min-width: 0; } .ycard .t { font-weight: 800; font-size: 15px; } .ycard .s { font-size: 13px; color: var(--ink3); }
+.ycard .len { font-size: 12.5px; font-weight: 700; color: var(--ink2); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.ycard .note2 { font-size: 12px; color: var(--ink3); font-style: italic; }
+.ycard.hol { grid-template-columns: 22px 1fr auto; background: var(--holiday-bg); box-shadow: none; } .ycard.hol .ic { color: var(--holiday-fg); display: grid; place-items: center; }
+.ycard.hol .t, .ycard.hol .len { color: var(--holiday-fg); } .ycard.hol .s { color: color-mix(in oklab, var(--holiday-fg) 70%, transparent); }
+.ycard.on { box-shadow: 0 0 0 2px var(--accent); } .ycard.hol.on { box-shadow: 0 0 0 2px var(--holiday-fg); }
+.ycard.past { opacity: .55; }
+.ycard.inner { margin-left: 20px; }
+.cmp.head.dates { padding: 0 0 6px; font-size: 9.5px; font-weight: 600; letter-spacing: 0; text-transform: none; border-top: 0; }
 .frow .fhw { font-size: 13.5px; color: var(--ink); line-height: 1.4; }
 .frow .topic { font-size: 13px; color: var(--ink3); }
 .frow .tcol { display: flex; align-items: center; justify-content: center; }
@@ -657,6 +708,16 @@ button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--accent
       </div>
     </div>
     <div class="group">
+      <h2>Время (демо)</h2>
+      <div class="toggle" id="nowToggle" style="flex-wrap:wrap">
+        <button data-now="465" aria-pressed="false">07:45 до уроков</button>
+        <button data-now="620" aria-pressed="false">10:20 урок</button>
+        <button data-now="645" aria-pressed="false">10:45 перемена</button>
+        <button data-now="900" aria-pressed="false">15:00 после</button>
+        <button data-now="1152" aria-pressed="true">19:12 вечер</button>
+      </div>
+    </div>
+    <div class="group">
       <h2>Состояние синхронизации (демо)</h2>
       <div class="toggle" id="syncToggle" style="flex-wrap:wrap">
         <button data-sync="ok" aria-pressed="true">Всё свежо</button>
@@ -666,7 +727,18 @@ button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--accent
       </div>
     </div>
     <div class="group">
-      <h2>Возможности провайдера (демо)</h2>
+      <h2>Семья (демо)</h2>
+      <div class="toggle" id="schoolsToggle" style="flex-wrap:wrap">
+        <button data-schools="same" aria-pressed="true">Дети в одной школе</button>
+        <button data-schools="diff" aria-pressed="false">Марк в другой школе, другой дневник</button>
+      </div>
+      <div class="toggle" id="sharedToggle" style="flex-wrap:wrap;margin-top:6px">
+        <button data-shared="0" aria-pressed="true">Марк только в нашей семье</button>
+        <button data-shared="1" aria-pressed="false">За Марком следит ещё одна семья</button>
+      </div>
+    </div>
+    <div class="group">
+      <h2>Возможности дневника выбранного ребёнка (демо)</h2>
       <div class="toggle" id="capsToggle" style="flex-wrap:wrap"></div>
     </div>
     <div class="group">
@@ -772,6 +844,7 @@ const SUBJ7 = [
   ['Биология', 8.0, [[1,5],[6,1]], ['Бактерии', 'Грибы', 'Лишайники', 'Водоросли', 'Мхи']],
   ['Информатика', 9.1, [[6,2]], ['Алгоритмы', 'Циклы в Pascal', 'Ветвление', 'Массивы']],
   ['Физическая культура', 9.4, [[2,5],[4,6],[5,6]], ['Бег 60 м', 'Прыжки в длину', 'Волейбол', 'Подтягивание']],
+  ['Трудовое обучение', 9.0, [[3,5],[3,6]], ['Ручные швы', 'Технология обработки ткани', 'Кулинария: блюда из круп']],
 ];
 
 function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
@@ -786,12 +859,13 @@ function buildGrade7() {
   const subjects = SUBJ7.map((s, i) => ({ id: 's' + i, name: s[0], mean: s[1], slots: s[2], topics: s[3] }));
   const lessons = [];
   const marks = [];
-  const endOfWeek = addDays(TODAY, 13 - TODAY.getDay()); // Saturday of next week, so the schedule has a week ahead
+  const endOfWeek = DATA_END; // the diary shows the timetable weeks ahead; the demo runs past the autumn holidays
   let mid = 0;
   subjects.forEach((sub, si) => {
     const r = rng(1000 + si * 97);
     for (let d = new Date(Q1_START); d <= endOfWeek; d = addDays(d, 1)) {
       const dow = d.getDay();
+      if (holidayOn('k', d)) continue;
       const slot = sub.slots.find(x => x[0] === dow);
       if (!slot) continue;
       const topic = sub.topics[Math.floor(((d - Q1_START) / 864e5 / 7) ) % sub.topics.length];
@@ -878,6 +952,7 @@ function hwFor(subject, topic) {
     'Биология': `§ 11, рисунок в тетради`,
     'Информатика': `написать программу из задания 3`,
     'Физическая культура': null,
+    'Трудовое обучение': null,
   };
   return map[subject] ?? null;
 }
@@ -899,9 +974,10 @@ function buildGrade1() {
     ['Трудовое обучение', [[5,3]], ['Аппликация из листьев']]];
   const subjects = subs.map((s, i) => ({ id: 'g' + i, name: s[0], slots: s[1], topics: s[2] }));
   const lessons = [];
-  const endOfWeek = addDays(TODAY, 13 - TODAY.getDay());
+  const endOfWeek = DATA_END;
   subjects.forEach(sub => {
     for (let d = new Date(Q1_START); d <= endOfWeek; d = addDays(d, 1)) {
+      if (holidayOn('m', d)) continue;
       const slot = sub.slots.find(x => x[0] === d.getDay()); if (!slot) continue;
       const topic = sub.topics[Math.floor((d - Q1_START) / 864e5 / 7) % sub.topics.length];
       const hw = { 'Обучение грамоте': 'Прописи с. 12, строки 1–3', 'Математика': 'Тетрадь с. 9, № 2', 'Белорусский язык': 'Паўтарыць літары', 'Трудовое обучение': 'Принести цветную бумагу и клей' }[sub.name] ?? null;
@@ -910,20 +986,100 @@ function buildGrade1() {
   });
   return { subjects, lessons, marks: [] };
 }
+/* ---------- School details, per child (docs/providers.md 4: BellSchedule, WeekTemplate, Lesson.room / groupLabel,
+   Subject teacher, group, level, lessons per week; ux-principles D51). Nothing here is shared between the children:
+   Милена is in the first shift, Марк has the grade 1 bells; only each child's own subgroups and teachers exist.
+   Fictional names, rooms and times. ---------- */
+const DATA_END = new Date(2026, 10, 14);   // Sat 14 Nov: the timetable runs past the autumn holidays
+// The school year as each child's calendar (api-spec 6.4, local dates). levels: holidays the provider applies only to
+// some grades; note: a remark it cannot apply, shown quietly under the dates.
+const CALENDAR = [
+  { id: 'q1', kind: 'quarter', name: 'I четверть', short: 'I', from: new Date(2026, 8, 1), to: new Date(2026, 9, 31) },
+  { id: 'h1', kind: 'holiday', name: 'Осенние каникулы', from: new Date(2026, 10, 1), to: new Date(2026, 10, 8) },
+  { id: 'q2', kind: 'quarter', name: 'II четверть', short: 'II', from: new Date(2026, 10, 9), to: new Date(2026, 11, 24) },
+  { id: 'h2', kind: 'holiday', name: 'Зимние каникулы', from: new Date(2026, 11, 25), to: new Date(2027, 0, 10) },
+  { id: 'q3', kind: 'quarter', name: 'III четверть', short: 'III', from: new Date(2027, 0, 11), to: new Date(2027, 2, 20) },
+  { id: 'h3', kind: 'holiday', name: 'Дополнительные каникулы', from: new Date(2027, 1, 15), to: new Date(2027, 1, 21), levels: [1, 2] },
+  { id: 'h4', kind: 'holiday', name: 'Весенние каникулы', from: new Date(2027, 2, 21), to: new Date(2027, 2, 28) },
+  { id: 'q4', kind: 'quarter', name: 'IV четверть', short: 'IV', from: new Date(2027, 2, 29), to: new Date(2027, 4, 31), note: 'Для 9 и 11 классов: с 30.03.2027 по 25.05.2027.' },
+  { id: 'h5', kind: 'holiday', name: 'Летние каникулы', from: new Date(2027, 5, 1), to: new Date(2027, 7, 31), note: 'Для окончивших 9 класс: с 11.06.2027.' },
+];
+function calendarOf(sid) { const lv = STUDENTS[sid].level; return CALENDAR.filter(x => !x.levels || x.levels.includes(lv)); }
+function dayOnly(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+function holidayOn(sid, d) { const x = dayOnly(d); return calendarOf(sid).find(h => h.kind === 'holiday' && x >= h.from && x <= h.to) || null; }
+function daysBetween(a, b) { return Math.round((dayOnly(b) - dayOnly(a)) / 864e5); }
+function rangeShort(a, b) { const m = d => MONTHS_G[d.getMonth()].slice(0, 3); return a.getMonth() === b.getMonth() ? `${a.getDate()}–${b.getDate()} ${m(b)}` : `${a.getDate()} ${m(a)} – ${b.getDate()} ${m(b)}`; }
+const SCHOOL = {
+  k: {
+    bells: { label: '1 смена', days: [1, 2, 3, 4, 5, 6], periods: [[1, '08:00', '08:45'], [2, '08:55', '09:40'], [3, '09:55', '10:40'], [4, '10:55', '11:40'], [5, '11:55', '12:40'], [6, '12:50', '13:35'], [7, '13:45', '14:30']] },
+    teacher: null,
+    subjects: {
+      'Алгебра': { teacher: 'Ковалёва Ирина Петровна', room: '305' },
+      'Геометрия': { teacher: 'Ковалёва Ирина Петровна', room: '305' },
+      'Физика': { teacher: 'Лосев Андрей Викторович', room: '301' },
+      'Русский язык': { teacher: 'Савченко Ольга Николаевна', room: '204' },
+      'Русская литература': { teacher: 'Савченко Ольга Николаевна', room: '204' },
+      'Белорусский язык': { teacher: 'Жук Тамара Васильевна', room: '206' },
+      'Белорусская литература': { teacher: 'Жук Тамара Васильевна', room: '206' },
+      'Английский язык': { teacher: 'Климович Елена Сергеевна', group: '2-я подгруппа', level: 'Углублённый', room: '412' },
+      'История Беларуси': { teacher: 'Сидоренко Павел Олегович', room: '210' },
+      'Всемирная история': { teacher: 'Сидоренко Павел Олегович', room: '210' },
+      'География': { teacher: 'Бондарь Наталья Владимировна', room: '214' },
+      'Биология': { teacher: 'Гринько Светлана Аркадьевна', room: '218' },
+      'Информатика': { teacher: 'Новиков Денис Александрович', group: '1-я подгруппа', room: '401' },
+      'Физическая культура': { teacher: 'Ермаков Виталий Иванович', room: 'спортзал' },
+      'Трудовое обучение': { teacher: 'Мельник Галина Ивановна', group: '1-я подгруппа (девочки)', room: '108' },
+    },
+  },
+  m: {
+    bells: { label: '1-е классы', days: [1, 2, 3, 4, 5], periods: [[1, '08:30', '09:05'], [2, '09:20', '09:55'], [3, '10:15', '10:50'], [4, '11:10', '11:45']] },
+    teacher: { teacher: 'Миронова Анна Сергеевна', room: '105' },
+    subjects: {
+      'Физическая культура': { teacher: 'Ермаков Виталий Иванович', room: 'спортзал' },
+      'Музыка': { teacher: 'Кравец Лилия Викторовна', room: '112' },
+    },
+  },
+};
+function subjInfo(sid, name) { const sc = SCHOOL[sid]; return sc.subjects[name] || sc.teacher || {}; }
+function toMin(t) { const [h, m] = t.split(':').map(Number); return h * 60 + m; }
+// The provider's job, done here for the demo: each lesson gets its times from the class bells, its room and the child's subgroup.
+function applySchool(sid, d) {
+  const sc = SCHOOL[sid];
+  d.lessons.forEach(l => { const p = sc.bells.periods.find(x => x[0] === l.number); if (p) { l.time = p[1]; l.end = p[2]; } const info = subjInfo(sid, l.subject); l.room = info.room || null; l.group = info.group || null; });
+}
+// The child's regular week (WeekTemplate): this week's lessons, one per weekday and number.
+function weekTemplateOf(sid) { const a = mondayOf(TODAY), b = addDays(a, 7); return DATA[sid].lessons.filter(l => l.date >= a && l.date < b).sort((x, y) => x.date - y.date || x.number - y.number); }
 let DATA; // built by rebuildData() once SCALE is defined (bottom of the script) and again when the demo scale changes
 /* Provider capabilities (docs/providers.md section 10). All true for by-eschools. The rail lets you switch them off to see
    how every screen adapts; the demo data is post-processed to look like a system without that feature. */
-const CAPS = { lessons: true, futureTimetable: true, lessonTypes: true, workTypes: true, comments: true, attendance: true, terms: true, finalMarks: true };
+const CAPS_FULL = { lessons: true, futureTimetable: true, lessonTypes: true, workTypes: true, comments: true, attendance: true, terms: true, finalMarks: true,
+  bellSchedule: true, rooms: true, teachingGroups: true, teacherNames: true, weekTemplate: true };
+/* Capabilities are the selected child's (ux-principles D53): each child has the provider of their own school. CAPS reads and
+   writes the selected child's set; CAPS_BY[sid] is used where another child's card is drawn (the picker). The rail's
+   «Семья (демо)» moves Марк to another school on another, thinner (fictional) diary system. */
+const CAPS_OTHER = { ...CAPS_FULL, lessonTypes: false, workTypes: false, attendance: false, rooms: false, teachingGroups: false, finalMarks: false };
+const CAPS_BY = { k: { ...CAPS_FULL }, m: { ...CAPS_FULL } };
+function selSid() { try { return state.student || 'k'; } catch (e) { return 'k'; } }
+const CAPS = new Proxy({}, {
+  get: (_, k) => CAPS_BY[selSid()][k],
+  set: (_, k, v) => { CAPS_BY[selSid()][k] = v; return true; },
+  ownKeys: () => Reflect.ownKeys(CAPS_BY[selSid()]),
+  getOwnPropertyDescriptor: (_, k) => ({ value: CAPS_BY[selSid()][k], enumerable: true, configurable: true, writable: true }),
+});
+function anyCaps(k) { return Object.values(CAPS_BY).some(c => c[k]); }
 const CAP_LABELS = { lessons: 'расписание', futureTimetable: 'уроки наперёд', lessonTypes: 'типы уроков', workTypes: 'типы работ', comments: 'комментарии', attendance: 'посещаемость', terms: 'четверти', finalMarks: 'итоги' };
+Object.assign(CAP_LABELS, { bellSchedule: 'звонки', rooms: 'кабинеты', teachingGroups: 'подгруппы', teacherNames: 'учителя', weekTemplate: 'неделя' });
 function rebuildData() {
   DATA = { k: buildGrade7(), m: buildGrade1() };
-  for (const d of Object.values(DATA)) {
-    if (!CAPS.attendance) d.marks = d.marks.filter(m => m.kind !== 'ABSENT');
-    if (!CAPS.workTypes) d.marks.forEach(m => { m.workType = null; });
-    if (!CAPS.comments) d.marks.forEach(m => { m.comment = ''; });
-    if (!CAPS.lessonTypes) d.lessons.forEach(l => { l.lessonType = null; });
-    if (!CAPS.futureTimetable || !CAPS.lessons) d.lessons = d.lessons.filter(l => l.date <= TODAY);
-    if (!CAPS.lessons) d.lessons.forEach(l => { l.topic = null; l.homework = null; });
+  Object.entries(DATA).forEach(([sid, d]) => applySchool(sid, d));
+  for (const [sid, d] of Object.entries(DATA)) {
+    const C = CAPS_BY[sid];
+    if (!C.attendance) d.marks = d.marks.filter(m => m.kind !== 'ABSENT');
+    if (!C.workTypes) d.marks.forEach(m => { m.workType = null; });
+    if (!C.comments) d.marks.forEach(m => { m.comment = ''; });
+    if (!C.lessonTypes) d.lessons.forEach(l => { l.lessonType = null; });
+    if (!C.futureTimetable || !C.lessons) d.lessons = d.lessons.filter(l => l.date <= TODAY);
+    if (!C.lessons) d.lessons.forEach(l => { l.topic = null; l.homework = null; });
     d.lessons.forEach(l => { l.mark = d.marks.find(m => m.lessonId === l.id) || null; });
   }
   if (!CAPS.terms && state.period === 'quarter') state.period = 'month';
@@ -1011,7 +1167,7 @@ function instanceLabel(p, offset) {
   const [a, b] = periodRange(p, offset); if (!a) return { t: '—', s: '' };
   if (p === 'week') { const end = offset ? b : addDays(a, 7); return { t: offset === 0 ? 'Эта неделя' : offset === 1 ? 'Прошлая неделя' : 'Неделя', s: rangeText(a, end) }; }
   if (p === 'month') return { t: offset === 0 ? 'Этот месяц' : offset === 1 ? 'Прошлый месяц' : MONTHS_N[a.getMonth()].charAt(0).toUpperCase() + MONTHS_N[a.getMonth()].slice(1), s: offset <= 1 ? MONTHS_N[a.getMonth()] : `${a.getFullYear()}` };
-  if (p === 'quarter') return { t: 'I четверть', s: `с ${fmtDay(a)}, идёт` };
+  if (p === 'quarter') return { t: 'I четверть', s: `${rangeShort(CALENDAR[0].from, CALENDAR[0].to)} · идёт` };
   return offset === 0 ? { t: '2026/27', s: '7 класс, идёт' } : { t: '2025/26', s: '6 класс · только итоги' };
 }
 // "было X · <prevLabel>": the instance before the selected one
@@ -1065,9 +1221,9 @@ function reachedAverage(a, need) { return SCALE.higher ? a >= need : a <= need; 
 function keepMark(need, sum, count) { const raw = need * (count + 1) - sum; const v = SCALE.higher ? Math.ceil(raw / SCALE.step) * SCALE.step : Math.floor(raw / SCALE.step) * SCALE.step; return Math.max(SCALE.min, Math.min(SCALE.max, Math.round(v * 100) / 100)); }
 
 /* ---------- App state ---------- */
-const state = { inboxRead: {}, study: { running: null, extra: [], onlyTimer: false }, targets: {}, look: { theme: 'light', bg: 'color', palette: 'sea', wall: 'cell', wallUrl: null, wallOp: 35, font: 'manrope' }, lkind: 'day', lday: null, lweek: 0, cancelled: {}, hwDone: {}, manualHw: {}, subjectColors: {}, finals: false, finalsMode: 'quarters', offset: 0, sync: 'ok', filterType: 'all', filterTags: [], filterTagMode: 'any', filterBelow: null, alwaysLast: false, avatarFor: 'k', editAlert: null, screen0: 'pick', guidance: true, uiMode: 'full', editTag: null, role: 'parent', student: 'k', screen: 'home', period: 'week', loginMode: 'login', rescanOpen: false, subjectId: null, target: 8, sort: 'alpha', subjMode: 'period', stack: [] };
+const state = { matchChoice: 'follow', demoSchools: 'same', demoShared: false, nowMin: 19 * 60 + 12, schoolTab: 'bells', inboxRead: {}, study: { running: null, extra: [], onlyTimer: false }, targets: {}, look: { theme: 'light', bg: 'color', palette: 'sea', wall: 'cell', wallUrl: null, wallOp: 35, font: 'manrope' }, lkind: 'day', lday: null, lweek: 0, cancelled: {}, hwDone: {}, manualHw: {}, subjectColors: {}, finals: false, finalsMode: 'quarters', offset: 0, sync: 'ok', filterType: 'all', filterTags: [], filterTagMode: 'any', filterBelow: null, alwaysLast: false, avatarFor: 'k', editAlert: null, screen0: 'pick', guidance: true, uiMode: 'full', editTag: null, role: 'parent', student: 'k', screen: 'home', period: 'week', loginMode: 'login', rescanOpen: false, subjectId: null, target: 8, sort: 'alpha', subjMode: 'period', stack: [] };
 const SCREENS = [
-  ['login', 'Вход'], ['pick', 'С кого начнём'], ['home', 'Главная', 'tab'], ['marks', 'Оценки', 'tab'], ['events', 'Внимание'], ['inbox', 'Уведомления'], ['finals', 'Итоговые отметки'], ['subjects', 'Предметы', 'tab'], ['subject', 'Предмет'], ['lessons', 'Расписание', 'tab'],
+  ['login', 'Вход'], ['connectMatch', 'Подключение: ребёнок уже в Marksy'], ['pick', 'С кого начнём'], ['home', 'Главная', 'tab'], ['marks', 'Оценки', 'tab'], ['events', 'Внимание'], ['inbox', 'Уведомления'], ['finals', 'Итоговые отметки'], ['subjects', 'Предметы', 'tab'], ['subject', 'Предмет'], ['lessons', 'Расписание', 'tab'], ['school', 'Школа'],
   ['more', 'Ещё', 'tab'], ['notifications', 'Настройки уведомлений'], ['alertEdit', 'Правило уведомления'], ['tags', 'Теги'], ['tagEdit', 'Тег'], ['look', 'Оформление'], ['study', 'Занятия'], ['family', 'Семья'], ['avatarEdit', 'Аватар'], ['sync', 'Синхронизация'],
 ];
 const TABS = [
@@ -1123,6 +1279,7 @@ const ICONS = {
   eye: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
   bulb: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-4 10.5c.8.8 1.3 1.6 1.5 2.5h5c.2-.9.7-1.7 1.5-2.5A6 6 0 0 0 12 3z"/></svg>',
   globe: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>',
+  sun: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
   moon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>',
   out: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h5"/><path d="M15 8l4 4-4 4M19 12H9"/></svg>',
   school: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 10l9-5 9 5-9 5z"/><path d="M7 12.5V17c0 1 2.5 2.5 5 2.5s5-1.5 5-2.5v-4.5"/><path d="M21 10v5"/></svg>',
@@ -1133,6 +1290,7 @@ const ICONS = {
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 function cur() { return STUDENTS[state.student]; }
+function schoolsDiffer() { return new Set(Object.values(STUDENTS).map(s => s.school)).size > 1; }
 function data() { return DATA[state.student]; }
 function isNew(m) { return m.firstSeenAt > LAST_SEEN; }
 function chip(m, small) {
@@ -1381,7 +1539,7 @@ function pauseStudy() { const run = state.study.running; if (!run) return; if (r
 function stopStudy() {
   const run = state.study.running; if (!run) return null;
   const min = Math.max(1, Math.round(studyElapsedSec(run) / 60));
-  const sess = { studentId: run.studentId, date: new Date(TODAY), subject: run.subject, subjectId: run.subjectId, lessonId: run.lessonId, lessonDate: run.lessonDate, kind: run.kind, source: 'timer', start: NOW_MIN, end: NOW_MIN + min, min };
+  const sess = { studentId: run.studentId, date: new Date(TODAY), subject: run.subject, subjectId: run.subjectId, lessonId: run.lessonId, lessonDate: run.lessonDate, kind: run.kind, source: 'timer', start: nowMin(), end: nowMin() + min, min };
   state.study.extra.push(sess); state.study.running = null;
   renderStudyBar(); return sess;
 }
@@ -1523,6 +1681,7 @@ function renderHome() {
   att.sort((x, y) => HINT_RANK[x.cls] - HINT_RANK[y.cls]);
   return `${screenHeader('Главная', periodSeg())}
   <div class="body">
+    ${nowCard()}
     ${periodNav(true)}
     ${noMarks ? lessonTiles() : statBlock(inP, prevP, { hint: periodHint(state.period), prevLabel: prevLabelOf(state.period), noPrev: noPrevReason(state.period), tilesOnly: true })}
     ${lastMarks.length ? `<div class="sect"><h2>${sameDay(lastDate, TODAY) ? 'Оценки сегодня' : 'Последние оценки'}</h2><span class="muted small">${lastMarks.length > 5 ? `5 из ${lastMarks.length} · ` : ''}${sameDay(lastDate, TODAY) ? fmtDayShort(TODAY) : fmtDayShort(lastDate)}</span></div>
@@ -1559,9 +1718,11 @@ function attentionItems() {
   drops.forEach(x => att.push({ cls: band(x.st.average) === 'critical' ? 'critical' : 'low', date: range[1], t: `${x.sub.name}: средний падает`, s: `было ${fmtAvg(x.st.prevAverage)}, стало ${fmtAvg(x.st.average)} за ${periodWord(state.period)} · ${x.st.count} ${plural(x.st.count, 'оценка', 'оценки', 'оценок')}`, subjectId: x.sub.id }));
   if (rise) att.push({ cls: 'good', date: range[1], t: `${rise.sub.name}: средний растёт`, s: `было ${fmtAvg(rise.st.prevAverage)}, стало ${fmtAvg(rise.st.average)} за ${periodWord(state.period)}`, subjectId: rise.sub.id });
   if (current) tagHits(d).filter(w => w.days <= tagLead(w)).forEach(w => att.push({ cls: w.tone, date: w.dueLesson.date, t: `${w.tag.name} · ${w.subject}`, s: `${w.ref}${w.cancelled ? ' · урока не будет' : ''} · ${w.src}`, subjectId: w.subjectId }));
+  // a fact, no advice: holidays of this child within a week (design.md 5.2a)
+  if (current && CAPS.terms) { const h = calendarOf(cur().id).find(x => x.kind === 'holiday' && x.from > TODAY && daysBetween(TODAY, x.from) <= 7); if (h) { const n = daysBetween(h.from, h.to) + 1; att.push({ cls: 'ok', date: h.from, t: `С ${fmtDay(h.from)} ${h.name.toLowerCase()}`, s: `до ${fmtDay(h.to)} · ${n} ${plural(n, 'день', 'дня', 'дней')}`, go: 'school' }); } }
   return att.sort((x, y) => HINT_RANK[x.cls] - HINT_RANK[y.cls] || y.date - x.date);
 }
-function eventRow(x) { const n = inboxFor(x); return `<button class="row" data-subject="${x.subjectId}"><span class="stripe ${x.cls}"></span><span class="main"><span class="t">${esc(x.t)}</span><span class="s">${esc(x.s)}</span>${n ? `<span class="sent">${ICONS.bell}пришло ${CH_LABEL[n.ch]}, ${sameDay(inboxDate(n), TODAY) ? '' : fmtDayShort(inboxDate(n)).replace(/^[^,]+, /, '') + ', '}${n.at}</span>` : ''}</span><span class="chev">${ICONS.chev}</span></button>`; }
+function eventRow(x) { const n = inboxFor(x); return `<button class="row" ${x.go ? `data-go="${x.go}"` : `data-subject="${x.subjectId}"`}><span class="stripe ${x.cls}"></span><span class="main"><span class="t">${esc(x.t)}</span><span class="s">${esc(x.s)}</span>${n ? `<span class="sent">${ICONS.bell}пришло ${CH_LABEL[n.ch]}, ${sameDay(inboxDate(n), TODAY) ? '' : fmtDayShort(inboxDate(n)).replace(/^[^,]+, /, '') + ', '}${n.at}</span>` : ''}</span><span class="chev">${ICONS.chev}</span></button>`; }
 function renderEvents() {
   const att = attentionItems();
   return `<div class="hdr"><div class="hdr-row"><button class="back" id="backBtn" aria-label="Назад">${ICONS.back}</button><div class="htitle" style="flex:1"><h1>Внимание</h1>${state.role === 'parent' ? `<span class="hsub">${esc(cur().name)} · ${esc(cur().cls)}</span>` : ''}</div><div class="hright">${studentBar()}</div></div>${periodSeg()}</div>
@@ -1641,7 +1802,7 @@ function renderSubjectsNoMarks() {
     ${periodNav(true)}
     <div class="note">В ${esc(cur().cls.split(' ')[0])} классе отметки не ставят. Здесь уроки и задания по предметам за период, справа время занятий${curInst ? ', ниже ближайший урок' : ''}.</div>
     <div class="list-card rows">${subs.map(({ sub, n, h, l, min }) => `<button class="row" data-subject="${sub.id}"><span class="stripe subj" style="${hueStyle(sub.name)}"></span>
-      <span class="main"><span class="t">${esc(sub.name)}</span><span class="s">${n ? `${n} ${plural(n, 'урок', 'урока', 'уроков')}${h ? ` · ${h} ${plural(h, 'задание', 'задания', 'заданий')}` : ''}` : `уроков за ${periodWord(state.period)} нет`}</span>${curInst ? `<span class="s">дальше: ${esc(nextLessonText(l))}</span>` : ''}</span>
+      <span class="main"><span class="t">${esc(sub.name)}${levelTag(sub)}</span><span class="s">${n ? `${n} ${plural(n, 'урок', 'урока', 'уроков')}${h ? ` · ${h} ${plural(h, 'задание', 'задания', 'заданий')}` : ''}` : `уроков за ${periodWord(state.period)} нет`}</span>${curInst ? `<span class="s">дальше: ${esc(nextLessonText(l))}</span>` : ''}</span>
       ${min ? `<span class="avgbox"><b class="tnum" style="font-size:14px">${fmtDur(min)}</b><span class="was">занятия</span></span>` : ''}<span class="chev">${ICONS.chev}</span></button>`).join('')}</div>
   </div>`;
 }
@@ -1670,7 +1831,7 @@ function renderSubjects() {
       <div class="sect"><span></span><button class="sort" data-sort-open aria-label="Порядок предметов">${SORT_LABELS[state.sort]}${ICONS.down}</button></div>
       <div class="list-card rows">
         ${rows.map(({ sub, st }) => `<button class="row" data-subject="${sub.id}"><span class="stripe subj" style="${hueStyle(sub.name)}"></span>
-          <span class="main"><span class="t">${esc(sub.name)}</span>
+          <span class="main"><span class="t">${esc(sub.name)}${levelTag(sub)}</span>
             ${st.marks.length ? `<span class="last">${st.marks.slice(0, 5).reverse().map(m => chip(m, true)).join('')}</span>` : `<span class="s">${filterIsOff() ? `нет оценок за ${periodWord(state.period)}` : `${filterLabel()}: нет за ${periodWord(state.period)}`}</span>`}</span>
           <span class="avgbox"><span class="avg ${band(st.average) || ''}">${fmtAvg(st.average)}${st.trend ? `<span class="tr ${st.trend}">${TR[st.trend]}</span>` : ''}</span>${finalOf(sub) ? `<span class="was tnum">итог I: ${fmtVal(finalOf(sub).v)}</span>` : st.prevAverage != null ? `<span class="was tnum">было ${fmtAvg(st.prevAverage)}</span>` : ''}</span>
           <span class="chev">${ICONS.chev}</span></button>`).join('')}
@@ -1686,7 +1847,7 @@ function renderSubjects() {
 function finalsEntry() {
   if (!CAPS.finalMarks) return '';
   const posted = state.finals && cur().id === 'k';
-  return `<button class="entry ${posted ? 'hot' : ''}" data-go="finals"><span class="ic">${ICONS.school}</span><span class="main"><b>Итоговые отметки</b><span>${posted ? 'I четверть выставлена 15 октября' : 'по четвертям и годам · I четверть идёт, итоги 30 окт'}</span></span><span class="chev">${ICONS.chev}</span></button>`;
+  return `<button class="entry ${posted ? 'hot' : ''}" data-go="finals"><span class="ic">${ICONS.school}</span><span class="main"><b>Итоговые отметки</b><span>${posted ? 'I четверть выставлена 15 октября' : 'по четвертям и годам · I четверть идёт, итоги после 31 окт'}</span></span><span class="chev">${ICONS.chev}</span></button>`;
 }
 function finalsHeader(sub) {
   return `<div class="hdr"><div class="hdr-row"><button class="back" id="backBtn" aria-label="Назад">${ICONS.back}</button><div class="htitle" style="flex:1"><h1>Итоги</h1>${state.role === 'parent' ? `<span class="hsub">${esc(cur().name)} · ${esc(cur().cls)}</span>` : ''}</div><div class="hright">${studentBar()}</div></div>${sub}</div>`;
@@ -1700,9 +1861,10 @@ function renderFinals() {
     return `${finalsHeader(sub)}
     <div class="body">
       <div class="note">Целое число в рамке — итог, который учитель ставит в конце четверти. Десятичное курсивом — к чему идёт, пока итога нет: у идущей четверти это текущий средний, у года — средний между уже выставленными итогами четвертей. Под предметом итог за прошлый год.</div>
-      <div class="sect"><h2>2026/27, 7 класс</h2><span class="muted small">${state.finals ? 'I четверть выставлена сегодня' : 'I четверть идёт, итоги 30 окт'}</span></div>
+      <div class="sect"><h2>2026/27, 7 класс</h2><span class="muted small">${state.finals ? 'I четверть выставлена сегодня' : 'I четверть идёт, итоги после 31 окт'}</span></div>
       <div class="list-card">
         <div class="cmp head"><span></span><span>I</span><span>II</span><span>III</span><span>IV</span><span>Год</span></div>
+        <div class="cmp head dates"><span></span>${calendarOf(cur().id).filter(x => x.kind === 'quarter').map(q => `<span>${q.from.getDate()}.${String(q.from.getMonth() + 1).padStart(2, '0')}<br>${q.to.getDate()}.${String(q.to.getMonth() + 1).padStart(2, '0')}</span>`).join('')}<span></span></div>
         ${rows.map(({ sub, q1, prev }) => { const f = finalOf(sub); return `<button class="cmp" data-subject="${sub.id}"><span class="t">${esc(sub.name)}${prev ? `<span class="was">итог 2025/26: ${fmtVal(prev)}</span>` : '<span class="was">новый предмет</span>'}</span>
           ${f ? `<span class="cell ${band(f.v) || ''}" title="итог учителя; средний был ${fmtAvg(f.avg)}">${fmtVal(f.v)}</span>` : q1.average != null ? `<span class="cell ${band(q1.average) || ''} live" title="четверть идёт: текущий средний">${fmtAvg(q1.average)}</span>` : '<span class="cell dash">–</span>'}<span class="cell dash">–</span><span class="cell dash">–</span><span class="cell dash">–</span>${(() => { const ye = yearEstimate(sub); return ye ? `<span class="cell ${band(ye.v) || ''} live" title="средний между итогами ${ye.n} ${plural(ye.n, 'четверти', 'четвертей', 'четвертей')}">${fmtAvg(ye.v)}</span>` : '<span class="cell dash">–</span>'; })()}</button>`; }).join('')}
       </div>
@@ -1858,6 +2020,21 @@ function subjectAttention(sub, q) {
   if (!hits.length && !hints.length) return '';
   return `<div class="plan"><span class="title">Обратить внимание</span>${hits.map(planRow).join('')}${hints.map(h => `<div class="planrow"><span class="stripe ${h.cls}"></span><span class="pm"><b>${h.t}</b><span class="pa">${h.s}</span></span></div>`).join('')}</div>`;
 }
+/* «О предмете» (design.md 5.4): the child's teacher and subgroup, level of study, lessons per week and when the subject
+   is in the regular week with its rooms. Right under «Настройки предмета». Each row needs its capability; the block disappears when nothing is known. */
+const WD_SHORT = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
+function aboutSubject(sub) {
+  const sid = cur().id, info = subjInfo(sid, sub.name), rows = [];
+  if (CAPS.teacherNames && info.teacher) rows.push(['Учитель', esc(info.teacher)]);
+  if (CAPS.teachingGroups && info.group) rows.push(['Подгруппа', esc(info.group)]);
+  if (cur().level > 2) rows.push(['Уровень', info.level ? esc(info.level) : 'Базовый']);
+  const wk = CAPS.weekTemplate ? weekTemplateOf(sid).filter(l => l.subject === sub.name) : [];
+  if (wk.length) rows.push(['В неделю', `${wk.length} ${plural(wk.length, 'урок', 'урока', 'уроков')}`]);
+  if (wk.length) rows.push(['Когда', wk.map(l => `${WD_SHORT[l.date.getDay()]} ${l.number}-й${CAPS.rooms && l.room ? ` · ${/^\d/.test(l.room) ? 'каб. ' : ''}${esc(l.room)}` : ''}`).join('<br>')]);
+  if (!rows.length) return '';
+  return `<div class="card about"><span class="label">О предмете</span>${rows.map(([k, v]) => `<div class="ar"><span class="k">${k}</span><span class="v">${v}</span></div>`).join('')}</div>`;
+}
+function levelTag(sub) { const i = subjInfo(cur().id, sub.name); return i.level && i.level !== 'Базовый' ? '<span class="lvl">углубл.</span>' : ''; }
 function renderSubject() {
   const d = data();
   const sub = d.subjects.find(s => s.id === state.subjectId) || d.subjects[0];
@@ -1865,6 +2042,7 @@ function renderSubject() {
   <div class="body">
     ${periodNav(true)}
     <button class="entry" data-ssettings="${sub.id}"><span class="ic">${ICONS.sliders}</span><span class="main"><b>Настройки предмета</b><span>цвет: ${colorNameOf(sub.name)}</span></span><span class="chev">${ICONS.chev}</span></button>
+    ${aboutSubject(sub)}
     ${lessonTiles(sub.id)}
     ${upcomingLessons(sub) || '<div class="card empty"><b>Уроков в ближайшие 2 недели нет</b></div>'}
     ${subjectStudyCard(sub)}
@@ -1888,6 +2066,7 @@ function renderSubject() {
   <div class="body">
     ${periodNav(true)}
     <button class="entry" data-ssettings="${sub.id}"><span class="ic">${ICONS.sliders}</span><span class="main"><b>Настройки предмета</b><span>${CAPS.terms && CAPS.finalMarks ? (goal != null ? `цель: итог ${fmtVal(goal)} · ` : 'без цели · ') : ''}цвет: ${colorNameOf(sub.name)}</span></span><span class="chev">${ICONS.chev}</span></button>
+    ${aboutSubject(sub)}
     ${subjectAttention(sub, q)}
     ${statBlock(inP, prevP, { hint: periodHint(state.period), prevLabel: prevLabelOf(state.period), noPrev: noPrevReason(state.period) })}
     ${distCard(vals)}
@@ -1903,7 +2082,7 @@ function renderSubject() {
     ${CAPS.terms ? `<div class="card" style="display:flex;flex-direction:column;gap:10px">
       <div class="sect"><h2>По четвертям</h2><span class="muted small">${priorYear(sub.name) != null ? `2025/26: итог ${fmtVal(priorYear(sub.name))}` : 'новый предмет в этом году'}</span></div>
       <div class="qstrip">${(() => { const f = finalOf(sub); const ye = yearEstimate(sub); return [['I', f ? f.v : q.average, !f], ['II', null], ['III', null], ['IV', null], ['Год', ye ? ye.v : null, true]]; })().map(([ql, v, live]) => `<span class="q"><span class="label">${ql}</span><span class="qv ${v != null ? band(v) + (live ? ' live' : '') : 'dash'}">${v != null ? (live ? fmtAvg(v) : fmtVal(v)) : '–'}</span></span>`).join('')}</div>
-      ${CAPS.finalMarks ? `<span class="small muted">${finalOf(sub) ? `Итог I четверти выставлен сегодня: ${fmtVal(finalOf(sub).v)} при среднем ${fmtAvg(finalOf(sub).avg)}.` : 'Курсивом текущий средний идущей четверти; итог учитель выставит после 30 октября.'}</span>` : ''}
+      ${CAPS.finalMarks ? `<span class="small muted">${finalOf(sub) ? `Итог I четверти выставлен сегодня: ${fmtVal(finalOf(sub).v)} при среднем ${fmtAvg(finalOf(sub).avg)}.` : 'Курсивом текущий средний идущей четверти; итог учитель выставит после 31 октября.'}</span>` : ''}
     </div>` : ''}
     ${subjectStudyCard(sub)}
   </div></div>`;
@@ -2251,7 +2430,7 @@ function openLessonMenu(l) {
   sheet.innerHTML = head + (isCancelled(l)
     ? opt('restore', 'undo', 'Вернуть урок', 'урок снова в расписании и в подсчётах')
     : ((studyRunning() && studyRunning().lessonId === l.id) ? opt('study', 'stop', 'Закончить занятие', `идёт ${fmtClockSec(studyElapsedSec())} · время запишется, «готово» отдельно`) : done ? '' : opt('study', 'timer', 'Заниматься', 'включить таймер к этому уроку'))
-      + (done ? opt('done', 'uncheck', 'Снять отметку «готово»', `отметил${done.by === 'папа' ? '' : 'а'} ${esc(done.by)} в ${done.at}`) : opt('done', 'check', 'Отметить «готово»', 'к уроку подготовились', ' ok'))
+      + (done ? opt('done', 'uncheck', 'Снять отметку «готово»', done.other ? `отмечено в другой семье, ${done.at}` : `отметил${done.by === 'папа' ? '' : 'а'} ${esc(done.by)} в ${done.at}`) : opt('done', 'check', 'Отметить «готово»', 'к уроку подготовились', ' ok'))
       + (m ? opt('hw', 'pen', 'Изменить задание', esc(m.text)) : !l.homework ? opt('hw', 'pen', 'Добавить задание', 'в дневнике задания нет') : '')
       + opt('cancel', 'off', 'Урока не будет', 'уберём из подсчётов и напоминаний, можно вернуть', ' quiet'));
   document.getElementById('sheetBg').classList.add('open');
@@ -2290,9 +2469,38 @@ function factsLine(f) {
   const ago = f.since === 0 ? 'на прошлом уроке' : `${f.since} ${plural(f.since, 'урок', 'урока', 'уроков')} назад`;
   return `<div class="facts"><div class="favg"><b class="${band(f.avg) || ''}">${fmtAvg(f.avg)}</b><span>средний</span></div><div class="flast"><span class="l5">${f.last5.map(m => chip(m, true)).join('')}</span><span>последняя ${fmtDay(f.lastDate).replace(/ (\S+)$/, (_, m) => ' ' + m.slice(0, 3))} · ${ago}</span></div></div>`;
 }
-// "Now" of the demo is 19:12 on TODAY (the status bar); a lesson has passed when it ended before now.
-const NOW_MIN = 19 * 60 + 12;
-function lessonPassed(l) { if (l.date < TODAY && !sameDay(l.date, TODAY)) return true; if (!sameDay(l.date, TODAY)) return false; const [h, m] = l.time.split(':').map(Number); return h * 60 + m + 45 <= NOW_MIN; }
+// "Now" of the demo is 19:12 on TODAY by default (the status bar); the rail's "Время (демо)" moves it within the day, so
+// «Сейчас» can be seen during a lesson, on a break, before and after lessons. A lesson has passed when it ended before now.
+function nowMin() { return state.nowMin; }
+/* «Сейчас» (design.md 5.2): the selected child's school day at the demo time. From an hour before the first lesson to two
+   hours after the last one; nothing in the evening, at weekends and in holidays. Needs the bell schedule (end times). */
+function todayLessonsOf(sid) { return DATA[sid].lessons.filter(l => sameDay(l.date, TODAY) && !state.cancelled[`${sid}:${l.id}`]).sort((a, b) => a.number - b.number); }
+function dayStatus(sid) {
+  if (!CAPS_BY[sid].bellSchedule || !CAPS_BY[sid].lessons) return null;
+  const ls = todayLessonsOf(sid); if (!ls.length) return null;
+  const now = nowMin(), first = ls[0], last = ls[ls.length - 1];
+  if (now < toMin(first.time) - 60 || now > toMin(last.end) + 120) return null;
+  if (now < toMin(first.time)) return { kind: 'before', l: first };
+  const curL = ls.find(l => now >= toMin(l.time) && now < toMin(l.end)); if (curL) return { kind: 'lesson', l: curL };
+  if (now >= toMin(last.end)) return { kind: 'after', end: last.end };
+  return { kind: 'break', l: ls.find(l => toMin(l.time) > now) };
+}
+function isNowLesson(l) { const st = dayStatus(cur().id); return !!st && st.kind === 'lesson' && st.l.id === l.id; }
+function lessonWhere(l) { return [CAPS.rooms && l.room ? (/^\d/.test(l.room) ? `каб. ${l.room}` : l.room) : '', CAPS.teachingGroups && l.group ? l.group : ''].filter(Boolean).join(' · '); }
+function nowCard() {
+  const st = dayStatus(cur().id); if (!st) return '';
+  const l = st.l, w = l ? lessonWhere(l) : '';
+  const head = { lesson: `Сейчас · ${l && l.number}-й урок`, break: 'Перемена', before: 'Скоро уроки', after: 'Уроки закончились' }[st.kind];
+  const main = st.kind === 'lesson' ? esc(l.subject) : st.kind === 'break' ? `до ${l.time}` : st.kind === 'before' ? `Первый урок в ${l.time}` : `в ${st.end}`;
+  const sub = st.kind === 'lesson' ? [w, `до ${l.end}`].filter(Boolean).join(' · ') : st.kind === 'after' ? (nextSchoolDay() ? `${dayLabel(nextSchoolDay()).toLowerCase()} к ${(data().lessons.filter(x => sameDay(x.date, nextSchoolDay())).sort((a, b) => a.number - b.number)[0] || {}).time || ''}` : '') : `${st.kind === 'break' ? 'дальше ' : ''}${l.number}. ${esc(l.subject)}${w ? ' · ' + w : ''}`;
+  return `<button class="nowcard" data-go="lessons" data-ltoday style="${l ? hueStyle(l.subject) : ''}"><span class="stripe ${l ? 'subj' : 'ok'}"></span><span class="main"><span class="nk">${head}</span><b>${main}</b>${sub ? `<span class="ns">${sub}</span>` : ''}</span><span class="chev">${ICONS.chev}</span></button>`;
+}
+function pickNowLine(sid) {
+  const st = dayStatus(sid); if (!st) return '';
+  const t = st.kind === 'lesson' ? `${st.l.number}-й урок, до ${st.l.end}` : st.kind === 'break' ? `перемена, дальше ${st.l.number}-й в ${st.l.time}` : st.kind === 'before' ? `первый урок в ${st.l.time}` : `уроки закончились в ${st.end}`;
+  return `<div class="pcnow">${ICONS.clock || ''}<span>${t}</span></div>`;
+}
+function lessonPassed(l) { if (l.date < TODAY && !sameDay(l.date, TODAY)) return true; if (!sameDay(l.date, TODAY)) return false; return toMin(l.end || l.time) + (l.end ? 0 : 45) <= nowMin(); }
 function lessonParts(l) {
   const w = cur().level <= 2 && !TAGS.some(r => r.on) ? { dueHere: [], setHere: [] } : lessonTags(l);
   const passed = lessonPassed(l), upcoming = !passed, done = hwDone(l), manual = manualHw(l);
@@ -2319,7 +2527,7 @@ function lessonParts(l) {
   }
   if (passed) { const notice = lines.length ? `<div class="nlines">${lines.map(noteHtml).join('')}</div>` : ''; const cls = `${done ? ' done' : ''} passed`; return { w, upcoming, passed, done, manual, badge, hwText, addHw: '', doneLine, watch: '', hint: '', notice, facts: '', cls }; }
   // готово: the first пометка of an upcoming lesson, drawn like a tag (green bar, check icon), with who and when
-  if (done) lines.push({ sev: 'good', icon: 'check', html: `<b>Готово</b> · ${esc(done.by)}, ${done.at}` });
+  if (done) lines.push({ sev: 'good', icon: 'check', html: `<b>Готово</b> · ${done.other ? 'в другой семье' : esc(done.by)}, ${done.at}` });
   const kind = !CAPS.lessonTypes ? null : l.lessonType === 'LABORATORY_WORK' ? ['call', 'lab', 'Лабораторная работа'] : l.lessonType === 'PRACTICAL_WORK' ? ['call', 'lab', 'Практическая работа'] : null;
   if (kind) lines.push({ sev: kind[0], icon: kind[1], html: `<b>${kind[2]}</b>` });
   // тег: the tags due at this lesson, in the tag's tone; a homework hit says what was set and when
@@ -2351,9 +2559,11 @@ function lessonParts(l) {
 function renderLessonFlat(l) {
   const P = lessonParts(l);
   const tick = P.upcoming ? `<button class="kebab" data-lmenu="${l.id}" aria-label="Действия с уроком">${NOTE_ICONS.dots}</button>` : '';
-  return `<div class="frow${P.cls}" style="${hueStyle(l.subject)}" ${P.upcoming ? `data-lmenu="${l.id}" role="button" aria-haspopup="dialog"` : ''}>
-      <div class="ftime"><b class="fnum">${l.number}</b><span>${l.time}</span></div>
-      <div class="fmain"><div class="fbody"><i class="fbar"></i><div class="c"><div class="t"><button class="linkish" data-subject="${l.subjectId}">${esc(l.subject)}</button></div>
+  const nowL = isNowLesson(l), where = lessonWhere(l);
+  return `<div class="frow${P.cls}${nowL ? ' now' : ''}" style="${hueStyle(l.subject)}" ${P.upcoming ? `data-lmenu="${l.id}" role="button" aria-haspopup="dialog"` : ''}>
+      <div class="ftime">${timeCell(l)}</div>
+      <div class="fmain"><div class="fbody"><i class="fbar"></i><div class="c"><div class="t"><button class="linkish" data-subject="${l.subjectId}">${esc(l.subject)}</button>${nowL ? '<span class="nowtag">сейчас</span>' : ''}</div>
+          ${where ? `<div class="fmeta">${esc(where)}</div>` : ''}
           ${l.topic ? `<div class="topic">${esc(l.topic)}</div>` : ''}
           ${l.homework ? `<div class="fhw">${esc(l.homework)}</div>` : ''}
           ${!l.homework && P.manual ? `<div class="fhw manual"><span>${esc(P.manual.text)}</span></div>` : ''}
@@ -2362,19 +2572,21 @@ function renderLessonFlat(l) {
     </div>`;
 }
 function renderLesson(l) { return isCancelled(l) ? cancelledRow(l) : renderLessonFlat(l); }
+// Time on the left axis: number, start and, with the bell schedule, the end under it (design.md 5.5)
+function timeCell(l) { return `<b class="fnum">${l.number}</b><span>${l.time}</span>${CAPS.bellSchedule && l.end ? `<span class="fend">${l.end}</span>` : ''}`; }
 function cancelledRow(l) {
-  return `<div class="frow cancelled" style="${hueStyle(l.subject)}" data-lmenu="${l.id}" role="button" aria-haspopup="dialog"><div class="ftime"><b class="fnum">${l.number}</b><span>${l.time}</span></div>
+  return `<div class="frow cancelled" style="${hueStyle(l.subject)}" data-lmenu="${l.id}" role="button" aria-haspopup="dialog"><div class="ftime">${timeCell(l)}</div>
     <div class="fmain"><div class="fbody"><i class="fbar"></i><div class="c"><div class="t"><span class="strike">${esc(l.subject)}</span></div><div class="ctext">Урока не будет</div></div><div class="tcol"><button class="kebab" data-lmenu="${l.id}" aria-label="Действия с уроком">${NOTE_ICONS.dots}</button></div></div></div></div>`;
 }
 /* Missing slots are part of the timetable: a day that starts with the second lesson says so above the list and shows the
    empty first slot; a window in the middle of the day is its own quiet row. A gap row has no bar, no tick, no tap. */
-const SLOT_TIMES = ['08:30','09:25','10:25','11:25','12:25','13:20','14:15'];
+function bellOf(n) { const p = SCHOOL[cur().id].bells.periods.find(x => x[0] === n); return p ? { time: p[1], end: p[2] } : { time: '', end: '' }; }
 function withGaps(ls) {
   const out = []; const max = ls[ls.length - 1].number;
-  for (let n = 1; n <= max; n++) { const l = ls.find(x => x.number === n); out.push(l || { gap: true, number: n, time: SLOT_TIMES[n - 1], first: n < ls[0].number }); }
+  for (let n = 1; n <= max; n++) { const l = ls.find(x => x.number === n); out.push(l || { gap: true, number: n, ...bellOf(n), first: n < ls[0].number }); }
   return out;
 }
-function gapRow(g) { return `<div class="frow gap"><div class="ftime"><b class="fnum">${g.number}</b><span>${g.time}</span></div><div class="fmain"><div class="fbody"><i class="fbar"></i><div class="c"><div class="gapt">${g.first ? 'урока нет' : 'окно'}</div></div></div></div></div>`; }
+function gapRow(g) { return `<div class="frow gap"><div class="ftime">${timeCell(g)}</div><div class="fmain"><div class="fbody"><i class="fbar"></i><div class="c"><div class="gapt">${g.first ? 'урока нет' : 'окно'}</div></div></div></div></div>`; }
 /* Timetable period control (design.md 5.5): the same two pieces as on every period screen. The segmented control picks the
    kind (День / Неделя); the navigator under it steps ‹ › through instances and its label opens a picker. Unlike marks, the
    timetable also goes forward: a day steps over days without lessons, a week steps by calendar weeks while the diary has
@@ -2386,7 +2598,7 @@ function dayTitle(d) { const l = dayLabel(d); return ['Сегодня', 'Зав�
 function weekStart(off) { return addDays(mondayOf(TODAY), 7 * off); }
 function lessonsStep(delta) {
   if (state.lkind === 'day') { const days = lessonDays(), cur = curLday(); const nd = delta > 0 ? days.find(x => x > cur && !sameDay(x, cur)) : [...days].reverse().find(x => x < cur && !sameDay(x, cur)); if (!nd) return false; state.lday = nd; return true; }
-  const w = state.lweek + delta, a = weekStart(w), b = addDays(a, 7); if (!data().lessons.some(l => l.date >= a && l.date < b)) return false; state.lweek = w; return true;
+  const w = state.lweek + delta, a = weekStart(w), b = addDays(a, 7); if (!data().lessons.some(l => l.date >= a && l.date < b) && !holidayOn(cur().id, a) && !holidayOn(cur().id, addDays(a, 4))) return false; state.lweek = w; return true;
 }
 function lessonsSeg() { return `<div class="seg" id="lkindSeg">${[['day', 'День'], ['week', 'Неделя']].map(([k, v]) => `<button data-lkind="${k}" aria-pressed="${state.lkind === k}">${v}</button>`).join('')}</div>`; }
 function weekTitle(off) { return off === 0 ? 'Эта неделя' : off === 1 ? 'Следующая неделя' : off === -1 ? 'Прошлая неделя' : `${off > 0 ? 'Через' : ''}${off > 0 ? ` ${off} ${plural(off, 'неделю', 'недели', 'недель')}` : `${-off} ${plural(-off, 'неделю', 'недели', 'недель')} назад`}`; }
@@ -2394,7 +2606,7 @@ function weekSub(off) { const a = weekStart(off), b = addDays(a, 6); return `${a
 function lessonsNav() {
   const day = state.lkind === 'day', cur = curLday(), days = lessonDays();
   const prevOk = day ? days.some(x => x < cur && !sameDay(x, cur)) : data().lessons.some(l => l.date < weekStart(state.lweek));
-  const nextOk = day ? days.some(x => x > cur && !sameDay(x, cur)) : data().lessons.some(l => l.date >= weekStart(state.lweek + 1));
+  const nextOk = day ? days.some(x => x > cur && !sameDay(x, cur)) : data().lessons.some(l => l.date >= weekStart(state.lweek + 1)) || !!holidayOn(cur().id, weekStart(state.lweek + 1));
   const t = day ? dayTitle(cur) : weekTitle(state.lweek), sub = day ? `${cur.getDate()} ${MONTHS_G[cur.getMonth()]}` : weekSub(state.lweek);
   return `<div class="pnav"><button class="pbtn" data-loff="-1" ${prevOk ? '' : 'disabled'} aria-label="Раньше">${ICONS.back}</button><button class="plabel" data-lpick><b>${t}</b><span>${sub}</span></button><button class="pbtn next" data-loff="1" ${nextOk ? '' : 'disabled'} aria-label="Позже">${ICONS.back}</button></div>`;
 }
@@ -2405,28 +2617,85 @@ function openLessonsPicker() {
   sheet.innerHTML = `<div class="grab"></div><span class="label">${state.lkind === 'day' ? 'День' : 'Неделя'}: какой показать</span>${rows}`;
   document.getElementById('sheetBg').classList.add('open');
 }
+function holidayCard(h) { const n = daysBetween(h.from, h.to) + 1; return `<div class="card empty holiday"><span class="em">${ICONS.sun}</span><b>${esc(h.name)}</b><p>${rangeShort(h.from, h.to)} · ${n} ${plural(n, 'день', 'дня', 'дней')}</p></div>`; }
 function nextSchoolDay() { return lessonDays().find(x => x > TODAY && !sameDay(x, TODAY)) || addDays(TODAY, 1); }
 function renderLessons() {
   const d = data();
-  if (!CAPS.lessons) return `<div class="hdr"><div class="hdr-row"><h1>Расписание</h1></div></div><div class="body"><div class="card empty"><span class="em">${ICONS.school}</span><b>У этого дневника нет расписания</b><p>Оценки есть во вкладках «Оценки» и «Предметы». В приложении эта вкладка просто не показывается.</p></div></div>`;
+  if (!CAPS.lessons) return `<div class="hdr"><div class="hdr-row"><h1>Расписание</h1></div></div><div class="body"><div class="card empty"><span class="em">${ICONS.school}</span><b>У дневника ${esc(cur().name)} нет расписания</b><p>${esc(cur().school)} ведёт только оценки: они во вкладках «Оценки» и «Предметы». Вкладка остаётся, потому что у других детей расписание есть; если бы его не было ни у кого, её бы не было.</p></div></div>`;
   const isDay = state.lkind === 'day';
   let days;
   if (isDay) days = [curLday()];
   else { const first = weekStart(state.lweek); days = Array.from({ length: 7 }, (_, i) => addDays(first, i)).filter(x => !isWeekend(x) || d.lessons.some(l => sameDay(l.date, x))); }
+  const wkHol = !isDay && holidayOn(cur().id, weekStart(state.lweek)) && holidayOn(cur().id, addDays(weekStart(state.lweek), 4));
   return `${screenHeader('Расписание', lessonsSeg())}
-  <div class="body">${lessonsNav()}${isDay ? '' : planFor(weekStart(state.lweek), weekStart(state.lweek + 1))}${days.map(day => {
+  <div class="body">${lessonsNav()}${wkHol ? holidayCard(wkHol) : `${isDay ? '' : planFor(weekStart(state.lweek), weekStart(state.lweek + 1))}${days.map(day => {
+    const hol = holidayOn(cur().id, day);
+    if (hol) return `<div>${isDay ? '' : `<div class="day-h"><b>${dayLabel(day)}</b><span>${fmtDay(day)}</span></div>`}${holidayCard(hol)}</div>`;
     const ls = d.lessons.filter(l => sameDay(l.date, day)).sort((a, b) => a.number - b.number);
     const real = ls.filter(l => !isCancelled(l)), firstReal = real[0];
     const startsLate = firstReal && firstReal.number > 1;
     const hw = real.filter(l => l.homework || manualHw(l)).length, ahead = real.filter(l => !lessonPassed(l)), ready = ahead.filter(l => hwDone(l)).length;
     const tests = real.filter(l => hasTag(l, 'test')).length, cancelledN = ls.length - real.length;
-    return `<div><div class="day-h">${isDay ? '' : `<b>${dayLabel(day)}</b>`}<span>${isDay ? '' : `${fmtDay(day)} · `}${real.length} ${plural(real.length, 'урок', 'урока', 'уроков')}${cancelledN ? ` · ${cancelledN} не будет` : ''}${hw ? `, ${hw} д/з` : ''}${ahead.length ? ` · <b style="color:var(--band-good-fg)">готово ${ready} из ${ahead.length}</b>` : ''}${tests ? `, <b style="color:var(--band-low-fg)">${tests} ${plural(tests, 'контрольная', 'контрольные', 'контрольных')}</b>` : ''}</span></div>
+    return `<div><div class="day-h">${isDay ? '' : `<b>${dayLabel(day)}</b>`}<span>${isDay ? '' : `${fmtDay(day)} · `}${CAPS.bellSchedule && real.length ? `${real[0].time}–${real[real.length - 1].end} · ` : ''}${real.length} ${plural(real.length, 'урок', 'урока', 'уроков')}${cancelledN ? ` · ${cancelledN} не будет` : ''}${hw ? `, ${hw} д/з` : ''}${ahead.length ? ` · <b style="color:var(--band-good-fg)">готово ${ready} из ${ahead.length}</b>` : ''}${tests ? `, <b style="color:var(--band-low-fg)">${tests} ${plural(tests, 'контрольная', 'контрольные', 'контрольных')}</b>` : ''}</span></div>
       ${isDay ? planFor(day, addDays(day, 1)) : ''}
       ${startsLate ? `<div class="late">Ко ${firstReal.number}-му уроку, к ${firstReal.time}</div>` : ''}
       <div class="lessons look-split">${ls.length ? withGaps(ls).map(x => x.gap ? gapRow(x) : renderLesson(x)).join('') : '<div class="card empty"><b>Уроков нет</b></div>'}</div></div>`;
-  }).join('')}</div>`;
+  }).join('')}`}</div>`;
 }
 
+/* «Школа» (design.md 5.9): the child's school reference. Per child with the StudentBar; two tabs, each needing its
+   capability. The regular week and the teachers are not here: they live on the subject screen («О предмете») and in
+   Расписание. Only the child's own bells and calendar (ux-principles D51). */
+function schoolHas() { return CAPS.bellSchedule || CAPS.terms; }
+function renderSchool() {
+  const sid = cur().id, sc = SCHOOL[sid];
+  const tabs = [['bells', 'Звонки', CAPS.bellSchedule], ['year', 'Четверти', CAPS.terms]].filter(t => t[2]);
+  if (!tabs.some(t => t[0] === state.schoolTab)) state.schoolTab = tabs[0][0];
+  const seg = `<div class="seg" id="schoolSeg">${tabs.map(([k, v]) => `<button data-stab="${k}" aria-pressed="${state.schoolTab === k}">${v}</button>`).join('')}</div>`;
+  const hdr = `<div class="hdr"><div class="hdr-row"><button class="back" id="backBtn" aria-label="Назад">${ICONS.back}</button><div class="htitle" style="flex:1"><h1>Школа</h1>${state.role === 'parent' ? `<span class="hsub">${esc(cur().name)} · ${esc(cur().cls)}</span>` : ''}</div><div class="hright">${studentBar()}</div></div>${seg}</div>`;
+  let body = '';
+  if (state.schoolTab === 'bells') {
+    const b = sc.bells, now = nowMin(), P = b.periods;
+    const dayNames = b.days.length === 6 ? 'пн–сб' : b.days.length === 5 ? 'пн–пт' : b.days.map(d => WD_SHORT[d % 7]).join(', ');
+    const rows = P.map((p, i) => {
+      const nx = P[i + 1], len = toMin(p[2]) - toMin(p[1]), isNow = now >= toMin(p[1]) && now < toMin(p[2]);
+      const lesson = `<div class="frow bell${isNow ? ' now' : ''}"><div class="ftime"><b class="fnum">${p[0]}</b></div><div class="fmain"><div class="fbody"><i class="fbar"></i><div class="c"><div class="t">${p[1]} – ${p[2]}${isNow ? '<span class="nowtag">сейчас</span>' : ''}</div><div class="fmeta">${len} мин</div></div><div></div></div></div></div>`;
+      if (!nx) return lesson;
+      const br = toMin(nx[1]) - toMin(p[2]), brNow = now >= toMin(p[2]) && now < toMin(nx[1]);
+      return lesson + `<div class="frow brk${brNow ? ' now' : ''}"><div class="ftime"></div><div class="fmain"><div class="fbody"><i class="fbar"></i><div class="c"><div class="gapt">перемена ${br} мин${brNow ? ' · сейчас' : ''}</div></div><div></div></div></div></div>`;
+    }).join('');
+    body = `<div class="day-h"><b>${esc(b.label)}</b><span>${dayNames} · ${P[0][1]}–${P[P.length - 1][2]} · ${P.length} ${plural(P.length, 'урок', 'урока', 'уроков')}</span></div>
+      <div class="lessons look-split">${rows}</div>
+      <div class="note">Звонки класса ${esc(cur().cls)}. У других классов школы смена и звонки могут быть другими; в дневнике каждого ребёнка свои.</div>`;
+  } else if (state.schoolTab === 'year') {
+    const cal = calendarOf(sid).slice().sort((a, b) => a.from - b.from || (a.kind === 'quarter' ? -1 : 1));
+    const curT = cal.find(x => x.kind === 'holiday' && TODAY >= x.from && TODAY <= x.to) || cal.find(x => TODAY >= x.from && TODAY <= x.to);
+    const nextH = cal.find(x => x.kind === 'holiday' && x.from > TODAY);
+    // the strip: the school year from the first day of the first term to the last day of the last one (summer is in the list)
+    const qs = cal.filter(x => x.kind === 'quarter'), y0 = qs[0].from, y1 = qs[qs.length - 1].to, span = daysBetween(y0, y1) + 1;
+    const pos = d => (daysBetween(y0, d) / span * 100).toFixed(2) + '%', wid = (a, b) => ((daysBetween(a, b) + 1) / span * 100).toFixed(2) + '%';
+    const segs = cal.filter(x => x.from <= y1).map(x => `<i class="${x.kind === 'holiday' ? 'h' : 'q'}" style="left:${pos(x.from)};width:${wid(x.from, x.to < y1 ? x.to : y1)}">${x.kind === 'quarter' ? x.short : ''}</i>`).join('');
+    const MON = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+    let months = '', m = new Date(y0.getFullYear(), y0.getMonth(), 1);
+    while (m <= y1) { if (m >= y0) months += `<span style="left:${pos(m)}">${MON[m.getMonth()]}</span>`; m = new Date(m.getFullYear(), m.getMonth() + 1, 1); }
+    const today = TODAY >= y0 && TODAY <= y1 ? `<span class="today" style="left:${pos(TODAY)}"></span>` : '';
+    const dd = n => `${n} ${plural(n, 'день', 'дня', 'дней')}`;
+    const left = curT ? daysBetween(TODAY, curT.to) + 1 : 0;
+    const head = `<div class="card yearnow">${curT ? `<span class="label">Сейчас</span><b>${esc(curT.name)}</b><span class="muted small">${rangeShort(curT.from, curT.to)} · осталось ${dd(left)}${nextH && curT.kind === 'quarter' ? ` · до каникул ${dd(daysBetween(TODAY, nextH.from))}` : ''}</span>` : '<span class="label">2026/27</span>'}
+      <div class="ystrip">${segs}${today}</div><div class="ymonths">${months}</div>
+      <div class="ylegend"><span><i class="q"></i>учёба</span><span><i class="h"></i>каникулы</span></div></div>`;
+    const items = cal.map(x => {
+      const n = daysBetween(x.from, x.to) + 1, on = curT === x, past = x.to < dayOnly(TODAY);
+      const inner = x.kind === 'holiday' && cal.some(q => q.kind === 'quarter' && x.from > q.from && x.to < q.to);
+      const tag = on ? ` <span class="nowtag">идёт</span>` : '';
+      const cls = `ycard${x.kind === 'holiday' ? ' hol' : ''}${on ? ' on' : ''}${past ? ' past' : ''}${inner ? ' inner' : ''}`;
+      const len = x.kind === 'holiday' ? dd(n) : `${Math.round(n / 7)} нед.`;
+      return `<div class="${cls}">${x.kind === 'holiday' ? `<span class="ic">${ICONS.sun}</span>` : '<span class="bar"></span>'}<span class="main"><span class="t">${esc(x.name)}${tag}</span><span class="s">${rangeShort(x.from, x.to)}</span>${x.note ? `<span class="note2">${esc(x.note)}</span>` : ''}</span><span class="len">${len}</span></div>`;
+    }).join('');
+    body = `${head}<div class="sect"><h2>2026/27</h2><span class="muted small">четверти и каникулы</span></div><div class="yitems">${items}</div>`;
+  }
+  return `${hdr}<div class="body">${body}</div>`;
+}
 function renderMore() {
   const parent = state.role === 'parent';
   const item = (go, ic, title, sub) => `<button class="menu" data-go="${go}"><span class="ic">${ic}</span><span class="main"><b>${title}</b><span>${sub}</span></span><span class="chev">${ICONS.chev}</span></button>`;
@@ -2438,6 +2707,7 @@ function renderMore() {
          and behaves; leaving last and apart. -->
     <div class="list-card">
       ${parent ? item('family', ICONS.users, 'Семья', '4 участника · Милена, Марк · 1 аккаунт дневника') : ''}
+      ${schoolHas() ? item('school', ICONS.school, 'Школа', `${state.unpicked ? '' : esc(cur().name) + ': '}звонки, четверти и каникулы`) : ''}
       ${item('notifications', ICONS.bell, 'Настройки уведомлений', 'Push, Telegram, правила, тихие часы')}
       ${item('tags', ICONS.tag, 'Теги', `${TAGS.filter(t => t.on).length} включено · ${TAGS.filter(t => t.on).slice(0, 3).map(t => t.name.toLowerCase()).join(', ')}`)}
       ${parent ? item('sync', ICONS.sync, 'Синхронизация', 'Сегодня в 12:17 · следующая около 13:00') : ''}
@@ -2646,6 +2916,11 @@ function renderAlertEdit() {
 }
 function renderFamily() {
   const member = (ini, name, role, access, extra) => `<div class="menu"><span class="who" style="box-shadow:none;padding:0"><span class="avatar">${ini}</span></span><span class="main"><b>${name}</b><span>${role} · ${access}</span></span>${extra || `<span class="chev">${ICONS.chev}</span>`}</div>`;
+  const diff = state.demoSchools === 'diff';
+  /* Diaries (design.md 5.6, 7.2): one row per account with its system, school and the children it shows. Children of one
+     family may be in different schools and systems. A child also followed by another family carries one quiet line, no
+     names and no details (ux-principles D54). */
+  const acct = (login, sys, school, kids, when) => `<div class="menu"><span class="ic">${ICONS.users}</span><span class="main"><b>${login} · родитель</b><span>${sys} · ${school}</span><span>${kids} · вход ${when}</span></span><span class="status">ок</span></div>`;
   return `<div class="hdr"><div class="hdr-row"><button class="back" id="backBtn" aria-label="Назад">${ICONS.back}</button><h1 style="flex:1">Семья</h1></div></div>
   <div class="body">
     <div class="sect"><h2>Участники</h2><span class="muted small">4</span></div>
@@ -2656,29 +2931,56 @@ function renderFamily() {
       ${member('Ма', 'Марк', 'ученик', 'только свои уроки', '<span class="status warn">приглашение не принято</span>')}
     </div>
     <button class="btn ghost">Пригласить · код действует 48 часов</button>
-    <span class="label">Ученики</span>
-    <div class="list-card">${Object.values(STUDENTS).map(s => `<button class="menu" data-avatar-edit="${s.id}"><span class="who" style="box-shadow:none;padding:0">${avatarOf(s, 40)}</span><span class="main"><b>${esc(s.name)}</b><span>${esc(s.cls)} · ${esc(s.school)} · аватар</span></span><span class="chev">${ICONS.chev}</span></button>`).join('')}</div>
+    <span class="label">Дети</span>
+    <div class="list-card">${Object.values(STUDENTS).map(s => `<button class="menu" data-avatar-edit="${s.id}"><span class="who" style="box-shadow:none;padding:0">${avatarOf(s, 40)}</span><span class="main"><b>${esc(s.name)}</b><span>${esc(s.cls)} · ${esc(s.school)} · аватар</span>${s.id === 'm' && state.demoShared ? '<span class="shared">Также следит другая семья</span>' : ''}</span><span class="chev">${ICONS.chev}</span></button>`).join('')}</div>
     <span class="label">Дневники</span>
     <div class="list-card">
-      <div class="menu"><span class="ic">${ICONS.users}</span><span class="main"><b>a.petrov · родитель</b><span>Беларусь · e-schools.by · вход сегодня в 12:17, следующий не раньше 13:17</span></span><span class="status">ок</span></div>
+      ${diff ? acct('a.petrov', 'Беларусь · e-schools.by', 'СШ № 34', 'Милена', 'сегодня в 12:17') + acct('andrey.p', 'Школьный портал (демо)', 'Гимназия № 2', 'Марк', 'сегодня в 11:40')
+        : acct('a.petrov', 'Беларусь · e-schools.by', 'СШ № 34', 'Милена, Марк', 'сегодня в 12:17')}
     </div>
     <button class="btn ghost">Добавить дневник</button>
-    <div class="note">Один аккаунт дневника на всю семью, можно добавить второй (например, другой системы). Пароль хранится зашифрованным, нужен только сборщику. Участники входят в Marksy со своими логинами и пароль дневника не видят.</div>
+    <div class="note">Дневников может быть несколько: например, если дети учатся в разных школах или в разных системах. Пароли хранятся зашифрованными и нужны только сборщику; участники входят в Marksy со своими логинами и паролей дневников не видят.${state.demoShared ? ' За Марком следит и другая семья: общими будут только его дневник, отметки «готово», занятия, цвета и цели предметов. Ваши участники, теги, правила и уведомления видны только вам, и наоборот.' : ''}</div>
   </div>`;
+}
+/* Today's sync window (design.md 10.2, ux-principles D55): from an hour before the first lesson to two hours after the last,
+   per child; an account's window is the union over the children read through it. No lessons today, no window. */
+const NAME_GEN = { k: 'Милены', m: 'Марка' };
+function childWindow(sid) {
+  const ls = todayLessonsOf(sid); if (!ls.length) return null;
+  if (!CAPS_BY[sid].bellSchedule || !ls[ls.length - 1].end) return [8 * 60, 14 * 60];
+  return [toMin(ls[0].time) - 60, toMin(ls[ls.length - 1].end) + 120];
+}
+function hmOf(m) { return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`; }
+function windowLine(sids) {
+  const w = sids.map(childWindow).filter(Boolean);
+  if (!w.length) return 'сегодня без обновлений · у детей нет уроков';
+  const who = sids.filter(x => childWindow(x)).map(x => NAME_GEN[x]);
+  return `сегодня ${hmOf(Math.min(...w.map(x => x[0])))}–${hmOf(Math.max(...w.map(x => x[1])))} · уроки ${who.join(' и ')}`;
 }
 function renderSync() {
   const S = syncInfo();
+  const diff = state.demoSchools === 'diff';
   return `<div class="hdr"><div class="hdr-row"><button class="back" id="backBtn" aria-label="Назад">${ICONS.back}</button><h1 style="flex:1">Синхронизация</h1></div></div>
   <div class="body">
+    <div class="acct-h"><b>a.petrov · e-schools.by</b><span>${diff ? 'Милена' : 'Милена, Марк'}</span></div>
     <div class="card" style="display:flex;flex-direction:column;gap:6px">
       <div class="sect"><h2>Состояние</h2><span class="status ${S.dot}">${S.status}</span></div>
       <div class="kv"><span>Последние данные</span><b>${S.lastOk}</b></div>
       <div class="kv"><span>Последняя попытка</span><b style="text-align:right">${S.lastTry}</b></div>
       ${S.failures ? `<div class="kv"><span>Сбоев подряд</span><b>${S.failures}</b></div>` : ''}
       <div class="kv"><span>Следующий запуск</span><b style="text-align:right">${S.next}</b></div>
-      <div class="kv"><span>Расписание</span><b>будни, 08:00–14:00, раз в час</b></div>
+      <div class="kv"><span>Окно</span><b style="text-align:right">${windowLine(diff ? ['k'] : ['k', 'm'])}</b></div>
+      ${state.demoShared && !diff ? `<div class="kv"><span>Марк</span><b style="text-align:right">его видит и вход другой семьи; дневник читается один раз</b></div>` : ''}
       ${S.note ? `<span class="muted small" style="padding-top:6px">${S.note}</span>` : ''}
     </div>
+    ${diff ? `<div class="acct-h"><b>andrey.p · Школьный портал (демо)</b><span>Марк</span></div>
+    <div class="card" style="display:flex;flex-direction:column;gap:6px">
+      <div class="sect"><h2>Состояние</h2><span class="status">всё свежо</span></div>
+      <div class="kv"><span>Последние данные</span><b>сегодня, 11:40</b></div>
+      <div class="kv"><span>Окно</span><b style="text-align:right">${windowLine(['m'])}</b></div>
+      ${state.demoShared ? `<div class="kv"><span>Марк</span><b style="text-align:right">его видит и вход другой семьи; дневник читается один раз</b></div>` : ''}
+      <span class="muted small" style="padding-top:6px">У каждой школы своё время уроков, поэтому и своё окно обновлений.</span>
+    </div>` : ''}
     ${S.plan.length ? `<div class="card" style="display:flex;flex-direction:column;gap:8px">
       <div class="sect"><h2>Следующий запуск возьмёт</h2></div>
       <div class="plan-list">${S.plan.map(p => `<span>${p}</span>`).join('')}<span>около ${S.reqs} запросов на ученика</span></div>
@@ -2707,7 +3009,7 @@ function renderSync() {
       <div class="sect"><h2>Журнал запусков</h2><span class="muted small">хранится 90 дней</span></div>
       ${S.runs.map(([k, when, what]) => `<div class="run ${k}"><i></i><span><b>${when}</b><span class="s">${what}</span></span></div>`).join('')}
     </div>
-    <div class="muted small" style="text-align:center">Не чаще одного входа в дневник в час, запросы по одному с паузами, время запуска каждый раз немного сдвигается. Если устройство было выключено, первый запуск догоняет пропущенное; если дневник не отвечает три раза подряд, попытки откладываются на сутки.</div>
+    <div class="muted small" style="text-align:center">Дневник читается только в учебный день ребёнка: с часа до первого урока до двух часов после последнего. Не чаще одного входа в дневник в час, запросы по одному с паузами, время запуска каждый раз немного сдвигается. Если устройство было выключено, первый запуск догоняет пропущенное; если дневник не отвечает три раза подряд, попытки откладываются на сутки.</div>
   </div>`;
 }
 function renderPick() {
@@ -2718,7 +3020,7 @@ function renderPick() {
     const fresh = d.marks.filter(m => isNew(m) && m.kind !== 'ABSENT');
     const wk = d.marks.filter(m => inRange(m.date, periodRange('week')));
     const a = avg(valuesOf(wk)), pa = avg(valuesOf(d.marks.filter(m => inRange(m.date, periodRange('week', 1))))), tr = trend(a, pa);
-    const abs = CAPS.attendance ? wk.filter(m => m.kind === 'ABSENT').length : 0;
+    const abs = CAPS_BY[st.id].attendance ? wk.filter(m => m.kind === 'ABSENT').length : 0;
     const nextDate = d.lessons.filter(l => l.date > TODAY).reduce((acc, l) => (!acc || l.date < acc ? l.date : acc), null);
     const next = nextDate ? d.lessons.filter(l => sameDay(l.date, nextDate)) : [];
     const hit = tagHits(d, 14).filter(w => !w.cancelled)[0];
@@ -2726,7 +3028,7 @@ function renderPick() {
     if (st.level > 2) {
       cells += cell('Новых', fresh.length, fresh.length ? 'accent' : 'zero');
       cells += cell('Неделя', fmtAvg(a), band(a) || 'zero', tr ? `<span class="tr ${tr}">${TR[tr]}</span> было ${fmtAvg(pa)}` : '');
-      if (CAPS.attendance) cells += cell('Пропуски', abs, abs ? 'low' : 'zero');
+      if (CAPS_BY[st.id].attendance) cells += cell('Пропуски', abs, abs ? 'low' : 'zero');
     } else {
       cells += cell(`Уроков ${nextDate ? dayLabel(nextDate).toLowerCase() : ''}`, next.length, next.length ? '' : 'zero');
       cells += cell('Д/з', next.filter(l => l.homework).length, 'zero');
@@ -2735,9 +3037,10 @@ function renderPick() {
     const up = hit ? { cls: hit.tone, text: `${esc(hit.tag.name)} · ${esc(hit.subject)}, ${hit.ref}` }
       : { cls: 'good', text: next.length ? 'Ближайшие 2 недели без уроков с тегами' : 'Уроков нет' };
     return `<button class="pickcard" data-start="${st.id}">
-      <div class="pchead">${avatarOf(st, 56)}<div class="pcname"><b>${esc(st.name)}</b><span class="muted small">${esc(st.cls)} · ${esc(st.school)}</span></div></div>
+      <div class="pchead">${avatarOf(st, 56)}<div class="pcname"><b>${esc(st.name)}</b><span class="muted small">${esc(st.cls)}${schoolsDiffer() ? ` · ${esc(st.school)}` : ''}</span></div></div>
       <div class="pcells">${cells}</div>
       <div class="pcnext"><span class="stripe ${up.cls}"></span><span>${up.text}</span></div>
+      ${pickNowLine(st.id)}
     </button>`;
   }).join('');
   return `<div class="hdr"><div class="hdr-row"><div class="htitle"><h1>С кого начнём?</h1><span class="hsub">${fmtDayShort(TODAY)}</span></div>${bellBtn()}</div></div>
@@ -2745,6 +3048,21 @@ function renderPick() {
     <div class="pickcards">${cards}</div>
     <div class="list-card"><div class="menu"><span class="main"><b>Всегда начинать с последнего</b><span>Без этого экрана. Иначе он появляется, если приложение не открывали больше 12 часов</span></span>${sw(state.alwaysLast).replace('class="switch"', 'class="switch" data-opt-global="alwaysLast"')}</div></div>
     <button class="entry" data-go="more"><span class="ic">${ICONS.sliders}</span><span class="main"><b>Настройки</b><span>семья, уведомления, теги, оформление · без выбора ученика</span></span><span class="chev">${ICONS.chev}</span></button>
+  </div>`;
+}
+/* Connecting a diary whose child Marksy already knows (design.md 7.2, ux-principles D54): never a second copy of the child.
+   «Следить из своей семьи» needs no approval because the diary itself gives this login access; the other family gets one
+   notice without names. */
+function renderConnectMatch() {
+  const ch = (k, title, sub) => `<button class="choice" data-match="${k}" aria-pressed="${state.matchChoice === k}"><span class="rad"></span><span class="main"><b>${title}</b><span class="s">${sub}</span></span></button>`;
+  return `<div class="hdr"><div class="hdr-row"><button class="back" id="backBtn" aria-label="Назад">${ICONS.back}</button><div class="htitle" style="flex:1"><h1>Дневник подключён</h1><span class="hsub">Школьный портал (демо) · andrey.p</span></div></div></div>
+  <div class="body">
+    <div class="card" style="display:flex;align-items:center;gap:12px">${avatarOf(STUDENTS.m, 48)}<span style="flex:1"><b>Марк уже есть в Marksy</b><br><span class="muted small">${esc(STUDENTS.m.cls)} · за ним следит другая семья</span></span></div>
+    <span class="label">Как вам следить за Марком</span>
+    ${ch('follow', 'Из своей семьи', 'Общими будут только дневник Марка и то, что он делает сам: отметки «готово», занятия, цвета и цели предметов. Ваши участники, теги, правила и уведомления видны только вам, а их только им. Та семья получит одно сообщение, без имён.')}
+    ${ch('join', 'Присоединиться к той семье', 'Её администратор подтвердит запрос, и вы станете родителем в ней: одна семья, общие теги и правила.')}
+    <button class="btn" data-go="family">Продолжить</button>
+    <div class="note">Второй копии Марка не будет: дневник читается один раз для обеих семей. Доступ даёт сам дневник: если ваш вход перестанет видеть Марка, он пропадёт и здесь.</div>
   </div>`;
 }
 function renderAvatarEdit() {
@@ -2792,8 +3110,8 @@ function renderLogin() {
   </div>`;
 }
 
-const RENDER = { login: renderLogin, home: renderHome, events: renderEvents, marks: renderMarks, finals: renderFinals, subjects: renderSubjects, subject: renderSubject, lessons: renderLessons, more: renderMore, notifications: renderNotifications, family: renderFamily, sync: renderSync, tags: renderTags, look: renderLook, study: renderStudy, tagEdit: renderTagEdit, alertEdit: renderAlertEdit, pick: renderPick, avatarEdit: renderAvatarEdit, inbox: renderInbox };
-const TAB_OF = { home: 'home', events: 'home', subjects: 'subjects', subject: 'subjects', marks: 'marks', finals: 'marks', lessons: 'lessons', more: 'more', notifications: 'more', family: 'more', sync: 'more', tags: 'more', look: 'more', study: 'home', tagEdit: 'more', alertEdit: 'more', pick: null, avatarEdit: 'more', inbox: null };
+const RENDER = { login: renderLogin, home: renderHome, events: renderEvents, marks: renderMarks, finals: renderFinals, subjects: renderSubjects, subject: renderSubject, lessons: renderLessons, more: renderMore, notifications: renderNotifications, family: renderFamily, sync: renderSync, tags: renderTags, look: renderLook, study: renderStudy, tagEdit: renderTagEdit, alertEdit: renderAlertEdit, pick: renderPick, avatarEdit: renderAvatarEdit, inbox: renderInbox, school: renderSchool, connectMatch: renderConnectMatch };
+const TAB_OF = { home: 'home', events: 'home', subjects: 'subjects', subject: 'subjects', marks: 'marks', finals: 'marks', lessons: 'lessons', more: 'more', notifications: 'more', family: 'more', sync: 'more', tags: 'more', look: 'more', study: 'home', tagEdit: 'more', alertEdit: 'more', pick: null, avatarEdit: 'more', inbox: null, school: 'more', connectMatch: null };
 
 let lastScreen = null;
 function render() {
@@ -2803,13 +3121,15 @@ function render() {
   view.scrollTop = keep ? st : 0; lastScreen = state.screen;
   if (state.screen === 'pick') state.unpicked = true;
   renderStudyBar();
+  renderCaps();
   // the tinted subject header continues under the status bar
   const sbar = document.querySelector('.statusbar'), tw = view.querySelector('.subjwrap.sv-accent');
+  const clock = document.querySelector('.statusbar .tnum'); if (clock) clock.textContent = fmtClock(state.nowMin);
   if (sbar) { if (tw) { sbar.setAttribute('style', tw.getAttribute('style')); sbar.classList.add('tinted'); } else { sbar.removeAttribute('style'); sbar.classList.remove('tinted'); } }
   const tb = document.getElementById('tabbar');
-  tb.hidden = state.screen === 'login' || state.screen === 'pick';
+  tb.hidden = state.screen === 'login' || state.screen === 'pick' || state.screen === 'connectMatch';
   tb.style.gridTemplateColumns = `repeat(${TABS.filter(([k]) => k !== 'lessons' || CAPS.lessons).length}, 1fr)`;
-  tb.innerHTML = TABS.filter(([k]) => k !== 'lessons' || CAPS.lessons).map(([k, label, ic]) => `<button data-tab="${k}" aria-current="${TAB_OF[state.screen] === k}">${ic}${label}</button>`).join('');
+  tb.innerHTML = TABS.filter(([k]) => k !== 'lessons' || anyCaps('lessons')).map(([k, label, ic]) => `<button data-tab="${k}" aria-current="${TAB_OF[state.screen] === k}">${ic}${label}</button>`).join('');
   fitStudentBar();
   const activeChip = view.querySelector('.filters .fchip[aria-pressed="true"]'); if (activeChip && activeChip.scrollIntoView) activeChip.scrollIntoView({ block: 'nearest', inline: 'nearest' });  // the selected filter is never hidden behind the edge
   document.querySelectorAll('#railScreens button').forEach(b => b.setAttribute('aria-current', b.dataset.screen === state.screen));
@@ -2819,7 +3139,7 @@ function render() {
 /* "С кого начнём?" (design.md 5.2): until a student is picked, only screens that do not belong to a student open (Ещё and
    what is under it). Any other screen, from the tab bar or a link, brings the pick screen back instead of silently taking
    the last student. */
-const NO_STUDENT_SCREENS = new Set(['pick', 'login', 'inbox', 'more', 'notifications', 'alertEdit', 'family', 'avatarEdit', 'sync', 'tags', 'tagEdit', 'look']);
+const NO_STUDENT_SCREENS = new Set(['pick', 'login', 'connectMatch', 'inbox', 'more', 'notifications', 'alertEdit', 'family', 'avatarEdit', 'sync', 'tags', 'tagEdit', 'look']);
 function go(screen, push = true) {
   if (state.unpicked && !NO_STUDENT_SCREENS.has(screen)) { state.stack = []; screen = 'pick'; push = false; }
   if (push && screen !== state.screen) state.stack.push(state.screen);
@@ -2833,9 +3153,20 @@ document.getElementById('railScreens').addEventListener('click', e => { const b 
 document.getElementById('roleToggle').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; state.role = b.dataset.role; state.unpicked = false; ALERT_RULES = null; if (state.role === 'student') state.student = 'k'; if (['family', 'sync'].includes(state.screen)) state.screen = 'more'; render(); });
 document.getElementById('studentToggle').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; state.student = b.dataset.student; state.unpicked = false; if (state.role === 'student' && state.student !== 'k') state.role = 'parent'; if (state.screen === 'subject') state.screen = 'home'; render(); });
 function renderCaps() { document.getElementById('capsToggle').innerHTML = Object.keys(CAPS).map(k => `<button data-cap="${k}" aria-pressed="${CAPS[k]}">${CAP_LABELS[k]}</button>`).join(''); }
-document.getElementById('capsToggle').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; CAPS[b.dataset.cap] = !CAPS[b.dataset.cap]; if (!CAPS.lessons) CAPS.futureTimetable = false; rebuildData(); if (state.screen === 'lessons' && !CAPS.lessons) state.screen = 'home'; renderCaps(); render(); });
+document.getElementById('nowToggle').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; state.nowMin = Number(b.dataset.now); document.querySelectorAll('#nowToggle button').forEach(x => x.setAttribute('aria-pressed', x === b)); render(); });
+document.getElementById('capsToggle').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; CAPS[b.dataset.cap] = !CAPS[b.dataset.cap]; if (!CAPS.lessons) CAPS.futureTimetable = false; rebuildData(); if (state.screen === 'lessons' && !anyCaps('lessons')) state.screen = 'home'; renderCaps(); render(); });
 renderCaps();
 document.getElementById('finalsToggle').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; state.finals = b.dataset.finals === '1'; document.querySelectorAll('#finalsToggle button').forEach(x => x.setAttribute('aria-pressed', x === b)); render(); });
+document.getElementById('schoolsToggle').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return;
+  const diff = b.dataset.schools === 'diff'; state.demoSchools = diff ? 'diff' : 'same';
+  STUDENTS.m.school = diff ? 'Гимназия № 2' : 'СШ № 34'; CAPS_BY.m = { ...(diff ? CAPS_OTHER : CAPS_FULL) };
+  document.querySelectorAll('#schoolsToggle button').forEach(x => x.setAttribute('aria-pressed', x === b)); rebuildData(); render(); });
+document.getElementById('sharedToggle').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return;
+  state.demoShared = b.dataset.shared === '1';
+  // the other family's tick on Марк's next lesson: shown here without a name (ux-principles D54)
+  const nl = DATA.m.lessons.filter(l => l.date > TODAY && !sameDay(l.date, TODAY)).sort((a, c) => a.date - c.date || a.number - c.number)[0];
+  if (nl) { const k = `m:${nl.id}`; if (state.demoShared) state.hwDone[k] = { by: '', other: true, at: 'вчера 20:05' }; else if (state.hwDone[k] && state.hwDone[k].other) delete state.hwDone[k]; }
+  document.querySelectorAll('#sharedToggle button').forEach(x => x.setAttribute('aria-pressed', x === b)); render(); });
 document.getElementById('syncToggle').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; state.sync = b.dataset.sync; document.querySelectorAll('#syncToggle button').forEach(x => x.setAttribute('aria-pressed', x === b)); render(); });
 document.getElementById('calToggle').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; CAL = CALS[b.dataset.cal]; document.querySelectorAll('#calToggle button').forEach(x => x.setAttribute('aria-pressed', x === b)); render(); });
 document.getElementById('scaleToggle').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; SCALE = SCALES[b.dataset.scale]; state.target = SCALE.goals[Math.min(1, SCALE.goals.length - 1)]; state.filterBelow = null; ALERT_RULES = null; rebuildData(); document.querySelectorAll('#scaleToggle button').forEach(x => x.setAttribute('aria-pressed', x === b)); render(); });
@@ -2845,7 +3176,8 @@ document.getElementById('view').addEventListener('click', e => {
   const t = e.target;
   const subj = t.closest('[data-subject]'); if (subj) { state.subjectId = subj.dataset.subject; go('subject'); return; }
   const fm = t.closest('[data-finalsmode]'); if (fm) { state.finalsMode = fm.dataset.finalsmode; render(); return; }
-  const goBtn = t.closest('[data-go]'); if (goBtn) { if (goBtn.hasAttribute('data-lnext')) { state.lkind = 'day'; state.lday = nextSchoolDay(); } go(goBtn.dataset.go); return; }
+  const stb = t.closest('[data-stab]'); if (stb) { state.schoolTab = stb.dataset.stab; render(); return; }
+  const goBtn = t.closest('[data-go]'); if (goBtn) { if (goBtn.hasAttribute('data-lnext')) { state.lkind = 'day'; state.lday = nextSchoolDay(); } if (goBtn.hasAttribute('data-ltoday')) { state.lkind = 'day'; state.lday = null; } go(goBtn.dataset.go); return; }
   if (t.closest('#backBtn')) { back(); return; }
   if (t.closest('#whoBtn')) { openSheet(); return; }
   const ae = t.closest('[data-avatar-edit]'); if (ae) { state.avatarFor = ae.dataset.avatarEdit; go('avatarEdit'); return; }
@@ -2857,6 +3189,7 @@ document.getElementById('view').addEventListener('click', e => {
   }
   const ib = t.closest('[data-inbox]'); if (ib) { const n = INBOX.find(x => x.id === ib.dataset.inbox); if (n) openInboxItem(n); return; }
   if (t.closest('[data-inbox-readall]')) { inboxList().forEach(n => { state.inboxRead[n.id] = true; }); render(); return; }
+  const mch = t.closest('[data-match]'); if (mch) { state.matchChoice = mch.dataset.match; render(); return; }
   const stt = t.closest('[data-start]'); if (stt) { state.student = stt.dataset.start; state.unpicked = false; state.stack = []; go('home', false); return; }
   const ss = t.closest('[data-stu-switch]'); if (ss) { switchStudent(ss.dataset.stuSwitch); return; }
   const p = t.closest('[data-period]'); if (p) { state.period = p.dataset.period; state.offset = 0; render(); return; }
@@ -2947,7 +3280,7 @@ function switchStudent(id) {
 }
 function openSheet() {
   const sheet = document.getElementById('sheet');
-  sheet.innerHTML = `<div class="grab"></div><span class="label">Ученик</span>${Object.values(STUDENTS).map(s => `<button class="opt" data-pick="${s.id}">${avatarOf(s, 40)}<span class="main"><b>${esc(s.name)}</b><span>${esc(s.cls)} · ${esc(s.school)}</span></span>${s.id === state.student ? `<span class="check">${ICONS.check}</span>` : ''}</button>`).join('')}`;
+  sheet.innerHTML = `<div class="grab"></div><span class="label">Ученик</span>${Object.values(STUDENTS).map(s => `<button class="opt" data-pick="${s.id}">${avatarOf(s, 40)}<span class="main"><b>${esc(s.name)}</b><span>${esc(s.cls)}${schoolsDiffer() ? ` · ${esc(s.school)}` : ''}</span></span>${s.id === state.student ? `<span class="check">${ICONS.check}</span>` : ''}</button>`).join('')}`;
   document.getElementById('sheetBg').classList.add('open');
 }
 document.getElementById('studybar').addEventListener('click', e => { const b = e.target.closest('[data-sb]'); if (!b) return; if (b.dataset.sb === 'pause') pauseStudy(); else { stopStudy(); render(); } });

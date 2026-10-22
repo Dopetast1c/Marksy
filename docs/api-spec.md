@@ -304,7 +304,7 @@ The parser in `providers/by-eschools/src/map.ts` (`mapFinals`) is provisional an
 
 ### 6.10 Other read endpoints
 
-Not in the allow-list yet; adding any of them is a product decision (`design.md` 17). The first four were verified on 2026-10-23 from the requests the site's «Расписание» pages make, with a parent token; shapes below, examples fictional.
+The first four (and 6.7a) go into the allow-list with milestone M3a (`build-plan.md`); mapping in 7.5. They were verified on 2026-10-23 from the requests the site's «Расписание» pages make, with a parent token; shapes below, examples fictional.
 
 #### 6.10.1 `GET /education/diary/schools/{school}/bells/whole` [VERIFIED]
 
@@ -503,6 +503,13 @@ The frontend counts weekly absences as slots with `lesson_mark.kind === "ABSENT"
 - `slot.type` (lesson type): TEST test, LABORATORY_WORK lab, PRACTICAL_WORK practical, EXCURSION excursion, INDEPENDENT_WORK other, `null` regular. The lesson type alone never makes a lesson "a test" in the app: that is the family's tag «Контрольная» (`design.md` 6.3).
 - Calendar: QUARTER entries are `Term`s (`kind: quarter`, index from FIRST_QUARTER ... FOURTH_QUARTER), HOLIDAYS are holidays, with dates converted in Europe/Minsk (6.4). ADDITIONAL_HOLIDAYS are holidays only for a class with `level` 1 or 2; for older grades those days are school days (6.4). A non-empty `description` is kept with the term or holiday as a note. A class with `level` 1 or 2 gets `gradingScaleId: null`, the school year without marks (`ux-principles.md` D49); from grade 3 the manifest's `by-10` applies.
 - Lesson identity: `lesson_uuid` when present. When it is null, the lesson's id is `slot:<date>:<number>:<subject_id>` (start time instead of the number if that is missing too), which is unique within one student's week; its mark and absence point to that id. The collector (design.md 8) matches a fetched lesson first by id, then by `(student, date, slot, subject)`, so a lesson that gets a real `lesson_uuid` on a later fetch keeps its row, its ticks and its history instead of being removed and created again.
+- School details (M3a; 6.7a, 6.10), all for the one student, fetched once a day, not every run:
+  - The student's group per subject: the 6.7a row whose `teacher_id` (or the 6.10.3 template behind the lesson's `lesson_template_id`) matches the student's lessons. A split subject with no lesson seen yet this term has no group and no teacher until the first one appears. → `Subject.groupLabel` (`group_name`), `teacherExternalId`, `teacherName` (6.7a `teacher`, family name first), `Lesson.groupLabel`, `Lesson.teacherName`.
+  - `level_of_study`: «Базовый» → `level: 'regular'`, «Углубленный» → `level: 'advanced'`, the text in `levelLabel`. `study_hours` of the student's template → `lessonsPerWeek`; `short_name` → `shortName`.
+  - `BellSchedule`: the 6.10.1 schedule named by the class timetable's `schedule_of_bells_uuid`; `title` → `label`, `days`, `time_of_bells` → periods ("HH:MM"). Shift numbers stay inside.
+  - `WeekTemplate` for the current term: 6.10.2 slots whose `lesson_template_id` is one of the student's (the whole-class slots plus the student's group), `cycleWeeks: 1`, `room` = 6.10.4 `audience_number` of `room_id` (absent when the room is not in the list), times from `time_of_bells`.
+  - `Lesson.endTime` and `Lesson.room`: from the template entry with the lesson's weekday, `number` and `lesson_template_id`; `endTime` falls back to the bell schedule's period with that number.
+  - Teachers of other groups and the school's room list are never returned or stored.
 - Students: `profile_id`, `full_name` and `school_id` from `/admin/auth/me`, class id, `class_number` and `level` from the class (`StudentRef.classExternalId`, `className`, `grade`).
 
 ## 8. Network and etiquette
