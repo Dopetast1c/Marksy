@@ -1,0 +1,6 @@
+{
+  "rows": [
+    { "subject": { "code": "alg", "title": "Алгебра" }, "period": "q1", "value": "7" },
+    { "subject": { "code": "pe", "title": "Физическая культура" }, "period": "q1", "value": "зач" }
+  ]
+}

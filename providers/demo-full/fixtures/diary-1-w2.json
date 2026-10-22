@@ -1,0 +1,63 @@
+{
+  "week": "2025-09-15",
+  "days": [
+    {
+      "date": "2025-09-15",
+      "lessons": [
+        {
+          "uid": "L-111",
+          "n": 1,
+          "starts": "08:30",
+          "subject": { "code": "alg", "title": "Алгебра" },
+          "topic": "Системы уравнений",
+          "homework": "№ 160",
+          "kind": null,
+          "marks": [
+            { "uid": "M-11", "value": "9", "type": "HOME", "note": null },
+            { "uid": "M-12", "value": "8", "type": "CLASS", "note": null }
+          ]
+        }
+      ]
+    },
+    {
+      "date": "2025-09-16",
+      "lessons": [
+        {
+          "uid": "L-112",
+          "n": 1,
+          "starts": "08:30",
+          "subject": { "code": "phy", "title": "Физика" },
+          "topic": "Механическое движение",
+          "homework": "§ 2",
+          "kind": null,
+          "marks": [{ "uid": "M-13", "value": "4", "type": "QUIZ", "note": "Пересдача во вторник" }]
+        },
+        {
+          "uid": "L-113",
+          "n": 2,
+          "starts": "09:25",
+          "subject": { "code": "eng", "title": "Английский язык" },
+          "topic": "Reported speech",
+          "homework": "SB p. 45 ex. 2",
+          "kind": null,
+          "marks": []
+        }
+      ]
+    },
+    {
+      "date": "2025-09-18",
+      "lessons": [
+        {
+          "uid": "L-114",
+          "n": 1,
+          "starts": "08:30",
+          "subject": { "code": "rus", "title": "Русский язык" },
+          "topic": "Действительные причастия",
+          "homework": "упр. 160",
+          "kind": null,
+          "marks": [{ "uid": "M-14", "value": "7", "type": "DICTATION", "note": null }]
+        }
+      ]
+    }
+  ]
+}

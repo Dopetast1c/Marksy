@@ -1,0 +1,472 @@
+{
+  "account": {
+    "externalUserId": "U-1",
+    "displayName": "Родитель",
+    "role": "parent",
+    "students": [
+      {
+        "externalId": "p-1",
+        "fullName": "Пример Ученик А",
+        "givenName": "Ученик А",
+        "familyName": "Пример",
+        "schoolId": "S-1",
+        "classExternalId": "C-1",
+        "className": "7 «Г»",
+        "grade": 7
+      },
+      {
+        "externalId": "p-2",
+        "fullName": "Пример Ученик Б",
+        "givenName": "Ученик Б",
+        "familyName": "Пример",
+        "schoolId": "S-1",
+        "classExternalId": "C-2",
+        "className": "1 «Д»",
+        "grade": 1
+      }
+    ]
+  },
+  "students": {
+    "p-1": {
+      "calendar": {
+        "schoolYear": {
+          "externalId": "2025-2026",
+          "label": "2025/2026",
+          "start": "2025-09-01",
+          "end": "2026-05-31"
+        },
+        "terms": [
+          {
+            "externalId": "q1",
+            "kind": "quarter",
+            "index": 1,
+            "label": "1",
+            "start": "2025-09-01",
+            "end": "2025-10-25"
+          },
+          {
+            "externalId": "q2",
+            "kind": "quarter",
+            "index": 2,
+            "label": "2",
+            "start": "2025-11-03",
+            "end": "2025-12-24"
+          },
+          {
+            "externalId": "q3",
+            "kind": "quarter",
+            "index": 3,
+            "label": "3",
+            "start": "2026-01-12",
+            "end": "2026-03-21"
+          },
+          {
+            "externalId": "q4",
+            "kind": "quarter",
+            "index": 4,
+            "label": "4",
+            "start": "2026-03-30",
+            "end": "2026-05-31"
+          }
+        ],
+        "holidays": [
+          {
+            "from": "2025-10-26",
+            "to": "2025-11-02"
+          },
+          {
+            "from": "2025-12-25",
+            "to": "2026-01-11"
+          },
+          {
+            "from": "2026-03-22",
+            "to": "2026-03-29"
+          }
+        ]
+      },
+      "subjects": [
+        {
+          "externalId": "alg",
+          "name": "Алгебра"
+        },
+        {
+          "externalId": "rus",
+          "name": "Русский язык"
+        },
+        {
+          "externalId": "phy",
+          "name": "Физика"
+        },
+        {
+          "externalId": "eng",
+          "name": "Английский язык"
+        },
+        {
+          "externalId": "pe",
+          "name": "Физическая культура"
+        }
+      ],
+      "lessons": [
+        {
+          "externalId": "L-101",
+          "date": "2025-09-08",
+          "slot": 1,
+          "startTime": "08:30",
+          "subjectExternalId": "alg",
+          "subjectName": "Алгебра",
+          "topic": "Линейные уравнения",
+          "homework": "№ 120, 121",
+          "marks": [
+            {
+              "externalId": "M-1",
+              "date": "2025-09-08",
+              "subjectExternalId": "alg",
+              "subjectName": "Алгебра",
+              "lessonExternalId": "L-101",
+              "raw": "8",
+              "kind": "numeric",
+              "values": [8],
+              "workType": "classwork",
+              "workTypeRaw": "CLASS"
+            }
+          ]
+        },
+        {
+          "externalId": "L-102",
+          "date": "2025-09-08",
+          "slot": 2,
+          "startTime": "09:25",
+          "subjectExternalId": "rus",
+          "subjectName": "Русский язык",
+          "topic": "Причастие как часть речи",
+          "homework": "упр. 140",
+          "marks": []
+        },
+        {
+          "externalId": "slot:2025-09-09:1:phy",
+          "date": "2025-09-09",
+          "slot": 1,
+          "startTime": "08:30",
+          "subjectExternalId": "phy",
+          "subjectName": "Физика",
+          "topic": "Измерение физических величин",
+          "homework": "§ 1, упр. 1",
+          "lessonType": "lab",
+          "marks": [
+            {
+              "externalId": "M-2",
+              "date": "2025-09-09",
+              "subjectExternalId": "phy",
+              "subjectName": "Физика",
+              "lessonExternalId": "slot:2025-09-09:1:phy",
+              "raw": "6",
+              "kind": "numeric",
+              "values": [6],
+              "workType": "lab",
+              "workTypeRaw": "LAB",
+              "comment": "Оформить вывод"
+            }
+          ]
+        },
+        {
+          "externalId": "L-104",
+          "date": "2025-09-09",
+          "slot": 2,
+          "startTime": "09:25",
+          "subjectExternalId": "eng",
+          "subjectName": "Английский язык",
+          "topic": "Travelling",
+          "homework": "WB p. 24 ex. 3",
+          "marks": [
+            {
+              "externalId": "M-3",
+              "date": "2025-09-09",
+              "subjectExternalId": "eng",
+              "subjectName": "Английский язык",
+              "lessonExternalId": "L-104",
+              "raw": "7/9",
+              "kind": "numeric",
+              "values": [7, 9]
+            }
+          ]
+        },
+        {
+          "externalId": "L-105",
+          "date": "2025-09-10",
+          "slot": 1,
+          "startTime": "08:30",
+          "subjectExternalId": "alg",
+          "subjectName": "Алгебра",
+          "topic": "К/р №1 «Линейные уравнения»",
+          "lessonType": "test",
+          "marks": [
+            {
+              "externalId": "M-4",
+              "date": "2025-09-10",
+              "subjectExternalId": "alg",
+              "subjectName": "Алгебра",
+              "lessonExternalId": "L-105",
+              "raw": "5",
+              "kind": "numeric",
+              "values": [5],
+              "workType": "test",
+              "workTypeRaw": "TEST",
+              "comment": "Повторить правило"
+            }
+          ]
+        },
+        {
+          "externalId": "L-106",
+          "date": "2025-09-10",
+          "slot": 2,
+          "startTime": "09:25",
+          "subjectExternalId": "rus",
+          "subjectName": "Русский язык",
+          "topic": "Причастный оборот",
+          "homework": "упр. 152",
+          "marks": [],
+          "attendance": [
+            {
+              "externalId": "att:M-5",
+              "date": "2025-09-10",
+              "lessonExternalId": "L-106",
+              "subjectExternalId": "rus",
+              "status": "absent",
+              "code": "н"
+            }
+          ]
+        },
+        {
+          "externalId": "L-107",
+          "date": "2025-09-12",
+          "slot": 1,
+          "startTime": "08:30",
+          "subjectExternalId": "pe",
+          "subjectName": "Физическая культура",
+          "topic": "Бег 60 м",
+          "marks": [
+            {
+              "externalId": "M-6",
+              "date": "2025-09-12",
+              "subjectExternalId": "pe",
+              "subjectName": "Физическая культура",
+              "lessonExternalId": "L-107",
+              "raw": "зач",
+              "kind": "pass",
+              "values": []
+            }
+          ]
+        },
+        {
+          "externalId": "L-111",
+          "date": "2025-09-15",
+          "slot": 1,
+          "startTime": "08:30",
+          "subjectExternalId": "alg",
+          "subjectName": "Алгебра",
+          "topic": "Системы уравнений",
+          "homework": "№ 160",
+          "marks": [
+            {
+              "externalId": "M-11",
+              "date": "2025-09-15",
+              "subjectExternalId": "alg",
+              "subjectName": "Алгебра",
+              "lessonExternalId": "L-111",
+              "raw": "9",
+              "kind": "numeric",
+              "values": [9],
+              "workType": "homework",
+              "workTypeRaw": "HOME"
+            },
+            {
+              "externalId": "M-12",
+              "date": "2025-09-15",
+              "subjectExternalId": "alg",
+              "subjectName": "Алгебра",
+              "lessonExternalId": "L-111",
+              "raw": "8",
+              "kind": "numeric",
+              "values": [8],
+              "workType": "classwork",
+              "workTypeRaw": "CLASS"
+            }
+          ]
+        },
+        {
+          "externalId": "L-112",
+          "date": "2025-09-16",
+          "slot": 1,
+          "startTime": "08:30",
+          "subjectExternalId": "phy",
+          "subjectName": "Физика",
+          "topic": "Механическое движение",
+          "homework": "§ 2",
+          "marks": [
+            {
+              "externalId": "M-13",
+              "date": "2025-09-16",
+              "subjectExternalId": "phy",
+              "subjectName": "Физика",
+              "lessonExternalId": "L-112",
+              "raw": "4",
+              "kind": "numeric",
+              "values": [4],
+              "workType": "quiz",
+              "workTypeRaw": "QUIZ",
+              "comment": "Пересдача во вторник"
+            }
+          ]
+        },
+        {
+          "externalId": "L-113",
+          "date": "2025-09-16",
+          "slot": 2,
+          "startTime": "09:25",
+          "subjectExternalId": "eng",
+          "subjectName": "Английский язык",
+          "topic": "Reported speech",
+          "homework": "SB p. 45 ex. 2",
+          "marks": []
+        },
+        {
+          "externalId": "L-114",
+          "date": "2025-09-18",
+          "slot": 1,
+          "startTime": "08:30",
+          "subjectExternalId": "rus",
+          "subjectName": "Русский язык",
+          "topic": "Действительные причастия",
+          "homework": "упр. 160",
+          "marks": [
+            {
+              "externalId": "M-14",
+              "date": "2025-09-18",
+              "subjectExternalId": "rus",
+              "subjectName": "Русский язык",
+              "lessonExternalId": "L-114",
+              "raw": "7",
+              "kind": "numeric",
+              "values": [7],
+              "workType": "dictation",
+              "workTypeRaw": "DICTATION"
+            }
+          ]
+        }
+      ],
+      "finalMarks": [
+        {
+          "subjectExternalId": "alg",
+          "subjectName": "Алгебра",
+          "termExternalId": "q1",
+          "raw": "7",
+          "value": 7,
+          "kind": "numeric",
+          "role": "final"
+        },
+        {
+          "subjectExternalId": "pe",
+          "subjectName": "Физическая культура",
+          "termExternalId": "q1",
+          "raw": "зач",
+          "value": null,
+          "kind": "pass",
+          "role": "final"
+        }
+      ]
+    },
+    "p-2": {
+      "calendar": {
+        "schoolYear": {
+          "externalId": "2025-2026",
+          "label": "2025/2026",
+          "start": "2025-09-01",
+          "end": "2026-05-31"
+        },
+        "terms": [
+          {
+            "externalId": "q1",
+            "kind": "quarter",
+            "index": 1,
+            "label": "1",
+            "start": "2025-09-01",
+            "end": "2025-10-25"
+          },
+          {
+            "externalId": "q2",
+            "kind": "quarter",
+            "index": 2,
+            "label": "2",
+            "start": "2025-11-03",
+            "end": "2025-12-24"
+          },
+          {
+            "externalId": "q3",
+            "kind": "quarter",
+            "index": 3,
+            "label": "3",
+            "start": "2026-01-12",
+            "end": "2026-03-21"
+          },
+          {
+            "externalId": "q4",
+            "kind": "quarter",
+            "index": 4,
+            "label": "4",
+            "start": "2026-03-30",
+            "end": "2026-05-31"
+          }
+        ],
+        "holidays": [
+          {
+            "from": "2025-10-26",
+            "to": "2025-11-02"
+          },
+          {
+            "from": "2025-12-25",
+            "to": "2026-01-11"
+          },
+          {
+            "from": "2026-03-22",
+            "to": "2026-03-29"
+          }
+        ],
+        "gradingScaleId": null
+      },
+      "subjects": [
+        {
+          "externalId": "lit1",
+          "name": "Обучение грамоте"
+        },
+        {
+          "externalId": "math1",
+          "name": "Математика"
+        }
+      ],
+      "lessons": [
+        {
+          "externalId": "L-201",
+          "date": "2025-09-08",
+          "slot": 1,
+          "startTime": "09:00",
+          "subjectExternalId": "lit1",
+          "subjectName": "Обучение грамоте",
+          "topic": "Буква М",
+          "homework": "Прописи с. 12",
+          "marks": []
+        },
+        {
+          "externalId": "L-202",
+          "date": "2025-09-08",
+          "slot": 2,
+          "startTime": "09:50",
+          "subjectExternalId": "math1",
+          "subjectName": "Математика",
+          "topic": "Число 5",
+          "marks": []
+        }
+      ],
+      "finalMarks": []
+    }
+  }
+}
