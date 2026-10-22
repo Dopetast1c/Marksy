@@ -10,7 +10,7 @@ import { createRunContext, fetchTransport, ProviderError } from '@marksy/core';
 import type { Transport } from '@marksy/core';
 import { dayRange, toISODate } from '../src/dates';
 import { byEschools, currentWeekRange, manifest } from '../src/index';
-import { countLeaks, endpointName, report, reportable, sanitisedRoute, sensitiveValues } from '../src/probe';
+import { endpointName, findLeaks, report, reportable, sanitisedRoute, sensitiveValues } from '../src/probe';
 import { sanitize } from '../src/sanitize';
 
 const root = fileURLToPath(new URL('../../..', import.meta.url));
@@ -100,7 +100,7 @@ async function main(): Promise<number> {
     sensitiveValues('url', { id: ids.map(decodeURIComponent) }, [], sensitive);
   }
   const sanitised = named.map((n) => ({ ...n, value: sanitize(n.name, n.raw) }));
-  const leaks = countLeaks([...sanitised.map((s) => s.value), sanitised.map((s) => s.route)], sensitive);
+  const leaks = findLeaks([...sanitised.map((s) => s.value), sanitised.map((s) => s.route)], sensitive);
 
   const rawKinds: Record<string, number> = {};
   const rawWorkTypes: Record<string, number> = {};
@@ -159,11 +159,12 @@ async function main(): Promise<number> {
   );
   console.log('');
   console.log(`Raw responses (this machine only, never commit): data/probe/${stamp}/`);
+  console.log('They contain real names and ids: delete the folder when you no longer need it (older runs too).');
 
-  if (leaks > 0) {
-    console.error(
-      `NOT written: ${leaks} id, name or text value(s) survived sanitize(). Fixtures were left as they were.`,
-    );
+  if (leaks.length > 0) {
+    // where each surviving value came from, never the value itself
+    console.error(`NOT written: values from these places survived sanitize(); fixtures were left as they were:`);
+    for (const from of leaks) console.error(`  ${from}`);
     return 1;
   }
   // replace the fixture set: old top-level fixtures go, denylist.json and the folders stay

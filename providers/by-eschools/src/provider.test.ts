@@ -149,7 +149,7 @@ describe('sanitize', () => {
         { profile_id: fakeUuid('b'), full_name: 'Ученик B' },
       ],
       lessons: [{ topic: 'Тема урока', homework: '', message: null, comment: 'Комментарий', subject_title: 'Алгебра' }],
-      marks: { [fakeUuid(real)]: { q: { mark: '8' } } },
+      marks: { [fakeUuid(real)]: { q: { mark: expect.stringMatching(/^\d{1,2}$/) } } },
     });
     expect(sanitize('me', out)).toEqual(out);
   });

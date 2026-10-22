@@ -9,7 +9,7 @@
         "fullName": "Ученик A",
         "schoolId": "00000000-0000-4000-8000-00000000b001",
         "classExternalId": "00000000-0000-4000-8000-00000000d001",
-        "className": "7Г",
+        "className": "7А",
         "grade": 7
       },
       {
@@ -17,7 +17,7 @@
         "fullName": "Ученик B",
         "schoolId": "00000000-0000-4000-8000-00000000b001",
         "classExternalId": "00000000-0000-4000-8000-00000000d002",
-        "className": "1Д",
+        "className": "1А",
         "grade": 1
       }
     ]
@@ -112,9 +112,9 @@
               "subjectExternalId": "00000000-0000-4000-8000-000000002001",
               "subjectName": "Алгебра",
               "lessonExternalId": "00000000-0000-4000-8000-000000004002",
-              "raw": "9",
+              "raw": "5",
               "kind": "numeric",
-              "values": [9],
+              "values": [5],
               "workType": "classwork",
               "workTypeRaw": "CLASSWORK",
               "authorExternalId": "00000000-0000-4000-8000-000000003001"
@@ -202,9 +202,9 @@
               "subjectExternalId": "00000000-0000-4000-8000-000000002001",
               "subjectName": "Алгебра",
               "lessonExternalId": "00000000-0000-4000-8000-000000004009",
-              "raw": "8",
+              "raw": "10",
               "kind": "numeric",
-              "values": [8],
+              "values": [10],
               "authorExternalId": "00000000-0000-4000-8000-000000003001"
             }
           ]
@@ -277,9 +277,9 @@
               "subjectExternalId": "00000000-0000-4000-8000-000000002001",
               "subjectName": "Алгебра",
               "lessonExternalId": "00000000-0000-4000-8000-000000004015",
-              "raw": "6",
+              "raw": "5",
               "kind": "numeric",
-              "values": [6],
+              "values": [5],
               "workType": "test",
               "workTypeRaw": "TEST",
               "authorExternalId": "00000000-0000-4000-8000-000000003001"
@@ -367,8 +367,8 @@
           "subjectExternalId": "00000000-0000-4000-8000-000000002001",
           "subjectName": "Алгебра",
           "termExternalId": "00000000-0000-4000-8000-00000000f001",
-          "raw": "8",
-          "value": 8,
+          "raw": "5",
+          "value": 5,
           "kind": "numeric",
           "role": "final"
         },
@@ -376,8 +376,8 @@
           "subjectExternalId": "00000000-0000-4000-8000-000000002002",
           "subjectName": "Русский язык",
           "termExternalId": "00000000-0000-4000-8000-00000000f001",
-          "raw": "7",
-          "value": 7,
+          "raw": "1",
+          "value": 1,
           "kind": "numeric",
           "role": "final"
         }

@@ -1,10 +1,10 @@
 import type { DriftEvent, FinalMark, Lesson } from '@marksy/core';
 import { FAKE_UUID_PREFIX, fakeUuid, keepsNumber, keepsString, PLACEHOLDERS } from './sanitize';
+import type { Place } from './sanitize';
 
 // The pieces of `pnpm probe` that do not touch the network or the disk, so they can be tested (docs/build-plan.md M2,
 // docs/api-spec.md 10). The probe prints only counts and checklist items: no names, marks, topics or ids.
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const D = '/api/v1/education/diary';
 
 /** The fixture name of a request: me, classes-1, lessons-2-w1, final-1 ... (students and weeks numbered in order). */
@@ -65,16 +65,22 @@ export function sanitisedRoute(method: string, url: URL): string {
   return `${method} ${path}${query ? `?${query}` : ''}`;
 }
 
+/** Sensitive values (lower case) and where each was found ("lessons-1-w2: days[].slots[].topic"), never the value. */
 export interface Sensitive {
-  /** Matched anywhere inside a kept string, lower case, 4 characters or more */
-  phrases: Set<string>;
-  /** Name parts and short values, matched as whole words, lower case */
-  words: Set<string>;
+  /** Matched anywhere inside a kept string, 4 characters or more */
+  phrases: Map<string, string>;
+  /** Name parts and short values, matched as whole words */
+  words: Map<string, string>;
   /** Numeric ids, matched as a whole value (a school number must not match inside a timestamp) */
-  numbers: Set<string>;
+  numbers: Map<string, string>;
 }
 
+export const emptySensitive = (): Sensitive => ({ phrases: new Map(), words: new Map(), numbers: new Map() });
+
 const NAME_KEY = /name|fio/i;
+const SCHEMA_KEY = /^[A-Za-z_][A-Za-z0-9_]{0,40}$/;
+const UUID_ANYWHERE = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
+const FAKE_ANYWHERE = /00000000-0000-4000-8000-[0-9a-f]{12}/g;
 const words = (s: string) =>
   s
     .toLowerCase()
@@ -82,61 +88,78 @@ const words = (s: string) =>
     .filter((w) => w.length >= 3);
 
 /**
- * Everything in a raw response that sanitize() does not keep: under any key, a string that is not allowed as it is,
- * a number that is not a timestamp or a counter, an id used as a key. Name parts become whole-word checks.
+ * Everything in a raw response that sanitize() does not keep, with the same rules (keepsString, keepsNumber at the
+ * same place): under any key, a string that is not allowed as it is, a number that is not a timestamp or a counter,
+ * an id or a word used as a key, any uuid inside a key or a string. Name parts become whole-word checks.
  */
 export function sensitiveValues(
   endpoint: string,
   raw: unknown,
   extra: readonly string[] = [],
-  into?: Sensitive,
+  into: Sensitive = emptySensitive(),
 ): Sensitive {
-  const out = into ?? { phrases: new Set<string>(), words: new Set<string>(), numbers: new Set<string>() };
-  const add = (s: string) => (s.length >= 4 ? out.phrases.add(s.toLowerCase()) : out.words.add(s.toLowerCase()));
-  for (const e of extra) if (e && e.length >= 3) add(e);
-  const walk = (v: unknown, key: string | null) => {
-    if (Array.isArray(v)) v.forEach((x) => walk(x, key));
+  const out = into;
+  const add = (s: string, from: string) => {
+    const v = s.toLowerCase();
+    if (v.length >= 4) out.phrases.set(v, from);
+    else out.words.set(v, from);
+  };
+  for (const e of extra) if (e && e.length >= 3) add(e, `${endpoint}: credentials`);
+  const walk = (v: unknown, place: Place, path: string) => {
+    const from = `${endpoint}: ${path || '$'}`;
+    if (Array.isArray(v)) v.forEach((x) => walk(x, place, `${path}[]`));
     else if (v && typeof v === 'object') {
       for (const [k, x] of Object.entries(v)) {
-        if (UUID.test(k) && !k.startsWith(FAKE_UUID_PREFIX)) add(k);
-        if (/^\d{3,}$/.test(k)) out.numbers.add(k);
-        walk(x, k);
+        for (const id of k.match(UUID_ANYWHERE) ?? []) if (!id.startsWith(FAKE_UUID_PREFIX)) add(id, from);
+        if (/^\d{3,}$/.test(k)) out.numbers.set(k, from);
+        else if (!SCHEMA_KEY.test(k.replace(UUID_ANYWHERE, 'id'))) add(k, from);
+        walk(x, { ...place, key: k, container: place.key, depth: place.depth + 1 }, path ? `${path}.${k}` : k);
       }
     } else if (typeof v === 'number') {
-      if (!keepsNumber(key) && Math.abs(v) >= 100) out.numbers.add(String(v));
+      if (!keepsNumber(place) && Math.abs(v) >= 100) out.numbers.set(String(v), from);
     } else if (typeof v === 'string') {
       const s = v.trim();
-      if (s.length < 3 || s.startsWith(FAKE_UUID_PREFIX) || PLACEHOLDERS.has(s) || keepsString(endpoint, key, v))
-        return;
-      if (/^\d+$/.test(s)) out.numbers.add(s);
-      else add(s);
-      if (key !== null && NAME_KEY.test(key)) for (const w of words(s)) out.words.add(w);
+      for (const id of s.match(UUID_ANYWHERE) ?? []) if (!id.startsWith(FAKE_UUID_PREFIX)) add(id, from);
+      if (s.length < 3 || s.startsWith(FAKE_UUID_PREFIX) || PLACEHOLDERS.has(s) || keepsString(place, v)) return;
+      if (/^\d+$/.test(s)) out.numbers.set(s, from);
+      else add(s, from);
+      if (place.key !== null && NAME_KEY.test(place.key)) for (const w of words(s)) out.words.set(w, from);
     }
   };
-  walk(raw, null);
+  walk(raw, { endpoint, key: null, container: null, depth: 0 }, '');
   return out;
 }
 
-/** How many sensitive values survived, over all fixtures and route keys. The values themselves are never printed. */
-export function countLeaks(sanitised: readonly unknown[], sensitive: Sensitive): number {
+/**
+ * Which sensitive values survived, over all fixtures and route keys: the places they came from, never the values.
+ * Fake uuids are taken out of the output first, so their digit groups cannot look like a number from the response.
+ */
+export function findLeaks(sanitised: readonly unknown[], sensitive: Sensitive): string[] {
   const leaves: string[] = [];
   const walk = (v: unknown) => {
     if (Array.isArray(v)) v.forEach(walk);
     else if (v && typeof v === 'object') {
       for (const [k, x] of Object.entries(v)) {
-        leaves.push(k.toLowerCase());
+        leaves.push(k.toLowerCase().replace(FAKE_ANYWHERE, ' '));
         walk(x);
       }
-    } else if (typeof v === 'string' || typeof v === 'number') leaves.push(String(v).toLowerCase());
+    } else if (typeof v === 'string' || typeof v === 'number') {
+      leaves.push(String(v).toLowerCase().replace(FAKE_ANYWHERE, ' '));
+    }
   };
   sanitised.forEach(walk);
   const leafWords = new Set(leaves.flatMap((l) => l.split(/[^\p{L}\d]+/u)));
   const leafSet = new Set(leaves);
-  let n = 0;
-  for (const p of sensitive.phrases) if (leaves.some((l) => l.includes(p))) n++;
-  for (const w of sensitive.words) if (leafWords.has(w)) n++;
-  for (const x of sensitive.numbers) if (leafSet.has(x) || leafWords.has(x)) n++;
-  return n;
+  const found = new Set<string>();
+  for (const [p, from] of sensitive.phrases) if (leaves.some((l) => l.includes(p))) found.add(from);
+  for (const [w, from] of sensitive.words) if (leafWords.has(w)) found.add(from);
+  for (const [x, from] of sensitive.numbers) if (leafSet.has(x) || leafWords.has(x)) found.add(from);
+  return [...found].sort();
+}
+
+/** How many places leaked (see findLeaks). */
+export function countLeaks(sanitised: readonly unknown[], sensitive: Sensitive): number {
+  return findLeaks(sanitised, sensitive).length;
 }
 
 /** An enum value as the report may show it: UPPER_SNAKE or "null", anything else is counted as "other". */

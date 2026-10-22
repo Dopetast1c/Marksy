@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { countLeaks, endpointName, report, reportable, sanitisedRoute, sensitiveValues } from './probe';
+import { countLeaks, endpointName, findLeaks, report, reportable, sanitisedRoute, sensitiveValues } from './probe';
 import { createSanitizer, fakeUuid, sanitize } from './sanitize';
 import type { ProbeFacts } from './probe';
 
@@ -61,7 +61,7 @@ describe('sanitize is an allow-list', () => {
             number: 2,
             substitution: { teacher_id: fakeUuid(S1), teacher_fio: '[text]', short_name: '[text]' },
             homework: { text: '[text]' },
-            school: { id: 0, number: 141, name: '[text]' },
+            school: { id: 0, number: 0, name: '[text]' },
           },
         ],
       },
@@ -93,13 +93,13 @@ describe('leak check', () => {
       school: { id: 4711 },
     };
     const sensitive = sensitiveValues('me', raw, ['my-login', 'pw']);
-    expect(sensitive.phrases).toContain('фамилия имя отчество');
-    expect(sensitive.phrases).toContain(S1);
-    expect(sensitive.phrases).toContain(W1);
-    expect(sensitive.phrases).toContain('my-login');
-    expect(sensitive.phrases).not.toContain('алгебра');
-    expect(sensitive.words).toContain('тестовый');
-    expect(sensitive.numbers).toContain('4711');
+    expect([...sensitive.phrases.keys()]).toContain('фамилия имя отчество');
+    expect([...sensitive.phrases.keys()]).toContain(S1);
+    expect([...sensitive.phrases.keys()]).toContain(W1);
+    expect([...sensitive.phrases.keys()]).toContain('my-login');
+    expect([...sensitive.phrases.keys()]).not.toContain('алгебра');
+    expect([...sensitive.words.keys()]).toContain('тестовый');
+    expect([...sensitive.numbers.keys()]).toContain('4711');
     expect(countLeaks([sanitize('me', raw)], sensitive)).toBe(0);
     expect(countLeaks([raw], sensitive)).toBeGreaterThan(5);
   });
@@ -113,6 +113,49 @@ describe('leak check', () => {
     const sensitive = sensitiveValues('url', { id: ['4711', S1] });
     expect(countLeaks([['GET /schools/4711/classes']], sensitive)).toBe(1);
     expect(countLeaks([{ date: 1791747110000 }], sensitive)).toBe(0);
+  });
+});
+
+describe('second review: places, real values, keys', () => {
+  it('a subject name is kept only on the subjects list itself, and never when it looks like a person', () => {
+    const out = sanitize('subjects-1', [
+      { uuid: S1, name: 'Математика', teacher: { uuid: W1, name: 'Иванова Мария Петровна' } },
+      { uuid: W1, name: 'Факультатив (Сидоренко О.И.)' },
+    ]);
+    expect(out).toEqual([
+      { uuid: fakeUuid(S1), name: 'Математика', teacher: { uuid: fakeUuid(W1), name: '[text]' } },
+      { uuid: fakeUuid(W1), name: '[text]' },
+    ]);
+    expect(sanitize('lessons', [{ slots: [{ subject_title: 'Сидоренко Ольга Ивановна' }] }])).toEqual([
+      { slots: [{ subject_title: '[text]' }] },
+    ]);
+  });
+
+  it('marks keep their form but not their value, the class letter becomes А, both stay stable', () => {
+    const raw = [{ slots: [{ lesson_mark: { uuid: S1, mark: '7/9', kind: 'DOUBLE' } }] }];
+    const once = sanitize('lessons-1-w1', raw) as [{ slots: [{ lesson_mark: { mark: string } }] }];
+    expect(once[0].slots[0].lesson_mark.mark).toMatch(/^\d{1,2}\/\d{1,2}$/);
+    expect(sanitize('lessons-1-w1', once)).toEqual(once);
+    expect(sanitize('classes-1', [{ uuid: S1, label: 'Г', class_number: '7Г', level: 7 }])).toEqual([
+      { uuid: fakeUuid(S1), label: 'А', class_number: '7А', level: 7 },
+    ]);
+  });
+
+  it('fakes uuids inside keys and any key that is not a schema word; top-level strings are text', () => {
+    const out = sanitize('final-1', { marks: { [`${S1}_FIRST_QUARTER`]: {}, 'Иванов Иван': {} } }) as {
+      marks: Record<string, unknown>;
+    };
+    expect(Object.keys(out.marks).every((k) => k.startsWith('00000000-0000-4000-8000-'))).toBe(true);
+    expect(sanitize('x', ['Иванов Иван Иванович'])).toEqual(['[text]']);
+  });
+
+  it('a leak names its source, never its value; fake uuid digits are not numbers from the response', () => {
+    const sensitive = sensitiveValues('lessons-1-w1', [{ slots: [{ substitution: { fio: 'Сосновая Ирина' } }] }]);
+    expect(findLeaks([{ subject_title: 'Сосновая' }], sensitive)).toEqual([
+      'lessons-1-w1: [].slots[].substitution.fio',
+    ]);
+    const numbers = sensitiveValues('me', { code: 4000 });
+    expect(findLeaks([{ id: fakeUuid('a') }], numbers)).toEqual([]);
   });
 });
 

@@ -171,7 +171,8 @@ export const byEschools: DiaryProvider = {
     try {
       raw = res.json();
     } catch {
-      raw = null;
+      // an HTML page from a proxy or a maintenance screen is an outage, not a verdict on the password
+      throw new ProviderUnavailableError('login: the answer is not JSON', res.status);
     }
     const check = driftChecker(ctx.drift, 'login');
     check.shape(loginResponse, raw);
