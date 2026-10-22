@@ -19,3 +19,4 @@ export * from './grading/scales';
 export * from './marks/dates';
 export * from './marks/periods';
 export * from './marks/stats';
+export * from './guidance/guidance';
