@@ -22,7 +22,8 @@ Provider ids are `<country-iso2>-<system>` in lower case: `by-eschools`, `ru-dne
 ```
 packages/
   core/                 canonical types, DiaryProvider interface, grading scales, marks math,
-                        guidance rules, shared HTTP client, conformance tests
+                        guidance rules, shared HTTP client, conformance suite (@marksy/core/conformance)
+  registry/             the list of providers: the only package that imports providers/*
 providers/
   _template/            copy this to start a provider (compiles, fails conformance until filled in)
   demo-minimal/         fixture-only provider with the thinnest capability set; what CI and the UI snapshots run against
@@ -39,7 +40,7 @@ web/                    the PWA; reads the grading scale and provider name from 
 docs/                   product docs (this file, design.md, api-spec.md, tokens.json, mockups.html)
 ```
 
-`packages/core/src/providers/registry.ts` imports every provider under `providers/` and exposes `getProvider(id)` and `listProviders()`. A provider becomes available to users as soon as it is in the registry and its manifest `status` is `stable` or `beta`.
+`packages/registry` (`@marksy/registry`) imports every provider under `providers/` and exposes `getProvider(id)` and `listProviders()`, built with `createRegistry()` from `packages/core/src/providers/registry.ts`. Core holds only the registry logic and never imports a provider, because every provider depends on core. A provider becomes available to users as soon as it is in the registry and its manifest `status` is `stable` or `beta`; `experimental` ones (such as `demo-minimal`) are reachable by id for tests but not offered.
 
 ## 3. Manifest (`provider.json`)
 
@@ -64,7 +65,8 @@ docs/                   product docs (this file, design.md, api-spec.md, tokens.
     "fields": [
       { "key": "login", "label": { "ru": "Логин", "en": "Login" }, "type": "text" },
       { "key": "password", "label": { "ru": "Пароль", "en": "Password" }, "type": "password" }
-    ]
+    ],
+    "loginRequest": "POST /auth/login/*"   // the allow-list entry of the login call: every matching request is a login for the client (never retried, one per run), whatever the provider code says; null for token auth without a call
   },
   "gradingScale": "by-10",              // id from packages/core/src/grading/scales.ts, or inline object
   "capabilities": {                     // what the system can give; the UI adapts to every false (section 12)
@@ -90,6 +92,7 @@ docs/                   product docs (this file, design.md, api-spec.md, tokens.
     "exams": false                        // named exams (midterm, final, mock) as assessment events (CN, JP, KR)
   },
   "network": {
+    "baseUrl": "https://…",             // origin of the system's API; ctx.http takes paths only and refuses every other host. The offline check (design.md 10.4) probes this host
     "regionHint": "BY",                 // the collector must run from this country; null if any
     "notes": "503 or hanging connections usually mean a VPN is in the path"
   },
@@ -107,7 +110,7 @@ docs/                   product docs (this file, design.md, api-spec.md, tokens.
 }
 ```
 
-The server enforces `limits`, `network.regionHint` (as a warning in Sync, since it cannot know the IP's country for sure) and `readOnlyAllowList` in the shared HTTP client. A provider cannot loosen them from code.
+The server enforces `limits`, `network.regionHint` (as a warning in Sync, since it cannot know the IP's country for sure) and `readOnlyAllowList` in the shared HTTP client. A provider cannot loosen them from code. The manifest schema itself keeps the list read-only: entries are `GET`, `HEAD` or `POST`, and `POST` only for `auth.loginRequest`; `PUT`, `PATCH` and `DELETE` cannot be listed. `network.baseUrl` must be a plain `https` origin without credentials or a path. The client refuses any path the server could read differently from the allow-list: encoded `/`, `\` or `.` (`%2F`, `%5C`, `%2E`), `.` and `..` segments, empty segments and broken escapes.
 
 Providers do not schedule anything and do not handle outages. The core planner (`design.md` 10.4) decides which `fetchUnit`s to ask for, records coverage and failures, pauses after repeated provider errors and catches up after the home server was off. A provider's job on failure is only to throw a typed error: `ProviderAuthError` (wrong credentials), `ProviderBlockedError`, `ProviderNeeds2FAError`, `ProviderUnavailableError` (5xx, 429, timeout) or let a network error propagate; the core maps these to the failure classes. Mapping an HTTP status or an error body to one of these classes is the one piece of outage knowledge that lives in the provider, because error shapes differ per system.
 
@@ -187,6 +190,7 @@ export interface Calendar {
   schoolYear: { externalId: string; label: string; start: ISODate; end: ISODate };
   terms: Term[];                                   // ordered
   holidays?: DateRange[];
+  gradingScaleId?: string | null;                  // this student's scale this year; null = no marks this year (5.3); absent = manifest default
 }
 export interface Term { externalId: string; kind: 'quarter' | 'trimester' | 'semester' | 'other'; index: number; label: string; start: ISODate; end: ISODate }
 // terms may be empty for systems with continuous assessment; the UI then has no term views and no term goal
@@ -277,7 +281,7 @@ export type BandRole = 'critical' | 'low' | 'good' | 'top';   // fixed roles; co
 export interface GradingScale {
   id: string;                         // 'by-10', 'ru-5', 'ua-12', 'de-1-6', 'cz-1-5', 'fr-20', 'us-letter', 'pct-100', 'pass-fail'
   nameKey: string;                    // i18n key, e.g. 'scale.by-10.name' (docs/i18n.md)
-  kind: 'numeric' | 'letter' | 'ordinal' | 'percent' | 'points' | 'pass-fail' | 'none';
+  kind: 'numeric' | 'letter' | 'ordinal' | 'percent' | 'points' | 'pass-fail';   // a year without marks has no scale at all (5.3)
   // 'ordinal': descriptor levels with an order but no arithmetic ("Working towards / Expected / Greater depth", 성취도 A–E,
   // 観点別 A/B/C). Averages are shown as the most common level or hidden (averaging.method = 'mode' | 'none').
 
@@ -289,9 +293,10 @@ export interface GradingScale {
   letters?: { label: string; value: number; fromPercent?: number }[];  // us-letter: A+ 4.3, A 4.0, A- 3.7 ... F 0; fromPercent maps percent cut-offs (A from 90) for percent-and-letter systems
   modifiers?: { plus: number; minus: number };   // Poland: 4+ = 4.5, 5- = 4.75 by default; schools configure it, the provider applies the school's value
 
-  // Four quality bands over the value space, each a closed range in scale values.
-  // A band may be empty (ru-5 has no room for four distinct ranges and uses critical 1-2, low 3, good 4, top 5).
-  bands: Record<BandRole, { from: number; to: number; labelKey: string }>;   // labelKey is an i18n key
+  // Four quality bands over the value space, each a closed range in scale values (from <= to, whatever the direction).
+  // A band may be empty: null (gb-primary has no low band). An average between two bands belongs to the worse one
+  // until it reaches the better band's edge: on by-10, 6.5 is low and 8.5 is good.
+  bands: Record<BandRole, { from: number; to: number; labelKey: string } | null>;   // labelKey is an i18n key
 
   // "Worse than X" quick filters and notification thresholds, in scale values, ordered from strictest.
   // by-10: [5, 7] ("ниже 5", "ниже 7"). de-1-6 (lower is better): [4, 3] ("хуже 4", "хуже 3").
@@ -312,28 +317,34 @@ export interface GradingScale {
 
   // Distribution chart buckets: 'each-value' for small integer scales, or a fixed bucket width.
   distribution: { mode: 'each-value' } | { mode: 'buckets'; width: number };
-
-  format: {
-    value(v: number): string;                    // "8", "A-", "17.5", "87%"
-    average(a: number): string;                  // "8.3", "3.67", "87.4%"
-    final(v: number): string;                    // "8", "B+", "2"
-  };
 }
 ```
 
-Helpers in `packages/core/src/grading/scale.ts` wrap the object so nothing else has to think about direction:
+A scale is plain data, so the API sends it to the web app as JSON (`useScale(studentId)`) and the same object is validated with Zod (`gradingScale` in `packages/core/src/grading/types.ts`). Formatting is not part of the object: `formatValue(scale, v, locale)`, `formatAverage(scale, a, locale)`, `formatFinal(scale, v, locale)` and `formatBandRange(scale, role, locale)` in `grading/format.ts` go through `Intl`, so 8.3 reads "8,3" in Russian and "8.3" in English, and `null` is "—". The web app imports the same helpers from `@marksy/core`.
+
+Helpers in `packages/core/src/grading/` wrap the object so nothing else has to think about direction:
 
 ```ts
-bandOf(scale, value): BandRole | null           // which band a value falls in
+bandOf(scale, value): BandRole | null           // which band a value (a mark or an average) falls in
+markBand(scale, values[]): BandRole | null      // a chip's band: the band of its worst value ("7/9" is coloured by the 7)
 compare(scale, a, b): -1 | 0 | 1                // 1 when a is better than b, respecting higherIsBetter
 isWorseThan(scale, value, threshold): boolean   // for filters and notification rules
 toQuality(scale, value): number                 // 0..1, best = 1; used to compare across different scales
-average(scale, marks): number | null            // arithmetic, weighted or GPA per scale.averaging
-projectFinal(scale, average): number | null     // per finalRule; null for 'teacher-decides' and 'unknown'
+scaleUnit(scale): number                        // one by-10 point scaled to the range: (max - min) / 9
+trendTolerance(scale): number                   // 0.3 × scaleUnit: 0.3 on by-10
+average(scale, marks): number | null            // arithmetic, weighted, GPA or mode per scale.averaging, rounded to its decimals
+projectFinal(scale, average): number | null     // per finalRule, half rounds toward the better mark; null for 'teacher-decides' and 'unknown'
+neededAverage(scale, final): number | null      // the average that still gives `final` (7.5 for an 8); null when finalRule cannot be inverted
+targetPlan(scale, sum, count, need)             // the fewest marks of each value that reach `need`, best first ("2 × 9 или 1 × 10")
+keepMark(scale, need, sum, count)               // the worst next mark that keeps `need`
+marksNeeded(scale, sum, count, targetFinal)     // the goal card: projected, need, reached, plan, keep; null when the goal card is hidden
 estimateYear(scale, termFinals[], marks[]): number | null   // per yearRule; the decimal shown in the Год cell until the year final is posted
-marksNeeded(scale, sum, count, targetFinal)     // the goal calculator, inverse of projectFinal
-boundaryLines(scale): number[]                  // sparkline reference lines: critical/low edge and good/top edge
+boundaryLines(scale): number[]                  // sparkline reference lines: the edge into the low band and the edge into the top band
+distributionBuckets(scale)                      // columns of the distribution chart
+defaultFamilyRules(scale), isLowMark(scale, v, rules)   // the family's "what is low" (design.md 6.4), defaults from the scale
 ```
+
+When `finalRule` is `teacher-decides` or `unknown`, `neededAverage` and `marksNeeded` return `null` and the goal card is hidden; nothing changes for `by-10`.
 
 ### 5.2 Built-in scales
 
@@ -365,7 +376,7 @@ boundaryLines(scale): number[]                  // sparkline reference lines: cr
 | `us-standards-1-4` | ordinal | 1 Beginning / 2 Developing / 3 Proficient / 4 Advanced, per standard | ordered | 1 → critical, 2 → low, 3 → good, 4 → top | none | 3, 4 | mode |
 | `ua-12` (listed above) | numeric | 1–12, levels початковий / середній / достатній / високий | higher | 1–3 / 4–6 / 7–9 / 10–12 | 4, 7 | 7, 9, 10 | semester from thematic marks, teacher decides |
 
-Bands for scales other than `by-10` are starting points taken from each country's official descriptors; the maintainer of the first provider on a scale confirms or adjusts them.
+Bands for scales other than `by-10` are starting points taken from each country's official descriptors; the maintainer of the first provider on a scale confirms or adjusts them. Implemented today: `by-10`, `ru-5`, `ua-12`, `de-1-6` (the direction test) and `pct-100` (used by `demo-minimal`); the other rows are specifications that become files when their first provider arrives.
 
 ### 5.3 Where the scale is attached
 
@@ -373,7 +384,7 @@ Bands for scales other than `by-10` are starting points taken from each country'
 - `student_years.grading_scale_id` records the scale per student per school year, filled from the provider at sync. A school that switches systems, or a child who changes schools, keeps correct history.
 - `Mark.scaleId` is an optional override for a single mark when a system mixes scales within one student (a pass/fail subject inside a numeric school, points-based assignments next to letter grades). The provider's mapper sets it; the mapper is also where raw strings like `"7/9"`, `"A-"`, `"17/20"` or `"зач."` are parsed into `kind`, `values` and `weight`, because only the provider knows the notation.
 - Comparing across years with different scales (section 6.1 of `design.md`) is done on `toQuality()` and the UI marks the row with "другая шкала" so nobody reads 4.0 (GPA) next to 8.3 (by-10) as a drop.
-- Grades without marks (Belarusian grades 1 and 2, narrative-assessment schools) use `kind: 'none'` on the student year: the UI hides averages and bands and leads with the schedule and homework, exactly as the first-grader screen in the prototype does.
+- Years without marks (Belarusian grades 1 and 2, narrative-assessment schools) have **no scale**: the provider returns `Calendar.gradingScaleId = null` for that student and year, it is stored as `student_years.grading_scale_id = null`, and `studentYearScale()` returns `null`. The no-marks mode of Главная, Предметы and Предмет is switched by this alone, never by a grade number, since the age at which marks start differs per country; knowing that a Belarusian first grader gets no marks is the provider's job. The UI hides averages and bands and leads with the schedule and homework, exactly as the first-grader screen in the prototype does.
 
 ### 5.4 What the scale drives in the UI
 
@@ -386,7 +397,7 @@ Every scale-dependent element, how it is derived, and what `by-10` yields (which
 | Overview distribution card | one column per band role with `bands[role].label`, plus absences | 1–4, 5–6, 7–8, 9–10 |
 | Feed filter chips | one chip per `thresholds` entry, label "ниже X" or "хуже X" by direction | Ниже 5, Ниже 7 |
 | Notification rule "below" | `isWorseThan(scale, value, threshold)` with the same thresholds | ниже 5 default on, ниже 7 off |
-| Trend arrow | `compare(scale, current, previous)` with a 0.3-step tolerance scaled to the range (`0.03 × (max - min)`) | 0.3 as today |
+| Trend arrow | `compare(scale, current, previous)` with `trendTolerance(scale)`, 0.3 of a by-10 point scaled to the range (`0.3 × (max - min) / 9`) | 0.3 as today |
 | Subject distribution chart | `distribution.mode` | ten bars, one per value |
 | Sparkline reference lines | `boundaryLines(scale)` | dashed lines at 5 and 9 |
 | Quarter goal picker | `goalTargets`, `format.final` | итог 7 / 8 / 9 |
@@ -428,17 +439,18 @@ If your system publishes a rate limit or terms of use, put them in the manifest 
 
 ## 8. Fixtures and the conformance test
 
-Each provider ships `fixtures/` with one sanitised raw response per endpoint and a `fixtures/expected/` folder with the canonical objects the mapper must produce from them. `sanitize()` is what produces them from real responses; the probe script (`pnpm probe --provider <id>`) calls every endpoint once, runs `sanitize()`, writes the fixtures and prints what still needs a real sample.
+Each provider ships `fixtures/` with one sanitised raw response per endpoint (`<name>.json`), `fixtures/denylist.json`, and `fixtures/expected/canonical.json` with the canonical objects the provider must produce from them. `sanitize()` is what produces the fixtures from real responses; the probe script (`pnpm probe --provider <id>`) calls every endpoint once, runs `sanitize()`, writes the fixtures and prints what still needs a real sample.
 
-The shared conformance test (`pnpm test:provider <id>`) checks that:
+The suite lives in `@marksy/core/conformance`. A provider calls it from its own test file with its provider object, its fixtures folder and a route table (`"GET /api/children/*/grades": "grades"`, first match wins), and `pnpm test:provider <id>` runs it. The fixtures are served through the real throttled client with a fixture transport, so the allow-list, the single login and the request budget are exercised exactly as in a collector run. It checks that:
 
 - the manifest validates against the schema and the grading scale resolves;
-- every method returns objects that pass the canonical Zod schemas;
-- ids are stable: mapping the same fixture twice gives the same `externalId`s;
-- marks parse: every `raw` with numeric content yields `values` within the scale;
-- `sanitize()` leaves no personal names, ids or free-text comments from the fixtures (checked with a denylist you provide in `fixtures/denylist.json`);
-- no request is made outside `readOnlyAllowList`;
-- the mapper tolerates unknown fields (fixtures are mutated with extra keys and must still parse).
+- every method the capabilities promise exists (`lessons` needs `getLessons`, `marksPerLesson: 'none'` needs `getMarks`, and so on);
+- every method returns objects that pass the canonical Zod schemas, every request matched `readOnlyAllowList`, and a full read made exactly one request to `auth.loginRequest`;
+- ids are stable and unique per student and kind: mapping the same fixtures twice gives the same `externalId`s;
+- marks parse: every numeric mark has `values` within the student's scale, every other kind has none, and a year without marks has no numeric marks;
+- the provider tolerates unknown fields (every object in every fixture gets an extra key and the canonical output must not change);
+- sanitising works: no fixture contains a string or matches a pattern in `fixtures/denylist.json` (`{"strings": [...], "patterns": [...]}`, for example e-mail addresses and long ids), `sanitize()` leaves an already sanitised fixture unchanged, at least one fictional unsanitised sample exists in `fixtures/unsanitised/` and contains denylisted values, and `sanitize()` removes every one of them (not `fixtures/raw/`: `raw/` is gitignored because it holds real responses on the maintainer's machine). `fixtures/expected/canonical.json` is scanned against the denylist too;
+- the output equals `fixtures/expected/canonical.json`. `MARKSY_UPDATE_EXPECTED=1 pnpm test:provider <id>` rewrites that file, and refuses to while any fixture or the output carries something on the denylist; review the diff before committing it.
 
 ## 9. How to add a provider, step by step
 
@@ -448,7 +460,7 @@ The shared conformance test (`pnpm test:provider <id>`) checks that:
 4. Write Zod schemas with `.passthrough()` in `schemas.ts`, the mapper in `map.ts`, and the interface in `index.ts` using only `ctx.http`.
 5. Implement `sanitize()` and run `pnpm probe --provider <id>` against your own account. Commit the sanitised fixtures only. Check them twice for names.
 6. Run `pnpm test:provider <id>` until it is green.
-7. Set `"status": "beta"`, add yourself to `maintainers`, open a pull request. The PR template asks for the README, fixtures, and a short note on the system's terms of use.
+7. Add the provider to `packages/registry/src/index.ts`, set `"status": "beta"`, add yourself to `maintainers`, open a pull request. The PR template asks for the README, fixtures, and a short note on the system's terms of use.
 8. After a few families used it for a term without drift events, `status` becomes `stable`.
 
 Everything in the UI works at once: averages, bands, filters, goals, guidance, schedule, notifications and family. If something in your system does not map, say so in the README (`capabilities` with `false` make the UI hide the feature gracefully).
@@ -557,7 +569,7 @@ What this changes in the interface, all behind capabilities: a mark chip can car
 | Скоригована semester mark after an appeal or retake | `FinalMark.role = 'adjusted'` |
 | Semesters I and II, year | `Term.kind = 'semester'` |
 | "н" in the mark cell, "зарах." / "не зарах.", "звільнений" | derived attendance, pass / fail, exempt (as in Belarus) |
-| Formative verbal assessment in grades 1 to 4 (НУШ) with levels | `student_years.grading_scale_id = none` or an ordinal scale, per school |
+| Formative verbal assessment in grades 1 to 4 (НУШ) with levels | `student_years.grading_scale_id = null` (no marks) or an ordinal scale, per school |
 | Distance-learning links and files on lessons | `hasAttachments`, attachments capability |
 
 The three countries also share two things the first model lacked and now has: **multi-tenant providers** (one vendor, many schools or districts, chosen at connect time) and **status-bearing marks** (missing, excused, proposed), which the feed shows as their own chip styles and which never silently enter an average.

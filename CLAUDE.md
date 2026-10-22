@@ -32,8 +32,11 @@ Read these before any work, in this order:
 
 ```
 packages/core/          canonical types, DiaryProvider interface, grading scales, marks math,
-                        guidance rules, throttled HTTP client, provider conformance tests
+                        guidance rules, throttled HTTP client, provider conformance suite (@marksy/core/conformance)
+packages/i18n/          interface languages, en.json (source) and ru.json, t() with plurals, i18n:check
+packages/registry/      the list of providers; the only package that imports providers/*
 providers/_template/    starting point for a new provider
+providers/demo-minimal/ fictional fixture-only provider with the thinnest capability set
 providers/by-eschools/  Belarus, diary.e-schools.by: manifest, schemas, mapper, sanitize, fixtures
 server/                 Express API + collector + Drizzle schema and migrations
 web/                    PWA frontend
@@ -49,7 +52,7 @@ docker-compose.yml      postgres:16
 - Lesson types, work types, comments, attendance, terms, final marks, homework, topics, future timetable: all optional. Components check `useCapabilities(studentId)` and hide or adapt (the table in `docs/providers.md` section 10); nothing assumes a concept exists because e-schools has it. Absences are attendance records, never marks.
 - Thresholds are family rules, not constants: what sends a notification, what counts as a low mark or a drop, how far ahead to warn. What a poem or a test is comes from the family's tags (`docs/design.md` 6.3), never from code or from the provider's lesson type alone: "is this a test" is "does the lesson carry the tag Контрольная". Tags never notify; notification rules reference tags and own the timing (`docs/design.md` 11). The word in copy is "тег", in code `LessonTag`. Defaults come from the scale; the value is stored per user or family and edited in the app (`docs/design.md` 6.4). Term words ("четверть") come from `Term.kind` via i18n keys, never typed into a component.
 - Calendar conventions (first day of the week, weekend, school days) and name order come from the provider manifest or the locale, never from code. `getDay() === 0` style checks are a bug.
-- Advice is optional: everything produced by `lib/guidance.ts` and the goal cards must disappear cleanly when `settings.guidance` is off; facts never depend on it.
+- Advice is optional: everything produced by guidance (`packages/core/src/guidance`) and the goal cards must disappear cleanly when `settings.guidance` is off; facts never depend on it.
 - `providers/demo-minimal` is the thinnest provider and runs in CI next to `by-eschools`; a change that breaks either is not done.
 - The UI reads the grading scale from the API (`useScale(studentId)`). No hard-coded 10, no hard-coded band ranges, thresholds, goal targets, rounding or decimals outside `packages/core/src/grading`. The `by-10` snapshot test (`docs/providers.md` 5.4) must keep passing: the Belarusian interface does not change when the model grows.
 - A new provider is a new folder plus a registry entry; it must pass `pnpm test:provider <id>` before it is listed with status `beta`.
@@ -91,6 +94,8 @@ pnpm dev:lan            the same, with the PWA open to the home network for test
 pnpm check              typecheck, lint, tests, privacy check: must be green before every commit
 pnpm format             Prettier over the workspace
 pnpm --filter @marksy/server test    one package
+pnpm test:provider <id> the shared conformance suite for one provider (demo-minimal, by-eschools)
+pnpm i18n:check         every key, plural form and placeholder in every language file
 pnpm privacy            scripts/privacy-check.mjs: secrets, forbidden files, personal data, provider names outside the provider
 ```
 

@@ -1,0 +1,151 @@
+{
+  "account": {
+    "externalUserId": "u-1",
+    "displayName": "Parent",
+    "role": "parent",
+    "students": [
+      {
+        "externalId": "c-1",
+        "fullName": "Student A Example",
+        "givenName": "Student A",
+        "familyName": "Example",
+        "gradeLabel": "Year 5"
+      },
+      {
+        "externalId": "c-2",
+        "fullName": "Student B Example",
+        "givenName": "Student B",
+        "familyName": "Example",
+        "gradeLabel": "Year 1"
+      }
+    ]
+  },
+  "students": {
+    "c-1": {
+      "calendar": {
+        "schoolYear": {
+          "externalId": "y-2026",
+          "label": "2026/27",
+          "start": "2026-08-30",
+          "end": "2027-06-20"
+        },
+        "terms": []
+      },
+      "subjects": [
+        {
+          "externalId": "math",
+          "name": "Mathematics"
+        },
+        {
+          "externalId": "sci",
+          "name": "Science"
+        },
+        {
+          "externalId": "eng",
+          "name": "English"
+        },
+        {
+          "externalId": "art",
+          "name": "Art"
+        }
+      ],
+      "marks": [
+        {
+          "externalId": "g-1",
+          "date": "2026-09-08",
+          "subjectExternalId": "math",
+          "subjectName": "Mathematics",
+          "raw": "82",
+          "kind": "numeric",
+          "values": [82]
+        },
+        {
+          "externalId": "g-2",
+          "date": "2026-09-22",
+          "subjectExternalId": "math",
+          "subjectName": "Mathematics",
+          "raw": "74",
+          "kind": "numeric",
+          "values": [74]
+        },
+        {
+          "externalId": "g-3",
+          "date": "2026-10-06",
+          "subjectExternalId": "math",
+          "subjectName": "Mathematics",
+          "raw": "45",
+          "kind": "numeric",
+          "values": [45]
+        },
+        {
+          "externalId": "g-4",
+          "date": "2026-09-15",
+          "subjectExternalId": "sci",
+          "subjectName": "Science",
+          "raw": "91",
+          "kind": "numeric",
+          "values": [91]
+        },
+        {
+          "externalId": "g-5",
+          "date": "2026-10-07",
+          "subjectExternalId": "sci",
+          "subjectName": "Science",
+          "raw": "excused",
+          "kind": "exempt",
+          "values": [],
+          "status": "excused"
+        },
+        {
+          "externalId": "g-6",
+          "date": "2026-09-29",
+          "subjectExternalId": "eng",
+          "subjectName": "English",
+          "raw": "67",
+          "kind": "numeric",
+          "values": [67]
+        },
+        {
+          "externalId": "g-7",
+          "date": "2026-10-12",
+          "subjectExternalId": "eng",
+          "subjectName": "English",
+          "raw": "88",
+          "kind": "numeric",
+          "values": [88]
+        }
+      ]
+    },
+    "c-2": {
+      "calendar": {
+        "schoolYear": {
+          "externalId": "y-2026",
+          "label": "2026/27",
+          "start": "2026-08-30",
+          "end": "2027-06-20"
+        },
+        "terms": [],
+        "gradingScaleId": null
+      },
+      "subjects": [
+        {
+          "externalId": "math",
+          "name": "Mathematics"
+        },
+        {
+          "externalId": "sci",
+          "name": "Science"
+        },
+        {
+          "externalId": "eng",
+          "name": "English"
+        },
+        {
+          "externalId": "art",
+          "name": "Art"
+        }
+      ],
+      "marks": []
+    }
+  }
+}

@@ -135,6 +135,7 @@ pnpm setup:env                  # creates .env and generates its secrets
 pnpm install
 pnpm db:up                      # PostgreSQL 16 in Docker (dev and test databases)
 pnpm check                      # typecheck, lint, tests, privacy check
+pnpm test:provider demo-minimal # the shared conformance suite for one provider
 pnpm dev                        # API on :3000, app on :5173
 ```
 
@@ -173,9 +174,11 @@ All configuration is in `.env` (created by `pnpm setup:env` from `.env.example`)
 
 ```
 packages/core/          common types, provider interface, grading scales, marks math,
-                        guidance rules, throttled HTTP client, provider conformance tests
-packages/i18n/          twelve interface languages, en.json as the source of truth
+                        guidance rules, throttled HTTP client, provider conformance suite
+packages/i18n/          interface languages: en.json as the source of truth, ru complete, ten more planned
+packages/registry/      the list of providers the app offers
 providers/_template/    starting point for a new provider
+providers/demo-minimal/ a fictional diary with the fewest features, served from fixtures
 providers/<id>/         one folder per diary system: manifest, schemas, mapper, fixtures
 server/                 Express API, collector, Drizzle schema and migrations
 web/                    React + Vite PWA, Tailwind driven by docs/tokens.json
@@ -200,7 +203,7 @@ The full plan with acceptance criteria is in [`docs/build-plan.md`](docs/build-p
 2. The first provider and its conformance tests.
 3. Server: database, collector, planner, fictional seed data.
 4. Accounts, families, invites and the read API.
-5. The app: home, attention, marks, finals, subjects, subject page, timetable, settings, appearance.
+5. The app: home, attention, marks, finals, subjects, subject page, timetable, settings, appearance; then translations into the other ten languages.
 6. Tags.
 7. Study time.
 8. Installable PWA with offline mode.

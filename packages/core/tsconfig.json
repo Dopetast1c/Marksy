@@ -1,4 +1,8 @@
 {
   "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // URL, fetch, AbortSignal and timers: the same globals exist in Node 22 and in browsers
+    "types": ["node"]
+  },
   "include": ["src"]
 }

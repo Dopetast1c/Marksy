@@ -948,7 +948,8 @@ let SCALE = SCALES['by-10'];
 const LANGS = [['ru', 'Русский'], ['be', 'Беларуская'], ['uk', 'Українська'], ['kk', 'Қазақша'], ['en', 'English'], ['pl', 'Polski'], ['de', 'Deutsch'], ['es', 'Español'], ['pt', 'Português'], ['fr', 'Français'], ['nl', 'Nederlands'], ['ro', 'Română']];
 function langSelect(id) { return `<label class="selwrap lang"><select id="${id}" aria-label="Язык интерфейса">${LANGS.map(([c, n]) => `<option value="${c}"${c === 'ru' ? ' selected' : ''}>${n}</option>`).join('')}</select>${ICONS.down}</label>`; }
 const BAND_ROLES = ['critical', 'low', 'good', 'top'];
-function band(v) { if (v == null) return null; for (const r of BAND_ROLES) { const [a, b] = SCALE.bands[r]; if (v >= a - 1e-9 && v <= b + 1e-9) return r; } return v < SCALE.min ? (SCALE.higher ? 'critical' : 'top') : (SCALE.higher ? 'top' : 'critical'); }
+// A value between two bands belongs to the worse one until it reaches the better band's edge (8.5 is good, 9.0 top), as bandOf() in core
+function band(v) { if (v == null) return null; let found = null; for (const r of BAND_ROLES) { const [a, b] = SCALE.bands[r]; if (a > b) continue; const edge = SCALE.higher ? a : b; if (found === null || (SCALE.higher ? v >= edge - 1e-9 : v <= edge + 1e-9)) found = r; } return found; }
 function bandLabel(r) { const [a, b] = SCALE.bands[r]; return a === b ? String(a) : `${a}–${b}`; }
 // Band columns in the order "worst to best" as the scale defines it; empty bands are skipped.
 function bandCounts(vals) { return BAND_ROLES.filter(r => SCALE.bands[r][0] <= SCALE.bands[r][1]).map(r => [bandLabel(r), r, vals.filter(v => band(v) === r).length]); }

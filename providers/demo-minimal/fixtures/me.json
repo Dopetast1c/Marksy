@@ -1,0 +1,8 @@
+{
+  "id": "u-1",
+  "name": "Parent",
+  "children": [
+    { "id": "c-1", "first_name": "Student A", "last_name": "Example", "group": "Year 5" },
+    { "id": "c-2", "first_name": "Student B", "last_name": "Example", "group": "Year 1" }
+  ]
+}
