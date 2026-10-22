@@ -7,7 +7,7 @@ The order in which Marksy is built with Claude Code, what each milestone must de
 | | Milestone | Branch | Status |
 |---|---|---|---|
 | M0 | Workspace scaffold, first run (`docs/first-run.md`) | `main` | done |
-| M1 | Core: canonical model, grading scales, marks math, HTTP client, i18n package | `m1-core` | todo |
+| M1 | Core: canonical model, grading scales, marks math, HTTP client, i18n package | `m1-core` | done |
 | M2 | Provider `by-eschools` and the probe | `m2-eschools` | todo |
 | M3 | Server: schema, collector, planner, seed data | `m3-server` | todo |
 | M4 | Accounts, families and the read API | `m4-api` | todo |
@@ -15,6 +15,7 @@ The order in which Marksy is built with Claude Code, what each milestone must de
 | M5b | Web: Оценки, Итоги, Предметы, Предмет | `m5b-marks` | todo |
 | M5c | Web: Расписание, lesson menu, ready ticks, own homework | `m5c-schedule` | todo |
 | M5d | Web: Ещё, Семья, Синхронизация, Оформление | `m5d-more` | todo |
+| M5e | Translations: the ten other interface languages | `m5e-i18n` | todo |
 | M6 | Tags | `m6-tags` | todo |
 | M7 | Study time | `m7-study` | todo |
 | M8 | PWA: install, offline, service worker | `m8-pwa` | todo |
@@ -139,6 +140,16 @@ Local check: `pnpm install`, `pnpm db:up`, `pnpm check`, `pnpm dev`, then open h
 
 **Deliver:** Ещё in the documented order (the row «Настройки уведомлений» comes with M9), Семья (members, invites, diary accounts, students), avatars, Синхронизация (status, history, manual refresh within the login limit), Оформление (theme, palette, wallpaper, font, subject colours), student mode and simple mode.
 
+## M5e. Translations
+
+**Read:** `docs/i18n.md` (all).
+
+**Why here:** the interface strings keep changing until the screens of M5a to M5d are done; translating earlier would mean translating twice. Until M5e only `en` and `ru` exist and every other language falls back to English key by key; `ru` is reviewed by the owner.
+
+**Deliver:** machine translations of `en.json` into `be`, `uk`, `kk`, `pl`, `de`, `es`, `pt`, `fr`, `nl`, `ro`, each marked `machine` in `locales/STATUS.md` (the app shows "help improve this translation" for them); every plural category each language needs; placeholders identical to the source; Russian copy rules (`беларуский`) and the no-gender rule (`docs/i18n.md` 4) kept in every language; the tab bar and chips fit at 360 px in all twelve.
+
+**Done when:** `pnpm i18n:check` reports no errors and no warnings for all twelve files, and the pseudo-locale and the longest languages (de, fr) fit every screen without ellipsis.
+
 ## M6. Tags
 
 **Read:** `docs/design.md` 6.3; prototype screens Теги, Тег, Расписание, Главная.
@@ -174,3 +185,4 @@ Local check: `pnpm install`, `pnpm db:up`, `pnpm check`, `pnpm dev`, then open h
 ## Notes
 
 - M0: TypeScript is pinned to 6.0 because typescript-eslint does not support TypeScript 7 yet. Raise it when typescript-eslint does.
+- M1: the provider list lives in `packages/registry`, not in core (core must not import providers, and providers depend on core). A grading scale is plain data sent to the web app; formatting is `formatValue/formatAverage/formatFinal(scale, v, locale)`. The trend tolerance is `0.3 × (max − min) / 9`, exactly 0.3 on by-10. The manifest has `network.baseUrl`; the client takes paths only. Guidance gets `isTest` per lesson from the server (the tag «Контрольная», M6) and returns facts with optional advice as i18n keys. `neededAverage` is `null` for final rules that cannot be inverted, which hides the goal card. A year without marks is a student year without a scale (`gradingScaleId = null`), never a grade number (ux-principles D49). Movers: core returns every subject with a trend sorted by the size of the change; screens apply their limits (design.md 6.1). The ten other languages moved to a milestone of their own, M5e. Fixed on the way: the prototype's `band()` puts averages between two bands (6.5, 8.5) into `top`; core puts them in the band whose edge they have reached.
