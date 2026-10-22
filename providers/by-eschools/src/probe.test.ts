@@ -169,6 +169,35 @@ describe('second review: places, real values, keys', () => {
   });
 });
 
+describe('third probe run: the forms real responses use', () => {
+  it('keeps the year label in time_activities and the school year, fakes an id under the same key', () => {
+    const ta = sanitize('time_activities', [
+      { uuid: S1, school_year: '2026-2027' },
+      { uuid: W1, school_year: S1 },
+    ]);
+    expect(ta).toEqual([
+      { uuid: fakeUuid(S1), school_year: '2026-2027' },
+      { uuid: fakeUuid(W1), school_year: fakeUuid(S1) },
+    ]);
+    expect(sanitize('school_year', { uuid: S1, label: '2026-2027' })).toEqual({
+      uuid: fakeUuid(S1),
+      label: '2026-2027',
+    });
+  });
+
+  it('a year label that appears twice is not a leak', () => {
+    const sensitive = sensitiveValues('time_activities', [{ school_year: '2026-2027' }]);
+    sensitiveValues('school_year', { label: '2026-2027' }, [], sensitive);
+    expect(findLeaks([sanitize('school_year', { label: '2026-2027' })], sensitive)).toEqual([]);
+  });
+
+  it('keeps HH:MM:SS start times', () => {
+    expect(sanitize('lessons', [{ slots: [{ start_time: '08:30:00' }] }])).toEqual([
+      { slots: [{ start_time: '08:30:00' }] },
+    ]);
+  });
+});
+
 describe('value forms', () => {
   it('show the format, never the value', async () => {
     const { shapeOf } = await import('./probe');

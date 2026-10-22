@@ -242,7 +242,7 @@ Array of 6 days (Mon to Sat).
     "topic": "string",
     "homework": null,              // string | null
     "message": "string",
-    "start_time": "08:30",           // real values are not plain HH:MM [VERIFIED, second probe]; the exact form is reported by the next probe run, the mapper accepts HH:MM and HH:MM:SS
+    "start_time": "08:30:00",        // HH:MM:SS, sometimes null [VERIFIED, third probe: 300 of 306 as 99:99:99, 6 null]; mapped to "08:30"
     "has_attachments_or_links": false,
     "homework_source_id": null,
     "lesson_mark": null,           // object | null, see 7
@@ -413,7 +413,7 @@ Still open:
 - [ ] `PUT /auth/refresh` (only if a refresh chain is used).
 - [ ] `final/whole` populated shape: re-check after 2026-10-30 (end of Q1) and finalise the parser.
 - [x] Real samples of `DOUBLE`, `ABSENT` and non-null `type` marks (second probe, `--weeks 6`): 1 `DOUBLE`, 27 `ABSENT`, 1 mark of type `INDEPENDENT_WORK`; no drift events (7.2, 7.3).
-- [ ] The exact form of `start_time` (not plain `HH:MM`; the next probe run prints it as digits-as-9) and of the school year `label`.
+- [x] `start_time` is `HH:MM:SS` or null; the school year `label` is `YYYY-YYYY` (third probe, forms printed as digits-as-9). `time_activities[].school_year` repeats that label rather than an id [UNVERIFIED: inferred from the third probe refusing to write because the value equalled the kept label; the next run prints its form].
 - [ ] Behaviour after token expiry (expected 401).
 - [ ] Whether a student login endpoint exists (`/auth/login/student` or similar in the bundle) and whether a student token reads the same diary routes.
 - [ ] Whether a re-fetched week can return a different `lesson_uuid` for the same slot (timetable edits), which affects removal detection.

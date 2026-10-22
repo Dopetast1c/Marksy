@@ -19,6 +19,8 @@ const ENUM = /^[A-Z][A-Z0-9_]{0,39}$/;
 /** Looks like a person: initials ("И.О.") or three capitalised words ("Иванова Мария Петровна"). */
 const PERSON_LIKE = /\p{Lu}\.\s?\p{Lu}\.|(\p{Lu}\p{Ll}+[\s-]+){2}\p{Lu}\p{Ll}+/u;
 const MARK_LABELS = /^(н|зач\.|незач\.|освоб\.|осв\.|не осв\.|н\/а)$/;
+/** A school year label: "2026-2027" in real responses (second probe), "2026/2027" in the bundle */
+const YEAR_LABEL = /^\d{4}\s?[/-]\s?\d{4}$/;
 
 /** Where we are in the response: the key of the value, the key of the container it sits in, the depth. */
 export interface Place {
@@ -52,7 +54,10 @@ export function keepsString({ endpoint, key, depth }: Place, value: string): boo
     case 'roles':
       return ENUM.test(value);
     case 'label':
-      return value === 'А' || /^\d{4}\s?[/-]\s?\d{4}$/.test(value);
+      return value === 'А' || YEAR_LABEL.test(value);
+    case 'school_year':
+      // time_activities[].school_year is the year's label ("2026-2027") when it has that form; otherwise an id
+      return YEAR_LABEL.test(value);
     case 'class_number':
       return /^\d{1,2}А$/.test(value);
     case 'summary':
@@ -161,7 +166,7 @@ export function createSanitizer(key: Buffer = randomBytes(32)): Sanitizer {
       /(^|_)(id|uuid)$/.test(key) ||
       key === 'author' ||
       key === 'school' ||
-      key === 'school_year'
+      (key === 'school_year' && !YEAR_LABEL.test(value))
     )
       return fakeId(value);
     if (key === 'full_name') return ctx.inStudents ? `Ученик ${letter(ctx.index)}` : 'Родитель';

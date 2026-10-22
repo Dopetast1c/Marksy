@@ -137,10 +137,16 @@ async function main(): Promise<number> {
   const rawWorkTypes: Record<string, number> = {};
   const rawLessonTypes: Record<string, number> = {};
   // forms of the values the allow-list needs to know, never the values (digits as 9, letters as a)
-  const shapes: Record<string, Record<string, number>> = { start_time: {}, 'school_year.label': {} };
+  const shapes: Record<string, Record<string, number>> = {
+    start_time: {},
+    'school_year.label': {},
+    'time_activities.school_year': {},
+  };
   const addShape = (field: string, v: unknown) => (shapes[field]![shapeOf(v)] = (shapes[field]![shapeOf(v)] ?? 0) + 1);
   const yearRaw = named.find((x) => x.name === 'school_year')?.raw as { label?: unknown } | undefined;
   if (yearRaw) addShape('school_year.label', yearRaw.label);
+  for (const a of (named.find((x) => x.name === 'time_activities')?.raw as { school_year?: unknown }[]) ?? [])
+    addShape('time_activities.school_year', a.school_year);
   for (const n of named.filter((x) => x.name.startsWith('lessons-'))) {
     for (const day of n.raw as {
       slots: { type: string | null; start_time?: unknown; lesson_mark: { kind: string; type: string | null } | null }[];
