@@ -99,6 +99,26 @@ export async function syncOnce(opts: SyncOnceOptions): Promise<SyncOnceReport> {
   return { created, credentialsChanged, result, students: count?.n ?? 0, drift };
 }
 
+/**
+ * 0 when everything went as the rules say, including a run the gate held back (login interval, pause, offline,
+ * another run in progress); 1 only for a real failure: the diary refused or failed, our own error, or an account
+ * that needs new credentials.
+ */
+export function exitCodeOf(r: SyncOnceReport): 0 | 1 {
+  const res = r.result;
+  switch (res.outcome) {
+    case 'ran':
+      return res.status === 'success' ? 0 : 1;
+    case 'skipped':
+      return res.decision.reason === 'requires_action' ? 1 : 0;
+    case 'offline':
+    case 'locked':
+      return 0;
+    case 'unknown_account':
+      return 1;
+  }
+}
+
 /** The report as lines for the terminal: counts and statuses only */
 export function formatReport(r: SyncOnceReport): string[] {
   const lines = [

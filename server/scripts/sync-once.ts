@@ -3,7 +3,7 @@ import { createDb, migrateDb } from '../src/db/client';
 import { masterKey } from '../src/crypto/credentials';
 import { log } from '../src/log';
 import { readSyncConfig } from '../src/sync/config';
-import { formatReport, syncOnce } from '../src/sync/once';
+import { exitCodeOf, formatReport, syncOnce } from '../src/sync/once';
 
 // `pnpm sync:once [--provider <id>]`: one sync of the owner's own diary account from .env (DIARY_LOGIN,
 // DIARY_PASSWORD) into the local database. It logs in to the real diary: only the owner runs it. The default provider
@@ -38,7 +38,7 @@ try {
     log,
   });
   for (const line of formatReport(report)) console.log(line);
-  process.exitCode = report.result.outcome === 'ran' && report.result.status !== 'failed' ? 0 : 1;
+  process.exitCode = exitCodeOf(report);
 } finally {
   await db.$client.end();
 }
