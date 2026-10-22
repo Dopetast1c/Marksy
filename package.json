@@ -17,7 +17,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "pnpm -r test",
-    "check": "pnpm typecheck && pnpm lint && pnpm test && pnpm privacy",
+    "check": "pnpm format:check && pnpm typecheck && pnpm lint && pnpm test && pnpm privacy",
     "privacy": "node scripts/privacy-check.mjs",
     "setup:env": "node scripts/init-env.mjs",
     "db:up": "docker compose up -d --wait",

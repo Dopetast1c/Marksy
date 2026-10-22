@@ -46,7 +46,7 @@ Claude Code works with the fictional data. It does not read rows of the real fam
 
 ### Definition of done (every milestone)
 
-- `pnpm check` is green: typecheck, lint, tests, privacy check.
+- `pnpm check` is green: formatting, typecheck, lint, tests, privacy check.
 - New code has tests: units for logic, Supertest for every route, the conformance suite for providers.
 - No real data anywhere: fixtures are sanitised and fictional, examples use example.com, nothing personal in logs.
 - Every user-facing string is an i18n key with `en` and `ru` values (from M1 on).

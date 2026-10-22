@@ -134,7 +134,7 @@ cd Marksy
 pnpm setup:env                  # creates .env and generates its secrets
 pnpm install
 pnpm db:up                      # PostgreSQL 16 in Docker (dev and test databases)
-pnpm check                      # typecheck, lint, tests, privacy check
+pnpm check                      # formatting, typecheck, lint, tests, privacy check
 pnpm test:provider demo-minimal # the shared conformance suite for one provider
 pnpm dev                        # API on :3000, app on :5173
 ```

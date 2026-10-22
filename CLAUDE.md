@@ -93,7 +93,7 @@ pnpm install            install the workspace (Node 22, pnpm via corepack)
 pnpm db:up              PostgreSQL 16 in Docker, waits until healthy (databases marksy and marksy_test)
 pnpm dev                API on 127.0.0.1:3000 (tsx watch) and PWA on :5173 (Vite, /api proxied)
 pnpm dev:lan            the same, with the PWA open to the home network for testing on a phone (README)
-pnpm check              typecheck, lint, tests, privacy check: must be green before every commit
+pnpm check              formatting, typecheck, lint, tests, privacy check: must be green before every commit
 pnpm format             Prettier over the workspace
 pnpm --filter @marksy/server test    one package
 pnpm test:provider <id> the shared conformance suite for one provider (demo-minimal, by-eschools)
