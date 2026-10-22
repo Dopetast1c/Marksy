@@ -145,7 +145,7 @@ Parent profile. Called by the frontend after login; not needed by the collector 
 ```jsonc
 {
   "uuid": "string", "summary": null,
-  "start_year": 2026, "end_year": 2027, "label": "string",
+  "start_year": 2026, "end_year": 2027, "label": "2026-2027",      // YYYY-YYYY [VERIFIED]
   "start_ts": 0, "end_ts": 0,
   "status": "string", "author": "string"
 }
@@ -157,7 +157,7 @@ Array (9 items for 2026/2027): quarters and holidays.
 
 ```jsonc
 [{
-  "uuid": "string", "summary": null, "school_year": "string",
+  "uuid": "string", "summary": null, "school_year": "2026-2027",   // the year's label, not an id [VERIFIED]
   "title": "FIRST_QUARTER",
   "description": "string",
   "type": "QUARTER",              // QUARTER | HOLIDAYS
@@ -413,7 +413,7 @@ Still open:
 - [ ] `PUT /auth/refresh` (only if a refresh chain is used).
 - [ ] `final/whole` populated shape: re-check after 2026-10-30 (end of Q1) and finalise the parser.
 - [x] Real samples of `DOUBLE`, `ABSENT` and non-null `type` marks (second probe, `--weeks 6`): 1 `DOUBLE`, 27 `ABSENT`, 1 mark of type `INDEPENDENT_WORK`; no drift events (7.2, 7.3).
-- [x] `start_time` is `HH:MM:SS` or null; the school year `label` is `YYYY-YYYY` (third probe, forms printed as digits-as-9). `time_activities[].school_year` repeats that label rather than an id [UNVERIFIED: inferred from the third probe refusing to write because the value equalled the kept label; the next run prints its form].
+- [x] `start_time` is `HH:MM:SS` or null; the school year `label` is `YYYY-YYYY`; `time_activities[].school_year` is that same label (`YYYY-YYYY` in all 9 entries), not an id (forms printed as digits-as-9 by the probe runs of 2026-10-22).
 - [ ] Behaviour after token expiry (expected 401).
 - [ ] Whether a student login endpoint exists (`/auth/login/student` or similar in the bundle) and whether a student token reads the same diary routes.
 - [ ] Whether a re-fetched week can return a different `lesson_uuid` for the same slot (timetable edits), which affects removal detection.
