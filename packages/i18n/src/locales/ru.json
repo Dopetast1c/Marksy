@@ -86,5 +86,16 @@
   "guidance.lessonRisk.fact": "Средний по предмету {{termAverage}}",
   "guidance.lessonRisk.advice": "Сделать д/з особенно внимательно",
   "guidance.lessonHomeworkWeak.fact": "За д/з по этому предмету средний {{homeworkAverage}}",
-  "guidance.lessonHomeworkWeak.advice": "Домашние здесь проверяют и оценивают"
+  "guidance.lessonHomeworkWeak.advice": "Домашние здесь проверяют и оценивают",
+
+  "notification.syncPaused.title": "Дневник не отвечает",
+  "notification.syncPaused.body": "Следующая попытка после {{until}}.",
+  "notification.syncAuth.title": "Дневник не принял логин или пароль",
+  "notification.syncAuth.body": "Обновите пароль в разделе «Семья», чтобы синхронизация продолжилась.",
+  "notification.syncBlocked.title": "Дневник заблокировал вход",
+  "notification.syncBlocked.body": "Проверьте учётную запись в дневнике, затем обновите данные входа в разделе «Семья».",
+  "notification.syncNeeds2fa.title": "Дневник просит код подтверждения",
+  "notification.syncNeeds2fa.body": "Войдите заново в разделе «Семья» и введите код.",
+  "notification.drift.title": "Дневник изменил формат данных",
+  "notification.drift.body": "{{endpoint}}: {{kind}}, {{path}}. Синхронизация продолжается."
 }
