@@ -1,503 +1,869 @@
 {
   "account": {
-    "externalUserId": "00000000-0000-4000-8000-00000000a001",
+    "externalUserId": "00000000-0000-4000-8000-bbbe02dc4d8c",
     "displayName": "Родитель",
     "role": "parent",
     "students": [
       {
-        "externalId": "00000000-0000-4000-8000-00000000c001",
+        "externalId": "00000000-0000-4000-8000-c27ba4226d12",
         "fullName": "Ученик A",
-        "schoolId": "00000000-0000-4000-8000-00000000b001",
-        "classExternalId": "00000000-0000-4000-8000-00000000d001",
-        "className": "7А",
-        "grade": 7
-      },
-      {
-        "externalId": "00000000-0000-4000-8000-00000000c002",
-        "fullName": "Ученик B",
-        "schoolId": "00000000-0000-4000-8000-00000000b001",
-        "classExternalId": "00000000-0000-4000-8000-00000000d002",
+        "schoolId": "00000000-0000-4000-8000-d48b0d56ccdb",
+        "classExternalId": "00000000-0000-4000-8000-88ee38e5ecf6",
         "className": "1А",
         "grade": 1
+      },
+      {
+        "externalId": "00000000-0000-4000-8000-a95be8cd28f2",
+        "fullName": "Ученик B",
+        "schoolId": "00000000-0000-4000-8000-d48b0d56ccdb",
+        "classExternalId": "00000000-0000-4000-8000-ead28d7b4296",
+        "className": "7А",
+        "grade": 7
       }
     ]
   },
   "students": {
-    "00000000-0000-4000-8000-00000000c001": {
+    "00000000-0000-4000-8000-c27ba4226d12": {
       "calendar": {
         "schoolYear": {
-          "externalId": "00000000-0000-4000-8000-00000000e001",
-          "label": "2026/2027",
+          "externalId": "00000000-0000-4000-8000-8a8dde459c6c",
+          "label": "[text]",
           "start": "2026-09-01",
-          "end": "2027-05-31"
+          "end": "2027-08-31"
         },
         "terms": [
           {
-            "externalId": "00000000-0000-4000-8000-00000000f001",
+            "externalId": "00000000-0000-4000-8000-0d1abce0dc32",
             "kind": "quarter",
             "index": 1,
             "label": "FIRST_QUARTER",
-            "start": "2026-08-31",
-            "end": "2026-10-30"
+            "start": "2026-09-01",
+            "end": "2026-10-31"
           },
           {
-            "externalId": "00000000-0000-4000-8000-00000000f002",
+            "externalId": "00000000-0000-4000-8000-3ec2f1827df6",
             "kind": "quarter",
             "index": 2,
             "label": "SECOND_QUARTER",
-            "start": "2026-11-08",
-            "end": "2026-12-23"
+            "start": "2026-11-09",
+            "end": "2026-12-24"
           },
           {
-            "externalId": "00000000-0000-4000-8000-00000000f003",
+            "externalId": "00000000-0000-4000-8000-8fb2b8b28936",
             "kind": "quarter",
             "index": 3,
             "label": "THIRD_QUARTER",
-            "start": "2027-01-10",
-            "end": "2027-03-19"
+            "start": "2027-01-11",
+            "end": "2027-03-20"
           },
           {
-            "externalId": "00000000-0000-4000-8000-00000000f004",
+            "externalId": "00000000-0000-4000-8000-9c7e5199bc06",
             "kind": "quarter",
             "index": 4,
-            "label": "FOURTH_QUARTER",
-            "start": "2027-03-28",
-            "end": "2027-05-30"
+            "label": "[text]",
+            "start": "2027-03-29",
+            "end": "2027-05-31"
           }
         ],
         "holidays": [
           {
-            "from": "2026-10-31",
-            "to": "2026-11-07"
+            "from": "2027-02-15",
+            "to": "2027-02-21"
           },
           {
-            "from": "2026-12-24",
-            "to": "2027-01-09"
+            "from": "2027-03-21",
+            "to": "2027-03-28"
           },
           {
-            "from": "2027-03-20",
-            "to": "2027-03-27"
-          }
-        ]
-      },
-      "subjects": [
-        {
-          "externalId": "00000000-0000-4000-8000-000000002001",
-          "name": "Алгебра"
-        },
-        {
-          "externalId": "00000000-0000-4000-8000-000000002002",
-          "name": "Русский язык"
-        },
-        {
-          "externalId": "00000000-0000-4000-8000-000000002003",
-          "name": "Биология"
-        }
-      ],
-      "lessons": [
-        {
-          "externalId": "00000000-0000-4000-8000-000000004002",
-          "date": "2026-10-05",
-          "slot": 1,
-          "startTime": "08:30",
-          "subjectExternalId": "00000000-0000-4000-8000-000000002001",
-          "subjectName": "Алгебра",
-          "teacherExternalId": "00000000-0000-4000-8000-000000003001",
-          "topic": "Тема урока",
-          "hasAttachments": false,
-          "marks": [
-            {
-              "externalId": "00000000-0000-4000-8000-000000005001",
-              "date": "2026-10-05",
-              "subjectExternalId": "00000000-0000-4000-8000-000000002001",
-              "subjectName": "Алгебра",
-              "lessonExternalId": "00000000-0000-4000-8000-000000004002",
-              "raw": "5",
-              "kind": "numeric",
-              "values": [5],
-              "workType": "classwork",
-              "workTypeRaw": "CLASSWORK",
-              "authorExternalId": "00000000-0000-4000-8000-000000003001"
-            }
-          ]
-        },
-        {
-          "externalId": "00000000-0000-4000-8000-000000004003",
-          "date": "2026-10-05",
-          "slot": 2,
-          "startTime": "09:25",
-          "subjectExternalId": "00000000-0000-4000-8000-000000002002",
-          "subjectName": "Русский язык",
-          "teacherExternalId": "00000000-0000-4000-8000-000000003002",
-          "topic": "Тема урока",
-          "homework": "Домашнее задание",
-          "hasAttachments": false,
-          "marks": []
-        },
-        {
-          "externalId": "00000000-0000-4000-8000-000000004005",
-          "date": "2026-10-06",
-          "slot": 1,
-          "startTime": "08:30",
-          "subjectExternalId": "00000000-0000-4000-8000-000000002003",
-          "subjectName": "Биология",
-          "teacherExternalId": "00000000-0000-4000-8000-000000003003",
-          "topic": "Тема урока",
-          "hasAttachments": false,
-          "marks": [
-            {
-              "externalId": "00000000-0000-4000-8000-000000005004",
-              "date": "2026-10-06",
-              "subjectExternalId": "00000000-0000-4000-8000-000000002003",
-              "subjectName": "Биология",
-              "lessonExternalId": "00000000-0000-4000-8000-000000004005",
-              "raw": "5",
-              "kind": "numeric",
-              "values": [5],
-              "workType": "homework",
-              "workTypeRaw": "HOMEWORK",
-              "comment": "Комментарий",
-              "authorExternalId": "00000000-0000-4000-8000-000000003001"
-            }
-          ]
-        },
-        {
-          "externalId": "00000000-0000-4000-8000-000000004007",
-          "date": "2026-10-07",
-          "slot": 3,
-          "startTime": "10:20",
-          "subjectExternalId": "00000000-0000-4000-8000-000000002002",
-          "subjectName": "Русский язык",
-          "teacherExternalId": "00000000-0000-4000-8000-000000003002",
-          "topic": "Тема урока",
-          "hasAttachments": false,
-          "marks": [
-            {
-              "externalId": "00000000-0000-4000-8000-000000005006",
-              "date": "2026-10-07",
-              "subjectExternalId": "00000000-0000-4000-8000-000000002002",
-              "subjectName": "Русский язык",
-              "lessonExternalId": "00000000-0000-4000-8000-000000004007",
-              "raw": "освоб.",
-              "kind": "exempt",
-              "values": [],
-              "authorExternalId": "00000000-0000-4000-8000-000000003001"
-            }
-          ]
-        },
-        {
-          "externalId": "00000000-0000-4000-8000-000000004009",
-          "date": "2026-10-12",
-          "slot": 1,
-          "startTime": "08:30",
-          "subjectExternalId": "00000000-0000-4000-8000-000000002001",
-          "subjectName": "Алгебра",
-          "teacherExternalId": "00000000-0000-4000-8000-000000003001",
-          "topic": "Тема урока",
-          "hasAttachments": false,
-          "marks": [
-            {
-              "externalId": "00000000-0000-4000-8000-000000005008",
-              "date": "2026-10-12",
-              "subjectExternalId": "00000000-0000-4000-8000-000000002001",
-              "subjectName": "Алгебра",
-              "lessonExternalId": "00000000-0000-4000-8000-000000004009",
-              "raw": "10",
-              "kind": "numeric",
-              "values": [10],
-              "authorExternalId": "00000000-0000-4000-8000-000000003001"
-            }
-          ]
-        },
-        {
-          "externalId": "00000000-0000-4000-8000-000000004011",
-          "date": "2026-10-12",
-          "slot": 2,
-          "startTime": "09:25",
-          "subjectExternalId": "00000000-0000-4000-8000-000000002002",
-          "subjectName": "Русский язык",
-          "teacherExternalId": "00000000-0000-4000-8000-000000003002",
-          "topic": "Тема урока",
-          "homework": "Домашнее задание",
-          "hasAttachments": false,
-          "marks": [
-            {
-              "externalId": "00000000-0000-4000-8000-000000005010",
-              "date": "2026-10-12",
-              "subjectExternalId": "00000000-0000-4000-8000-000000002002",
-              "subjectName": "Русский язык",
-              "lessonExternalId": "00000000-0000-4000-8000-000000004011",
-              "raw": "7/9",
-              "kind": "numeric",
-              "values": [7, 9],
-              "workType": "dictation",
-              "workTypeRaw": "DICTATION",
-              "comment": "Комментарий",
-              "authorExternalId": "00000000-0000-4000-8000-000000003001"
-            }
-          ]
-        },
-        {
-          "externalId": "00000000-0000-4000-8000-000000004013",
-          "date": "2026-10-12",
-          "slot": 3,
-          "startTime": "10:20",
-          "subjectExternalId": "00000000-0000-4000-8000-000000002003",
-          "subjectName": "Биология",
-          "teacherExternalId": "00000000-0000-4000-8000-000000003003",
-          "topic": "Тема урока",
-          "hasAttachments": false,
-          "marks": [],
-          "attendance": [
-            {
-              "externalId": "00000000-0000-4000-8000-000000005012",
-              "date": "2026-10-12",
-              "lessonExternalId": "00000000-0000-4000-8000-000000004013",
-              "subjectExternalId": "00000000-0000-4000-8000-000000002003",
-              "status": "absent",
-              "code": "н"
-            }
-          ]
-        },
-        {
-          "externalId": "00000000-0000-4000-8000-000000004015",
-          "date": "2026-10-13",
-          "slot": 2,
-          "startTime": "09:25",
-          "subjectExternalId": "00000000-0000-4000-8000-000000002001",
-          "subjectName": "Алгебра",
-          "teacherExternalId": "00000000-0000-4000-8000-000000003001",
-          "topic": "Тема урока",
-          "hasAttachments": false,
-          "lessonType": "test",
-          "marks": [
-            {
-              "externalId": "00000000-0000-4000-8000-000000005014",
-              "date": "2026-10-13",
-              "subjectExternalId": "00000000-0000-4000-8000-000000002001",
-              "subjectName": "Алгебра",
-              "lessonExternalId": "00000000-0000-4000-8000-000000004015",
-              "raw": "5",
-              "kind": "numeric",
-              "values": [5],
-              "workType": "test",
-              "workTypeRaw": "TEST",
-              "authorExternalId": "00000000-0000-4000-8000-000000003001"
-            }
-          ]
-        },
-        {
-          "externalId": "00000000-0000-4000-8000-000000004016",
-          "date": "2026-10-13",
-          "slot": 3,
-          "startTime": "10:20",
-          "subjectExternalId": "00000000-0000-4000-8000-000000002003",
-          "subjectName": "Биология",
-          "teacherExternalId": "00000000-0000-4000-8000-000000003003",
-          "topic": "Тема урока",
-          "homework": "Домашнее задание",
-          "hasAttachments": false,
-          "marks": []
-        },
-        {
-          "externalId": "00000000-0000-4000-8000-000000004018",
-          "date": "2026-10-14",
-          "slot": 1,
-          "startTime": "08:30",
-          "subjectExternalId": "00000000-0000-4000-8000-000000002002",
-          "subjectName": "Русский язык",
-          "teacherExternalId": "00000000-0000-4000-8000-000000003002",
-          "topic": "Тема урока",
-          "hasAttachments": false,
-          "marks": [
-            {
-              "externalId": "00000000-0000-4000-8000-000000005017",
-              "date": "2026-10-14",
-              "subjectExternalId": "00000000-0000-4000-8000-000000002002",
-              "subjectName": "Русский язык",
-              "lessonExternalId": "00000000-0000-4000-8000-000000004018",
-              "raw": "зач.",
-              "kind": "pass",
-              "values": [],
-              "authorExternalId": "00000000-0000-4000-8000-000000003001"
-            }
-          ]
-        },
-        {
-          "externalId": "00000000-0000-4000-8000-000000004019",
-          "date": "2026-10-15",
-          "slot": 1,
-          "startTime": "08:30",
-          "subjectExternalId": "00000000-0000-4000-8000-000000002001",
-          "subjectName": "Алгебра",
-          "teacherExternalId": "00000000-0000-4000-8000-000000003001",
-          "topic": "Тема урока",
-          "homework": "Домашнее задание",
-          "hasAttachments": false,
-          "lessonType": "lab",
-          "marks": []
-        },
-        {
-          "externalId": "00000000-0000-4000-8000-000000004020",
-          "date": "2026-10-15",
-          "slot": 2,
-          "startTime": "09:25",
-          "subjectExternalId": "00000000-0000-4000-8000-000000002003",
-          "subjectName": "Биология",
-          "teacherExternalId": "00000000-0000-4000-8000-000000003003",
-          "topic": "Тема урока",
-          "hasAttachments": false,
-          "marks": []
-        },
-        {
-          "externalId": "00000000-0000-4000-8000-000000004021",
-          "date": "2026-10-16",
-          "slot": 1,
-          "startTime": "08:30",
-          "subjectExternalId": "00000000-0000-4000-8000-000000002002",
-          "subjectName": "Русский язык",
-          "teacherExternalId": "00000000-0000-4000-8000-000000003002",
-          "topic": "Тема урока",
-          "hasAttachments": true,
-          "marks": []
-        }
-      ],
-      "finalMarks": [
-        {
-          "subjectExternalId": "00000000-0000-4000-8000-000000002001",
-          "subjectName": "Алгебра",
-          "termExternalId": "00000000-0000-4000-8000-00000000f001",
-          "raw": "5",
-          "value": 5,
-          "kind": "numeric",
-          "role": "final"
-        },
-        {
-          "subjectExternalId": "00000000-0000-4000-8000-000000002002",
-          "subjectName": "Русский язык",
-          "termExternalId": "00000000-0000-4000-8000-00000000f001",
-          "raw": "1",
-          "value": 1,
-          "kind": "numeric",
-          "role": "final"
-        }
-      ]
-    },
-    "00000000-0000-4000-8000-00000000c002": {
-      "calendar": {
-        "schoolYear": {
-          "externalId": "00000000-0000-4000-8000-00000000e001",
-          "label": "2026/2027",
-          "start": "2026-09-01",
-          "end": "2027-05-31"
-        },
-        "terms": [
-          {
-            "externalId": "00000000-0000-4000-8000-00000000f001",
-            "kind": "quarter",
-            "index": 1,
-            "label": "FIRST_QUARTER",
-            "start": "2026-08-31",
-            "end": "2026-10-30"
+            "from": "2027-06-01",
+            "to": "2027-08-31"
           },
           {
-            "externalId": "00000000-0000-4000-8000-00000000f002",
-            "kind": "quarter",
-            "index": 2,
-            "label": "SECOND_QUARTER",
-            "start": "2026-11-08",
-            "end": "2026-12-23"
+            "from": "2026-12-25",
+            "to": "2027-01-10"
           },
           {
-            "externalId": "00000000-0000-4000-8000-00000000f003",
-            "kind": "quarter",
-            "index": 3,
-            "label": "THIRD_QUARTER",
-            "start": "2027-01-10",
-            "end": "2027-03-19"
-          },
-          {
-            "externalId": "00000000-0000-4000-8000-00000000f004",
-            "kind": "quarter",
-            "index": 4,
-            "label": "FOURTH_QUARTER",
-            "start": "2027-03-28",
-            "end": "2027-05-30"
-          }
-        ],
-        "holidays": [
-          {
-            "from": "2026-10-31",
-            "to": "2026-11-07"
-          },
-          {
-            "from": "2026-12-24",
-            "to": "2027-01-09"
-          },
-          {
-            "from": "2027-03-20",
-            "to": "2027-03-27"
+            "from": "2026-11-01",
+            "to": "2026-11-08"
           }
         ],
         "gradingScaleId": null
       },
       "subjects": [
         {
-          "externalId": "00000000-0000-4000-8000-000000002101",
+          "externalId": "00000000-0000-4000-8000-95cfb7cd1e11",
+          "name": "Беларуская мова"
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-489e7f841099",
+          "name": "Изобразительное искусство"
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-3a976f4aef0c",
+          "name": "Информационный час"
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-514514c1cbda",
+          "name": "Классный час"
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-c2eb455e4a1a",
           "name": "Математика"
         },
         {
-          "externalId": "00000000-0000-4000-8000-000000002102",
-          "name": "Обучение грамоте"
+          "externalId": "00000000-0000-4000-8000-9f056dc3d75b",
+          "name": "Музыка"
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-0fa0c2beac3e",
+          "name": "Обучение грамоте (письмо)"
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-9c46e65eb5ed",
+          "name": "Обучение грамоте (чтение)"
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-e0800af094f1",
+          "name": "Трудовое обучение"
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-c11151f1a2b6",
+          "name": "Физическая культура и здоровье"
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-43262e997a1f",
+          "name": "Человек и мир"
         }
       ],
       "lessons": [
         {
-          "externalId": "00000000-0000-4000-8000-000000004022",
-          "date": "2026-10-05",
+          "externalId": "00000000-0000-4000-8000-1df2acabec2e",
+          "date": "2026-10-19",
           "slot": 1,
-          "startTime": "08:30",
-          "subjectExternalId": "00000000-0000-4000-8000-000000002101",
-          "subjectName": "Математика",
-          "teacherExternalId": "00000000-0000-4000-8000-000000003101",
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-9c46e65eb5ed",
+          "subjectName": "Обучение грамоте (чтение)",
+          "teacherExternalId": "00000000-0000-4000-8000-a25496df27d9",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
         },
         {
-          "externalId": "00000000-0000-4000-8000-000000004023",
-          "date": "2026-10-12",
-          "slot": 1,
-          "startTime": "08:30",
-          "subjectExternalId": "00000000-0000-4000-8000-000000002101",
-          "subjectName": "Математика",
-          "teacherExternalId": "00000000-0000-4000-8000-000000003101",
-          "topic": "Тема урока",
-          "hasAttachments": false,
-          "marks": []
-        },
-        {
-          "externalId": "00000000-0000-4000-8000-000000004024",
-          "date": "2026-10-12",
+          "externalId": "00000000-0000-4000-8000-8d343cd26f1b",
+          "date": "2026-10-19",
           "slot": 2,
-          "startTime": "09:25",
-          "subjectExternalId": "00000000-0000-4000-8000-000000002102",
-          "subjectName": "Обучение грамоте",
-          "teacherExternalId": "00000000-0000-4000-8000-000000003101",
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-0fa0c2beac3e",
+          "subjectName": "Обучение грамоте (письмо)",
+          "teacherExternalId": "00000000-0000-4000-8000-a25496df27d9",
+          "topic": "Тема урока",
+          "hasAttachments": false,
+          "marks": []
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-fbc4bfb73a46",
+          "date": "2026-10-19",
+          "slot": 3,
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-c11151f1a2b6",
+          "subjectName": "Физическая культура и здоровье",
+          "teacherExternalId": "00000000-0000-4000-8000-6cd5a5444641",
+          "topic": "Тема урока",
+          "hasAttachments": false,
+          "marks": []
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-cf0f7b6417d5",
+          "date": "2026-10-19",
+          "slot": 4,
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-e0800af094f1",
+          "subjectName": "Трудовое обучение",
+          "teacherExternalId": "00000000-0000-4000-8000-a25496df27d9",
+          "topic": "Тема урока",
+          "hasAttachments": false,
+          "marks": []
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-6668c57a9388",
+          "date": "2026-10-20",
+          "slot": 1,
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-43262e997a1f",
+          "subjectName": "Человек и мир",
+          "teacherExternalId": "00000000-0000-4000-8000-a25496df27d9",
+          "topic": "Тема урока",
+          "hasAttachments": false,
+          "marks": []
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-5f03b76d22b0",
+          "date": "2026-10-20",
+          "slot": 2,
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-c2eb455e4a1a",
+          "subjectName": "Математика",
+          "teacherExternalId": "00000000-0000-4000-8000-a25496df27d9",
+          "topic": "Тема урока",
+          "hasAttachments": false,
+          "marks": []
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-1588f213ce30",
+          "date": "2026-10-20",
+          "slot": 3,
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-95cfb7cd1e11",
+          "subjectName": "Беларуская мова",
+          "teacherExternalId": "00000000-0000-4000-8000-a25496df27d9",
+          "topic": "Тема урока",
+          "hasAttachments": false,
+          "marks": []
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-e4a362fc1829",
+          "date": "2026-10-20",
+          "slot": 4,
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-489e7f841099",
+          "subjectName": "Изобразительное искусство",
+          "teacherExternalId": "00000000-0000-4000-8000-a25496df27d9",
+          "topic": "Тема урока",
+          "hasAttachments": false,
+          "marks": []
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-0e1de0c2710e",
+          "date": "2026-10-21",
+          "slot": 1,
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-c11151f1a2b6",
+          "subjectName": "Физическая культура и здоровье",
+          "teacherExternalId": "00000000-0000-4000-8000-6cd5a5444641",
+          "topic": "Тема урока",
+          "hasAttachments": false,
+          "marks": []
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-461ab5ef2aaa",
+          "date": "2026-10-21",
+          "slot": 2,
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-c2eb455e4a1a",
+          "subjectName": "Математика",
+          "teacherExternalId": "00000000-0000-4000-8000-a25496df27d9",
+          "topic": "Тема урока",
+          "hasAttachments": false,
+          "marks": []
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-86fb18105de5",
+          "date": "2026-10-21",
+          "slot": 3,
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-9c46e65eb5ed",
+          "subjectName": "Обучение грамоте (чтение)",
+          "teacherExternalId": "00000000-0000-4000-8000-a25496df27d9",
+          "topic": "Тема урока",
+          "hasAttachments": false,
+          "marks": []
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-9e14d24a8869",
+          "date": "2026-10-21",
+          "slot": 4,
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-0fa0c2beac3e",
+          "subjectName": "Обучение грамоте (письмо)",
+          "teacherExternalId": "00000000-0000-4000-8000-a25496df27d9",
+          "topic": "Тема урока",
+          "hasAttachments": false,
+          "marks": []
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-e0dfa0db744c",
+          "date": "2026-10-22",
+          "slot": 1,
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-3a976f4aef0c",
+          "subjectName": "Информационный час",
+          "teacherExternalId": "00000000-0000-4000-8000-a25496df27d9",
+          "topic": "Тема урока",
+          "hasAttachments": false,
+          "marks": []
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-faf9439c59cc",
+          "date": "2026-10-22",
+          "slot": 2,
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-c2eb455e4a1a",
+          "subjectName": "Математика",
+          "teacherExternalId": "00000000-0000-4000-8000-a25496df27d9",
+          "topic": "Тема урока",
+          "hasAttachments": false,
+          "marks": []
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-77710e909cbb",
+          "date": "2026-10-22",
+          "slot": 3,
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-9c46e65eb5ed",
+          "subjectName": "Обучение грамоте (чтение)",
+          "teacherExternalId": "00000000-0000-4000-8000-a25496df27d9",
+          "topic": "Тема урока",
+          "hasAttachments": false,
+          "marks": []
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-c53602891ee2",
+          "date": "2026-10-22",
+          "slot": 4,
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-0fa0c2beac3e",
+          "subjectName": "Обучение грамоте (письмо)",
+          "teacherExternalId": "00000000-0000-4000-8000-a25496df27d9",
+          "topic": "Тема урока",
+          "hasAttachments": false,
+          "marks": []
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-8b917702f58c",
+          "date": "2026-10-22",
+          "slot": 5,
+          "subjectExternalId": "00000000-0000-4000-8000-489e7f841099",
+          "subjectName": "Изобразительное искусство",
+          "teacherExternalId": "00000000-0000-4000-8000-a25496df27d9",
+          "topic": "Тема урока",
+          "hasAttachments": false,
+          "marks": []
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-2787647eae1b",
+          "date": "2026-10-23",
+          "slot": 1,
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-c2eb455e4a1a",
+          "subjectName": "Математика",
+          "teacherExternalId": "00000000-0000-4000-8000-a25496df27d9",
+          "topic": "Тема урока",
+          "hasAttachments": false,
+          "marks": []
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-4d33dac8229b",
+          "date": "2026-10-23",
+          "slot": 2,
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-c11151f1a2b6",
+          "subjectName": "Физическая культура и здоровье",
+          "teacherExternalId": "00000000-0000-4000-8000-6cd5a5444641",
+          "topic": "Тема урока",
+          "hasAttachments": false,
+          "marks": []
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-968cb6e1058a",
+          "date": "2026-10-23",
+          "slot": 3,
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-9f056dc3d75b",
+          "subjectName": "Музыка",
+          "teacherExternalId": "00000000-0000-4000-8000-82b1921b8c6d",
+          "hasAttachments": false,
+          "marks": []
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-f14050a32623",
+          "date": "2026-10-23",
+          "slot": 4,
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-514514c1cbda",
+          "subjectName": "Классный час",
+          "teacherExternalId": "00000000-0000-4000-8000-a25496df27d9",
+          "topic": "Тема урока",
+          "hasAttachments": false,
+          "marks": []
+        }
+      ],
+      "finalMarks": []
+    },
+    "00000000-0000-4000-8000-a95be8cd28f2": {
+      "calendar": {
+        "schoolYear": {
+          "externalId": "00000000-0000-4000-8000-8a8dde459c6c",
+          "label": "[text]",
+          "start": "2026-09-01",
+          "end": "2027-08-31"
+        },
+        "terms": [
+          {
+            "externalId": "00000000-0000-4000-8000-0d1abce0dc32",
+            "kind": "quarter",
+            "index": 1,
+            "label": "FIRST_QUARTER",
+            "start": "2026-09-01",
+            "end": "2026-10-31"
+          },
+          {
+            "externalId": "00000000-0000-4000-8000-3ec2f1827df6",
+            "kind": "quarter",
+            "index": 2,
+            "label": "SECOND_QUARTER",
+            "start": "2026-11-09",
+            "end": "2026-12-24"
+          },
+          {
+            "externalId": "00000000-0000-4000-8000-8fb2b8b28936",
+            "kind": "quarter",
+            "index": 3,
+            "label": "THIRD_QUARTER",
+            "start": "2027-01-11",
+            "end": "2027-03-20"
+          },
+          {
+            "externalId": "00000000-0000-4000-8000-9c7e5199bc06",
+            "kind": "quarter",
+            "index": 4,
+            "label": "[text]",
+            "start": "2027-03-29",
+            "end": "2027-05-31"
+          }
+        ],
+        "holidays": [
+          {
+            "from": "2027-02-15",
+            "to": "2027-02-21"
+          },
+          {
+            "from": "2027-03-21",
+            "to": "2027-03-28"
+          },
+          {
+            "from": "2027-06-01",
+            "to": "2027-08-31"
+          },
+          {
+            "from": "2026-12-25",
+            "to": "2027-01-10"
+          },
+          {
+            "from": "2026-11-01",
+            "to": "2026-11-08"
+          }
+        ]
+      },
+      "subjects": [
+        {
+          "externalId": "00000000-0000-4000-8000-876fbd395bf5",
+          "name": "Английский язык"
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-7d0b6443f321",
+          "name": "Беларуская літаратура (літаратурнае чытанне)"
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-70e614343b7f",
+          "name": "Беларуская мова"
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-da5fcfb19c01",
+          "name": "Биология"
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-0052ad7e5b36",
+          "name": "Всемирная история"
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-d5632a781d66",
+          "name": "География"
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-138d9167819b",
+          "name": "Информатика"
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-607b450b8fce",
+          "name": "Искусство (отечественная и мировая художественная культура)"
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-b1cad1815b06",
+          "name": "История Беларуси"
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-70ec57bd82d5",
+          "name": "Математика"
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-fe528a1ea4e4",
+          "name": "Русская литература (литературное чтение)"
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-84561dfefec7",
+          "name": "Русский язык"
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-fbe8503ae88c",
+          "name": "Трудовое обучение"
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-1f02b34f3436",
+          "name": "Физика"
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-8abad82431bf",
+          "name": "Физическая культура и здоровье"
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-106943ac31be",
+          "name": "Химия"
+        }
+      ],
+      "lessons": [
+        {
+          "externalId": "00000000-0000-4000-8000-3ae3d3ae45e5",
+          "date": "2026-10-19",
+          "slot": 2,
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-84561dfefec7",
+          "subjectName": "Русский язык",
+          "teacherExternalId": "00000000-0000-4000-8000-563cc2b855e7",
+          "topic": "Тема урока",
+          "homework": "Домашнее задание",
+          "hasAttachments": false,
+          "lessonType": "test",
+          "marks": []
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-6dd2cb3d948c",
+          "date": "2026-10-19",
+          "slot": 3,
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-70ec57bd82d5",
+          "subjectName": "Математика",
+          "teacherExternalId": "00000000-0000-4000-8000-2aa9d0247e41",
+          "topic": "Тема урока",
+          "hasAttachments": false,
+          "marks": []
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-471305d29deb",
+          "date": "2026-10-19",
+          "slot": 4,
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-da5fcfb19c01",
+          "subjectName": "Биология",
+          "teacherExternalId": "00000000-0000-4000-8000-ec811a054539",
+          "topic": "Тема урока",
+          "homework": "Домашнее задание",
+          "hasAttachments": false,
+          "marks": [
+            {
+              "externalId": "00000000-0000-4000-8000-b95cde4fe42c",
+              "date": "2026-10-19",
+              "subjectExternalId": "00000000-0000-4000-8000-da5fcfb19c01",
+              "subjectName": "Биология",
+              "lessonExternalId": "00000000-0000-4000-8000-471305d29deb",
+              "raw": "7",
+              "kind": "numeric",
+              "values": [
+                7
+              ],
+              "authorExternalId": "00000000-0000-4000-8000-ec811a054539"
+            }
+          ]
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-56dab9c4cf7d",
+          "date": "2026-10-19",
+          "slot": 5,
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-70e614343b7f",
+          "subjectName": "Беларуская мова",
+          "teacherExternalId": "00000000-0000-4000-8000-46e756d2a946",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
           "marks": []
         },
         {
-          "externalId": "00000000-0000-4000-8000-000000004025",
-          "date": "2026-10-13",
-          "slot": 1,
-          "startTime": "08:30",
-          "subjectExternalId": "00000000-0000-4000-8000-000000002102",
-          "subjectName": "Обучение грамоте",
-          "teacherExternalId": "00000000-0000-4000-8000-000000003101",
+          "externalId": "00000000-0000-4000-8000-ebd7783a7f55",
+          "date": "2026-10-19",
+          "slot": 7,
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-607b450b8fce",
+          "subjectName": "Искусство (отечественная и мировая художественная культура)",
+          "teacherExternalId": "00000000-0000-4000-8000-82b1921b8c6d",
           "topic": "Тема урока",
+          "homework": "Домашнее задание",
+          "hasAttachments": false,
+          "marks": []
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-aa8e07bd7258",
+          "date": "2026-10-20",
+          "slot": 1,
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-8abad82431bf",
+          "subjectName": "Физическая культура и здоровье",
+          "teacherExternalId": "00000000-0000-4000-8000-5aa31877383d",
+          "topic": "Тема урока",
+          "hasAttachments": false,
+          "marks": []
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-833fab248612",
+          "date": "2026-10-20",
+          "slot": 2,
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-b1cad1815b06",
+          "subjectName": "История Беларуси",
+          "teacherExternalId": "00000000-0000-4000-8000-876ea284f73c",
+          "hasAttachments": false,
+          "marks": []
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-b889bc703e04",
+          "date": "2026-10-20",
+          "slot": 3,
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-84561dfefec7",
+          "subjectName": "Русский язык",
+          "teacherExternalId": "00000000-0000-4000-8000-563cc2b855e7",
+          "topic": "Тема урока",
+          "hasAttachments": false,
+          "marks": []
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-d448a1aa855b",
+          "date": "2026-10-20",
+          "slot": 4,
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-70ec57bd82d5",
+          "subjectName": "Математика",
+          "teacherExternalId": "00000000-0000-4000-8000-2aa9d0247e41",
+          "topic": "Тема урока",
+          "homework": "Домашнее задание",
+          "hasAttachments": false,
+          "marks": []
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-129678a7cefa",
+          "date": "2026-10-20",
+          "slot": 5,
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-1f02b34f3436",
+          "subjectName": "Физика",
+          "teacherExternalId": "00000000-0000-4000-8000-90ed5e28f936",
+          "topic": "Тема урока",
+          "homework": "Домашнее задание",
+          "hasAttachments": false,
+          "marks": []
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-44f7a77e724b",
+          "date": "2026-10-20",
+          "slot": 6,
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-d5632a781d66",
+          "subjectName": "География",
+          "teacherExternalId": "00000000-0000-4000-8000-6e4d2dd6835c",
+          "topic": "Тема урока",
+          "homework": "Домашнее задание",
+          "hasAttachments": false,
+          "marks": []
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-c69027f36002",
+          "date": "2026-10-21",
+          "slot": 3,
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-70ec57bd82d5",
+          "subjectName": "Математика",
+          "teacherExternalId": "00000000-0000-4000-8000-2aa9d0247e41",
+          "topic": "Тема урока",
+          "hasAttachments": false,
+          "marks": []
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-5938ed5a0c63",
+          "date": "2026-10-21",
+          "slot": 4,
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-876fbd395bf5",
+          "subjectName": "Английский язык",
+          "teacherExternalId": "00000000-0000-4000-8000-e9e7009b6d77",
+          "topic": "Тема урока",
+          "homework": "Домашнее задание",
+          "hasAttachments": false,
+          "marks": []
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-957560299819",
+          "date": "2026-10-21",
+          "slot": 5,
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-138d9167819b",
+          "subjectName": "Информатика",
+          "teacherExternalId": "00000000-0000-4000-8000-f42dab2e8623",
+          "hasAttachments": false,
+          "marks": []
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-70891834d436",
+          "date": "2026-10-21",
+          "slot": 6,
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-106943ac31be",
+          "subjectName": "Химия",
+          "teacherExternalId": "00000000-0000-4000-8000-293bfa9323ad",
+          "topic": "Тема урока",
+          "homework": "Домашнее задание",
+          "hasAttachments": false,
+          "marks": []
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-43bf22b76cb8",
+          "date": "2026-10-22",
+          "slot": 2,
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-70ec57bd82d5",
+          "subjectName": "Математика",
+          "teacherExternalId": "00000000-0000-4000-8000-2aa9d0247e41",
+          "topic": "Тема урока",
+          "hasAttachments": false,
+          "marks": []
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-fd1098b4aedd",
+          "date": "2026-10-22",
+          "slot": 3,
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-876fbd395bf5",
+          "subjectName": "Английский язык",
+          "teacherExternalId": "00000000-0000-4000-8000-e9e7009b6d77",
+          "topic": "Тема урока",
+          "homework": "Домашнее задание",
+          "hasAttachments": false,
+          "marks": []
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-f6dad938702d",
+          "date": "2026-10-22",
+          "slot": 4,
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-da5fcfb19c01",
+          "subjectName": "Биология",
+          "teacherExternalId": "00000000-0000-4000-8000-ec811a054539",
+          "topic": "Тема урока",
+          "homework": "Домашнее задание",
+          "hasAttachments": false,
+          "marks": []
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-1b4b7b3c9bc6",
+          "date": "2026-10-22",
+          "slot": 5,
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-fbe8503ae88c",
+          "subjectName": "Трудовое обучение",
+          "teacherExternalId": "00000000-0000-4000-8000-501930293aca",
+          "hasAttachments": false,
+          "marks": []
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-9a1226841043",
+          "date": "2026-10-22",
+          "slot": 6,
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-fbe8503ae88c",
+          "subjectName": "Трудовое обучение",
+          "teacherExternalId": "00000000-0000-4000-8000-501930293aca",
+          "hasAttachments": false,
+          "marks": []
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-1be879dc09db",
+          "date": "2026-10-22",
+          "slot": 7,
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-8abad82431bf",
+          "subjectName": "Физическая культура и здоровье",
+          "teacherExternalId": "00000000-0000-4000-8000-5aa31877383d",
+          "topic": "Тема урока",
+          "hasAttachments": false,
+          "marks": []
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-4036aad10d86",
+          "date": "2026-10-23",
+          "slot": 2,
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-876fbd395bf5",
+          "subjectName": "Английский язык",
+          "teacherExternalId": "00000000-0000-4000-8000-e9e7009b6d77",
+          "topic": "Тема урока",
+          "hasAttachments": false,
+          "marks": []
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-aa2af4fbf736",
+          "date": "2026-10-23",
+          "slot": 3,
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-1f02b34f3436",
+          "subjectName": "Физика",
+          "teacherExternalId": "00000000-0000-4000-8000-90ed5e28f936",
+          "homework": "Домашнее задание",
+          "hasAttachments": false,
+          "marks": []
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-9778bb2f5363",
+          "date": "2026-10-23",
+          "slot": 4,
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-70ec57bd82d5",
+          "subjectName": "Математика",
+          "teacherExternalId": "00000000-0000-4000-8000-2aa9d0247e41",
+          "homework": "Домашнее задание",
+          "hasAttachments": false,
+          "marks": []
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-074b74a2b598",
+          "date": "2026-10-23",
+          "slot": 5,
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-8abad82431bf",
+          "subjectName": "Физическая культура и здоровье",
+          "teacherExternalId": "00000000-0000-4000-8000-5aa31877383d",
+          "topic": "Тема урока",
+          "hasAttachments": false,
+          "marks": []
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-e9e1f0f06f8e",
+          "date": "2026-10-23",
+          "slot": 6,
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-fe528a1ea4e4",
+          "subjectName": "Русская литература (литературное чтение)",
+          "teacherExternalId": "00000000-0000-4000-8000-563cc2b855e7",
+          "homework": "Домашнее задание",
+          "hasAttachments": false,
+          "marks": []
+        },
+        {
+          "externalId": "00000000-0000-4000-8000-fee8fe04938a",
+          "date": "2026-10-23",
+          "slot": 7,
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-0052ad7e5b36",
+          "subjectName": "Всемирная история",
+          "teacherExternalId": "00000000-0000-4000-8000-876ea284f73c",
+          "homework": "Домашнее задание",
           "hasAttachments": false,
           "marks": []
         }

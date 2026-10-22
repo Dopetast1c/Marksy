@@ -1,13 +1,13 @@
 [
   {
-    "uuid": "00000000-0000-4000-8000-00000000d001",
+    "uuid": "00000000-0000-4000-8000-88ee38e5ecf6",
     "summary": null,
     "label": "А",
-    "level": 7,
-    "school": "00000000-0000-4000-8000-00000000b001",
+    "level": 1,
+    "school": "00000000-0000-4000-8000-d48b0d56ccdb",
     "dt_disbanded": null,
-    "graduating_year": 2031,
-    "class_number": "7А",
+    "graduating_year": 0,
+    "class_number": "1А",
     "graduating": false
   }
 ]
