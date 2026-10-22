@@ -1,6 +1,7 @@
 import { createApp } from './app';
 import { createDb } from './db/client';
 import { log } from './log';
+import { dailyJanitor, readRetention } from './retention';
 import { readSyncConfig } from './sync/config';
 import { createScheduler } from './sync/scheduler';
 
@@ -17,7 +18,9 @@ createApp().listen(port, host, () => {
 const config = readSyncConfig();
 if (config.enabled) {
   const db = createDb();
-  createScheduler({ db, config, log });
+  // the retention janitor runs after the first tick of each day (docs/design.md 10.4)
+  const janitor = dailyJanitor(db, readRetention(), (report) => log.info('retention', report));
+  createScheduler({ db, config, log, afterTick: janitor });
   log.info('collector scheduler on', { count: config.tickMinutes });
 } else {
   log.info('collector scheduler off (SYNC_ENABLED=false)');
