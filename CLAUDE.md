@@ -107,6 +107,14 @@ Database commands (`db:migrate`, `db:seed`, `db:studio`) arrive with M3, `probe`
 
 The owner tests every screen in a desktop browser and on a phone over the home network (`pnpm dev:lan`, `http://<computer-ip>:5173`). Keep it working: the browser talks only to the PWA origin (relative `/api` URLs, never `localhost:3000` in client code), the API binds to `HOST` (127.0.0.1) behind the proxy, session cookies are `SameSite=Lax` and `Secure` only when `PUBLIC_URL` is https, layouts work at 360 px with touch. Two kinds of data (`docs/build-plan.md`, "Data for testing"): the owner's real family in the local `marksy` database, loaded by commands only the owner runs (`pnpm probe`, `pnpm sync:once`, `pnpm dev:connect`; they use the logins in `.env`), and a fictional family from `pnpm db:seed` and fixtures for tests and for anyone without a diary account. Never read rows of the real family into the conversation (schema, counts and ids are fine) and never copy real values into code, tests, fixtures or docs; reproduce a bug seen on real data with fictional data in a test.
 
+## Windows
+
+The owner's machine is Windows; the shell is Git Bash.
+
+- Never call `python` or `python3`: on Windows it is usually the Microsoft Store stub, which hangs waiting for input. Helper scripts are Node only (`node -e`, `node scripts/*.mjs`).
+- Write and change files with the editing tools (Write, Edit), not with `printf`, `echo` or heredocs in the shell: Git Bash eats backslashes in them (`\\w` in a JSON regex arrives as `\w`).
+- One `git push` at a time: before a new push, make sure the previous one has finished. `.claude/settings.json` sets `GCM_INTERACTIVE=never`, so a push without stored credentials fails with an error instead of waiting for the Git Credential Manager account window; when that happens, tell the owner to sign in once (`git push` in their own terminal) instead of retrying.
+
 ## Build order and workflow
 
 Follow `docs/build-plan.md`: one milestone per branch, the `/next` skill to start one (it plans first and waits for approval), `/check` before every commit, `/privacy-check` before merging, `/ui-check <screen>` for screens. Agents `privacy-reviewer` and `ux-reviewer` live in `.claude/agents/`. You commit and push yourself: commit after each green step and push the milestone branch; when the milestone is done and `/check` and `/privacy-check` are green, merge it into `main` with `--no-ff` and push `main`. Never force-push, never rewrite pushed history, never push with a failing `pnpm check`. When the docs do not answer a product question, ask the owner and write the answer into the docs.
