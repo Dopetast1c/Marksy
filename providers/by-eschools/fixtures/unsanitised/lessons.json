@@ -1,0 +1,29 @@
+[
+  {
+    "day_of_week": 1,
+    "date": 1791752400000,
+    "slots": [
+      {
+        "lesson_uuid": "9a8b7c6d-5e4f-4a3b-9c2d-1e0f9a8b7c6d",
+        "lesson_template_id": "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+        "subject_id": "3c4d5e6f-7a8b-4c9d-8e0f-1a2b3c4d5e6f",
+        "subject_title": "Алгебра",
+        "teacher_id": "4d5e6f7a-8b9c-4d0e-9f1a-2b3c4d5e6f7a",
+        "type": null,
+        "number": 1,
+        "topic": "Повторение: Ника Лесная у доски",
+        "homework": "Ника, принеси тетрадь",
+        "message": "Родителям Лесной Н.: подпишите дневник",
+        "start_time": "08:30",
+        "lesson_mark": {
+          "uuid": "6f7a8b9c-0d1e-4f2a-8b3c-4d5e6f7a8b9c",
+          "type": "HOMEWORK",
+          "mark": "8",
+          "kind": "SINGLE",
+          "comment": "Ника молодец",
+          "author": "4d5e6f7a-8b9c-4d0e-9f1a-2b3c4d5e6f7a"
+        }
+      }
+    ]
+  }
+]

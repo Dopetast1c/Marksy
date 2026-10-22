@@ -21,6 +21,8 @@ export const studentRef = z.object({
   middleName: z.string().optional(),
   displayName: z.string().optional(),
   schoolId: z.string().optional(),
+  /** The class or year group in the system, when its URLs or data need it */
+  classExternalId: z.string().optional(),
   className: z.string().optional(),
   grade: z.number().int().optional(),
   gradeLabel: z.string().optional(),
@@ -134,6 +136,20 @@ export const mark = z.object({
 });
 export type Mark = z.infer<typeof mark>;
 
+/** Attendance is never a mark: averages do not see it. */
+export const attendance = z.object({
+  externalId: nonEmpty,
+  date: isoDate,
+  lessonExternalId: z.string().optional(),
+  subjectExternalId: z.string().optional(),
+  status: z.enum(['absent', 'late', 'left_early', 'present_other']),
+  excused: z.boolean().optional(),
+  minutes: z.number().optional(),
+  reason: z.string().optional(),
+  code: z.string().optional(),
+});
+export type Attendance = z.infer<typeof attendance>;
+
 export const lessonType = z.enum(['regular', 'test', 'lab', 'practical', 'excursion', 'other']);
 export type LessonType = z.infer<typeof lessonType>;
 
@@ -155,6 +171,8 @@ export const lesson = z.object({
   lessonType: lessonType.optional(),
   substituteTeacherName: z.string().optional(),
   marks: z.array(mark),
+  /** Attendance that comes with the lesson (capabilities.attendance = 'derived', e.g. an "absent" mark cell) */
+  attendance: z.array(attendance).optional(),
   cancelled: z.boolean().optional(),
 });
 export type Lesson = z.infer<typeof lesson>;
@@ -183,20 +201,6 @@ export const behaviourEvent = z.object({
   authorExternalId: z.string().optional(),
 });
 export type BehaviourEvent = z.infer<typeof behaviourEvent>;
-
-/** Attendance is never a mark: averages do not see it. */
-export const attendance = z.object({
-  externalId: nonEmpty,
-  date: isoDate,
-  lessonExternalId: z.string().optional(),
-  subjectExternalId: z.string().optional(),
-  status: z.enum(['absent', 'late', 'left_early', 'present_other']),
-  excused: z.boolean().optional(),
-  minutes: z.number().optional(),
-  reason: z.string().optional(),
-  code: z.string().optional(),
-});
-export type Attendance = z.infer<typeof attendance>;
 
 export const finalMarkRole = z.enum([
   'final',

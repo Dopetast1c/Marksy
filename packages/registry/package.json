@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@marksy/core": "workspace:*",
+    "@marksy/provider-by-eschools": "workspace:*",
     "@marksy/provider-demo-minimal": "workspace:*"
   },
   "devDependencies": {

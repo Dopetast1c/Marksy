@@ -106,7 +106,7 @@ describe('logger: strings are allowed, not denied', () => {
       data: { fio: 'A Person', teacher: 'B Person' },
       unexpected: 'A Person',
       json: '{"password":"x","name":"y"}',
-      kind: 'MASTERED',
+      kind: 'ACHIEVED',
       path: '/diary/week/12',
       week: 12,
       ok: true,
@@ -118,7 +118,7 @@ describe('logger: strings are allowed, not denied', () => {
       data: '[redacted]',
       unexpected: '[redacted]',
       json: '[redacted]',
-      kind: 'MASTERED',
+      kind: 'ACHIEVED',
       path: '/diary/week/12',
       week: 12,
       ok: true,
@@ -141,12 +141,12 @@ describe('drift events carry shapes, not data', () => {
   it('keeps enum samples, drops ids and logins, replaces ids in paths', () => {
     const d = createMemoryDrift();
     const uuid = '3f2a9c1e-0b7d-4c1a-9e55-1f2d3c4b5a69';
-    d.report({ kind: 'new_enum_value', endpoint: 'lessons', path: 'days[].lesson_mark.kind', sample: 'MASTERED' });
+    d.report({ kind: 'new_enum_value', endpoint: 'entries', path: 'entries[].grade.kind', sample: 'ACHIEVED' });
     d.report({ kind: 'unknown_field', endpoint: 'final', path: `marks.${uuid}.q1.x`, sample: uuid });
     d.report({ kind: 'unknown_field', endpoint: 'final', path: `marks.7b1e4d2a-aaaa-4bbb-8ccc-0d1e2f3a4b5c.q1.x` });
     d.report({ kind: 'new_enum_value', endpoint: 'account', path: 'login', sample: 'ivanov.ivan_2015' });
     expect(d.events).toEqual([
-      { kind: 'new_enum_value', endpoint: 'lessons', path: 'days[].lesson_mark.kind', sample: 'MASTERED' },
+      { kind: 'new_enum_value', endpoint: 'entries', path: 'entries[].grade.kind', sample: 'ACHIEVED' },
       { kind: 'unknown_field', endpoint: 'final', path: 'marks.*.q1.x' },
       { kind: 'new_enum_value', endpoint: 'account', path: 'login' },
     ]);

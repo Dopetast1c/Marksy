@@ -27,7 +27,7 @@ export interface Logger {
   error(msg: string, data?: Record<string, unknown>): void;
 }
 
-export type DriftKind = 'unknown_field' | 'missing_field' | 'new_enum_value' | 'new_error_shape';
+export type DriftKind = 'unknown_field' | 'missing_field' | 'type_mismatch' | 'new_enum_value' | 'new_error_shape';
 
 /** Something in a response that the schemas did not expect. Recorded, pushed to the admin, never fatal. */
 export interface DriftEvent {

@@ -99,6 +99,8 @@ export const providerManifest = z
       baseUrl: apiOrigin,
       /** The collector must run from this country (ISO 3166-1 alpha-2); null if any. */
       regionHint: z.string().length(2).nullable(),
+      /** The User-Agent the client sends; set here so it can change without code. Absent: the runtime default. */
+      userAgent: z.string().min(1).max(300).optional(),
       notes: z.string().optional(),
     }),
     limits: z.object({

@@ -8,6 +8,10 @@ describe('registry', () => {
     expect(listProviders({ all: true }).map((p) => p.manifest.id)).toContain('demo-minimal');
   });
 
+  it('offers by-eschools as beta', () => {
+    expect(listProviders().map((p) => [p.manifest.id, p.manifest.status])).toEqual([['by-eschools', 'beta']]);
+  });
+
   it('never lists the template', () => {
     expect(getProvider('_template')).toBeUndefined();
   });

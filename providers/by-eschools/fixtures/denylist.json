@@ -1,0 +1,8 @@
+{
+  "strings": ["Лесн", "Ника", "Андрей", "PC-7731", "lesnoy"],
+  "patterns": [
+    "\\b(?!00000000-0000-4000-8000-)[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\b",
+    "[\\w.]+@[\\w.]+"
+  ],
+  "keep": ["person_kind", "roles", "subject_title", "start_time", "type", "mark", "kind"]
+}

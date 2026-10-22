@@ -25,3 +25,4 @@ export * from './http/throttled-client';
 export * from './http/logger';
 export * from './http/run-context';
 export * from './http/fixture-transport';
+export * from './drift/check';

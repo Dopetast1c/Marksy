@@ -1,0 +1,17 @@
+{
+  "POST /api/v1/auth/login/parent": "login",
+  "GET /api/v1/admin/auth/me": "me",
+  "GET /api/v1/education/diary/school_year": "school_year",
+  "GET /api/v1/education/diary/time_activities/week_activities": "week_activities",
+  "GET /api/v1/education/diary/time_activities": "time_activities",
+  "GET /api/v1/education/diary/schools/00000000-0000-4000-8000-00000000b001/students/00000000-0000-4000-8000-00000000c001/classes": "classes-1",
+  "GET /api/v1/education/diary/schools/00000000-0000-4000-8000-00000000b001/classes/00000000-0000-4000-8000-00000000d001/students/00000000-0000-4000-8000-00000000c001/educational_subjects": "subjects-1",
+  "GET /api/v1/education/diary/schools/00000000-0000-4000-8000-00000000b001/classes/00000000-0000-4000-8000-00000000d001/students/00000000-0000-4000-8000-00000000c001/lessons?week_activity_uuid=00000000-0000-4000-8000-000000001001": "lessons-1-w1",
+  "GET /api/v1/education/diary/schools/00000000-0000-4000-8000-00000000b001/classes/00000000-0000-4000-8000-00000000d001/students/00000000-0000-4000-8000-00000000c001/lessons?week_activity_uuid=00000000-0000-4000-8000-000000001002": "lessons-1-w2",
+  "GET /api/v1/education/diary/schools/00000000-0000-4000-8000-00000000b001/classes/00000000-0000-4000-8000-00000000d001/students/00000000-0000-4000-8000-00000000c001/final/whole": "final-1",
+  "GET /api/v1/education/diary/schools/00000000-0000-4000-8000-00000000b001/students/00000000-0000-4000-8000-00000000c002/classes": "classes-2",
+  "GET /api/v1/education/diary/schools/00000000-0000-4000-8000-00000000b001/classes/00000000-0000-4000-8000-00000000d002/students/00000000-0000-4000-8000-00000000c002/educational_subjects": "subjects-2",
+  "GET /api/v1/education/diary/schools/00000000-0000-4000-8000-00000000b001/classes/00000000-0000-4000-8000-00000000d002/students/00000000-0000-4000-8000-00000000c002/lessons?week_activity_uuid=00000000-0000-4000-8000-000000001001": "lessons-2-w1",
+  "GET /api/v1/education/diary/schools/00000000-0000-4000-8000-00000000b001/classes/00000000-0000-4000-8000-00000000d002/students/00000000-0000-4000-8000-00000000c002/lessons?week_activity_uuid=00000000-0000-4000-8000-000000001002": "lessons-2-w2",
+  "GET /api/v1/education/diary/schools/00000000-0000-4000-8000-00000000b001/classes/00000000-0000-4000-8000-00000000d002/students/00000000-0000-4000-8000-00000000c002/final/whole": "final-2"
+}

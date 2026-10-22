@@ -69,6 +69,8 @@ const PERSONAL_PATTERNS = [
 const PROVIDER_WORDS = /e-?schools/i;
 const PROVIDER_ALLOWED = [
   /^providers\/by-eschools\//,
+  // the registry lists providers by id (docs/providers.md 2): its import line, its test and its package.json, nothing else
+  /^packages\/registry\/(src\/index(\.test)?\.ts|package\.json)$/,
   /^docs\//,
   /^README\.md$/,
   /^CLAUDE\.md$/,

@@ -1,0 +1,127 @@
+[
+  {
+    "day_of_week": 1,
+    "date": 1791147600000,
+    "slots": [
+      {
+        "lesson_uuid": "00000000-0000-4000-8000-000000004002",
+        "lesson_template_id": "00000000-0000-4000-8000-000000006002",
+        "subject_id": "00000000-0000-4000-8000-000000002001",
+        "subject_title": "Алгебра",
+        "teacher_id": "00000000-0000-4000-8000-000000003001",
+        "type": null,
+        "number": 1,
+        "topic": "Тема урока",
+        "homework": null,
+        "message": "",
+        "start_time": "08:30",
+        "has_attachments_or_links": false,
+        "homework_source_id": null,
+        "lesson_mark": {
+          "uuid": "00000000-0000-4000-8000-000000005001",
+          "summary": null,
+          "type": "CLASSWORK",
+          "mark": "5",
+          "kind": "SINGLE",
+          "comment": "",
+          "author": "00000000-0000-4000-8000-000000003001"
+        },
+        "substitution": null
+      },
+      {
+        "lesson_uuid": "00000000-0000-4000-8000-000000004003",
+        "lesson_template_id": "00000000-0000-4000-8000-000000006003",
+        "subject_id": "00000000-0000-4000-8000-000000002002",
+        "subject_title": "Русский язык",
+        "teacher_id": "00000000-0000-4000-8000-000000003002",
+        "type": null,
+        "number": 2,
+        "topic": "Тема урока",
+        "homework": "Домашнее задание",
+        "message": "",
+        "start_time": "09:25",
+        "has_attachments_or_links": false,
+        "homework_source_id": null,
+        "lesson_mark": null,
+        "substitution": null
+      }
+    ]
+  },
+  {
+    "day_of_week": 2,
+    "date": 1791234000000,
+    "slots": [
+      {
+        "lesson_uuid": "00000000-0000-4000-8000-000000004005",
+        "lesson_template_id": "00000000-0000-4000-8000-000000006005",
+        "subject_id": "00000000-0000-4000-8000-000000002003",
+        "subject_title": "Биология",
+        "teacher_id": "00000000-0000-4000-8000-000000003003",
+        "type": null,
+        "number": 1,
+        "topic": "Тема урока",
+        "homework": null,
+        "message": "",
+        "start_time": "08:30",
+        "has_attachments_or_links": false,
+        "homework_source_id": null,
+        "lesson_mark": {
+          "uuid": "00000000-0000-4000-8000-000000005004",
+          "summary": null,
+          "type": "HOMEWORK",
+          "mark": "5",
+          "kind": "SINGLE",
+          "comment": "Комментарий",
+          "author": "00000000-0000-4000-8000-000000003001"
+        },
+        "substitution": null
+      }
+    ]
+  },
+  {
+    "day_of_week": 3,
+    "date": 1791320400000,
+    "slots": [
+      {
+        "lesson_uuid": "00000000-0000-4000-8000-000000004007",
+        "lesson_template_id": "00000000-0000-4000-8000-000000006007",
+        "subject_id": "00000000-0000-4000-8000-000000002002",
+        "subject_title": "Русский язык",
+        "teacher_id": "00000000-0000-4000-8000-000000003002",
+        "type": null,
+        "number": 3,
+        "topic": "Тема урока",
+        "homework": null,
+        "message": "",
+        "start_time": "10:20",
+        "has_attachments_or_links": false,
+        "homework_source_id": null,
+        "lesson_mark": {
+          "uuid": "00000000-0000-4000-8000-000000005006",
+          "summary": null,
+          "type": null,
+          "mark": null,
+          "kind": "EXEMPT",
+          "comment": "",
+          "author": "00000000-0000-4000-8000-000000003001"
+        },
+        "substitution": null
+      }
+    ]
+  },
+  {
+    "day_of_week": 4,
+    "date": 1791406800000,
+    "slots": []
+  },
+  {
+    "day_of_week": 5,
+    "date": 1791493200000,
+    "slots": []
+  },
+  {
+    "day_of_week": 6,
+    "date": 1791579600000,
+    "slots": []
+  }
+]

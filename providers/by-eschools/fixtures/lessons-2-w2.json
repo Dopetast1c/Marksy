@@ -1,0 +1,85 @@
+[
+  {
+    "day_of_week": 1,
+    "date": 1791752400000,
+    "slots": [
+      {
+        "lesson_uuid": "00000000-0000-4000-8000-000000004023",
+        "lesson_template_id": "00000000-0000-4000-8000-000000006023",
+        "subject_id": "00000000-0000-4000-8000-000000002101",
+        "subject_title": "Математика",
+        "teacher_id": "00000000-0000-4000-8000-000000003101",
+        "type": null,
+        "number": 1,
+        "topic": "Тема урока",
+        "homework": null,
+        "message": "",
+        "start_time": "08:30",
+        "has_attachments_or_links": false,
+        "homework_source_id": null,
+        "lesson_mark": null,
+        "substitution": null
+      },
+      {
+        "lesson_uuid": "00000000-0000-4000-8000-000000004024",
+        "lesson_template_id": "00000000-0000-4000-8000-000000006024",
+        "subject_id": "00000000-0000-4000-8000-000000002102",
+        "subject_title": "Обучение грамоте",
+        "teacher_id": "00000000-0000-4000-8000-000000003101",
+        "type": null,
+        "number": 2,
+        "topic": "Тема урока",
+        "homework": "Домашнее задание",
+        "message": "",
+        "start_time": "09:25",
+        "has_attachments_or_links": false,
+        "homework_source_id": null,
+        "lesson_mark": null,
+        "substitution": null
+      }
+    ]
+  },
+  {
+    "day_of_week": 2,
+    "date": 1791838800000,
+    "slots": [
+      {
+        "lesson_uuid": "00000000-0000-4000-8000-000000004025",
+        "lesson_template_id": "00000000-0000-4000-8000-000000006025",
+        "subject_id": "00000000-0000-4000-8000-000000002102",
+        "subject_title": "Обучение грамоте",
+        "teacher_id": "00000000-0000-4000-8000-000000003101",
+        "type": null,
+        "number": 1,
+        "topic": "Тема урока",
+        "homework": null,
+        "message": "",
+        "start_time": "08:30",
+        "has_attachments_or_links": false,
+        "homework_source_id": null,
+        "lesson_mark": null,
+        "substitution": null
+      }
+    ]
+  },
+  {
+    "day_of_week": 3,
+    "date": 1791925200000,
+    "slots": []
+  },
+  {
+    "day_of_week": 4,
+    "date": 1792011600000,
+    "slots": []
+  },
+  {
+    "day_of_week": 5,
+    "date": 1792098000000,
+    "slots": []
+  },
+  {
+    "day_of_week": 6,
+    "date": 1792184400000,
+    "slots": []
+  }
+]

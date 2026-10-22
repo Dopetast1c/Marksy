@@ -46,9 +46,10 @@ export interface ThrottledClientOptions {
 
 export const MAX_ATTEMPTS = 3;
 const MAX_RETRY_WAIT_MS = 60_000;
-/** Headers a provider may not set: method overrides, the host, the length (the client owns them). */
+/** Headers a provider may not set: method overrides, the host, the length, the user agent (the client owns them). */
 const FORBIDDEN_HEADERS = new Set([
   'host',
+  'user-agent',
   'content-length',
   'x-http-method-override',
   'x-http-method',
@@ -105,6 +106,7 @@ export function createThrottledClient(opts: ThrottledClientOptions): HttpClient 
     if (sent > 0) await pause();
     sent++;
     const headers: Record<string, string> = { accept: 'application/json' };
+    if (manifest.network.userAgent) headers['user-agent'] = manifest.network.userAgent;
     for (const [k, v] of Object.entries(options.headers ?? {})) {
       // a header must not turn a GET into something else, or point the request at another host
       if (!FORBIDDEN_HEADERS.has(k.toLowerCase())) headers[k] = v;
