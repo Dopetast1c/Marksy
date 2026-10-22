@@ -18,6 +18,7 @@ import {
   reportable,
   sanitisedRoute,
   sensitiveValues,
+  shapeOf,
   weeksArg,
 } from '../src/probe';
 import { sanitize } from '../src/sanitize';
@@ -135,11 +136,17 @@ async function main(): Promise<number> {
   const rawKinds: Record<string, number> = {};
   const rawWorkTypes: Record<string, number> = {};
   const rawLessonTypes: Record<string, number> = {};
+  // forms of the values the allow-list needs to know, never the values (digits as 9, letters as a)
+  const shapes: Record<string, Record<string, number>> = { start_time: {}, 'school_year.label': {} };
+  const addShape = (field: string, v: unknown) => (shapes[field]![shapeOf(v)] = (shapes[field]![shapeOf(v)] ?? 0) + 1);
+  const yearRaw = named.find((x) => x.name === 'school_year')?.raw as { label?: unknown } | undefined;
+  if (yearRaw) addShape('school_year.label', yearRaw.label);
   for (const n of named.filter((x) => x.name.startsWith('lessons-'))) {
     for (const day of n.raw as {
-      slots: { type: string | null; lesson_mark: { kind: string; type: string | null } | null }[];
+      slots: { type: string | null; start_time?: unknown; lesson_mark: { kind: string; type: string | null } | null }[];
     }[]) {
       for (const slot of day.slots) {
+        addShape('start_time', slot.start_time);
         // enum values only: anything that is not UPPER_SNAKE is counted as "other", never printed
         const count = (m: Record<string, number>, v: unknown) =>
           (m[reportable(String(v))] = (m[reportable(String(v))] ?? 0) + 1);
@@ -184,6 +191,7 @@ async function main(): Promise<number> {
       rawKinds,
       rawWorkTypes,
       rawLessonTypes,
+      shapes,
       drift: run.drift.events,
     }),
   );

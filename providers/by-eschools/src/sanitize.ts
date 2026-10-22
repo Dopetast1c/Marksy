@@ -42,7 +42,8 @@ export function keepsString({ endpoint, key, depth }: Place, value: string): boo
         !PERSON_LIKE.test(value)
       );
     case 'start_time':
-      return /^\d{1,2}:\d{2}$/.test(value);
+      // "08:30" in the bundle; seconds allowed, the first probe's values were not plain HH:MM
+      return /^\d{1,2}:\d{2}(:\d{2})?$/.test(value);
     case 'kind':
     case 'type':
     case 'title':
@@ -51,7 +52,7 @@ export function keepsString({ endpoint, key, depth }: Place, value: string): boo
     case 'roles':
       return ENUM.test(value);
     case 'label':
-      return value === 'А' || /^\d{4}\/\d{4}$/.test(value);
+      return value === 'А' || /^\d{4}\s?[/-]\s?\d{4}$/.test(value);
     case 'class_number':
       return /^\d{1,2}А$/.test(value);
     case 'summary':

@@ -197,7 +197,7 @@ Array (36 items): every school week.
 
 Use `time_activity_id` to map weeks (and their marks) to quarters. Pick the current week by `start_ts <= now < end_ts`.
 
-`end_ts` (and `end_date` in 6.4) is local midnight of the **last day** of the range, inclusive [VERIFIED, first probe: weeks span 6 or 7 days]; the mapper reads it that way.
+`end_ts` (and `end_date` in 6.4) is local midnight of the **last day** of the range, inclusive [VERIFIED, two probe runs: no week spans 8 days]; the mapper reads it that way. Not every week is 6 or 7 days: of the 36 weeks of 2026/27, 31 span 7 days, 3 span 6, one 4 and one a single day (weeks cut by the start of the year and by holidays) [VERIFIED]. Nothing may assume a week is Monday to Sunday.
 
 ### 6.6 `GET .../students/{student_id}/classes` [VERIFIED]
 
@@ -242,7 +242,7 @@ Array of 6 days (Mon to Sat).
     "topic": "string",
     "homework": null,              // string | null
     "message": "string",
-    "start_time": "08:30",
+    "start_time": "08:30",           // real values are not plain HH:MM [VERIFIED, second probe]; the exact form is reported by the next probe run, the mapper accepts HH:MM and HH:MM:SS
     "has_attachments_or_links": false,
     "homework_source_id": null,
     "lesson_mark": null,           // object | null, see 7
@@ -307,7 +307,9 @@ The frontend bundle contains about 640 endpoints in total (teacher journal, plan
 
 Observed on 2 recent weeks of the grade 7 child: 13 marks, all `kind: "SINGLE"`, values 4 to 10.
 
-### 7.2 `kind` [VERIFIED: SINGLE] [BUNDLE: others]
+### 7.2 `kind` [VERIFIED: SINGLE, DOUBLE, ABSENT] [BUNDLE: others]
+
+Second probe, six weeks of two children: 44 `SINGLE`, 1 `DOUBLE`, 27 `ABSENT`; no PASS, EXEMPT, MASTERED or NOT_TAKEN yet. Absences are far more frequent than double marks, so the derived attendance path matters from day one.
 
 | kind | Meaning | `mark` content |
 |---|---|---|
@@ -323,7 +325,7 @@ The frontend counts weekly absences as slots with `lesson_mark.kind === "ABSENT"
 
 ### 7.3 Work type enums [BUNDLE]
 
-`lesson_mark.type` (what the mark is for; `null` observed = ordinary classwork):
+`lesson_mark.type` (what the mark is for; `null` observed = ordinary classwork). Second probe: 71 marks with `null`, 1 `INDEPENDENT_WORK` [VERIFIED]; teachers rarely set it, so the work-type features (filters, the homework and tests hints) will have little to work on with this school, and tags matter more. `slot.type` seen: 303 `null`, 2 `TEST`, 1 `INDEPENDENT_WORK` [VERIFIED].
 
 | value | UI label |
 |---|---|
@@ -408,7 +410,8 @@ Still open:
 
 - [ ] `PUT /auth/refresh` (only if a refresh chain is used).
 - [ ] `final/whole` populated shape: re-check after 2026-10-30 (end of Q1) and finalise the parser.
-- [ ] Real samples of `DOUBLE`, `ABSENT` and non-null `type` marks: log the first occurrences and confirm 7.2 / 7.3. The first probe read one week with a single `SINGLE` mark; rerun with `--weeks 6`.
+- [x] Real samples of `DOUBLE`, `ABSENT` and non-null `type` marks (second probe, `--weeks 6`): 1 `DOUBLE`, 27 `ABSENT`, 1 mark of type `INDEPENDENT_WORK`; no drift events (7.2, 7.3).
+- [ ] The exact form of `start_time` (not plain `HH:MM`; the next probe run prints it as digits-as-9) and of the school year `label`.
 - [ ] Behaviour after token expiry (expected 401).
 - [ ] Whether a student login endpoint exists (`/auth/login/student` or similar in the bundle) and whether a student token reads the same diary routes.
 - [ ] Whether a re-fetched week can return a different `lesson_uuid` for the same slot (timetable edits), which affects removal detection.

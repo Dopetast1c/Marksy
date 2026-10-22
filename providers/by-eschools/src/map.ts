@@ -178,6 +178,12 @@ export function lessonIdOf(s: Slot, date: string): string {
   return s.lesson_uuid ?? `slot:${date}:${s.number ?? s.start_time ?? '-'}:${s.subject_id}`;
 }
 
+/** "8:30", "08:30" or "08:30:00" -> "08:30"; anything that is not a time of day -> undefined. */
+export function timeOf(value: string | null | undefined): string | undefined {
+  const m = value?.trim().match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+  return m ? `${m[1]!.padStart(2, '0')}:${m[2]}` : undefined;
+}
+
 /** A lesson_mark: a mark, or for ABSENT an attendance record (absences are never marks). */
 export function mapLessonMark(m: LessonMark, s: Slot, date: string, check: DriftCheck): MappedCell {
   check.known(m.kind, MARK_KINDS, 'lesson_mark.kind');
@@ -225,7 +231,7 @@ export function mapLesson(s: Slot, date: string, check: DriftCheck): Lesson {
     externalId: lessonIdOf(s, date),
     date,
     ...(s.number != null && { slot: s.number }),
-    ...(nonEmpty(s.start_time) && { startTime: s.start_time! }),
+    ...(timeOf(s.start_time) && { startTime: timeOf(s.start_time)! }),
     subjectExternalId: s.subject_id,
     subjectName: s.subject_title,
     ...(nonEmpty(s.teacher_id) && { teacherExternalId: s.teacher_id! }),

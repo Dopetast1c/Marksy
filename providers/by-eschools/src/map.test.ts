@@ -192,6 +192,18 @@ describe('lessons and marks', () => {
     expect(drift.events).toEqual([]);
   });
 
+  it('start times become HH:MM, anything else is no time', async () => {
+    const { timeOf } = await import('./map');
+    expect(['8:30', '08:30', '08:30:00', '[text]', '', null].map(timeOf)).toEqual([
+      '08:30',
+      '08:30',
+      '08:30',
+      undefined,
+      undefined,
+      undefined,
+    ]);
+  });
+
   it('an absence is attendance, never a mark', () => {
     const { check } = setup();
     const [l] = mapLessonsWeek(week([slot({ lesson_mark: mark({ kind: 'ABSENT', mark: null }) })]), TZ, check);

@@ -169,6 +169,21 @@ describe('second review: places, real values, keys', () => {
   });
 });
 
+describe('value forms', () => {
+  it('show the format, never the value', async () => {
+    const { shapeOf } = await import('./probe');
+    expect(['08:30:00', '8:30', '2026/2027', 'Ника', null, 830].map(shapeOf)).toEqual([
+      '99:99:99',
+      '9:99',
+      '9999/9999',
+      'aaaa',
+      'null',
+      'number',
+    ]);
+    expect(shapeOf('a very long text that could be anything')).toBe('long');
+  });
+});
+
 describe('--weeks', () => {
   it('defaults to 1, accepts 1 to 8, refuses anything else', () => {
     expect(weeksArg([])).toBe(1);

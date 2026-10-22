@@ -175,7 +175,19 @@ export function countLeaks(sanitised: readonly unknown[], sensitive: Sensitive):
 /** An enum value as the report may show it: UPPER_SNAKE or "null", anything else is counted as "other". */
 export const reportable = (v: string) => (/^([A-Z][A-Z0-9_]{0,39}|null)$/.test(v) ? v : 'other');
 
+/**
+ * The form of a value without the value: every digit becomes 9, every letter a ("08:30:00" -> "99:99:99"). For
+ * fields whose format the allow-list must know (times, year labels); long values are just "long".
+ */
+export function shapeOf(value: unknown): string {
+  if (typeof value !== 'string') return value === null ? 'null' : typeof value;
+  if (value.length > 24) return 'long';
+  return value.replace(/\d/g, '9').replace(/\p{L}/gu, 'a');
+}
+
 export interface ProbeFacts {
+  /** field -> shape -> count, see shapeOf */
+  shapes?: Record<string, Record<string, number>>;
   requests: number;
   loginHasRefreshToken: boolean;
   students: number;
@@ -229,6 +241,12 @@ export function report(f: ProbeFacts): string {
     'Other checks',
     `  week length in days (6 or 7 means end_ts is the last day, 8 means it is the next midnight): ${tally(f.weekLengths)}`,
     `  words in full_name of students (3 means family name, given name, patronymic): ${tally(f.nameWords)}`,
+    ...Object.entries(f.shapes ?? {}).map(
+      ([field, shapes]) =>
+        `  ${field} forms (digits as 9, letters as a): ${Object.entries(shapes)
+          .map(([s, n]) => `"${s}": ${n}`)
+          .join(', ')}`,
+    ),
     `  drift events: ${f.drift.length ? '' : 'none'}`,
     ...f.drift.map((d) => `    ${d.kind} ${d.endpoint} ${d.path}${d.sample ? ` (${d.sample})` : ''}`),
   ];
