@@ -8,6 +8,7 @@ Handoff document for building **Marksy**, a personal grade tracker on top of the
 - Auth is JWT. Login with parent login/password returns `auth_token` + `refresh_token`. Every request sends `Authorization: <auth_token>` (raw token; `Bearer <token>` returns 401).
 - Both tokens live about 2 hours. A once-a-day job cannot survive on a pasted token, so the collector must store the parent credentials and log in on every run.
 - All grades are reachable with 6 endpoints: me, student classes, weeks, weekly lessons (contain marks), final marks, subjects. All verified with real calls.
+- The timetable with rooms, the bell schedule (lesson end times, shifts, separate bells for grade 1), teachers, subgroups and the level of study are reachable with four more reads (6.7a, 6.10). Verified on 2026-10-23 from the requests the site's own «Расписание» pages make.
 - The site works poorly from non-Belarusian IPs: through a VPN it returned 503 and then hung; with the VPN bypassed, every call returned 200 quickly. The collector must run from a Belarusian IP (see 9.1).
 - No CORS headers on API responses: browser calls from another origin are blocked. A server-side collector is required.
 - Unofficial API: it can change without notice. Keep the client thin and well isolated.
@@ -165,21 +166,24 @@ Array (9 items for 2026/2027): quarters and holidays.
 }]
 ```
 
-Values for 2026/2027:
+Values for 2026/2027, as local (Europe/Minsk) dates. The timestamps are milliseconds at local midnight, so read in UTC every date looks one day earlier; the mapper converts them in the school's time zone [VERIFIED against the site's «Расписание четвертей и каникул» page]:
 
-| type | title | dates |
-|---|---|---|
-| QUARTER | FIRST_QUARTER | 2026-08-31 .. 2026-10-30 |
-| HOLIDAYS | AUTUMN_HOLIDAYS | 2026-10-31 .. 2026-11-07 |
-| QUARTER | SECOND_QUARTER | 2026-11-08 .. 2026-12-23 |
-| HOLIDAYS | WINTER_HOLIDAYS | 2026-12-24 .. 2027-01-09 |
-| QUARTER | THIRD_QUARTER | 2027-01-10 .. 2027-03-19 |
-| HOLIDAYS | ADDITIONAL_HOLIDAYS | 2027-02-14 .. 2027-02-20 |
-| HOLIDAYS | SPRING_HOLIDAYS | 2027-03-20 .. 2027-03-27 |
-| QUARTER | FOURTH_QUARTER | 2027-03-28 .. 2027-05-30 |
-| HOLIDAYS | SUMMER_HOLIDAYS | 2027-05-31 .. 2027-08-30 |
+| type | title | dates (inclusive) | `description` |
+|---|---|---|---|
+| QUARTER | FIRST_QUARTER | 2026-09-01 .. 2026-10-31 | |
+| HOLIDAYS | AUTUMN_HOLIDAYS | 2026-11-01 .. 2026-11-08 | |
+| QUARTER | SECOND_QUARTER | 2026-11-09 .. 2026-12-24 | |
+| HOLIDAYS | WINTER_HOLIDAYS | 2026-12-25 .. 2027-01-10 | |
+| QUARTER | THIRD_QUARTER | 2027-01-11 .. 2027-03-20 | |
+| HOLIDAYS | ADDITIONAL_HOLIDAYS | 2027-02-15 .. 2027-02-21 | only for grades 1 and 2 (and grade 3 in a five-year primary programme) |
+| HOLIDAYS | SPRING_HOLIDAYS | 2027-03-21 .. 2027-03-28 | |
+| QUARTER | FOURTH_QUARTER | 2027-03-29 .. 2027-05-31 | for grades 9(10) and 11(12): 2027-03-30 .. 2027-05-25 |
+| HOLIDAYS | SUMMER_HOLIDAYS | 2027-06-01 .. 2027-08-31 | for pupils finishing grade 9: from 2027-06-11 |
 
-ADDITIONAL_HOLIDAYS sit inside THIRD_QUARTER (grade 1 only).
+**Level-specific dates exist only as free text** in `description` (Russian prose, e.g. «для учащихся 1-2 классов …»); there is no structured `levels` field [VERIFIED]. Consequences for the provider:
+
+- ADDITIONAL_HOLIDAYS sit inside THIRD_QUARTER and apply to grades 1 and 2 only. They must be holidays for a class with `level` 1 or 2 and school days for everyone else; applying them to every child would hide a week of lessons for older children.
+- The shortened FOURTH_QUARTER of the graduating grades and the later summer holidays after grade 9 are not machine-readable. Keep the `description` with the term or holiday so the app can show it as a note; do not parse the prose.
 
 ### 6.5 `GET /education/diary/time_activities/week_activities` [VERIFIED]
 
@@ -215,13 +219,46 @@ Use `time_activity_id` to map weeks (and their marks) to quarters. Pick the curr
 }]
 ```
 
-One item per child observed. If several, pick the one with `dt_disbanded == null`. A `POST` on the same path also exists; not needed.
+One item per child observed. If several, pick the one with `dt_disbanded == null`.
+
+The site itself calls this path with `POST` and a JSON body `{ "from": "dd.MM.yyyy", "to": "dd.MM.yyyy" }` (the visible week). It is a read, but its answer has a different shape [VERIFIED, 2026-10-23]:
+
+```jsonc
+{
+  "classes_by_date": { "2026-10-19": ["uuid"], "2026-10-20": ["uuid"] },   // class per day of the range
+  "classes": [ { /* the same class object as above */ } ]
+}
+```
+
+`classes_by_date` would show a change of class during the year. Marksy keeps the `GET` (verified to work, and the allow-list stays GET-only for reads).
 
 ### 6.7 `GET .../classes/{class_uuid}/students/{student}/educational_subjects` [VERIFIED]
 
 ```jsonc
 [{ "uuid": "uuid", "name": "string" }]   // 16 items for grade 7
 ```
+
+### 6.7a `GET .../students/{student}/classes/{class_uuid}/subjects` [VERIFIED, 2026-10-23]
+
+Note the order of the path (`students/{student}/classes/{class}`), unlike 6.7. This is what the site's «Список всех учебных предметов» page loads: one row per subject and teaching group, with the teacher and the level of study. 19 rows for 16 subjects in grade 7.
+
+```jsonc
+[{
+  "id": "uuid",                   // = 6.7 uuid = lessons slot subject_id [VERIFIED: 30 of 30 lessons]
+  "partition_type": "CLASS",      // CLASS (whole class) | GROUP (split into subgroups)
+  "type": "SUBJECT",
+  "subject_title": "string",
+  "level_of_study": "Базовый",    // Базовый | Углубленный (basic / advanced)
+  "teacher_id": "uuid",           // = lessons slot teacher_id
+  "teacher": "string",            // teacher's full name, family name first: personal data, see below
+  "group_id": "uuid",             // null when partition_type is CLASS
+  "group_name": "1-я подгруппа"   // null | "1-я подгруппа" | "2-я подгруппа" | "1-я подгруппа (девочки)" | "2-я подгруппа (мальчики)"
+}]
+```
+
+The class's list, not the child's: a split subject has one row per subgroup. Which subgroup the child is in follows from the lessons: a lesson's `teacher_id` (or its `lesson_template_id`, 6.10.3) matches exactly one row of the subject [VERIFIED: every lesson of a week matched one row; no subject had the same teacher in two subgroups]. The diary's lessons list already contains only the child's own subgroup lessons.
+
+`teacher` is a third person's full name. Never in fixtures, logs or drift samples: `sanitize()` must replace it like a student's name.
 
 ### 6.8 `GET .../classes/{class_uuid}/students/{student}/lessons?week_activity_uuid={week}` [VERIFIED]
 
@@ -246,10 +283,12 @@ Array of 6 days (Mon to Sat).
     "has_attachments_or_links": false,
     "homework_source_id": null,
     "lesson_mark": null,           // object | null, see 7
-    "substitution": null
+    "substitution": null           // null in every lesson seen so far; probably the substitute teacher, shape unknown
   }]
 }]
 ```
+
+`teacher_id` resolves to a name through 6.7a (or the bundle's `employees/{id}/fio`); `lesson_template_id` resolves to the teaching group, teacher and level through 6.10.3 and links the lesson to its timetable slot, room and bell time (6.10.2) [VERIFIED, 2026-10-23]. `start_time` is the only time on a lesson; the end time comes from the bell schedule (6.10.1).
 
 ### 6.9 `GET .../classes/{class_uuid}/students/{student}/final/whole` [VERIFIED shape, empty]
 
@@ -259,21 +298,124 @@ No query params. Before the first quarter ends the response is:
 { "marks": {}, "behaviour": {}, "diary_signature": {} }
 ```
 
-From the frontend code, `marks` is a nested map `marks[<key1>][<key2>] = { mark, kind }`, most likely subject id, then period (quarter / year) [UNVERIFIED]. Store the raw JSON and finalise the parser after 2026-10-30, when Q1 marks appear.
+From the frontend code, `marks` is a nested map `marks[<key1>][<key2>] = { mark, kind }`, most likely subject id, then period (quarter / year) [UNVERIFIED]. Store the raw JSON and finalise the parser after 2026-10-31 (the last day of Q1), when Q1 marks appear.
 
 The parser in `providers/by-eschools/src/map.ts` (`mapFinals`) is provisional and follows that guess: key1 is the subject, key2 is a quarter's `time_activities.uuid` (a term final) or a year-like key (`YEAR`, `annual`, `whole`: the year final). Any other key2 is recorded as drift and skipped, so a wrong guess shows up in the drift list instead of as wrong finals.
 
-### 6.10 Other read endpoints (optional) [BUNDLE]
+### 6.10 Other read endpoints
+
+Not in the allow-list yet; adding any of them is a product decision (`design.md` 17). The first four were verified on 2026-10-23 from the requests the site's «Расписание» pages make, with a parent token; shapes below, examples fictional.
+
+#### 6.10.1 `GET /education/diary/schools/{school}/bells/whole` [VERIFIED]
+
+The school's bell schedules: one per shift and group of grades.
+
+```jsonc
+[{
+  "uuid": "uuid", "summary": null,
+  "title": "Расписание звонков",      // free text; "1-ые классы" for the grade 1 schedule
+  "shift": 1,                          // 1 | 2
+  "levels": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11],   // grades it applies to
+  "period": "WHOLE_YEAR",
+  "days_of_week": [{
+    "uuid": "uuid", "summary": null,
+    "days": [1, 2, 3, 4, 5],           // ISO weekday numbers, Monday = 1
+    "time_of_bells": [{ "uuid": "uuid", "summary": null, "number": 1, "start_time": "08:00:00", "end_time": "08:45:00" }]
+  }]
+}]
+```
+
+Observed: three schedules (shift 1 for grades 2 to 11, shift 2 for some grades with lesson numbers starting at 0, and a separate schedule for grade 1 with shorter lessons and longer breaks). The site's «Расписание звонков» page shows only the schedules whose `levels` include the child's grade. A grade can appear in two schedules (both shifts); which one the class uses comes from its timetable (`schedule_of_bells_uuid`, 6.10.2).
+
+#### 6.10.2 `GET /education/diary/schools/{school}/classes/{class_uuid}/timetables/whole` [VERIFIED]
+
+The class timetable for the term, with rooms and bell times. No student in the path: it is the whole class, both subgroups included.
+
+```jsonc
+[{
+  "uuid": "uuid", "summary": null,
+  "schedule_of_bells_uuid": "uuid",   // -> 6.10.1 uuid [VERIFIED]
+  "class_id": "uuid",
+  "class_level": 7,
+  "period": "FIRST_QUARTER",          // the term this timetable is for
+  "days_of_week": [{
+    "day_of_week": 1,                 // 1..6; Saturday present and empty in the observed class
+    "timetable_slots": [{
+      "time_of_bells": { "uuid": "uuid", "summary": null, "number": 1, "start_time": "08:00:00", "end_time": "08:45:00" },
+      "slots": [{                     // one per subgroup taught at that time (1 or 2 observed)
+        "uuid": "uuid",
+        "summary": "string",          // subject title, with the group in brackets when split
+        "number": 1,
+        "room_id": "uuid",            // -> 6.10.4 uuid; 35 of 38 slots found there, the rest unknown
+        "lesson_template_id": "uuid"  // -> 6.10.3 templates[].uuid and lessons slot lesson_template_id
+      }]
+    }]
+  }]
+}]
+```
+
+One item observed (the current term). Whether other terms appear once they are planned is open (10).
+
+#### 6.10.3 `GET /education/planning/classes/{class_uuid}/educational_subjects` [VERIFIED]
+
+The class's teaching plan (the `planning` area, outside `/education/diary`). One item per subject; `uuid` equals 6.7's subject uuid. Large objects; the useful part:
+
+```jsonc
+[{
+  "uuid": "uuid",                     // = subject id
+  "partition_type": "CLASS",          // CLASS | GROUP
+  "type": "SUBJECT", "pass_exam": false, "additional_characteristic": null, "special_students": null,
+  "school_subject": { "summary": "string", "kind": "01_EDUCATIONAL_SCHOOL_SUBJECT", "as_json": { "short_name": "Рус. яз." /* … */ } /* … */ },
+  "templates": [{                     // lesson templates: one per teaching group
+    "uuid": "uuid",                   // = lesson_template_id in lessons and the timetable [VERIFIED: 30 of 30]
+    "study_hours": 3,                 // lessons per week
+    "study_group": { "uuid": "uuid", "name": "1-я подгруппа", "summary": "string" },   // null for the whole class
+    "teacher": { "id": "uuid", "name": "string", "surname": "string", "patronymic": "string" },   // personal data
+    "level_of_study": { "uuid": "uuid", "value": "Базовый" },
+    "description": null
+  }]
+}]
+```
+
+Gives the subject's short name, lessons per week and, through `lesson_template_id`, the exact group, teacher and level of each of the child's lessons. 6.7a gives the same teacher, group and level in a flatter form; 6.10.3 adds `study_hours` and `short_name`.
+
+#### 6.10.4 `GET /institution/schools/{school}/premises?q=…` [VERIFIED]
+
+The school's rooms. The site passes `q={"expr":{"units":[{"field":"dt_delete","operator":"ISNULL","operands":[]}],"operator":"AND"},"sorting":{"audience_number":"ASC"}}` (URL-encoded).
+
+```jsonc
+[{
+  "uuid": "uuid",                     // = timetable slot room_id
+  "audience_number": "201",           // what the timetable shows as «Каб»
+  "audience_name": "string",
+  "hull": null,                       // building, when the school has several
+  "premise_type": { "summary": "string", "as_json": { "short_name": "string" /* … */ } /* … */ },
+  "dt_delete": null, "school": "uuid"
+}]
+```
+
+About 60 rooms for one school.
+
+#### 6.10.5 How the pieces connect
+
+- A lesson (6.8) has `subject_id`, `teacher_id`, `lesson_template_id`, `number` and `start_time`.
+- `lesson_template_id` → the template (6.10.3): teaching group, teacher, level of study, lessons per week.
+- `teacher_id` → the teacher's name (6.7a `teacher`, or 6.10.3 `teacher`).
+- The class timetable (6.10.2) for the lesson's term, weekday and `number`, slot with the same `lesson_template_id` → `room_id` → the room number (6.10.4), and `time_of_bells.end_time` → when the lesson ends.
+- The timetable's `schedule_of_bells_uuid` → the class's bell schedule (6.10.1): breaks, shift, and the different times of grade 1.
+- The timetable is the plan for the term; the weekly lessons (6.8) are what actually happens. A lesson moved or replaced shows up in 6.8, not in 6.10.2.
+
+#### 6.10.6 Other reads seen in the bundle [BUNDLE]
 
 | Method | Path | Use |
 |---|---|---|
-| GET | `.../classes/{class_uuid}/students/{student}/master_messages?week_activity_id=` | Class teacher messages per week |
-| GET | `.../classes/{class_uuid}/students/{student}/diary_signatures/weekly?week_activity_id=` | Parent weekly signature status |
-| GET | `.../classes/{class_uuid}/students/{student}/lessons/{lesson_uuid}/attachments_and_links` | Homework attachments |
-| GET | `.../classes/{class_uuid}/timetables/whole` | Class timetable |
-| GET | `.../bells/whole` | Bell schedule |
+| GET | `.../classes/{class_uuid}/students/{student}/master_messages?week_activity_id=` | Class teacher messages per week (the site loads it with every diary week) |
+| GET | `.../classes/{class_uuid}/students/{student}/diary_signatures/weekly?week_activity_id=` | Parent weekly signature status (read; signing is 6.11) |
+| GET | `.../classes/{class_uuid}/students/{student}/lessons/{lesson_uuid}/attachments_and_links` | Homework attachments, when `has_attachments_or_links` is true |
 | GET | `.../employees/{employee_uuid}/fio` | Teacher name by `teacher_id` |
 | GET | `/institution/schools` | Schools visible to the user |
+
+The site's menu also has «Дополнительное образование», «Питание обучающихся» and «Задолженность обучающихся» (after-school activities, school meals, debts). Not examined.
 
 ### 6.11 Write endpoints: DO NOT CALL
 
@@ -359,7 +501,7 @@ The frontend counts weekly absences as slots with `lesson_mark.kind === "ABSENT"
 - `kind`: SINGLE and DOUBLE are `numeric` with `values` from the split; PASS and MASTERED are `pass`, NOT_PASS and NOT_MASTERED `fail`, EXEMPT `exempt`, NOT_TAKEN `not_assessed`; an empty `mark` shows the official cell text (зач., незач., освоб., осв., не осв., н/а). ABSENT is never a mark: it becomes an `Attendance` record (`status: absent`, code "н") on `Lesson.attendance`. An unknown kind is drift and an `other` chip with the raw text.
 - `lesson_mark.type` (work type): CLASSWORK classwork, HOMEWORK homework, PRACTICAL_WORK practical, LABORATORY_WORK lab, DICTATION dictation, TEST and KNOWLEDGE_CONTROL test, INDEPENDENT_WORK quiz, ESSAY essay; CREATIVE_WORK, SUMMARY, BY_HEART and TRANSLATION are `other`. The original value is always kept in `workTypeRaw`. `null` stays without a work type ("Работа на уроке" in the UI).
 - `slot.type` (lesson type): TEST test, LABORATORY_WORK lab, PRACTICAL_WORK practical, EXCURSION excursion, INDEPENDENT_WORK other, `null` regular. The lesson type alone never makes a lesson "a test" in the app: that is the family's tag «Контрольная» (`design.md` 6.3).
-- Calendar: QUARTER entries are `Term`s (`kind: quarter`, index from FIRST_QUARTER ... FOURTH_QUARTER), HOLIDAYS are holidays. A class with `level` 1 or 2 gets `gradingScaleId: null`, the school year without marks (`ux-principles.md` D49); from grade 3 the manifest's `by-10` applies.
+- Calendar: QUARTER entries are `Term`s (`kind: quarter`, index from FIRST_QUARTER ... FOURTH_QUARTER), HOLIDAYS are holidays, with dates converted in Europe/Minsk (6.4). ADDITIONAL_HOLIDAYS are holidays only for a class with `level` 1 or 2; for older grades those days are school days (6.4). A non-empty `description` is kept with the term or holiday as a note. A class with `level` 1 or 2 gets `gradingScaleId: null`, the school year without marks (`ux-principles.md` D49); from grade 3 the manifest's `by-10` applies.
 - Lesson identity: `lesson_uuid` when present. When it is null, the lesson's id is `slot:<date>:<number>:<subject_id>` (start time instead of the number if that is missing too), which is unique within one student's week; its mark and absence point to that id. The collector (design.md 8) matches a fetched lesson first by id, then by `(student, date, slot, subject)`, so a lesson that gets a real `lesson_uuid` on a later fetch keeps its row, its ticks and its history instead of being removed and created again.
 - Students: `profile_id`, `full_name` and `school_id` from `/admin/auth/me`, class id, `class_number` and `level` from the class (`StudentRef.classExternalId`, `className`, `grade`).
 
@@ -411,15 +553,18 @@ Verified by the first `pnpm probe` run (2026-10, one week, two children):
 Still open:
 
 - [ ] `PUT /auth/refresh` (only if a refresh chain is used).
-- [ ] `final/whole` populated shape: re-check after 2026-10-30 (end of Q1) and finalise the parser.
+- [ ] `final/whole` populated shape: re-check after 2026-10-31 (the last day of Q1) and finalise the parser.
 - [x] Real samples of `DOUBLE`, `ABSENT` and non-null `type` marks (second probe, `--weeks 6`): 1 `DOUBLE`, 27 `ABSENT`, 1 mark of type `INDEPENDENT_WORK`; no drift events (7.2, 7.3).
 - [x] `start_time` is `HH:MM:SS` or null; the school year `label` is `YYYY-YYYY`; `time_activities[].school_year` is that same label (`YYYY-YYYY` in all 9 entries), not an id (forms printed as digits-as-9 by the probe runs of 2026-10-22).
 - [ ] Behaviour after token expiry (expected 401).
 - [ ] Whether a student login endpoint exists (`/auth/login/student` or similar in the bundle) and whether a student token reads the same diary routes.
 - [ ] Whether a re-fetched week can return a different `lesson_uuid` for the same slot (timetable edits), which affects removal detection.
+- [ ] `substitution` on a lesson: null in every lesson seen; its shape when a substitute teacher takes the lesson.
+- [ ] Whether 6.7a, 6.10.2 and 6.10.3 answer the same way for the grade 1 child, and whether 6.10.2 returns the next term's timetable once it is planned.
+- [ ] Rooms for the 3 of 38 timetable slots whose `room_id` is not in 6.10.4 (deleted rooms or a missing filter).
 
 Save sanitised fixtures (names and ids replaced) of every endpoint into `fixtures/` on the first run and write parser tests against them.
 
-`pnpm probe` does this (owner only, from a Belarusian IP, with `DIARY_LOGIN` / `DIARY_PASSWORD` in `.env`). It logs in once and reads me, classes, the calendar, the weeks, subjects, the current week's lessons and final marks of every child, about 13 requests. `pnpm probe --weeks N` (1 to 8, default 1) reads the last N school weeks instead of one, one request per week and child, strictly in order with the manifest's pauses; it refuses before reading lessons if that would exceed `limits.maxRequestsPerRun`, and each week becomes its own fixture. Raw responses stay in `data/probe/<time>/` (gitignored; the login response without its tokens; request bodies and headers are never recorded). `sanitize()` is an allow-list by key and place: it keeps subject names (only on the subjects list itself, and never when they look like a person's name), lesson titles, start times and slot numbers, enum values (`kind`, `type`, `title`, `status`, roles), the school-year label, week summaries, the diary's mark labels (`зач.`, `н/а`), timestamps and grade levels, and nothing else. Numeric marks keep their form but get other digits (`8` becomes some value from 1 to 10, `7/9` becomes `x/y`), and class letters become `А` (`7Г` → `7А`): the tests need the shape, never the child's real record. Every other string under any key, known or not, becomes a placeholder (`[text]`; topics, homework, messages and comments get readable ones), every other number becomes 0, contact fields are dropped, and every id, in values, in map keys and in URL segments, becomes a fake uuid made with a random key that exists only during the run, so nobody holding the real ids can match them later. Before anything is written, everything `sanitize()` did not keep is collected from the raw responses, the URLs and `.env`, and looked for in the sanitised fixtures and `routes.json` (lower case, name parts as whole words, ids as whole values); if anything is found, nothing is written. If anything is found, the probe lists where it came from (endpoint and key path, never the value). What does stay in the fixtures is the shape of one real week: subject names, the grade number, dates, the timetable and which lessons have a mark or an absence, without a name, an id, a real mark value or the class letter. The raw dumps in `data/probe/` do contain real names and ids: delete them once they are no longer needed. The console shows counts, enum values and this checklist, and two more checks: how many days a week spans (6 or 7: `end_ts` is the last day, which the mapper assumes; 8: it is the next midnight) and how many words students' `full_name` has (3: family, given, patronymic, which `nameOrder: family-first` assumes). Run it once after setup and again after 2026-10-30 for final marks.
+`pnpm probe` does this (owner only, from a Belarusian IP, with `DIARY_LOGIN` / `DIARY_PASSWORD` in `.env`). It logs in once and reads me, classes, the calendar, the weeks, subjects, the current week's lessons and final marks of every child, about 13 requests. `pnpm probe --weeks N` (1 to 8, default 1) reads the last N school weeks instead of one, one request per week and child, strictly in order with the manifest's pauses; it refuses before reading lessons if that would exceed `limits.maxRequestsPerRun`, and each week becomes its own fixture. Raw responses stay in `data/probe/<time>/` (gitignored; the login response without its tokens; request bodies and headers are never recorded). `sanitize()` is an allow-list by key and place: it keeps subject names (only on the subjects list itself, and never when they look like a person's name), lesson titles, start times and slot numbers, enum values (`kind`, `type`, `title`, `status`, roles), the school-year label, week summaries, the diary's mark labels (`зач.`, `н/а`), timestamps and grade levels, and nothing else. Numeric marks keep their form but get other digits (`8` becomes some value from 1 to 10, `7/9` becomes `x/y`), and class letters become `А` (`7Г` → `7А`): the tests need the shape, never the child's real record. Every other string under any key, known or not, becomes a placeholder (`[text]`; topics, homework, messages and comments get readable ones), every other number becomes 0, contact fields are dropped, and every id, in values, in map keys and in URL segments, becomes a fake uuid made with a random key that exists only during the run, so nobody holding the real ids can match them later. Before anything is written, everything `sanitize()` did not keep is collected from the raw responses, the URLs and `.env`, and looked for in the sanitised fixtures and `routes.json` (lower case, name parts as whole words, ids as whole values); if anything is found, nothing is written. If anything is found, the probe lists where it came from (endpoint and key path, never the value). What does stay in the fixtures is the shape of one real week: subject names, the grade number, dates, the timetable and which lessons have a mark or an absence, without a name, an id, a real mark value or the class letter. The raw dumps in `data/probe/` do contain real names and ids: delete them once they are no longer needed. The console shows counts, enum values and this checklist, and two more checks: how many days a week spans (6 or 7: `end_ts` is the last day, which the mapper assumes; 8: it is the next midnight) and how many words students' `full_name` has (3: family, given, patronymic, which `nameOrder: family-first` assumes). Run it once after setup and again after 2026-10-31 for final marks.
 
 Until the probe has run, the provider is tested on fictional fixtures shaped from this document (two children, grades 7 and 1, every mark kind).
