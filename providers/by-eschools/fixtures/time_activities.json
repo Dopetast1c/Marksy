@@ -1,8 +1,8 @@
 [
   {
-    "uuid": "00000000-0000-4000-8000-f8117ab02c18",
+    "uuid": "00000000-0000-4000-8000-87f1b72c5b2f",
     "summary": null,
-    "school_year": "00000000-0000-4000-8000-a0dd70d79dd2",
+    "school_year": "2026-2027",
     "title": "ADDITIONAL_HOLIDAYS",
     "description": "[text]",
     "type": "HOLIDAYS",
@@ -10,9 +10,9 @@
     "end_date": 1803157200000
   },
   {
-    "uuid": "00000000-0000-4000-8000-d50f40a98cb7",
+    "uuid": "00000000-0000-4000-8000-4480733a56be",
     "summary": null,
-    "school_year": "00000000-0000-4000-8000-a0dd70d79dd2",
+    "school_year": "2026-2027",
     "title": "SPRING_HOLIDAYS",
     "description": null,
     "type": "HOLIDAYS",
@@ -20,9 +20,9 @@
     "end_date": 1806181200000
   },
   {
-    "uuid": "00000000-0000-4000-8000-3c88b604ca0b",
+    "uuid": "00000000-0000-4000-8000-f911e3ad7d58",
     "summary": null,
-    "school_year": "00000000-0000-4000-8000-a0dd70d79dd2",
+    "school_year": "2026-2027",
     "title": "FOURTH_QUARTER",
     "description": "[text]",
     "type": "QUARTER",
@@ -30,9 +30,9 @@
     "end_date": 1811710800000
   },
   {
-    "uuid": "00000000-0000-4000-8000-88f083444717",
+    "uuid": "00000000-0000-4000-8000-6ee6581c0838",
     "summary": null,
-    "school_year": "00000000-0000-4000-8000-a0dd70d79dd2",
+    "school_year": "2026-2027",
     "title": "FIRST_QUARTER",
     "description": null,
     "type": "QUARTER",
@@ -40,9 +40,9 @@
     "end_date": 1793394000000
   },
   {
-    "uuid": "00000000-0000-4000-8000-d112c10951f9",
+    "uuid": "00000000-0000-4000-8000-44b6a23b3189",
     "summary": null,
-    "school_year": "00000000-0000-4000-8000-a0dd70d79dd2",
+    "school_year": "2026-2027",
     "title": "SUMMER_HOLIDAYS",
     "description": "[text]",
     "type": "HOLIDAYS",
@@ -50,9 +50,9 @@
     "end_date": 1819659600000
   },
   {
-    "uuid": "00000000-0000-4000-8000-1f9e1913d190",
+    "uuid": "00000000-0000-4000-8000-abd4c6369a32",
     "summary": null,
-    "school_year": "00000000-0000-4000-8000-a0dd70d79dd2",
+    "school_year": "2026-2027",
     "title": "WINTER_HOLIDAYS",
     "description": null,
     "type": "HOLIDAYS",
@@ -60,9 +60,9 @@
     "end_date": 1799528400000
   },
   {
-    "uuid": "00000000-0000-4000-8000-fe126c72394e",
+    "uuid": "00000000-0000-4000-8000-2ef7b170edf4",
     "summary": null,
-    "school_year": "00000000-0000-4000-8000-a0dd70d79dd2",
+    "school_year": "2026-2027",
     "title": "THIRD_QUARTER",
     "description": null,
     "type": "QUARTER",
@@ -70,9 +70,9 @@
     "end_date": 1805490000000
   },
   {
-    "uuid": "00000000-0000-4000-8000-3273b7412f00",
+    "uuid": "00000000-0000-4000-8000-0daad1d8d53a",
     "summary": null,
-    "school_year": "00000000-0000-4000-8000-a0dd70d79dd2",
+    "school_year": "2026-2027",
     "title": "AUTUMN_HOLIDAYS",
     "description": null,
     "type": "HOLIDAYS",
@@ -80,9 +80,9 @@
     "end_date": 1794085200000
   },
   {
-    "uuid": "00000000-0000-4000-8000-0a3d45fc478d",
+    "uuid": "00000000-0000-4000-8000-41a63806a6ea",
     "summary": null,
-    "school_year": "00000000-0000-4000-8000-a0dd70d79dd2",
+    "school_year": "2026-2027",
     "title": "SECOND_QUARTER",
     "description": null,
     "type": "QUARTER",

@@ -1,23 +1,25 @@
 {
-  "user_id": "00000000-0000-4000-8000-f59377125acf",
+  "user_id": "00000000-0000-4000-8000-cc7d4c3617b4",
   "school_id": null,
   "school_name": null,
   "our_school_id": null,
   "profile_id": null,
   "person_kind": "PARENT",
   "full_name": "Родитель",
-  "roles": ["PARENT"],
+  "roles": [
+    "PARENT"
+  ],
   "position": null,
   "students_for_parent": [
     {
-      "profile_id": "00000000-0000-4000-8000-65735f071ee7",
+      "profile_id": "00000000-0000-4000-8000-455161283970",
       "full_name": "Ученик A",
-      "school_id": "00000000-0000-4000-8000-94c334eda447"
+      "school_id": "00000000-0000-4000-8000-2326a58a04b1"
     },
     {
-      "profile_id": "00000000-0000-4000-8000-54671bd859aa",
+      "profile_id": "00000000-0000-4000-8000-53f0dd727676",
       "full_name": "Ученик B",
-      "school_id": "00000000-0000-4000-8000-94c334eda447"
+      "school_id": "00000000-0000-4000-8000-2326a58a04b1"
     }
   ],
   "first_name": null,
