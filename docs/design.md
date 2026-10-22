@@ -834,9 +834,9 @@ A daily janitor job (same process, after the first run of the day) applies these
 
 ### 10.3 API drift detection
 
-Unofficial APIs change. Every provider's response passes through its Zod schema built with `.passthrough()` and `ctx.drift` records what the schema did not expect:
+Unofficial APIs change. Every provider's response passes through its Zod schema built with `z.looseObject` and the core `driftChecker` (`packages/core/src/drift`), and `ctx.drift` records what the schema did not expect (`docs/providers.md` 3):
 
-- unknown top-level or nested field, missing required field, type mismatch, new value of `kind`, `type`, `lesson type`, `time_activities.type`, unexpected HTTP status, unknown error body shape;
+- unknown top-level or nested field (`unknown_field`), missing required field (`missing_field`), type change (`type_mismatch`), new value of `kind`, `type`, `lesson type`, `time_activities.type` (`new_enum_value`), unknown error body shape (`new_error_shape`); a broken list item is skipped and the rest of the response is used;
 - each finding becomes an `api_drift_events` row keyed by `(endpoint, kind, path)` with a sanitised sample (names, uuids and comments replaced, same rules as fixtures), `count` and `last_seen_at`. Core enforces it before anything is stored: a sample is kept only as an UPPER_SNAKE enum value, a short number or a type name, and every path segment that is not a schema key (uuids, numbers, hex ids, logins) becomes `*`, so one change in a map keyed by ids is one row, not one per id;
 - the first occurrence is logged at `warn` and pushed to the admin through their notification channels ("e-schools API: новое поле `slots[].foo` в lessons"), later occurrences only increment `count`;
 - parsing never fails on unknown fields; the raw body is in `raw_responses`, so support can be added later without re-fetching;

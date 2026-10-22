@@ -90,6 +90,32 @@ describe('errors', () => {
   });
 });
 
+describe('read-only allow-list (docs/api-spec.md 6.11)', () => {
+  it('refuses every write endpoint and every read outside the list, without sending', async () => {
+    const sent: string[] = [];
+    const run = createRunContext(byEschools, {
+      transport: async (req) => {
+        sent.push(req.url);
+        return { status: 200, headers: {}, text: '{}' };
+      },
+      sleep: async () => undefined,
+    });
+    const D = '/api/v1/education/diary/schools/s/students/p';
+    for (const [method, path] of [
+      ['POST', `${D}/diary_signatures/weekly/activities/w`],
+      ['POST', `${D}/diary_signatures/final/activities/q`],
+      ['PUT', '/api/v1/admin/schools/parents/u/change/password'],
+      ['POST', '/api/v1/admin/schools/parents/forgot-password'],
+      ['PUT', '/api/v1/auth/refresh'],
+      ['GET', '/api/v1/education/diary/schools/s/classes/c/students/p/master_messages'],
+      ['GET', '/api/v1/institution/schools'],
+    ] as const) {
+      await expect(run.ctx.http.request(method, path), `${method} ${path}`).rejects.toThrow(/allow-list/);
+    }
+    expect(sent).toEqual([]);
+  });
+});
+
 describe('sanitize', () => {
   const real = '7d3e2b1a-4c5f-4e6d-9a8b-1c2d3e4f5a6b';
 

@@ -79,6 +79,8 @@ Error bodies come in several shapes; normalise all of them:
 
 `401` means not authenticated. A `401` with header `www-authenticate: IC authorization required` triggers a separate staff auth flow; not expected for parents.
 
+How the provider maps them (`providers/by-eschools/src/index.ts`): `400`, `401` or `403` on the login is `ProviderAuthError` (wrong credentials; the account stops until they change, never retried). A `401` on any other call means the two-hour token ran out mid-run, which the next run's fresh login fixes, so it is `ProviderUnavailableError`, not an auth failure. Other `403` and the `IC authorization` header are `ProviderBlockedError`; `429` and `5xx` are `ProviderUnavailableError`. The six body shapes above are recognised; any other shape is recorded as drift (`new_error_shape`). Error texts are never copied into errors or logs, since `details[].value` can carry the login.
+
 ### 4.6 Session snapshot in localStorage [VERIFIED]
 
 Useful for a "paste session JSON" dev mode. `localStorage["e-school-auth-diary"]` holds `authToken`, `refreshToken`, `issuedAt` (ms) and a `person` object equal to the `/admin/auth/me` response plus a `children` map keyed by student id.
@@ -107,6 +109,8 @@ Useful for a "paste session JSON" dev mode. `localStorage["e-school-auth-diary"]
 ## 6. Endpoint reference (parent scope)
 
 All paths are relative to `https://diary.e-schools.by/api/v1`. `...` below means `/education/diary/schools/{school_uuid}`.
+
+The provider's `readOnlyAllowList` (`providers/by-eschools/provider.json`) lists exactly the login and the nine reads of 6.1 and 6.3 to 6.9, with `*` for the ids, not `/education/diary/**`: everything else, the write endpoints of 6.11 included, is refused by the HTTP client before it is sent. The week list, the calendar, classes and subjects are fetched once per login and reused, so a run costs one request per week and child plus about ten.
 
 ### 6.1 `GET /admin/auth/me` [VERIFIED]
 
@@ -251,6 +255,8 @@ No query params. Before the first quarter ends the response is:
 
 From the frontend code, `marks` is a nested map `marks[<key1>][<key2>] = { mark, kind }`, most likely subject id, then period (quarter / year) [UNVERIFIED]. Store the raw JSON and finalise the parser after 2026-10-30, when Q1 marks appear.
 
+The parser in `providers/by-eschools/src/map.ts` (`mapFinals`) is provisional and follows that guess: key1 is the subject, key2 is a quarter's `time_activities.uuid` (a term final) or a year-like key (`YEAR`, `annual`, `whole`: the year final). Any other key2 is recorded as drift and skipped, so a wrong guess shows up in the drift list instead of as wrong finals.
+
 ### 6.10 Other read endpoints (optional) [BUNDLE]
 
 | Method | Path | Use |
@@ -338,6 +344,14 @@ The frontend counts weekly absences as slots with `lesson_mark.kind === "ABSENT"
 - 10-point scale; the official diary highlights values below 4. Marksy's own bands (1–4, 5–6, 7–8, 9–10) are defined in `design.md` section 6 and `tokens.json`.
 - Useful extra filter: tests only (`type` in TEST, DICTATION, ESSAY, KNOWLEDGE_CONTROL, INDEPENDENT_WORK).
 
+### 7.5 Canonical mapping (`providers/by-eschools/src/map.ts`)
+
+- `kind`: SINGLE and DOUBLE are `numeric` with `values` from the split; PASS and MASTERED are `pass`, NOT_PASS and NOT_MASTERED `fail`, EXEMPT `exempt`, NOT_TAKEN `not_assessed`; an empty `mark` shows the official cell text (зач., незач., освоб., осв., не осв., н/а). ABSENT is never a mark: it becomes an `Attendance` record (`status: absent`, code "н") on `Lesson.attendance`. An unknown kind is drift and an `other` chip with the raw text.
+- `lesson_mark.type` (work type): CLASSWORK classwork, HOMEWORK homework, PRACTICAL_WORK practical, LABORATORY_WORK lab, DICTATION dictation, TEST and KNOWLEDGE_CONTROL test, INDEPENDENT_WORK quiz, ESSAY essay; CREATIVE_WORK, SUMMARY, BY_HEART and TRANSLATION are `other`. The original value is always kept in `workTypeRaw`. `null` stays without a work type ("Работа на уроке" in the UI).
+- `slot.type` (lesson type): TEST test, LABORATORY_WORK lab, PRACTICAL_WORK practical, EXCURSION excursion, INDEPENDENT_WORK other, `null` regular. The lesson type alone never makes a lesson "a test" in the app: that is the family's tag «Контрольная» (`design.md` 6.3).
+- Calendar: QUARTER entries are `Term`s (`kind: quarter`, index from FIRST_QUARTER ... FOURTH_QUARTER), HOLIDAYS are holidays. A class with `level` 1 or 2 gets `gradingScaleId: null`, the school year without marks (`ux-principles.md` D49); from grade 3 the manifest's `by-10` applies.
+- Students: `profile_id`, `full_name` and `school_id` from `/admin/auth/me`, class id, `class_number` and `level` from the class (`StudentRef.classExternalId`, `className`, `grade`).
+
 ## 8. Network and etiquette
 
 - From a Belarusian IP without VPN: 12 calls, serial, 1.5 s apart, all returned 200 quickly [VERIFIED].
@@ -348,6 +362,8 @@ The frontend counts weekly absences as slots with `lesson_mark.kind === "ABSENT"
   - on 503/429/network error: exponential backoff (30 s, 2 min, 10 min), then give up until the next schedule;
   - one login per run; never loop on failed logins (risk of account lock);
   - normal browser-like `User-Agent`; no parallel requests.
+
+In Marksy: the delays, the window, the login interval and the request cap are the manifest `limits`; the User-Agent is `network.userAgent` in `provider.json`, so it can change without code (providers cannot set it from code). Within one run the shared client retries a failed read twice with a short backoff (about 7 and 15 s) and never a login; the long pauses (30 s, 2 min, 10 min and beyond) are the planner's job across runs (`design.md` 10.4).
 
 ## 9. Proposed architecture
 
@@ -384,3 +400,7 @@ Still open:
 - [ ] Whether a re-fetched week can return a different `lesson_uuid` for the same slot (timetable edits), which affects removal detection.
 
 Save sanitised fixtures (names and ids replaced) of every endpoint into `fixtures/` on the first run and write parser tests against them.
+
+`pnpm probe` does this (owner only, from a Belarusian IP, with `DIARY_LOGIN` / `DIARY_PASSWORD` in `.env`). It logs in once and reads me, classes, the calendar, the weeks, subjects, the current week's lessons and final marks of every child, about 13 requests. Raw responses stay in `data/probe/<time>/` (gitignored; the login response without its tokens). Every id, name, topic, homework, message, comment and token of the raw responses is collected first; the sanitised fixtures and `fixtures/routes.json` are written only when none of them is left after `sanitize()`. The console shows counts, enum values and this checklist, and two more checks: how many days a week spans (6 or 7: `end_ts` is the last day, which the mapper assumes; 8: it is the next midnight) and how many words students' `full_name` has (3: family, given, patronymic, which `nameOrder: family-first` assumes). Run it once after setup and again after 2026-10-30 for final marks.
+
+Until the probe has run, the provider is tested on fictional fixtures shaped from this document (two children, grades 7 and 1, every mark kind).

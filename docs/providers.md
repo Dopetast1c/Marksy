@@ -94,6 +94,7 @@ docs/                   product docs (this file, design.md, api-spec.md, tokens.
   "network": {
     "baseUrl": "https://…",             // origin of the system's API; ctx.http takes paths only and refuses every other host. The offline check (design.md 10.4) probes this host
     "regionHint": "BY",                 // the collector must run from this country; null if any
+    "userAgent": "Mozilla/5.0 …",       // optional; the client sends it on every request, providers cannot set it from code
     "notes": "503 or hanging connections usually mean a VPN is in the path"
   },
   "limits": {
@@ -112,7 +113,9 @@ docs/                   product docs (this file, design.md, api-spec.md, tokens.
 
 The server enforces `limits`, `network.regionHint` (as a warning in Sync, since it cannot know the IP's country for sure) and `readOnlyAllowList` in the shared HTTP client. A provider cannot loosen them from code. The manifest schema itself keeps the list read-only: entries are `GET`, `HEAD` or `POST`, and `POST` only for `auth.loginRequest`; `PUT`, `PATCH` and `DELETE` cannot be listed. An entry starts with a literal segment (`GET /**` or `GET /*/x` would open the whole host). `network.baseUrl` must be a plain `https` origin with a host name: no credentials, path, IP literal or localhost. The client checks the allow-list and the origin again when it is created, because it may get an unparsed manifest. It refuses any path the server could read differently from the allow-list: every decoded segment must consist of letters, digits and `._~@:+=,-`, so encoded or double-encoded `/`, `\`, `.` or `%`, `;` (`..;` is `..` to Java servers), spaces, control characters, `.` and `..` segments, empty segments and broken escapes never match. Any request to the login path counts as a login, whatever its method and letter case. Providers cannot set `Host`, `Content-Length` or method-override headers, and a `GET` or `HEAD` with a body is refused.
 
-Providers do not schedule anything and do not handle outages. The core planner (`design.md` 10.4) decides which `fetchUnit`s to ask for, records coverage and failures, pauses after repeated provider errors and catches up after the home server was off. A provider's job on failure is only to throw a typed error: `ProviderAuthError` (wrong credentials), `ProviderBlockedError`, `ProviderNeeds2FAError`, `ProviderUnavailableError` (5xx, 429, timeout) or let a network error propagate; the core maps these to the failure classes. Mapping an HTTP status or an error body to one of these classes is the one piece of outage knowledge that lives in the provider, because error shapes differ per system.
+Providers do not schedule anything and do not handle outages. The core planner (`design.md` 10.4) decides which `fetchUnit`s to ask for, records coverage and failures, pauses after repeated provider errors and catches up after the home server was off. A provider's job on failure is only to throw a typed error: `ProviderAuthError` (wrong credentials), `ProviderBlockedError`, `ProviderNeeds2FAError`, `ProviderUnavailableError` (5xx, 429, timeout, an expired session), `ProviderSchemaError` (a response that cannot be used at all) or let a network error propagate; the core maps these to the failure classes. Mapping an HTTP status or an error body to one of these classes is the one piece of outage knowledge that lives in the provider, because error shapes differ per system.
+
+**Drift.** Raw schemas are `z.looseObject`s, and every response goes through `driftChecker(ctx.drift, endpoint)` from core: `parse()` for a whole response, `items()` for lists (a broken item is reported and skipped, the rest is kept), `known()` for enum values (declare enum fields as plain strings with a list of known values, so a new value is drift, not a crash), `errorShape()` for an unrecognised error body. It reports unknown fields, missing fields, type changes and new enum values with their schema path; core strips ids from paths and keeps only enum-like samples before anything is stored. A provider may keep what it fetched once per login (a week list, a calendar) in a `WeakMap` keyed by the session object; nothing outlives the run.
 
 ## 4. The interface
 
@@ -183,6 +186,7 @@ export interface StudentRef {
   fullName: string;                     // as the system shows it
   givenName?: string; familyName?: string; middleName?: string;   // when the system has separate fields
   displayName?: string;                 // short form for headers and notifications ("Кира", "Yuki"); the core derives it from givenName or the first token of fullName per manifest.nameOrder when absent
+  classExternalId?: string;             // the class or year group in the system, when its URLs or data need it (e-schools: every diary URL)
   schoolId?: string; className?: string; grade?: number; gradeLabel?: string /* "Year 7", "K", "7Д" */
 }
 
@@ -212,6 +216,7 @@ export interface Lesson {
   lessonType?: 'regular' | 'test' | 'lab' | 'practical' | 'excursion' | 'other';
   substituteTeacherName?: string;   // Poland zastępstwo, e-schools substitution
   marks: Mark[];             // zero or more marks given at this lesson
+  attendance?: Attendance[]; // attendance that arrives with the lesson (capabilities.attendance = 'derived': e-schools' ABSENT mark cell); never a mark
   cancelled?: boolean;
 }
 
@@ -439,7 +444,7 @@ If your system publishes a rate limit or terms of use, put them in the manifest 
 
 ## 8. Fixtures and the conformance test
 
-Each provider ships `fixtures/` with one sanitised raw response per endpoint (`<name>.json`), `fixtures/denylist.json`, and `fixtures/expected/canonical.json` with the canonical objects the provider must produce from them. `sanitize()` is what produces the fixtures from real responses; the probe script (`pnpm probe --provider <id>`) calls every endpoint once, runs `sanitize()`, writes the fixtures and prints what still needs a real sample.
+Each provider ships `fixtures/` with one sanitised raw response per endpoint (`<name>.json`), `fixtures/denylist.json`, and `fixtures/expected/canonical.json` with the canonical objects the provider must produce from them. Requests are routed to fixtures by a table, in code or in `fixtures/routes.json`; a route may include query parameters (`GET /lessons?week=w1`) when one path serves several fixtures. `sanitize()` is what produces the fixtures from real responses; a provider's probe (`pnpm probe --provider <id>`, a `probe` script in the provider's package; `providers/by-eschools/scripts/probe.ts` is the reference) logs in once, calls every read endpoint once, keeps the raw responses in the gitignored `data/probe/`, writes the sanitised fixtures and `routes.json` only when nothing of the raw ids, names and texts survived, and prints counts and what still needs a real sample, never personal data. Only the owner of the account runs it.
 
 The suite lives in `@marksy/core/conformance`. A provider calls it from its own test file with its provider object, its fixtures folder and a route table (`"GET /api/children/*/grades": "grades"`, first match wins), and `pnpm test:provider <id>` runs it. The fixtures are served through the real throttled client with a fixture transport, so the allow-list, the single login and the request budget are exercised exactly as in a collector run. It checks that:
 
