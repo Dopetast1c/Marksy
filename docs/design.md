@@ -1,0 +1,1019 @@
+# Marksy: Product and Technical Design
+
+Companion to `docs/ux-principles.md` (why the interface is the way it is, decision log, what may change), `docs/api-spec.md` (the e-schools.by API) and `docs/mockups.html` (clickable prototype). This document says what Marksy is, who uses it, what the screens are, how data is modelled and how the API looks. Edit it in place when a decision changes.
+
+## 1. Decisions in one place
+
+| Area | Decision |
+|---|---|
+| Product | Mobile-first PWA for one family first; multi-family (friends) from day one in the data model, not in the UI |
+| Architecture | Two layers. The product (UI, API, collector, guidance, notifications) works on a canonical model and is country-agnostic. A **provider** is the only code that knows a specific diary system; Belarus's `by-eschools` is the first. Anyone can add a country, region or school by writing one provider against the contract in `docs/providers.md` |
+| Capabilities | Lesson types, work types, teacher comments, attendance, terms, final marks, homework, topics and a future timetable are optional features of a diary system, not of Marksy. Each is a flag in the provider manifest; the interface hides or adapts every element that depends on a missing one (`docs/providers.md` section 10). All flags are on for `by-eschools`, so the Belarusian interface is the full one |
+| Grading | The grading system belongs to the provider, not to the app. Each provider names a `GradingScale` (range, direction, four band ranges, thresholds, goal targets, averaging, final rule, formatting); the UI derives every mark-related number and colour from it (`docs/providers.md` section 5). `by-10` reproduces the current interface exactly, and a snapshot test keeps it that way |
+| Roles | `admin` (the parent who connected the diary) manages the family; `parent` sees all students of the family and switches between them; `student` sees only themself |
+| Accounts | Marksy users are separate from diary accounts. One diary login (a parent's e-schools account in Belarus) feeds the whole family; each family member (second parent, each child) gets their own Marksy login through an invite code and sees only what the admin assigned |
+| Sync cadence | School days only, hourly inside a window (default 08:00 to 14:00 Europe/Minsk), each run shifted by a random 0 to 20 minutes and random seconds. Never more than one e-schools login per hour per account, manual refresh included |
+| History | Marks are kept forever and the past is re-checked: a weekly full re-scan of the current quarter (default Friday 20:00 to 23:00, jittered) detects changed and removed marks; manual re-scan by student and period from the app |
+| API drift | Every e-schools response is validated against a schema that allows unknown fields; new fields, missing fields, new enum values and new error shapes are logged, stored and pushed to the admin so support can be added quickly |
+| Core views | Overview (what matters now), Marks feed (week / month / quarter / year, any past instance, calendar-aligned), Finals (quarter table, year table), Subjects (period list), Subject detail, Schedule and homework, Notifications |
+| Comparisons | One rule everywhere: current value versus the previous calendar unit of the same kind (week, month, quarter, school year), with arrow, previous value and delta. Years before Marksy can be entered by hand |
+| Notifications | Web Push from the PWA and a Telegram bot. Rules: any new mark, mark below a threshold, absence, evening homework digest, weekly summary |
+| Stack | TypeScript everywhere. Backend: Node.js 22, Express 5, Drizzle ORM, PostgreSQL 16 in Docker. Frontend: React 19 + Vite, Tailwind driven by `docs/tokens.json`. Tests: Vitest (units), Supertest (API). OpenAPI 3.1 served as Swagger UI at `/api/docs` |
+| Collector | Lives in the same backend as a scheduled job (node-cron); generic over providers. Limits (login interval, delays, window, allow-list, region hint) come from the provider manifest and are enforced by the shared HTTP client, never by provider code |
+| Interface language | Twelve languages at launch (Russian, Belarusian, Ukrainian, Kazakh, English, Polish, German, Spanish, Portuguese, French, Dutch, Romanian), per user, independent of the diary system; `en.json` is the source of truth, adding a language is one JSON file (`docs/i18n.md`) |
+| Mark semantics | 10-point scale, four bands: 1 to 4 critical (red), 5 to 6 low (orange), 7 to 8 good (green), 9 to 10 top (filled deep green, exceptional). Only `SINGLE` and `DOUBLE` marks count towards averages |
+| Rules, not constants | The provider says what exists, the scale says how marks look and compare, the family's rules say what matters: alert thresholds, what counts as a low mark or a drop, lead times, the family's tags. Defaults come from the scale; everything is editable (section 6.4) |
+| Tags | Families define their own vocabulary for kinds of work (a poem to learn by heart, a test known only from the topic, something to bring) as **tags**: keywords in topic or homework, an icon, a tone, how many days it takes to prepare. Tags mark lessons in the schedule, on Overview and in the subject (section 6.3). Notifications are separate rules that reference tags and choose the moments (section 11) |
+| Shared components | The same information is rendered by the same component everywhere (StatBlock, MarkChip, SubjectRow, HintRow, LessonRow). No screen re-implements a block that exists on another screen |
+| Guidance | The app does not only report; it suggests. A small rule engine (section 6.2) turns facts into hints with a reason: on the subject screen ("Обратить внимание", quarter goal), in the schedule (per-lesson hints and "Обратить внимание" for the day), on Overview (Внимание) and in notifications |
+| Navigation | A subject name is a link everywhere it appears (overview, feed, schedule, tables, notifications); it opens the subject detail with the current period and student, and Back returns to the exact place |
+
+## 2. Users and what they need
+
+### Family (tenant)
+
+A **family** is the unit of data isolation. It owns one or more **diary accounts** (credentials for a provider, parent or student), one or more **students**, and one or more **Marksy users**. Everything that is queried in the app is scoped by `family_id`. Friends later get their own family; nothing is shared across families.
+
+The typical shape of a family: one e-schools parent login, used by the collector; several Marksy users (two parents, each child), each with their own Marksy login, so a child never knows the e-schools password and a parent's notification settings are their own. The admin creates the family by connecting the diary, then invites the others with a code.
+
+### Parent
+
+Checks the phone two or three times a week, often in the evening. Wants to know, in under a minute:
+
+1. Is anything new today, and is anything bad (a mark of 4 or lower, an absence, a test coming)?
+2. How is each subject going this quarter (average, direction)?
+3. What happened in one subject (the marks, for what work, the teacher's comment)?
+4. What is set for tomorrow (homework), especially for the grade 1 child who has no marks.
+
+Needs a student switcher, notifications, and the ability to see the quarter that just ended next to the current one.
+
+### Student (grade 7 today)
+
+Opens the app after school. Wants:
+
+1. "What did I get today" and "what is my average in X".
+2. "What do I need to get to reach an 8 average" (target calculator).
+3. Homework for tomorrow, with the lesson topic.
+4. A quarter view that looks like a report card.
+
+Does not see other students, cannot change notification settings for the parents, cannot trigger a sync.
+
+### Not in v1 but shaped for
+
+- Several families (friends): the same connect-diary flow creates their own family; nothing else is needed in the data model. What is missing is only polish (family name, admin hand-over, deleting a family with all its data).
+- Goals per subject with progress; streaks for the child.
+- Comparison with class average (not available in the API today).
+
+## 3. Scope
+
+### v1 (build first)
+
+- Connect the diary with e-schools credentials (creates the family and the admin), Marksy login for members, invites with codes, family management (members, roles, student access), sessions, logout.
+- Overview per student and period: metrics with comparison to the previous period, movers, last school day's marks, attention list, next school day.
+- Subjects tab with three modes: period list with trends, quarter table, year table; manual entry of past year-final marks; subject links across years.
+- Marks feed with period kinds (week, month, quarter, year), a navigator to any past instance, and filters (subject, work type, below N). Grouped by day.
+- Subject detail: average, distribution, timeline of marks with topic, work type, comment; quarter final mark when available; target calculator.
+- Lessons: today / tomorrow / week with homework and topic. Works for grade 1 (no marks).
+- Notifications: Web Push subscription, Telegram linking, rules, quiet hours.
+- Study time: a timer per lesson or subject, estimates from "готово" ticks, the Занятия screen with time per day and per subject (6.7).
+- More: students and linked accounts, sync status with last and next run, appearance (Оформление), logout.
+- Collector: hourly runs in the school-day window with jitter, weekly quarter re-scan, manual re-scan by student and period, raw response storage, change and removal detection with history, `sync_runs`, API drift logging and alerts.
+- Swagger UI, health endpoint, Docker Compose for PostgreSQL.
+
+### v1.1
+
+- `final/whole` parser (after 2026-10-30) feeding the quarter and year tables.
+- Weekly digest (Sunday evening) and homework digest (evening before).
+- Offline cache of the last loaded data (Workbox, stale-while-revalidate).
+- Desktop layout with a two-column overview.
+
+### Later
+
+- Family polish for friends: rename, admin hand-over, delete family.
+- Goals and streaks.
+- Teacher names (`employees/{id}/fio`), attachments.
+- Export (CSV / share image).
+
+## 4. Information architecture
+
+Bottom tab bar (five tabs):
+
+| Tab | Screen | Notes |
+|---|---|---|
+| Главная | Overview | The most important things only: metrics for the chosen period, last school day's marks, attention list, next school day. Parents with several children first see the student picker |
+| Оценки | Marks feed | Period presets + filters, "new" badge on the tab. Day-to-day work |
+| Предметы | Subjects | One list by period: every subject with its last marks, average and direction |
+| Расписание | Timetable and homework | Today / tomorrow / week |
+| Ещё | More | Notifications, family, sync, tags, Оформление, logout |
+| (from Главная and Предмет) | Занятия (`#study`) | study time by period, subject and day; the timer |
+
+**Choosing and switching the student.** A parent with more than one child never lands on a child by accident:
+
+- On open (a fresh session, or the app resumed after a few hours) parents see **С кого начнём?** (`#pick`): one card per child, the whole card is the button. Card anatomy, top to bottom: avatar with name and class; a row of two or three small stat cells (Новых, Неделя with the arrow and "было", Пропуски when attendance exists; for a first-grader Уроков завтра and Д/з); one line with a severity stripe for the nearest thing to prepare (the nearest lesson still ahead that carries a tag, said as data: "Контрольная · Алгебра, завтра, 2 урок", stripe orange for an important tag; or "Ближайшие 2 недели без уроков с тегами"; never "Завтра контрольная" as if the app knew more than a tag match). Nothing else on the card: no chips, no prose, no chevron. One tap opens Главная for that child. Under the cards: the switch **Всегда начинать с последнего** and an entry row **Настройки** ("семья, уведомления, теги, оформление · без выбора ученика") that opens Ещё without picking anyone. The screen has no bell: events belong to a child. Until a child is picked, only screens that do not belong to a child open (Ещё and everything under it: Уведомления, Семья, Синхронизация, Теги, Оформление, Аватар); a tab or link to any other screen brings **С кого начнём?** back instead of quietly using the last child. While nobody is picked, Ещё starts with a row **"Ученик не выбран"** that leads back to the choice.
+- **When the picker appears.** The selected child is remembered on the device (`localStorage`: child id and the time of the last activity). On launch or when the PWA returns to the foreground, the app compares that time with now: if **more than 12 hours** have passed, the stored child is cleared and the picker is shown; within 12 hours the app continues on the same child, so a parent who checks in the morning and again at lunch is not asked twice, but an evening open after a school day starts from the choice. A parent with one child and a student user never see the picker.
+- **Setting "Всегда начинать с последнего"** (off by default; on the picker as "Запоминать выбор" and in Ещё → Настройки приложения): when on, the 12-hour rule is skipped and the app always opens on the last child; it can be turned off again in the same place, which also clears the stored child. Both the flag and the timestamp are per device, not per account, because the phone of the parent and the shared tablet in the kitchen are different situations.
+- Every student-scoped screen (Главная, Оценки, Предметы, Предмет, Расписание) carries the same **ScreenHeader**: one row with the title on the left and, on the right, the **StudentBar** and the bell (opens Уведомления, the inbox of what was sent, 5.2b; a badge with the number of unread notifications). The bar is avatars only, no words: 34 px avatars, the active one with an accent ring and full opacity, the others dimmed, with a red badge for a critical event on an inactive child. The order is the family order and never changes with the selection; when not every child fits, the active one stays visible in its own position and another is hidden instead. The number shown is not fixed: after layout the bar measures the space left between the title (which keeps at least 140 px) and the bell and shows as many avatars as fit, the rest collapsing into a "+N" circle that opens the student sheet; it re-measures on resize and rotation. Order is active child first, then children with new marks, then the rest, so the ones that matter stay visible on a narrow phone (typically two or three) while a tablet shows everyone. The selected child's name and class sit under the title in small type, so the header costs one row. Student mode has no bar.
+- Switching keeps the context: the same screen, the same period, the same filters; on a subject screen the app opens the same subject for the other child when they have it, otherwise their subjects list. A first-grader has no marks, so Оценки → Итоги and Предметы show their empty states.
+- Notification deep links carry the student, so a tap on "Милена: 9 по алгебре" opens Милена regardless of who was last selected.
+
+**Every subject name is a link.** Wherever a subject appears (a mark in the feed, a row on Overview, a lesson in the schedule, a cell in the quarter or year tables, a chip in a notification), tapping it opens the subject detail for the current student with the current period, and Back returns to the exact place and scroll position. Rows that carry a mark open the subject with that mark highlighted. The student sheet (four or more children) lists the students of the family; the selected student is remembered per device when "Запоминать выбор" is on.
+
+Routes (React Router):
+
+```
+/login
+/s/:studentId                      overview
+/s/:studentId/marks                feed, ?period=week|month|quarter|year&offset=N (N instances back)
+/s/:studentId/finals               term and year finals, ?mode=quarters|years (reached from Оценки and Предметы)
+/s/:studentId/subjects             subjects by period
+/s/:studentId/subjects/:subjectId  subject detail
+/s/:studentId/schedule             timetable and homework
+/more
+/more/notifications
+/more/family
+/more/sync
+```
+
+## 5. Screens
+
+Each screen has an id in `docs/mockups.html` (`#login`, `#home`, ...). The prototype is the visual reference; this section lists content and states. All mark-related numbers in the prototype come from the active grading scale (switchable in its rail for demonstration); the screens below describe the `by-10` instance.
+
+### 5.1 Login (`#login`)
+
+Two entry paths on one screen:
+
+- **Вход**: Marksy login and password for an existing family member. Default tab.
+- **Подключить дневник**: first a provider picker (country, then system; one entry per provider in the registry with `status` beta or stable, plus "Другая страна или школа" that links to `docs/providers.md`), then, for multi-tenant vendors, the school or district (URL, code or a searchable list, as the manifest's `tenant` says), then the credential fields the provider's manifest declares and a role toggle when the provider supports both roles. Used once per family by the person who becomes `admin`. Copy explains that credentials are stored encrypted and used only to read the diary, a few times a day on school days. A `beta` provider shows a short warning.
+- **У меня есть код приглашения** link: enter the code, choose a display name and a Marksy password, land on the students the admin assigned.
+- Header: the wordmark and a one-line description across the full width (nothing beside it).
+- Language selector at the very bottom of the screen, centred (native names of the twelve languages); the choice is remembered on the device and saved to the user after login.
+- **The provider is named in one place only**, the "Страна и дневник" field (its display name from the manifest). Every other label, hint and error on this screen and in the app says "дневник": "Логин в дневнике", "Пароль от дневника", "Дети не знают пароль от дневника". The same screen then works for any provider without copy changes.
+- Errors: wrong credentials (Marksy or the diary), the diary unreachable (collector host offline or 503), diary already connected to another family (contact its admin for an invite), invite code expired.
+
+### 5.2 Overview (`#home`)
+
+- ScreenHeader with the StudentBar (section 4), then the period segmented control: Неделя / Месяц / Четверть / Год. Default: Неделя. The first line of the body is the **period navigator** (section 6): ‹ Эта неделя · 12–18 окт ›. Periods are calendar-aligned (section 6).
+- **Brief row** right under the navigator: the two StatBlock tiles, "Средний балл" (band colour, arrow, "было 8.4") and "Оценок" (the period's count, arrow, "было 18"). This is the whole summary a parent reads at a glance; everything else on the screen is lists and, at the bottom, detail.
+- Then the lists: last day's marks (five, 5.2), Внимание (five, 5.2a), tomorrow's timetable as **the same two-bar rows as Расписание, in brief** (`LessonRow` with `compact`: number and time, subject bar, topic, homework, the ⋯ menu, and only the пометки готово, тип урока, тег and задали; no факты, сигнал or подсказка, so no averages or last marks; missing slots shown as in Расписание: "урока нет" before a late start, "окно" mid-day, with "ко 2-му, к 09:25" in the section header; no summary line, no chip cloud) with the lesson count in the section header and a "Всё расписание" button under the list, the same shape as "Все оценки" and "Все события".
+- Then the **Статистика** block, after the timetable, with a bare heading (the period is already in the navigator): three titled cards, every one with a heading and a one-line subtitle in the same place: **По градациям** (the band distribution, subtitle "сколько оценок в каждой"), **Распределение** (one bar per value of the scale with the count printed above each non-empty bar, `DistCard`, the same as on the subject screen) and **Динамика**. The average and the count are not repeated here; they are in the brief row above.
+- Footer: one centred muted line, "Обновлено сегодня в 12:17 · ⟳ Обновить"; nothing else lives there.
+- StatBlock (shared component, here split: the average tile in the brief row, the count tile and the band card in Статистика): tiles and a distribution card, every number paired with **what it was** in the previous calendar period. One grammar everywhere: the value in its band colour, a small arrow in the direction colour (green when the change is for the better on this scale, red for the worse, grey for none; for bands and absences "better" follows the meaning, so more low marks is red), and "было 8.4" in plain text. The size of the change is not printed: the previous value is more useful to a parent and the difference is one subtraction. Average tile hint: "было 8.4" and nothing else; **what "было" refers to is said once, in the navigator** on every screen that shows "было" (Главная, Предметы, Предмет): "12–18 окт · против 5–11 окт", "октябрь · против сентября" ("против" rather than "vs" or a second "было"), "с 1 сентября, идёт · сравнить не с чем". Tiles, subject rows and bands never repeat it; count tile: "было 9" and nothing else (how many of them were tests is the tag filter "Контрольная" on Оценки, not a second fact in the same hint); under every band column and the absences column: "было 3". The band card has four fixed rows per column (range, count with arrow, a bar box of constant height with the share bar anchored to its bottom, "было N"), so the ranges always sit on one line whatever the bars do; the range itself is a small pill in the band's own background and text colours, which is what makes the legend readable in the dark theme. The identical component is used on Главная (all marks of the period) and on the subject screen (one subject, the filtered selection against the same selection in the previous period); subject rows in Предметы use the same grammar (value, arrow, "было 8.7").
+- **Динамика** (in the Статистика block; the same `TrendCard` as on the subject screen, 5.4) over all marks of the student: one stacked bar per bucket of the selected kind (weeks, months, terms, months of a year), marks stacked by band, the average line with printed values over it, the selected instance last and highlighted, legend of range pills underneath. This is where the trend lives: Оценки does not repeat it.
+- Movement versus the previous period is not a separate block (a horizontal carousel was tried and rejected as unusable): each subject whose average dropped on at least two marks (at most three rows, biggest drops first) becomes an Внимание row with the numbers ("Физика: средний падает · было 6.1, стало 5.5 за неделю"), and the single biggest rise becomes a green row so the list is not only bad news. The full picture is in Предметы with the "По динамике" sort.
+- Last school day's marks: the most recent day that has marks, which is today on a school day and Friday at the weekend. Heading says "Оценки сегодня" or "Последние оценки" with the date and, when there are more than five, "5 из 6". At most **five** rows (newest first): chip, subject, work type, comment; then a button "Все оценки · N" that opens Оценки. Главная never grows a long list of its own: five rows and a way to the screen that owns them, the same rule as Внимание.
+- Внимание: the **five** most important events of the selected period (5.2a), then a button "Показать все · N" that opens the Внимание screen. By severity, then date: drops in subject averages, tag hits from their `prep_days` (section 6.3: "Контрольная · Алгебра" / "завтра, 2 урок · тема: К/р №2 по теме «Системы линейных уравнений»"; tests are the tag "Контрольная"), marks 1 to 4 in the last 7 days with the teacher's comment, absences in the last 7 days, marks changed or removed by a teacher (from `mark_events`), a diary account that needs a new password or a code (admin and parents). Severity stripe on the left. Empty state: "Всё спокойно". No carousel, no "show more" inline: five rows and one button.
+- Next school day: heading with weekday and date, one line with the number of lessons, start time, homework count and a highlighted "контрольная" when one is scheduled, then the lessons as compact chips. Link to the full timetable.
+- Student mode adds the "Близко к 8" target card.
+- Footer: data age and days left in the quarter; manual refresh for admin and parents.
+- Not on this screen: the subjects list (moved to the Предметы tab).
+- **A class without marks** (grades 1 and 2, `level <= 2`): the same screen and the same blocks in the same order, with the period control and the navigator; only the blocks about marks are left out. The two tiles count what such a class has: **Уроков** and **Заданий** in the period, with "было" for the previous one (lessons are planned ahead, so the current week counts to Sunday, the term to its end). Then Занятия сегодня, Внимание, tomorrow's lessons in brief, the sync line. No Оценки сегодня, no Статистика, no "Близко к итогу". Lesson rows never say "Оценок по предмету ещё нет" in such a class. The period picker counts lessons instead of marks.
+- Sync footer: "Обновлено сегодня в 12:17" and a manual refresh (admin and parents; shares the one-login-per-hour budget, shows "можно в 13:17" when used up).
+
+### 5.2a Внимание (`#events`)
+
+Everything worth attention for one child in the selected period, reached only from "Показать все · N" under the Внимание block on Главная. Header with back, title "Внимание", the StudentBar and the period kind control; the body starts with the period navigator (so last week's rows are one tap or one swipe away), then the list: the same rows as on Главная, all of them, ranked by severity and then by date, with no second caption (the navigator names the period). Rows tied to the past (low marks, absences, changed marks, drops and rises of the average) follow the selected instance; rows about the future (a test in three days, something to prepare) appear only in the current instance, and the note under the list says so. A row that also went out as a notification says so in a small line under it: "пришло в Telegram, 14:02" (or "пришло push, 14 окт, 18:00").
+
+**Computed, not stored.** Внимание is built on read from what sync recorded: `mark_events` and `mark_history` (new, changed, removed marks), marks and absences of the period (a date filter), the subject averages of this period against the previous one (one grouped query), `lesson_tag_hits` with days left. A child's year is about 1,000 to 1,500 marks and 1,200 lessons, so even a year is a few thousand rows and milliseconds with an index on (student, date). Nothing here is kept as its own record: a mark the teacher corrected changes the list at once instead of leaving a stale "низкая оценка". Stats per (student, period) may be cached and dropped after each sync if it ever matters; v1 does not need it.
+
+### 5.2b Уведомления (`#inbox`)
+
+What the app actually sent to this user, as it was sent, so a push swiped away can be found again. Opened by the bell on every header, "С кого начнём?" included: the inbox is the user's, not a child's, so it needs no choice of child and has no StudentBar and no period control. Header: back, "Уведомления", under it "все дети · за 180 дней" (a student sees only their own). Body:
+
+- The first row is the entry **"Настройки уведомлений · N правил включено · каналы, тихие часы"**, opening `#notifications` (the same entry row as the finals entry on Оценки). There is no gear in the header.
+- Then the notifications grouped by day, newest first. Row: the child's avatar (or an app icon for a family-wide message: the evening digest, the weekly summary, "Дневник: нужен новый пароль"), the text as sent, child's name first for parents ("Милена · Физика: 3"), the body in two lines at most; on the right the time and the channel (push, Telegram, both). Unread rows are bold with an accent dot; "Прочитать все" sits in the first day header while anything is unread. The bell shows the unread count.
+- A tap opens what the push opened (the subject, tomorrow's timetable, Главная, Синхронизация) and marks the row read. If the row is about a child, that child becomes the selected one, which also counts as the choice on "С кого начнём?".
+- A note: the list keeps what was sent for 180 days; what matters now for each child is Внимание on Главная.
+
+### 5.3 Marks feed (`#marks`)
+
+Current marks only. Finals are a different scenario and have their own screen (5.3b), reached in one tap from here and from Предметы.
+
+- Period control as on Overview (Неделя / Месяц / Четверть / Год) and the period navigator as the first body line (section 6); the **mark filter** chips (`MarkFilter`, one component and one piece of state shared by Оценки, Предметы and Предмет, D27): **Все** and **Теги ▾**, nothing else for now (no threshold chips such as "Ниже 7", no "Пропуски": they may come back if the family misses them). A mark carries the tags of its lesson (6.3): "Контрольная" when the topic says "К/р №2…", "Стихотворение" when it was the lesson the poem was due for. "Теги" opens a sheet: every enabled tag with its icon and how many marks of the period it has, ticked one or several; under them **"Если выбрано несколько: Любой из / Все сразу"** (OR / AND over the lesson's tags, with one sentence explaining the choice); "Показать N оценок" and "Сбросить теги". The list behind the sheet updates live. The chip then reads the tag name ("Контрольная") or "Контрольная +1"; the empty-state and the subject rows say the filter in words ("контрольная или стихотворение", "… и …"). There are no work-type chips ("Контрольные", "Домашние"): a work type is what the diary may or may not send, a tag is what the family decided, and the same tag "Контрольная" drives the schedule, Внимание and this filter. There is no "new" chip: the "new" dot on rows and the badge on the tab already carry that, and a filter that empties itself after one visit is not a filter.
+- No StatBlock and no chart here: the average, the count, the band distribution and the trend for the selected period are on Главная, one tab away; Оценки is the list. The filter chips still narrow the list (and the same filter narrows Предметы and the subject screen, D27).
+- Right under the StatBlock, the **finals entry row**: "Итоговые отметки · по четвертям и годам · I четверть идёт, итоги 30 окт", opening the Finals screen. When a term's finals have been posted and the next term has not started, the row says so in the good-news colour ("I четверть выставлена 15 октября"): the finals are shown next to the current marks for as long as they are news, without mixing the two lists.
+- List grouped by day, newest first. Row: mark chip, subject, work type label, topic (one line, truncated), comment icon if a comment exists. Chips for tests (the `TEST_TYPES` work types) carry a small pencil icon in the corner, the only decoration a chip ever has; there is no "new since last visit" dot (D28).
+- Absences appear as `н` chips in the same stream when the "Пропуски" filter is on; by default they are shown but visually quiet.
+- On the day a term's finals are posted they also appear in the stream as one card per term ("Итоги I четверти": subject chips, how many differ from the rounded average, link "Все итоги"), because a posted final is a mark event. Finals never enter the StatBlock above.
+- Empty state per filter; for the 2025/26 instance of Год the empty state says that only finals exist for that year and links to the Finals screen.
+
+### 5.3b Finals (`#finals`)
+
+The marks a teacher sets at the end of a term or year (in Belarus an integer set separately, usually but not always the rounded average; `FinalMark` rows from `final/whole`). Own screen with a back button, title "Итоги", the StudentBar, and one segmented control Четверти / Годы (Четверти only when the provider has terms). Reached from the entry row on Оценки and Предметы, from the finals card in the feed, and from the subject's "По четвертям" strip.
+
+- **Четверти**: table subject × I, II, III, IV, Год for the current school year, every subject listed. A posted final is a filled mark chip (integer). A running term shows the **current average as a plain decimal in italics**, no fill: a decimal cannot be a final, so the reader sees at once that this is where the term is heading, not what the teacher gave. Future terms are dashes. The Год cell follows the same idea one level up: until the year final is posted it shows, in the same italic decimal notation, the **average of the term finals posted so far** (the Belarusian year rule; `GradingScale.finalRule.year` names the rule for other systems), and a dash while no term has a final yet. It is never the average of all marks: a year is made of term finals. Under each subject name: last year's final for that subject ("итог 2025/26: 8") or "новый предмет". The header line states the current term ("I четверть идёт, итоги 30 окт" / "I четверть выставлена сегодня"). Tap a row to open the subject.
+- **Годы**: table subject × school years with the year final per year; the running year shows the average of its posted term finals in the same italic notation (dash until the first term final); the last column is the direction arrow against the previous year (D5), no signed delta. Subjects that exist in only one year are listed with "в этом году нет" or "новый предмет". Button for admin and parents: "Ввести итоги прошлого года" (section 6.1).
+- In both views the short legend (what a framed integer and an italic decimal mean, where last year's finals come from) sits **above** the table, not under it: without it the mix of integers, decimals and dashes cannot be read.
+- Prototype: rail toggle "Итоги I четверти" (not posted / posted today) shows both cell states, the entry row, the feed card, the Предметы row badge and the subject strip.
+
+### 5.3a Subjects (`#subjects`)
+
+One list, by period. The period control and the mark filter chips (same as Оценки, same state), the navigator, then the finals entry row (5.3), then the sort control: a text button with the current order that opens a bottom sheet (no native select) with По алфавиту (default), Сначала слабые, Сначала сильные (by the period average), Сильнее всего упали, Сильнее всего выросли (by the change against the previous instance), each with a one-line explanation; subjects without marks in the period always sort last. **Every subject of the student is always listed**, whether or not it has marks in the period under the current filter ("контрольные: нет за неделю" when the filter leaves none): the list is the student's curriculum, not a result set. A subject without marks shows "нет" instead of an average and "нет оценок за неделю" instead of chips, and sorts last under weak / strong / move. The line above the list holds only the sort dropdown, no counts and no period text. Row: subject, last 5 marks as chips (of the filtered kind), average over the filtered marks with band colour and trend arrow, "было 7.9" underneath (the instance before); when the term's final has been posted and the next term has not started, the row shows "итог I: 8" there instead. A note under the list explains what the arrow compares.
+- Subject detail mirrors the finals notation in its "По четвертям" strip: posted finals as chips, the running term as an italic decimal, the Год cell as the average of posted term finals, and a line "Итог I четверти выставлен сегодня: 9 при среднем 8.8" once posted; the goal card then stops computing for that term and says so until the next term starts.
+- **A class without marks** (grades 1 and 2 in Belarus, `level <= 2`): the list is never empty, and the period control and navigator stay, as on every period screen. A note "В 1 классе отметки не ставят. Здесь уроки и задания по предметам за период, справа время занятий, ниже ближайший урок", then every subject in the same row with its colour stripe: lessons and homework in the period ("5 уроков · 5 заданий"), in the current period a second line with the next lesson and its homework ("дальше: завтра, 3 урок · Принести цветную бумагу и клей"), and on the right the study time of the period when there is any. Sorted by the next lesson, subjects with no lesson in two weeks last. No filter, no finals row, no sort. A row opens the subject screen in the same mode: tinted header with the period control and navigator, "Настройки предмета" with the colour only (no goal), the tiles Уроков and Заданий for the period, "Ближайшие уроки", and the study card if there is study time.
+
+### 5.4 Subject detail (`#subject`)
+
+- **Colour: "акцент" (D45).** The header (back, subject name, student, period control, filter chips) sits on a soft tint of the subject's colour that continues under the status bar, with rounded bottom corners; the name takes a darker shade of it. The screen's controls use the subject colour instead of the app accent: selected chip and segment, navigator arrows, links, the target picker. In the dark theme the shade is light and the text on filled controls dark, so every palette colour stays readable. No colour dot in the header; colour and goal are changed in "Настройки предмета" (below). Never in the subject colour: StatBlock, Распределение, Динамика, mark chips, averages, severity stripes.
+- Header: subject name, the period control and the same mark filter chips as on Оценки and Предметы (Все / Теги), sharing their state, so a filter set on the list is still on when a subject is opened. Both controls drive only the first section.
+- The screen is two sections with an explicit boundary. The first follows the controls and has no caption of its own: the period navigator is its first line, exactly as on Оценки and Предметы, and on this screen the whole navigator row continues the subject-tinted header (rounded bottom, stays tinted while sticky). Under it, before any statistics, two blocks that do not depend on the period:
+  - **"Настройки предмета"**, an entry row in the style of "Итоговые отметки" (icon tile, bold title, one line "цель: итог 8 · цвет: синий", chevron). It opens a sheet "Физика: настройки": **Цель на четверть: итог** (any whole value of the scale as a grid, 1 to 10 for by-10, plus **"Без цели"** for a subject the family does not set a goal for; the explanation under the grid says what the goal is used for; per subject per student; a new subject starts with the scale's default goal) and **Цвет** (the twelve swatches and "Авто", 6.6), then "Готово". Changes apply live behind the sheet.
+  - **"Обратить внимание"**, in the style of the timetable's "Обратить внимание" block (tinted card, rows with a stripe, bold title, quiet line): first this subject's lessons that carry a tag (the same rows as "Обратить внимание": "Контрольная · Физика / вт, 20 окт, 1 урок · через 5 дней / тема: …"), then the subject's guidance hints (6.2): a low mark to go over with the teacher's comment, weak homework, tests below the usual level, three marks under the average, an absence to catch up. Hints disappear with guidance off; the block is hidden when there is nothing to say. It replaces the old "Что сделать" list at the bottom.
+  Then StatBlock, Распределение, Динамика, the list of marks; all four follow the controls. Then a labelled divider **Четверть** with one line "Не зависит от периода и фильтров выше: считается по всей текущей четверти, по всем оценкам", under which sits По четвертям. Last, a labelled divider **Занятия** with the study card (6.7): it follows the period at the top again, so its card is titled with the period ("Эта неделя · 1 ч 17 мин · было 25 мин"). The period-dependent part comes first because it is what the controls act on; the term part is stable context that a reader scrolls to once.
+- StatBlock for the subject (average, count, band distribution, each against the previous period), then the **Динамика** chart. The chart follows the period control: with Неделя selected it shows one point per week for the 8 weeks ending at the selected week, with Месяц one per month of the school year up to the selected month, with Четверть one per term, with Год one per month of the selected school year. Each bucket is a **stacked bar** of its marks, worst band at the bottom and best at the top in the band colours (the same colours as the range pills: 7–8 soft green with a dark edge, 9–10 deep green), with height proportional to the number of marks, so a quiet week is visibly small and a 7.5 made of two 9s and a 4 looks different from a 7.5 made of three 7s and 8s. Over the bars runs the average line; each point is the subject's average over that bucket with its value printed above it and the bucket's label underneath ("14.09", "сен", "II"); the last bucket is the selected instance itself and is highlighted, so the chart is the StatBlock's "было" extended back in time. A legend of the range pills sits under the chart with one line of words ("столбик — оценки отрезка по градациям, линия — средний"). Empty buckets are gaps with a dash, never zeros; buckets before the school year are not drawn; future terms show only their label. Band boundary lines stay as dashed guides.
+- По четвертям strip: I, II, III, IV, Год cells (final mark bold, running average italic, dash for the future), with last year's final mark for the subject in the header.
+- Distribution bar: how many of each value 1..10 (thin bars, labels on hover).
+- No "Цель за четверть" card: the goal is a setting ("Настройки предмета"), and its consequence is one row at the top of **"Обратить внимание"**: "Цель итог 8: ещё 9 × 10" (what is missing, with "сейчас выходит 5, средний 5.1, нужен 7.5"), or "Цель итог 8: хватает" with the lowest next mark that keeps it, or "Цель итог 8 в этой четверти уже не достичь". No goal, no row.
+- **Ближайшие уроки**, between the marks of the period and "Четверть" (independent of the period): the next three lessons of the subject still ahead, each under a day caption ("Вт, 20 окт"), as `LessonRow`s from the timetable (number and time, subject bar, topic, homework, тег and задали notes, ⋯ menu). It uses the same compact rows as Главная: the факты, сигнал and подсказка notes are left out, since the screen above already shows the average and the last marks. Hidden without `lessons` and `futureTimetable`.
+- Timeline: date, mark chip, work type, topic, comment, teacher (later).
+
+### 5.5 Timetable and homework (`#lessons`, tab "Расписание")
+
+- **Period controls like everywhere else** (D2): the segmented control picks the kind, **День / Неделя**; the sticky navigator under the header steps ‹ › through instances, its label ("Сегодня · 15 октября", "Завтра", "Понедельник", "Эта неделя · 12–18 окт", "Следующая неделя") opens a picker of days or weeks with lesson counts, and a horizontal swipe does the same as the arrows. Unlike marks the timetable also goes forward. A day steps over days without lessons (Friday → Monday); a week steps by calendar weeks while the diary has lessons in them. Default: День, today. "Всё расписание" on Главная opens День on the next school day. Both kinds open with the same block, "Обратить внимание", for exactly the selected day or week.
+- Day header: in День the navigator names the day, so the line under it carries only the counts; in Неделя every day has its name and date. The counts: number of lessons that will take place ("· 1 не будет" when the family cancelled one), homework count, number of tests highlighted.
+- **"Обратить внимание"** above the lessons, in День and in Неделя: **facts from tags only**, nothing the app cannot know, and **only about the selected day or week**: its lessons still ahead that carry a tag, ordered by date and lesson number, each tappable to the subject. No look-ahead into other days ("ближайшие 2 недели" is gone): to see next week, step to next week. Hidden when the range has no tagged lesson. Every row has three lines: tag icon and **"Тег · Предмет"** in bold ("Контрольная · Алгебра"); which lesson and how far in muted type ("завтра, 2 урок", "вт, 20 окт, 4 урок · через 5 дней"); and the diary's own words that matched, as the diary wrote them, in quiet type ("тема: К/р №2 по теме «Системы линейных уравнений»", "задано ср, 14 окт: SB p. 45 ex. 2, learn the poem by heart"). The stripe is orange for an important tag, grey otherwise. No advice, no "повторить", no weekend tips: guidance hints live under the lesson (подсказка, 6.2) and are not repeated here. Shown whether guidance is on or off. Hidden when no lesson carries a tag.
+- **Lessons of a day as one list with two bars** (chosen over rounded cards, a plain list and a full-width feed): all lessons in one container separated by hairlines. Each row: on the left the **lesson number** (large) and its **start time** under it; a thin square bar in the subject's colour (6.6); the subject in bold, the topic in muted type, the homework as plain text; a **⋯ button** at the right edge, level with the subject (5.5 "Lesson actions"). There is no checkbox on the row. Anything Marksy wants to say about the lesson (a tag due here, "задали" on the lesson where it was set, the guidance hint) goes **under the content with its own short bar in the severity colour** (red, orange, grey), so "which subject" and "how serious" are two stripes one under the other and no dot or tinted box is needed. No lesson number: the order of the rows is the order of the day. A row marked ready gets the пометка **готово** as its first note and its texts fade a step. The Внимание list on Главная uses the same bar language, so the two screens read alike.
+- **Missing slots are part of the timetable.** A day that starts later says so above the list in the accent colour ("Ко 2-му уроку, к 09:25", also in the section header of the home widget), and the empty first slot is a quiet row ("1-го урока нет"); a window in the middle of the day is its own row ("5-й урок · окно"). Gap rows have a dashed bar that runs the full height of the number and time, the text centred against it, no tick and no tap; slot times come from the provider's bell schedule, and the day header still counts only real lessons.
+- **Пометки (lesson notes).** The single name for every line under a lesson, in the app, in the docs and in code (`LessonNote`; "пометка", plural "пометки"). A пометка is a line icon from the app's icon set (the stroke style of the menu icons, never emoji) on the **left axis**, right-aligned under the lesson number and time, then a short bar in its colour in line with the subject bar, then one short text. The left column therefore reads top to bottom as number, time, icons, and the texts of the lesson and its notes share one left edge. Notes are separated by a small gap so every bar, grey ones included, stands on its own. **One fact per note**: a note never strings several facts together with dots. A note that carries mark chips ("Оценка за урок", "Последние оценки") centres its label and chips on one line; when the chips wrap, the icon stays level with the first line. Kinds, in this order:
+  - **готово**: first on an upcoming lesson marked ready (6.5): check icon and green bar like a tag, "**Готово** · Милена, 17:40".
+  - **оценка**: up to three notes, one fact each: "Оценка за урок: 9" (bar in the mark's band colour; the only note with a label, because a bare number reads like a lesson number or a score), the kind of work without a label ("Работа на уроке", grey bar, pen icon) and the teacher's comment in quotes without a label ("«Аккуратная работа»", grey bar, comment icon), the last two only when the diary has them; or one grey note "Пропуск урока". A test-type work (контрольная, самостоятельная, диктант, сочинение) is shown exactly like the тип урока note of an upcoming test: orange bar, test icon, bold "Контрольная", so a test reads the same before and after the lesson. The mark lives here, not in the left column.
+  - **тип урока**: "Контрольная" (orange), "Лабораторная работа" / "Практическая работа" (accent).
+  - **тег**: a tag due at this lesson (6.3): tag icon, bold name in the tag's tone (orange for important, accent otherwise); for a homework match the matched text and "(задали 14 окт)". A test is this note: "Контрольная".
+  - **задали**: "Задали: стихотворение, к вт, 20 октября" (grey) on the lesson where tagged homework was set.
+  - **подсказка**: the guidance hint (6.2), action in bold and the reason after it.
+  - **сигнал**: "Давно без оценки, могут спросить; можно вызваться самой", "Могут спросить, стоит подготовиться", "Нужно поднажать" (guidance on).
+  - **факты**: "Средняя оценка", "Последние оценки", "Последняя оценка: 14 окт, 2 урока назад" (grey bars).
+- **A lesson that has passed keeps only its оценка** (or "Пропуск урока"), in both views: every other note exists to prepare for a lesson, and that lesson is over. Passed lessons have no ⋯ button and no actions; "Обратить внимание" and the day's "готово N из M" count only lessons still ahead.
+- **One view, facts always shown.** There is no Подробно / Кратко switch: with one fact per note and icons on the left axis the full row stays easy to scan, so every upcoming lesson shows the пометки факты and сигнал: the subject facts as of the start of the lesson: **"Средняя оценка: 8.5"** (in its band colour), **"Последние оценки:"** with the last five marks this school year as chips (never mixed with last year), **"Последняя оценка: 14 окт, 2 урока назад"** (lessons of this subject since the last mark); and, when guidance is on, **"Давно без оценки, могут спросить · 7 уроков без оценки; можно вызваться самой"** in the accent colour after `callAfter` lessons without a mark (family rule, default 4, 6.4), or **"Могут спросить, стоит подготовиться"** in orange when the average is also low, or **"Нужно поднажать · средний 5.8"** when the average is low and nothing more serious is said. These answer "where should I push and where might I be called" before the day, next to the lesson.
+- **Lesson actions: one ⋯ menu.** Every upcoming lesson has a ⋯ button at the right, and a tap anywhere on the row (except the subject name) opens the same bottom sheet, titled "Алгебра · 2 урок, завтра 09:25". The actions, always in this order, each a row with an icon tile, a bold title and one line of context:
+  1. **"Отметить «готово»"** (green tile, check icon; "к уроку подготовились") or **"Снять отметку «готово»"** ("отметила Милена в 17:40"). First, because it is the action used every day.
+  2. **"Добавить задание"** ("в дневнике задания нет") when the lesson has no homework, or **"Изменить задание"** with the current text when the family added one (6.5). Not shown when only the diary's homework exists.
+  3. **"Урока не будет"** (grey; "уберём из подсчётов и напоминаний, можно вернуть").
+  A cancelled lesson's menu has one action, **"Вернуть урок"**. Actions under the lesson, checkboxes and inline "изменить" links are not used: they mixed with the notes and with each other. A choice closes the sheet and re-renders without scrolling the page.
+- **"Урока не будет".** The diary does not say when a lesson is cancelled (teacher ill, trip, the class at an event), so the family says it. The third action of the lesson menu is **"Урока не будет"** (line icon "circle with slash"). It turns the row into a cancelled row: number and time stay, the bar fades, the subject is struck through, the text "Урока не будет" replaces topic, homework and пометки, and the ⋯ menu offers only **"Вернуть урок"** (undo icon), which restores the row exactly as it was. No confirmation dialog: undo is two taps away. Anyone who may tick (6.5) may cancel and restore; who did it is stored, not shown. A cancelled lesson:
+  - is not counted in the day header ("3 урока · 1 не будет"), in "готово N из M", in "Ко 2-му уроку" (the first lesson that will take place decides it) or in the home widget count; in the widget the row stays, struck through, with "урока не будет";
+  - is skipped as a due lesson: homework, tag hits and "Обратить внимание" items that pointed at it move to the next lesson of the subject that will take place;
+  - is skipped when counting "N уроков без оценки" and "N уроков назад" (`callAfter`);
+  - keeps its test event on Главная and События, with "урока не будет, уточните перенос" added, because a cancelled test is usually moved, not dropped.
+  If the diary later records a mark or an absence for that lesson (a planned topic does not count: the diary shows topics ahead), the diary wins: the override is removed, the lesson shows normally, and nothing is announced. Passed lessons have no cancel action (nothing to plan any more).
+- In Неделя the block lists the whole selected week, so the weekend planning view is "Неделя → следующая неделя".
+- Grade 1: this is the primary screen; the overview links here.
+
+### 5.6 More (`#more`)
+
+Order, from the most important down: who is signed in (a card); then **what the app does for the family**: **Семья** (children, members, diary accounts; parents only; first, because everything else depends on who is in the family), **Настройки уведомлений** (the setting people come back to most), **Теги** (what the schedule, Внимание and notifications look for), **Синхронизация** (status; parents only, and the freshness banner already leads there when something is wrong); then **how the app looks and behaves**, set once: **Оформление**, **Простой режим** (student only), **Подсказки**, **Всегда начинать с последнего ребёнка** (parents only), **Язык**; last and in its own card, **Выйти**. While no child is picked, the row "Ученик не выбран" comes first (5.1).
+
+- Avatars (`#avatarEdit`, from Family by tapping a student): a generated avatar from traits, or an uploaded photo. Traits: age (6–9, 10–13, 14–17, adult), look (boy, girl, neutral), skin tone (six), hair colour (black, dark, chestnut, light brown, blond, red, grey), hairstyle (buzz, short, medium, long, ponytail, bob, curly, braids), eye colour (brown, hazel, green, blue, grey), glasses. Every combination exists and is drawn on the fly as SVG from the trait set (no image library), so "a seven-year-old boy with dark hair and brown eyes" and "a twelve-year-old girl with dark hair and brown eyes" are both a few taps. The picker shows each option already applied to the child's current avatar. Photos are stored on the family's server only. Avatars appear in the StudentBar, the start screen, the family list, the student sheet and in notifications.
+- Family (`#family`, admin and parents): members of the family with role and which students they see; invite button that shows a code valid for 48 hours and a link; linked diary accounts with provider name and status (ok, password changed, blocked, needs a code); students with class and school. "Добавить дневник" lets a family connect a second account, possibly on another provider (children in different systems). Admin can change a member's role and student access and remove a member.
+- Теги (`#tags`): the family's tags (section 6.3) as rows with icon tile (orange for important), name, where and which words, "готовиться за N дней", on/off; tapping a row opens the editor; "Добавить тег"; an entry "Уведомления по тегам" that opens Уведомления; below, "Сейчас в расписании": every hit for the next two weeks.
+- Tag editor (`#tagEdit`): name; icon from the line set; tone (Обычный / Важный) with a live preview of the пометка; keywords as removable chips with an input (Enter adds; case-insensitive prefix, explained under the field); where to search (topic, homework) with the rule of where the tag lands; a switch for the diary's lesson type "контрольная" only when the provider has `lessonTypes`; subjects (none = all); "Готовиться заранее, дней" (нет / 1 / 2 / 3 / 5 / 7); for whom. No notification settings here. Below the form, "Проверка на расписании" shows what the tag as edited finds in the next two weeks. Save / delete.
+- Notifications (`#notifications`): channels (Web Push toggle per device, Telegram link with a one-time code); then a list of **alert rules** the user owns, each shown as a title built from its condition ("Оценка ниже 5", "Средний по предмету вырос больше чем на 0.5") and a line with the comparison period, when it is sent and for whom; a toggle per rule; tap to edit; "Добавить правило". Quiet hours. Rules whose event needs a capability the provider lacks are hidden.
+- Alert rule editor (`#alertEdit`, section 6.4): pick the **event** (new mark, subject average changed, mark changed or removed, absence, lesson with a tag, homework digest, weekly summary); set the **condition** that belongs to the event: for a mark, any / worse than a value / not worse than a value / in a band, with values and bands from the scale; for an average, direction (dropped / rose / changed), step, the **period and what it is compared with** (week vs previous week, 2 weeks, month, term: calendar-aligned, named explicitly on screen), minimum marks; for a lesson with a tag, **which tags** (chips, several allowed) and **when to remind** (several allowed: как только появился, за N дней, вечером накануне, в субботу на следующую неделю), which replace the generic "when" choice; choose **for whom** (all students or one) and **which subjects** (none selected = all); choose **when** (immediately, evening digest at 19:00, weekly on Sunday). Below, "Проверка на данных" shows how often the rule would have fired in the last two weeks or which subjects match now, so the threshold is tangible before saving. Save, delete.
+- Default rules created for a new user (all editable, deletable): any new mark (students on, parents off), mark worse than the scale's first threshold (parents on, immediately), mark in the top band (parents on, evening digest: good news belongs in notifications too), subject average dropped by 0.5 of a by-10 point over a week versus the previous week on at least 2 marks (off), mark changed or removed, absence, "Теги: Контрольная, Стихотворение" (as soon as it appears, the evening before, in the Saturday list; everyone on), "Теги: Принести" (the evening before; students on), homework digest, weekly summary.
+- Sync (`#sync`, admin and parents): state card (status dot and word, last data, last attempt with its outcome, failures in a row when any, next run and why, schedule, a plain-language note when something is wrong), "Следующий запуск возьмёт" (the planned weeks and a request estimate, 10.4), weekly re-scan status, API drift notices, manual actions: "Обновить сейчас" and "Перепроверить" with a scope picker (student, period: quarter / school year / specific weeks), and the run log (90 days). Both buttons respect the one-login-per-hour rule and show when the next run is allowed; after a wrong-password failure the primary button becomes "Обновить пароль дневника" and opens Семья. Every student screen gets a `FreshnessBanner` under its header when the last success is older than 24 hours or the account is paused or needs action (D22); it opens this screen. Prototype: rail toggle "Состояние синхронизации" with scenarios fresh / device was off / paused after failures / wrong password.
+- Настройки приложения (per device): "Всегда начинать с последнего ребёнка" (off: the picker appears after 12 hours of inactivity), simple mode for a student, theme.
+- Language: one of the twelve interface languages with its review status (`docs/i18n.md`); saved per user, also used for that user's notifications.
+- **Оформление** (`#look`, an item in Ещё with a one-line summary "Светлая · палитра «Морская» · Manrope"), section 5.6a. Logout.
+
+### 5.6a Оформление (`#look`)
+
+Personal settings: stored per user (`users.settings.appearance`) and applied on every device the user signs in on, so a child and a parent can look at the same data in different clothes. Subject colours are the family's (6.6) and are only listed here.
+
+- **Тема**: Светлая (default for a new user and on the login screen) / Тёмная / Как в системе.
+- **Фон**: Цвет / Обои.
+  - **Цвет → Палитра**: eight palettes (`tokens.json → palette`): Морская (default), Лесная, Небесная, Сливовая, Ягодная, Янтарная, Мятная, Графит. A palette sets the page background and the app accent (buttons, selected controls, links) in both themes. It never changes mark bands, severity or arrows, and on the subject screen the subject colour still overrides the accent (D45).
+  - **Обои**: five built-in tiled patterns (Клетка, Линейка, Точки, Каракули, Волны: school-notebook motifs in one mid-tone, `web/public/wallpapers`) and **"Загрузить"** for an own picture (JPEG/PNG/WebP up to 5 MB, scaled down to 1600 px on the server, stored per user in `user_files`, visible only to that user). **"Насколько видны обои"**: a slider 10 to 100 %, default 35 %. Cards stay solid; the wallpaper shows between them and behind headers; the sticky navigator gets a translucent blurred background so it stays readable.
+- **Шрифт**: five body fonts with full Cyrillic, each shown with a sample "Аа" in itself: **Manrope** (default, even and compact), **Nunito** (soft and round, liked by children), **PT Sans** (classic, made for Cyrillic), **Inter** (neutral, like system apps), **Rubik** (slightly rounded, large and friendly). Numbers in statistics keep the display font.
+- **Цвета предметов**: the student's subjects, each with its colour stripe and the colour's name ("авто", "синий"); a tap opens the same colour sheet as on the subject screen (6.6). The header says these colours are seen by the whole family.
+
+### 5.8 Занятия (`#study`)
+
+Reached from the card "Занятия сегодня" on Главная and from the card "Занятия" on a subject. Header with the StudentBar, the period kind control and a filter row **Все / Только таймер** (whether estimates count, 6.7); the body starts with the navigator ("12–18 окт · против 5–11 окт"), then:
+
+- An entry row **"Заниматься"** (hidden while a session runs; the timer bar is then visible anyway).
+- Two tiles: **Занятий** (total time for the period, "было 6 ч 56 мин") and **В учебный день** (total divided by school days of the period, with "было").
+- **По предметам**: one row per subject with time, sorted by time: subject stripe, name, a proportional bar in the subject colour, the time. Time only: no averages next to it (6.7).
+- **Динамика**: the Динамика card's buckets (same `trendBuckets` as marks): one bar of total time per bucket, all subjects together, in the screen's accent (no split by subject: a stack of fifteen colours says nothing; the per-subject view is the subject screen), the time as h:mm under the date. No average line.
+- **По дням**: every day of the period with sessions, newest first, "Вчера · 2 ч 18 мин"; rows: start and end time on the left, the subject bar (dotted for an estimate), subject, what for ("к уроку завтра", "повторение", "по отметкам «готово»", "внесено вручную"), and the duration, "≈ 46 мин" for estimates. A batch is a row without time: "4 отметки «готово» за 2 минуты · время не посчитано".
+- A note explains the three sources in two sentences.
+
+
+### 5.7 Student mode
+
+Same screens, with: no student switcher, no sync controls, no family settings, notification rules limited to own marks and homework digest, the target calculator pinned on the overview.
+
+**Simple mode** (`users.ui_mode = 'simple'`, for the youngest, set by a parent or the student): Overview shrinks to three blocks built from the same components: today's marks as large chips, "Не забыть" (tag hits for the next 7 days), and the next school day's lessons with homework as checkboxes. No statistics, no trends, no hints. The other tabs stay but open in their plainest form (feed without filters, subjects as a list).
+
+## 6. Mark semantics
+
+- `mark` string from e-schools is parsed into `values: number[]` (`"7/9"` becomes `[7, 9]`); each value is a separate mark in averages.
+- Kinds: `SINGLE`, `DOUBLE` count; `ABSENT` becomes an absence; `PASS`, `NOT_PASS`, `EXEMPT`, `MASTERED`, `NOT_MASTERED`, `NOT_TAKEN` are shown as text chips and excluded from averages.
+- Average = sum(values) / count(values), one decimal, half-up. Shown as "8.3". No marks: "нет".
+- Bands come from the student's `GradingScale` (`docs/providers.md` section 5); the four roles are fixed, their ranges are not. For `by-10`: 1..4 `critical` (низкие, red), 5..6 `low` (средние, orange), 7..8 `good` (хорошие, soft green), 9..10 `top` (отличные, filled deep green). Colours for the roles live in `tokens.json`. Non-numeric kinds use the neutral `ok` style. Chips always show the raw mark; colour is never the only signal. Thresholds offered in filters and notification rules are the scale's `thresholds` ("ниже 5" and "ниже 7" for `by-10`). For scales where lower is better, "below" becomes "worse than" and the arrow logic flips through one helper, `compare(scale, a, b)`.
+- Absences are attendance records, not marks: `by-eschools` derives them from the `ABSENT` mark kind, other systems have a register. Averages never see them.
+- Everything in this section that mentions a number (0.3 for the trend, 1.0 for a work-type gap, "4 and below" for a low mark, 7.5 for an 8) is the `by-10` instance of a scale-relative rule; the table in `docs/providers.md` section 5.4 lists each element and its derivation. The web app reads the scale through one hook, `useScale(studentId)`, and components never see raw numbers without it.
+- Trend arrow: average for the period minus average for the previous calendar period; threshold 0.3 for an arrow, otherwise flat. No arrow when the previous period has no marks (first quarter, first week of September).
+- Work type labels from `api-spec.md` 7.3; `null` type is "Работа на уроке". Tests filter = `TEST, DICTATION, ESSAY, KNOWLEDGE_CONTROL, INDEPENDENT_WORK`.
+- Periods are calendar-aligned, never rolling windows, so the numbers match how school works. A period is a **kind** plus an **instance**:
+  - Kinds, in this order: Неделя, Месяц, Четверть (when the provider has terms, named by `Term.kind`), Год. No "2 weeks": it was an invented unit nobody thinks in. Default kind: Неделя.
+  - Instances: the current one and every earlier one of the same kind back to the start of the school year (for Год: every school year Marksy has). The **period navigator** sits as the first line of the body on Главная, Оценки, Предметы and Предмет: ‹ and › step to the previous or next instance, the label ("Эта неделя · 12–18 окт", "Прошлая неделя · 5–11 окт", "Неделя · 28 сен – 4 окт", "Этот месяц · октябрь", "I четверть", "2026/27 · 7 класс") opens a picker listing every instance with its number of marks. Choosing a kind resets to the current instance. The navigator is content, not a control strip, so Оценки keeps two strips. It is the one sticky element on the screen: when the body scrolls, the navigator stays pinned to the top (with its own background) while the header, the kind control and the filters scroll away, so flipping to last week never requires scrolling back up.
+  - **Swipe** does the same as ‹ ›: a horizontal swipe over the body moves one instance, finger to the right = previous (older), to the left = next (newer), like turning the pages of a calendar, with a short slide of the content in that direction. The gesture is recognised only when the horizontal travel is at least 48 px and the vertical drift is less than half of it; anything else is a scroll or a tap and is untouched. A swipe that starts inside a horizontally scrolling strip (filter chips, segmented controls) or while a sheet is open is ignored, and the click the browser fires after a swipe is swallowed, so a swipe never also opens the row under the finger. Nothing happens at the edges (no instance before the school year, nothing after the current one).
+  - Ranges: a week runs from the first weekday of the calendar (manifest) to its end, the current week to today; a month from the 1st; a term from its start in `terms`; a year from the school year start. The current instance of any kind ends today.
+  - Comparison: always the instance **right before the selected one**, whatever is selected: this week with last week, last week with the one before it, October with September, 2026/27 with 2025/26. The hint names it ("было 8.4 · прошлая неделя", "было 8.2 · 28 сен – 4 окт").
+  - The API takes `period=week|month|quarter|year&offset=N` and resolves the dates on the server in the account's timezone; the response carries `from` and `to` so the UI can label the instance.
+
+### 6.1 Comparison model ("better or worse than before")
+
+The same question is answered at every level with one rule: compare the current value with the same kind of value for the previous calendar unit, and show the direction, the previous value and the delta.
+
+| Level | Current value | Compared with | Where it shows |
+|---|---|---|---|
+| Week, month | average of marks in the instance | average of the instance before it | Overview tiles, movers, Subjects (Период), subject hero |
+| Quarter (running) | running average (italic decimal) | final mark of the previous quarter, or its average if the final mark is not in the diary | Оценки → Итоги (Четверти), subject strip |
+| Quarter (finished) | final mark from `final/whole` | final mark of the previous quarter | Оценки → Итоги (Четверти) |
+| Year (running) | running average of the year (italic decimal) | year-final mark of the previous school year | Оценки → Итоги (Годы) |
+| Year (finished) | year-final mark | year-final mark of the previous school year | Оценки → Итоги (Годы) |
+
+- **Any past instance** is reachable through the navigator and the picker (section 6), so there is no separate custom-range control; a parent looks at "the week before the test" by stepping back to it.
+- Threshold for an arrow is 0.3; below that the comparison is "flat" and shown as →.
+- Final marks are integers on the 10-point scale; averages have one decimal. When an integer is compared with an average the delta is still shown with one decimal.
+- **Missing data is a state, never a zero** (D23). An average over no marks is `null`, shown as "—", and an arrow needs two real values; a count of 0 against 15 on a Monday morning is not a drop. The four cases and their copy, identical in StatBlock, SubjectRow, the subject hero and the picker cells:
+
+  | Current period | Previous period | Value | Arrow | Hint |
+  |---|---|---|---|---|
+  | has marks | has marks | `7.3` | yes | `было 8.4 · прошлая неделя` |
+  | has marks | exists, no marks | `7.3` | no | `прошлая неделя: оценок не было` (StatBlock); SubjectRow shows nothing under the value |
+  | has marks | does not exist | `7.3` | no | `I четверть, сравнить не с чем` / `до начала учебного года` |
+  | no marks | has marks | `—` | no | `пока нет оценок · было 8.4`; band columns show `0` with `было N` only where either count is non-zero |
+  | no marks | no marks | `—` | no | `оценок нет · прошлая неделя: тоже` |
+
+  "Does not exist" is decided from the calendar (`Term` list and the school year start), not from the data: the first term has no previous term, the first week of September has nothing before it. The Внимание rows ("средний падает") require both averages and at least two marks behind the current one, so an empty week never produces a warning. The Subjects list explains the two silent cases in its footer note once, not per row.
+- Multi-year data: Marksy keeps every school year it has ever synced. The e-schools API appears to serve only the current school year (`/education/diary/school_year` returns one object); whether past years can be requested is an open check. For years before Marksy existed, admin and parents can enter year-final marks (and optionally quarter finals) by hand from the paper report card; these rows are marked `source = manual` and shown with a small "введено вручную" hint.
+- Subjects across years are matched by normalised name within the same student. When a subject splits or renames (grade 6 "Математика" becomes "Алгебра" and "Геометрия" in grade 7) the rows stay separate; the admin can link a past subject to a current one in Family settings (stored in `subject_links`), after which the Годы table shows them on one row.
+
+### 6.2 Guidance rules
+
+Marksy should tell a parent or a child what to do next, not only what happened. Guidance is a deterministic rule engine in `lib/guidance.ts` (and the same logic in the API for notifications). Every hint carries a severity (`critical`, `low`, `ok`, `good`), a title, and a reason with the numbers behind it, so nobody has to trust it blindly. Rules are evaluated per student on the data already in the database; nothing is fetched for them.
+
+**Quarter goal (subject screen).** The final mark for a term is derived with the scale's `finalRule`; for `by-10` it is assumed to be the average rounded half up (7.5 gives 8). This is an assumption until verified against real final marks; it is labelled as such in the UI. The goal picker offers the scale's `goalTargets` (7, 8, 9 for `by-10`). The card says what final is currently projected, how many marks of which value are needed to reach the chosen final (`targetPlan(sum, count, final - 0.5)`), or, if already reached, the lowest next mark that keeps it. Student mode pins the same card on Overview for the two subjects closest to the next final.
+
+**Subject hints ("Обратить внимание" on the subject screen).** Evaluated on the current quarter, shown in severity order, at most five:
+
+Each rule declares the capabilities it needs (`requires`) and is skipped when the provider lacks them: the homework and test gap rules need `workTypes`, the comment quote needs `comments`, the absence rule needs `attendance`, the upcoming-test rule needs `lessonTypes` or a watch rule.
+
+| Rule | Condition | Hint |
+|---|---|---|
+| Upcoming test | a TEST or LABORATORY_WORK lesson in this subject within 7 days | "Контрольная вт, 20 октября. Повторить темы последних уроков: …" (topics of the last two lessons) |
+| Low mark to fix | a mark of 4 or lower in the last 14 days | "Разобрать: <teacher's comment>" or "Разобрать работу на 3", with the work type and date |
+| Homework is the weak spot | 2+ homework marks and 2+ classwork marks, classwork average higher by 1.0 or more | "Слабое место: домашние задания. За д/з 6.0, за работу на уроке 8.2" |
+| Tests go worse than daily work | 2+ test marks, 2+ other marks, others higher by 1.0 or more | "Контрольные идут хуже текущих оценок. Готовиться заранее" |
+| Downward streak | the last three numeric marks are all below the quarter average | "Три последние оценки ниже среднего: 6, 5, 6 при среднем 7.4" |
+| Absence to catch up | an ABSENT mark in the last 14 days | "Пропуск 15 октября. Уточнить тему урока и домашнее задание" |
+| Nothing to do | none of the above | "Всё идёт ровно. Оценки держатся около 8.4" |
+
+**Schedule hints.** For each lesson today or later, at most one hint, first match wins; the day card "Обратить внимание" lists the top three by severity:
+
+| Rule | Hint |
+|---|---|
+| Lesson type TEST | "Контрольная. Средний по предмету 5.5, последняя оценка 3. Повторить то, что не получилось" |
+| Lesson type LABORATORY_WORK or PRACTICAL_WORK | "Оценку за такую работу ставят почти всегда. Подготовить тетрадь и повторить тему" |
+| Last mark in the subject is 4 or lower and has a comment | "В прошлый раз 3: <comment>" |
+| Subject quarter average below 7 and homework is set | "Предмет в зоне риска (средний 5.5). Сделать д/з особенно внимательно" |
+| Homework is set and the homework average in the subject is below 7 | "За д/з по этому предмету средний 6.0: домашние здесь проверяют и оценивают" |
+
+### 6.3 Tags (what kind of work a lesson needs)
+
+The problem: a child sees "выучить стихотворение" in Thursday's homework, the poem is due Tuesday, and nothing happens until Monday night. Tests are the same: many schools, including the one Marksy was built for, mark a test only in the topic ("Контрольная работа «Системы уравнений»"), not as a lesson type. Teachers phrase these things in free text ("верш", "стихотворение", "наизусть", "на памяць", "принести", "контрольная"), differently per school and language, so what counts as a poem or a test is the family's vocabulary.
+
+**Two things, kept apart.** A **tag** (`LessonTag`, "тег") says *what to find in the timetable and how to show it*. A **notification rule** of kind "Урок с тегом" (section 11) says *whom to tell and when*. A tag never sends anything; a notification rule never decides what a poem is. One tag can be used by several people's rules with different timing, and a parent can switch a reminder off without the timetable losing the tag.
+
+**Tag.** `lesson_tags`: name ("Стихотворение"), icon from the app's line icon set, tone (`normal` → accent bar, `important` → orange bar, like a test), keyword stems (case-insensitive substrings, so "стих" matches "стихотворение" and "стихи"), where to look (topic, homework), optionally the diary's lesson types (`test`, `lab`) where the provider has `lessonTypes`, subjects (none = all), students (all or one), `prep_days` (how long this kind of work takes to prepare, or none), on/off, who created it. Presets per interface language ship in `packages/core/src/tags/presets/<lang>.ts` and are copied into the family on connect, then edited freely: for Russian and Belarusian "Стихотворение" (стих, наизусть, верш, на памяць, poem, by heart; 4 days), "Контрольная" (контрольн, кантрольн, к/р, тест, plus lesson type test; important; 3 days), "Сочинение" (сочинени, изложени, пераказ, сачыненн; 3 days), "Принести" (принести, прынес, взять с собой; homework only; no prep), "Проект" (off; 7 days). Students may add tags for themselves; parents edit the family's.
+
+**Where a tag lands.** A match in the topic, or the lesson type, puts the tag on that lesson. A match in the homework puts it on the next lesson of the same subject that takes place (a cancelled lesson is skipped, 5.5), because that is when the diary's homework is checked; a provider that knows real due dates sets `Lesson.homeworkDueDate` and it wins (`docs/providers.md`, manifest `homeworkSemantics`). The lesson where the homework was set gets a quiet note "Задали: стихотворение, к вт, 20 октября".
+
+**Hit.** `lesson_tag_hits` are materialised at sync and recomputed when a tag changes: tag, student, source lesson, due lesson, matched field, snippet (the matched text), created_at, removed_at; unique per tag and due lesson. Days left and urgency (`critical` 0 to 1 days, `low` 2 days, `ok` more) are computed on read. There is no separate done tick on a hit: the lesson's own "готово" (6.5) is the one mark of readiness, so a poem learned is the Tuesday literature lesson marked ready.
+
+**Preparation.** `prep_days` decides when a hit starts to show in Внимание on Главная (the timetable's block is about the selected range only, 5.5): from `prep_days` before the due lesson (the day before when the tag has none). A hit is a fact, not advice: what the app can honestly say is that a lesson carries a tag, which lesson it is, how far away, and the diary's text that matched. It renders as **"Тег · Предмет"** with **"завтра, 2 урок · тема: …"** or **"вт, 20 окт, 4 урок · через 5 дней · задано чт, 15 окт: …"**. The matched text is quoted as the diary wrote it (abbreviations like "К/р №2", other languages, the teacher's own quotes), cut at 70 characters. No generated tips ("начать в выходные", "разбить на подходы"): they read nicely in a mockup and would be noise on real data.
+
+**Surfaces.** The schedule: a пометка of kind **тег** on the due lesson (tag icon, bold name, for a homework match the text and "(задали 14 окт)"), "Задали: …" on the setting lesson, the timetable's "Обратить внимание" for the selected day or week; the home widget: the тег note, the same as in Расписание; Внимание and Events; the subject's "Обратить внимание"; the day header counts tests from the tag "Контрольная"; the Теги screen (tags and current hits); the mark filter on Оценки, Предметы and Предмет (5.3), where a mark carries its lesson's tags; the parent picker card (the nearest tagged lesson still ahead). Only lessons still ahead produce hits for planning surfaces: a lesson that ended today is not "скоро". Every place that used to ask "is this a test?" asks whether the lesson carries the tag "Контрольная"; the diary's lesson type is only one way for that tag to match.
+
+**Not in v1.** Matching attachments' text, recurring tags by weekday, regular expressions. If a family needs them, the tag object has room.
+
+**Overview (Внимание) and the Внимание screen** reuse the same facts as notifications: tests within 3 days, marks the family's rules call low (default: the critical band) in the last 7 days, absences, changed or removed marks, an account that needs a new password.
+
+### 6.5 Preparation checklist (what is ready)
+
+**The tick is per lesson, not per homework item.** The diary often shows no topic and no homework for a lesson although the teacher gave one (entered late, said aloud, written on the board), so a checklist built on diary homework would miss half of what the child actually has to do. Every upcoming lesson on the timetable therefore carries one tick, "готово": the child marks that they are prepared for that lesson, whatever the diary says. A parent sees the tick and may tick or untick too; the card remembers who and when ("готово · Милена, 17:40", "готово · папа, 19:12"). The tick never touches the diary (the collector is read-only); it is Marksy's own shared state, the same on every phone in the family.
+
+- **Where.** The first action in the ⋯ menu of every lesson for today and later (5.5), so a lesson with or without topic or homework is marked the same way; a marked lesson shows the пометка "Готово · кто, когда" first under it (check icon, green bar, like a tag). In the home widget "Готово" is the first item of the tag line, in green. In the day header: "готово 2 из 5". Tag hits have no tick of their own (6.3): a poem learned is Tuesday's literature lesson marked ready.
+- **Homework the diary does not have.** The ⋯ menu of an upcoming lesson without homework offers **"Добавить задание"** (pen icon). It opens a sheet with one text field; anyone in the family, child or parent, types what was actually assigned and saves. The item is then shown in the lesson like the diary's homework, and the menu action becomes **"Изменить задание"**, which reopens the same sheet with the text filled in, a "Сохранить" button and "Удалить задание". Who added or edited it is not displayed (it is stored, for undo). Only manual items can be edited; the diary's homework is read-only. When the diary later delivers the homework, both are shown; nothing is overwritten. A passed lesson has no menu, so its homework can no longer be added or edited.
+- **Who may.** The student for their own lessons, every parent and the admin for any student they follow. A tick by a parent is shown as such; an untick is the lesson going back to open (the history of ticks is kept in `lesson_prep_events` for 180 days and is not shown).
+- **Notifications.** `homework_digest` at 19:00 lists tomorrow's lessons with their ticks and what is still open ("Не отмечено: Алгебра, Английский"); parents may switch on "к 20:00 не всё отмечено" (event `prep_open`, 6.4). Nothing nags the child beyond the digest they chose.
+- **What a tick is not.** Not a mark, not a promise, not surveillance: the family's shared list, in neutral copy ("готово", never "молодец" or "не сделано!").
+- **Model.** `lesson_prep(student_id, lesson_id, done_at, done_by)`, one row per ticked lesson; `lesson_prep_events(lesson_id, student_id, kind done|undone, by, at)`. `homework_items` gains `source: diary | manual`, `created_by`, and manual items have no `external_id`.
+- **API.** `PUT /api/students/:id/lessons/:lessonId/prep` and `DELETE …/prep` (returns `{done, doneBy, doneAt}`); `POST /api/students/:id/lessons/:lessonId/homework {text}` for a manual item; the lessons endpoint carries `prep` and `homework[]` (with `source`) so the card needs no second call.
+
+### 6.6 Subject colours
+
+Every subject has a colour of its own, chosen by the child or a parent from a palette of twelve (`tokens.json → color.subject`: red, orange, yellow, lime, green, teal, sky, blue, violet, purple, pink, grey) or left on "авто", a stable hue derived from the subject name. The choice is per subject per student and shared by the whole family: the parent's and the child's phones show the same colours. Picker: **"Настройки предмета"** at the top of the subject screen (5.4) and the list in Ещё → Оформление → Цвета предметов (5.6a); a bottom sheet with the twelve swatches and "Авто" (D32).
+
+Where the colour appears: the **side stripe** of every row that is about one subject, a 3 px square bar like the timetable's subject bar (every side stripe in the app has this one shape, the severity stripes of Внимание, События, "С кого начнём?" and "Обратить внимание" included; the colour says what it is about): the timetable's subject bar, the home widget "Завтра", "Оценки сегодня" on Главная, the day groups in Оценки and the subject list in Предметы; and on the subject screen the tinted header and the screen's controls (5.4, D45). Внимание and Events keep their stripes in severity colours: a stripe there says how serious, a stripe on a subject or mark row says which subject. Where it never appears: mark chips, averages, band columns, severity stripes and arrows, which keep the colours of meaning; the lesson type badge and the test edge keep orange. The subject colour is wayfinding ("the physics one"), the band colour is judgement, and the two never swap roles (D36).
+
+Model: `subject_colors(student_id, subject_id, color, set_by, updated_at)`, `color` a palette key or null for auto; subjects matched across years by name (6.1) keep their colour. API: `PUT /api/students/:id/subjects/:subjectId/color {color|null}`, student (own), parent, admin; the subjects and lessons endpoints carry `color`.
+
+### 6.7 Study time (занятия)
+
+The question: how long does the child actually work, per day and per subject, over the same periods as everything else. Time only, for now: it is not compared with marks (see the end of this section).
+
+**Session.** `study_sessions`: student, subject (nullable: "без предмета"), the lesson it prepares for (nullable), kind (`homework` for a lesson, `review` otherwise), `started_at`, `ended_at`, `active_sec` (without pauses), `source` (`timer` | `inferred` | `manual`), who started it, note. `study_session_events` (start, pause, resume, stop) are kept 180 days. One session runs at a time per student: starting another pauses the running one.
+
+**The timer.** Started from the ⋯ menu of any upcoming lesson, first action **"Заниматься"** (over "Отметить «готово»"), which binds the session to the subject and the lesson; or from **"Заниматься"** on Главная and on the Занятия screen, which opens a two-step sheet, so a child can start work for any lesson ahead, not only tomorrow's. Step one: **Скоро** (up to four lessons worth starting now: the next school day's lessons not yet ready, then lessons further ahead whose tag is already inside its prep days, e.g. a test on Tuesday), then **Предмет**: every subject as a row with its stripe and "следующий урок: вт, 20 окт", sorted by that next lesson, then "Без предмета". Step two, after a subject (with a back arrow): **"Повторение, без урока"** first, then **"К уроку · ближайшие 2 недели"**: every lesson of the subject still ahead in that window with day, number, homework or topic, its tags, and "готово" if already marked. One tap on any row starts the timer. While a session runs a **timer bar** (`StudyBar`) sits above the tab bar on every screen like a mini-player: green dot, subject, "к уроку завтра · 12:34", pause / resume, and ■ to finish. **Finishing a session never marks the lesson ready**: a child stops for a break, for dinner or for the day without being done, so "готово" stays its own tap in the lesson menu (the menu says "Закончить занятие · время запишется, «готово» отдельно"). The other way round holds: marking a lesson ready while its session runs stops the session. A lesson may collect several sessions over an evening. Paused time is not counted. A stopped session shorter than a minute is kept as one minute.
+
+**Estimates when the timer was not used.** Children forget the timer, so the evening's "готово" ticks are turned into estimates, honestly labelled:
+- ticks of one day sorted by time; a gap between two consecutive ticks of **3 to 90 minutes** becomes an inferred session for the subject of the later tick, from the earlier tick to the later one, `source = inferred`, shown everywhere with **≈** and a dotted subject bar;
+- the first tick of the evening starts from the last app open if that was within 90 minutes, otherwise it gets no time;
+- a gap under 3 minutes is a **batch**: no time is estimated, the fact is shown as it is ("4 отметки «готово» за 2 минуты · время не посчитано"), with no judgement in the copy;
+- a gap over 90 minutes is a break, not studying;
+- where a timer session overlaps the gap, no estimate is made: the timer wins.
+Estimates are recomputed from `lesson_prep_events` after every tick (and nightly) and stored as rows with `source = inferred`, replaced on recompute. They count in the totals; the filter **Только таймер** on the Занятия screen leaves them out.
+
+**Manual sessions.** A parent or the child may add a session after the fact ("занимался 40 минут, таймер забыл") or delete one; `created_by` is stored, not shown.
+
+**Surfaces.** Главная: the card **"Занятия сегодня"** (total, per-subject chips with ≈ where estimated, "Заниматься" or "Закончить · Алгебра" while running, "Все занятия"). The subject screen: the card **"Занятия"** at the very end, under its own divider after Четверть: time for the period with "было", the same chart for this subject only (bars in the subject colour), the last three sessions, "Все занятия". The Занятия screen (5.8). The homework digest adds "занимался 1 ч 20 мин". An optional rule `study_long` reminds about a break (11).
+
+**Who sees what.** Parents see everything; the child sees their own sessions and totals. Copy is neutral throughout: no "мало", no "лень", no praise; the numbers and the batches speak.
+
+**Not now: time against marks.** Comparing study time with marks (averages next to time, an average line over the time chart, correlation) is deliberately left out. The hard part is attribution: a child prepares this week for lessons this week and for lessons next week, so time grouped by the day it was spent does not line up with the marks of that period. When this comes back, each session gets a second date, the lesson it prepares for (known from the timer or the tick; for review without a lesson, the subject's next lesson, flagged as approximate), and the comparison is made per lesson: the mark at a lesson against the time spent preparing for that lesson, a test against all sessions before it.
+
+### 6.4 Who decides what: provider, scale, family
+
+Three layers, never mixed. The provider says **what exists** (lessons, work types, comments, attendance, terms, finals: the capabilities). The grading scale says **how marks are shown and compared** (range, direction, bands, formatting, how averages and finals are computed). The family's **rules** say **what matters to them**: which values trigger an alert, how far ahead to warn, which tags exist and which of them notify, what counts as a drop. Rules have defaults derived from the scale so the app is useful on day one, and they are editable so a family that considers a 6 a problem is not stuck with the scale's idea of "low".
+
+| Question | Decided by | Example on by-10 |
+|---|---|---|
+| Can a mark have a work type? a comment? | provider capability | yes, yes |
+| What colour is an 8? | scale bands | good (green) |
+| Which quick filters exist in the feed? | scale (band edges) | ниже 5, ниже 7 |
+| Which mark sends a notification? | family alert rule, default from scale threshold | worse than 5, parent on; worse than 7, off |
+| After how many lessons without a mark a subject is "давно без оценки" | family rule `callAfter`, default 4 lessons | 4 |
+| What is a "low mark" in Внимание and hints? | family rule `lowMark`, default: critical band | 4 and below |
+| How many days ahead does a poem show in Внимание? | family tag `prep_days` | 4 |
+| When to remind about a poem or a test? | user's notification rule "Урок с тегом" (moments) | as soon as it appears, the evening before, Saturday list |
+| What counts as a drop worth a row? | family rule `dropStep`, default 0.3 of a by-10 point scaled to the range, on at least 2 marks | 0.3 |
+| What is the goal for a subject? | family or student `goalTargets` choice, options from the scale | итог 8 |
+| How is the term final computed? | scale `finalRule` (an assumption until verified) | round half up |
+
+Alert rules are stored in `alert_rules` (user, event, condition JSON, scope JSON, when, enabled); the defaults are created per user from the scale when they join and are ordinary rules afterwards: a user can delete every default and compose their own. There is no fixed number of "below" rules and no fixed direction: a rule is an event plus a condition, and both good news ("оценка 9–10") and bad news are expressed the same way. For `average` the comparison period is part of the condition and is spelled out on screen ("за неделю против прошлой недели"), never implied. The `lowMark` and `dropStep` family rules live in `families.settings` and are edited from the same screen under "Что считать проблемой".
+
+**Notifications** map to the same rules: `tag` with the tag "Контрольная" is the upcoming-test rule, `below` is the low-mark rule, `homework_digest` includes the schedule hints for tomorrow, `weekly_summary` includes the subject hints with severity `low` or `critical`.
+
+Later rules worth adding once there is data: "the subject has had no marks for three weeks, a поll or test is likely", "the quarter ends in N days and these subjects are within 0.2 of the next final", comparison with the previous year's final ("last year 8, now heading for 6").
+
+## 7. Accounts, authentication, tenancy
+
+### 7.1 Model
+
+```
+family 1..n users            Marksy accounts (admin | parent | student), own login + password
+family 1..n diary_accounts   provider credentials used by the collector (usually one parent login)
+family 1..n students         children followed by this family
+user   n..n students         via user_student_access (admin and parents: all by default, student: self)
+family 1..n invites          one-time codes to add members
+```
+
+Marksy logins are independent from e-schools. A Marksy username is unique per installation (`users.login`), chosen by the member when accepting an invite. Passwords are hashed with argon2id.
+
+### 7.2 Connecting the diary (creates the family)
+
+1. The first parent picks the provider, submits the credentials its manifest asks for (login and password for `by-eschools`) and the role, plus the Marksy login and password they want for themselves.
+2. Backend calls `provider.login()` once through the shared HTTP client (same throttling, allow-list and login-interval rules; this counts as that hour's login for the account), then `provider.getAccount()`.
+3. If a `diary_accounts` row with this `(provider_id, external_user_id)` already exists, refuse with "this diary is already connected, ask the family admin for an invite". If the account is new but one of its students already exists in another family (`student_identities (provider_id, external_id)`: the other parent connected their own login), show both options: "Присоединиться к семье …" (creates a join request the admin of that family approves, after which this login is added as a second diary account of that family) or "Создать отдельную семью" (allowed; the child is then followed by two isolated families). Otherwise create the family, the account, the students and the `admin` user with access to all students.
+4. Store the credentials object in `diary_accounts.credentials_enc`, encrypted with AES-256-GCM using `CREDENTIALS_KEY` from `.env`.
+5. Issue a session: httpOnly, Secure, SameSite=Lax cookie with a random id stored in `sessions` (30 days, sliding). No JWT needed for a first-party PWA.
+6. If the e-schools password changes later, the collector marks the account `auth_failed` after one failed login, stops trying, and notifies the admin; the admin re-enters the password in Family.
+
+### 7.3 Inviting members
+
+1. Admin (or a parent, if allowed) taps "Пригласить", picks role and students, gets a 6-character code and a link (`/join/<code>`), valid 48 hours, single use.
+2. The invitee opens the link or enters the code, sets display name, Marksy login and password; the backend creates the `users` row with the prepared role and `user_student_access`.
+3. Admin can later change role, student access, reset a member's password (one-time code again) or remove the member.
+
+### 7.4 Later logins
+
+Marksy login and password only; verified against `users.password_hash`. e-schools is never called at login time after the diary is connected.
+
+### 7.5 Student e-schools login (to verify)
+
+`api-spec.md` documents only the parent endpoint. The bundle has about 640 endpoints; the probe script should look for `/auth/login/student` (or `/auth/login/pupil`) and the student variant of `/admin/auth/me`. It matters only for families where no parent login exists; the common case is a family connected through the parent login, with children using Marksy invites. Until verified, the UI keeps the role toggle on "Подключить дневник" but the backend returns a clear "student diary login is not supported yet" error.
+
+### 7.6 Authorization
+
+- Every `/api/students/:id/*` route checks `user_student_access`.
+- `POST /api/sync/run`, `POST /api/sync/rescan`: `admin` and `parent`. Family management, invites, diary accounts: `admin` (parents may invite if the admin enables it; default on).
+- All API routes except `/api/auth/login`, `/api/auth/connect`, `/api/invites/:code`, `/api/health` and `/api/docs` require a session.
+- Rate limits: login 5 per 15 minutes per IP and per login; sync and rescan share the login budget of the diary account (manifest `minLoginIntervalMinutes`) (section 10).
+
+## 8. Data model (PostgreSQL 16, Drizzle)
+
+Every row has a Marksy `uuid` primary key (`gen_random_uuid()`); ids from the source system are kept in `external_id` with a unique index on `(provider_id, external_id)` (per student where the system scopes ids that way), because another provider may use integers or composite keys. All timestamps `timestamptz`. Every family-owned table carries `family_id` for isolation and indexes. Tables that mirror the source carry `provider_id`.
+
+```
+families            id, name, created_at, settings (jsonb: parents_can_invite, sync_window, guidance,
+                    retention_years, low_mark, drop_step), consent_version, consent_at, consent_by
+users               id, family_id, role (admin|parent|student), login (unique), display_name,
+                    locale (ru|be|uk|kk|en|pl|de|es|pt|fr|nl|ro), ui_mode (full|simple),
+                    settings (jsonb: guidance, appearance {theme light|dark|system, bg color|wallpaper, palette,
+                    wallpaper (built-in id | user_file id), wallpaperOpacity 0.1..1, font manrope|nunito|ptsans|inter|rubik}),
+                    password_hash, created_at, last_login_at
+user_files          id, user_id, kind (wallpaper), mime, bytes, width, height, storage_key, created_at   (5.6a; one
+                    wallpaper per user, replaced on upload; served only to its owner)
+student_identities  provider_id, external_id, student_id, family_id   (cross-family lookup at connect)
+join_requests       id, family_id, from_user_id, diary_account_id, status, created_at, decided_by
+sessions            id, user_id, expires_at, created_at, user_agent
+invites             code (unique), family_id, created_by, role, student_ids (uuid[]), expires_at,
+                    used_by, used_at
+diary_accounts      id, family_id, provider_id, tenant (jsonb: url | code | id, nullable), role (parent|student),
+                    label (login or email shown in the UI), credentials_enc (bytea, encrypted JSON of the manifest's auth fields),
+                    external_user_id, status (ok|auth_failed|blocked|needs_2fa), last_ok_at,
+                    last_login_at, last_error
+students            id, family_id, diary_account_id, provider_id, external_id, full_name, given_name,
+                    family_name, display_name, school_id, class_label, grade, grade_label,
+                    grading_scale_id, is_active, avatar (jsonb: traits or {photo: storage key})
+users               + avatar (jsonb), same shape
+user_student_access user_id, student_id, PK(user_id, student_id)
+
+school_years        id, student_id, provider_id, external_id, label, start_date, end_date,
+                    source (api|manual)
+terms               id, school_year_id, external_id, kind (quarter|trimester|semester|other),
+                    index, label, start_date, end_date
+holidays            id, school_year_id, start_date, end_date
+subjects            id, student_id, school_year_id, provider_id, external_id, name, name_norm
+subject_links       student_id, from_subject_id, to_subject_id      (manual mapping across years)
+subject_colors      student_id, subject_id, color (palette key, null = auto), set_by (user_id), updated_at   (6.6)
+subject_goals       student_id, subject_id, term_goal (any value of the scale, null = без цели), set_by (user_id), updated_at   (5.4)
+student_years       student_id, school_year_id, class_label, grade
+lessons             id, family_id, student_id, provider_id, external_id, date, slot, start_time,
+                    subject_id, subject_name, teacher_external_id, teacher_name, lesson_type,
+                    topic, homework, has_attachments, cancelled, fetched_at, removed_at
+marks               id, family_id, student_id, provider_id, external_id, lesson_id (nullable), date,
+                    posted_at, subject_id, raw, kind, values (numeric[]), work_type, work_type_raw, title,
+                    assessment_type, dimension, criterion, weight, max_points, modifier, status,
+                    cohort (jsonb), comment, first_seen_at, changed_at, removed_at, last_seen_at
+subjects            + teacher_name, level, credits, grading_scheme (jsonb)   (US courses)
+attendance          id, family_id, student_id, provider_id, external_id, date, lesson_id (nullable),
+                    subject_id (nullable), status (absent|late|left_early|present_other), excused (nullable),
+                    code, minutes, reason, source (separate|derived), first_seen_at, removed_at
+homework_items      id, family_id, student_id, provider_id, external_id (null for manual), subject_id, lesson_id, title,
+                    description, set_date, due_date, source (diary|manual), created_by (user_id, nullable), mark_id (nullable),
+                    first_seen_at, removed_at
+lesson_prep         student_id, lesson_id, done_at, done_by (user_id), PK(student_id, lesson_id)      (6.5: "готово" per lesson)
+lesson_prep_events  id, student_id, lesson_id, kind (done|undone), by (user_id), at        (180 days, 10.4)
+study_sessions      id, family_id, student_id, subject_id (nullable), lesson_id (nullable), kind (homework|review),
+                    source (timer|inferred|manual), started_at, ended_at, active_sec, created_by (user_id), note,
+                    inferred_from (jsonb: the two tick event ids, nullable), created_at, updated_at   (6.7)
+study_session_events id, session_id, kind (start|pause|resume|stop), at   (180 days, 10.4)
+lesson_overrides    student_id, lesson_id, cancelled (bool), set_by (user_id), set_at, PK(student_id, lesson_id)
+                    (5.5: "Урока не будет"; dropped when the diary records a mark or absence for the lesson)
+behaviour_events    id, family_id, student_id, provider_id, external_id, date, points, polarity, category,
+                    comment, subject_id (nullable), first_seen_at, removed_at
+mark_history        id, mark_id, seen_at, raw_mark, kind, work_type, comment   (previous versions)
+mark_events         id, family_id, student_id, mark_id, kind (new|changed|removed|restored),
+                    diff (jsonb), created_at, notified_at
+final_marks_raw     student_id, family_id, school_year_id, raw_json (jsonb), fetched_at
+final_marks         id, family_id, student_id, school_year_id, subject_id (nullable for manual rows
+                    with no API subject), subject_name, period_id (nullable = year), role (final|current|
+                    predicted|proposed|adjusted|target|thematic|effort|behaviour), criterion, label, date,
+                    mark, kind, source (api|manual), entered_by, updated_at
+                    UNIQUE(student_id, school_year_id, subject_name, period_id)
+                    (API parser for `final/whole` written after 2026-10-30)
+diary_accounts      + consecutive_failures, paused_until, pause_hours (current pause length),
+                    requires_action (auth|blocked|needs_2fa|null), last_attempt_at, last_success_at
+sync_runs           id, family_id, diary_account_id, provider_id, kind (scheduled|catchup|weekly_rescan|
+                    manual|rescan|backfill|connect), scope (jsonb: student_ids, weeks planned), trigger
+                    (schedule|startup|user:<id>), started_at, finished_at, status (success|partial|failed|
+                    skipped_offline|skipped_paused|skipped_interval), error_class (offline|
+                    provider_unavailable|auth|blocked|needs_2fa|partial|null), error (sanitised text),
+                    requests, duration_ms, stats (jsonb: weeks_verified, new, changed, removed, warnings)
+sync_coverage       student_id, week_start, verified_at, run_id, status (verified|failed),
+                    PK(student_id, week_start)          (the planner's queue, see 10.4)
+term_rescans        term_id, student_id, last_full_rescan_at, post_term_rescan_done
+sync_daily          diary_account_id, date, runs, failures, requests   (compacted sync_runs older than 90 days)
+raw_responses       id, sync_run_id, provider_id, endpoint, params (jsonb), status, body (jsonb),
+                    fetched_at
+api_drift_events    id, sync_run_id, provider_id, endpoint, kind (unknown_field|missing_field|
+                    new_enum_value|type_mismatch|new_error_shape|status_change), path,
+                    sample (jsonb, sanitised), first_seen_at, last_seen_at, count, acknowledged_at
+
+notification_channels id, user_id, type (webpush|telegram), config (jsonb), enabled, created_at
+notifications         id, user_id, student_id (null = family-wide), rule_id (nullable), event_key (what fact it was
+                      about, for "пришло" on Внимание and for deduplication), severity, title, body, link (screen +
+                      params), channels (text[]: push|telegram), sent_at, read_at (nullable)   (180 days, 10.4)
+                      webpush: {endpoint, keys}; telegram: {chat_id}
+alert_rules           id, user_id, event (mark|average|changed|absence|tag|homework|summary),
+                      condition (jsonb: mark {dir any|worse|better|band, value, band}; average {dir down|up|any,
+                      step, period week|month|term|year, minMarks}; tag {tagIds [], moments [new|before|evening|saturday],
+                      daysBefore}),
+                      scope (jsonb: students all|id, subjects []), when (now|evening|weekly), channel
+                      (all|push|telegram), enabled, updated_at   (defaults created from the scale, then ordinary rows)
+telegram_link_codes   code, user_id, expires_at
+user_seen             user_id, student_id, last_seen_at   (powers "new since last visit")
+
+lesson_tags           id, family_id, created_by, name, icon, tone (normal|important), keywords (text[]),
+                      fields (text[]: topic|homework), lesson_types (text[], nullable), subject_names (text[], empty = all),
+                      student_ids (uuid[] | null = all), prep_days (nullable), enabled, preset_key (nullable), updated_at
+lesson_tag_hits       id, family_id, student_id, tag_id, source_lesson_id, due_lesson_id, due_date, field (topic|homework|type),
+                      snippet, created_at, removed_at   UNIQUE(tag_id, due_lesson_id)   (6.3; no done status: lesson_prep is the one tick)
+```
+
+Upsert rules, applied to every fetched date range whatever the run kind:
+
+- lessons by `(provider_id, student_id, external_id)`; a lesson that disappears from a re-fetched range is soft-deleted (`removed_at`).
+- marks by `(provider_id, student_id, external_id)`. New id: insert, `mark_events(new)`. Existing id with a different `raw_mark`, `kind`, `work_type` or `comment`: copy the old version to `mark_history`, update, set `changed_at`, `mark_events(changed)` with the diff. Existing mark whose lesson was fetched but which is no longer in the response: set `removed_at`, `mark_events(removed)`; if it comes back later, clear `removed_at`, `mark_events(restored)`. `last_seen_at` is updated on every fetch that contains the mark.
+- Averages and feeds exclude marks with `removed_at`; the feed shows removed and changed marks as their own items ("оценка 6 изменена на 7", "оценка удалена") for 14 days.
+- A week counts as "verified at" the `finished_at` of the last run that fetched it; the Sync screen shows the oldest verified-at of the quarter so it is visible how stale the history is.
+
+Materialised reads: averages are computed in SQL with a view `subject_period_stats(student_id, subject_id, period_id)`; small data, no caching needed.
+
+## 9. API (Express, OpenAPI 3.1 at `/api/docs`)
+
+Conventions: JSON, `camelCase`, dates as ISO strings, errors as `{ error: { code, message, details? } }`. All list endpoints accept `period` as `week` | `month` | `quarter` | `year` with `offset` (instances back, default 0) | `quarter:<id>` | `from=..&to=..`, resolved as in section 6; responses echo the resolved `from` and `to`. Zod schemas generate both validation and the OpenAPI document (`zod-to-openapi`).
+
+```
+POST /api/auth/login              {login, password}            -> {user, students[]}   Marksy login
+POST /api/auth/connect            {providerId, credentials: {...manifest fields}, role,
+                                   user: {login, password, displayName}}
+                                                               -> creates family, admin session;
+                                                                  409 needs_2fa with a prompt
+POST /api/auth/logout
+PATCH /api/me                     {locale?, displayName?, avatar?}
+PATCH /api/students/:id           {avatar?}                    (admin, parent)
+POST /api/uploads/avatar          multipart, 512 px square, stored locally
+GET  /api/auth/me                                              -> {user, family, students[] with
+                                                                   provider and gradingScale}
+
+GET  /api/providers                                            -> registry: id, name, country,
+                                                                   status, auth fields, roles (public)
+GET  /api/invites/:code                                        -> {family, role, students[]} (public)
+POST /api/invites/:code/accept    {login, password, displayName} -> session
+GET  /api/family                                               -> members, accounts, students
+GET  /api/family/export                                        -> everything the family owns, JSON (admin)
+DELETE /api/family                                             -> erase the family (admin, typed confirmation)
+POST /api/family/join-requests        PATCH /api/family/join-requests/:id   (approve / reject)
+POST /api/family/invites          {role, studentIds[]}          -> {code, url, expiresAt}
+PATCH /api/family/members/:id     {role?, studentIds?}
+DELETE /api/family/members/:id
+PUT  /api/family/accounts/:id/password {password}              -> re-check at next allowed login
+
+GET  /api/students                                             -> students the user may see
+GET  /api/students/:id/overview?period=&sort=alpha|weak|strong -> {from, to, average, prevAverage,
+                                                                   trend, marksCount, testsCount,
+                                                                   bands: {b1to4, b5to6, b7to8, b9to10},
+                                                                   absences, newCount, lastDay{date,
+                                                                   marks[]}, movers[], attention[],
+                                                                   nextDay{date, lessons[]}}
+GET  /api/students/:id/subjects?period=&sort=                  -> [{subject, average, prevAverage,
+                                                                   delta, trend, count, last[]}]
+GET  /api/students/:id/finals/quarters?year=                   -> rows: subject × {I..IV, year}: final or running average
+                                                                   each {mark|average, kind: final|
+                                                                   running|none}, prevYearFinal
+GET  /api/students/:id/finals/years                            -> rows: subject × school year, direction
+GET  /api/students/:id/subjects/:subjectId?period=             -> {stats, quarters[], prevYearFinal,
+                                                                   distribution, marks[]}
+PUT  /api/students/:id/final-marks                             -> manual year/quarter finals
+                                                                   [{schoolYear, subjectName,
+                                                                   period?, mark}] (admin, parent)
+PUT  /api/students/:id/subject-links                           -> [{from, to}]
+GET  /api/students/:id/marks?period=|from=&to=&subject=&tags=a,b&tagMode=any|all&absent=&below= -> cursor-paginated feed;
+                                                                   each mark carries its lesson's tagIds
+GET  /api/students/:id/subjects/:subjectId/trend?period=|from=&to= -> buckets [{from, to, label, average, count}]
+POST /api/students/:id/seen                                    -> marks everything as seen
+GET  /api/students/:id/schedule?day=today|tomorrow|next|week=  -> lessons with homework
+                                                                   (next = next school day)
+GET  /api/students/:id/absences?period=
+GET  /api/students/:id/events?period=&offset=&limit=           -> ranked events; Внимание is limit=5 of the same call
+GET  /api/students/:id/guidance?subject=&day=                  -> subject hints, quarter goal,
+                                                                   lesson hints (section 6.2)
+GET  /api/students/:id/tag-hits?horizon=14                     -> tag hits with due lesson, days left, advice (6.3)
+POST /api/students/:id/study/start {subjectId?, lessonId?, kind}  -> the running session (pauses another running one)
+POST /api/students/:id/study/pause  POST …/study/resume  POST …/study/stop  -> {session} (6.7; stop never touches lesson_prep)
+GET  /api/students/:id/study?period=|from=&to=&onlyTimer=       -> sessions and batches by day, totals by subject and
+                                                                   per bucket (same buckets as /trend), averages alongside
+                                                                   when the viewer may see them
+POST /api/students/:id/study {subjectId?, lessonId?, startedAt, endedAt}   PATCH/DELETE /api/students/:id/study/:sessionId  (manual)
+PUT  /api/students/:id/lessons/:lessonId/prep  DELETE …/prep   -> {done, doneBy, doneAt} (6.5); student (own), parent, admin
+POST /api/students/:id/lessons/:lessonId/homework {text}      -> manual homework item (source: manual)
+PUT  /api/students/:id/lessons/:lessonId/cancel  DELETE …/cancel -> {cancelled, setAt} (5.5); same roles as prep; the lessons endpoint carries `cancelled`
+PATCH /api/students/:id/homework/:itemId {text}   DELETE /api/students/:id/homework/:itemId   -> edit or remove a manual item (source: manual only)
+PATCH /api/me/settings {appearance: {...}}                      -> personal appearance (5.6a)
+POST /api/me/wallpaper (multipart, image ≤ 5 MB)   DELETE /api/me/wallpaper   GET /api/me/wallpaper -> own picture only
+PUT  /api/students/:id/subjects/:subjectId/goal {termGoal}     -> the subject's goal, shown as a row in "Обратить внимание" (5.4); student (own), parent, admin
+PUT  /api/students/:id/subjects/:subjectId/color {color|null}  -> subject colour for the family (6.6); student (own), parent, admin
+GET  /api/tags                        POST /api/tags    PUT /api/tags/:id    DELETE /api/tags/:id   (family's tags; student may create own)
+GET  /api/periods                                              -> quarters, weeks, current
+
+GET  /api/sync/status                                          -> per diary account: status (ok|stale|
+                                                                   paused|auth_failed|blocked|needs_2fa),
+                                                                   lastSuccessAt, lastAttemptAt + outcome,
+                                                                   consecutiveFailures, pausedUntil,
+                                                                   nextAllowedAt, nextPlannedAt + reason,
+                                                                   plan (weeks per student, request
+                                                                   estimate), oldest verified week,
+                                                                   drift events. /api/me carries the same
+                                                                   `status` + lastSuccessAt per student so
+                                                                   the FreshnessBanner needs no extra call
+POST /api/sync/run                                             -> one planner run now (10.4), all
+                                                                   students; 409 with nextAllowedAt
+                                                                   when the login budget is used or
+                                                                   the account requires action
+POST /api/sync/rescan             {studentIds?, period: quarter|year|{weekIds}} -> queued run
+GET  /api/sync/runs?limit=                                     -> history with stats
+POST /api/sync/drift/:id/ack
+
+GET  /api/notifications?before=<cursor>                         -> inbox, newest first, {items, unread, next}
+POST /api/notifications/read                                   -> {ids} or {all: true}
+GET  /api/notifications/settings
+PUT  /api/notifications/settings                               -> rules, quiet hours
+POST /api/notifications/push/subscribe                         -> store PushSubscription
+DELETE /api/notifications/push/subscribe
+POST /api/notifications/telegram/link                          -> {code, botUrl}
+POST /api/telegram/webhook                                     -> bot updates (secret path)
+
+GET  /api/health                                               -> {ok, db, lastSyncAt}
+```
+
+Shapes worth fixing now:
+
+```ts
+type MarkChip = { id: string; values: number[]; raw: string; kind: MarkKind; band: Band | null };
+type SubjectRow = { subjectId: string; name: string; average: number | null; count: number;
+                    trend: 'up' | 'down' | 'flat' | null; last: MarkChip[]; absences: number };
+type FeedItem  = { id: string; date: string; subjectId: string; subject: string; mark: MarkChip;
+                   workType: WorkType | null; topic: string | null; comment: string | null;
+                   isNew: boolean };
+```
+
+## 10. Collector in this architecture
+
+The collector is generic. It asks a provider for data through the `DiaryProvider` interface (`docs/providers.md`) and never knows which system is behind it. Belarus-specific request mechanics are in `api-spec.md` (the `by-eschools` provider's documentation); this section covers scheduling, scope and drift, which are the same for every provider.
+
+### 10.1 Where it runs
+
+One Node process (`server/`) runs the HTTP API and the scheduler (`node-cron`, timezone from the provider manifest per account). `SYNC_ENABLED=false` lets a cloud copy of the API run without touching any diary. The shared HTTP client (`packages/core/src/http/throttled-client.ts`) implements throttle, backoff and the read-only allow-list from the manifest; providers receive it in `ctx.http` and have no other way to make requests. Fixtures live in each provider's `fixtures/` and feed the conformance test.
+
+### 10.0 Provider layer in one paragraph
+
+`packages/core` holds the canonical types (`Student`, `Term`, `Subject`, `Lesson`, `Mark`, `FinalMark`), the `DiaryProvider` interface, grading scales, marks math and guidance. `providers/<id>` implement the interface for one system and ship a manifest, Zod schemas, a mapper, `sanitize()` and fixtures. The registry lists them; the login screen shows them; the server picks one per `diary_accounts.provider_id`. Limits and the allow-list come from the manifest and are enforced centrally. A single school with its own site is a provider with `scope: "school"`; a national system is `scope: "national"`. Full contract and contributor guide: `docs/providers.md`.
+
+### 10.2 Schedule
+
+Goal: look like a parent who opens the diary a few times during the school day, not like a cron job.
+
+- **Hourly run** on school days only (Mon to Sat, skipping `HOLIDAYS` periods from `time_activities` and a manual `no_school_dates` list in family settings), inside `sync_window` (default `08:00` to `14:00`). The scheduler ticks at the top of each hour and sleeps a random `0 to 20 minutes` plus random seconds before the run, so the timestamps in the school's logs drift from run to run. Scope: current week and previous week per student, plus `final/whole` once a day.
+- **One diary login per `minLoginIntervalMinutes` (60 for by-eschools) per account, hard limit.** Hourly run, manual "Обновить", manual re-scan and the weekly re-scan all draw from the same budget (`diary_accounts.last_login_at`). When the budget is used the manual action is queued for the next allowed time and the UI shows it.
+- **Weekly re-scan** of the current quarter: default Friday between 20:00 and 23:00 (random start), fallback Saturday or Sunday if the Friday run failed. Scope: every week of the current quarter for every student, same parser, same upsert, so changed and removed marks are detected (section 8). About 8 to 12 requests per student per week of the quarter; spacing grows to 3 to 5 s for runs longer than 40 requests.
+- **Manual re-scan** from the Sync screen: student(s) and period (current quarter, school year, specific weeks). The API fetches per week, not per subject, so a subject filter in the UI does not reduce requests; the UI offers period and student only and explains why.
+- **Backfill** after connecting a diary: all weeks of the school year so far, run at the next night window (23:00 to 02:00), spread over two nights if more than 60 requests.
+- Defaults come from the provider manifest (`limits`), can be tightened globally in `.env` (`SYNC_WINDOW`, `SYNC_JITTER_MIN`, `SYNC_WEEKLY`, `SYNC_MIN_LOGIN_INTERVAL`) and per family in `families.settings`; a family can only make them stricter than the manifest, never looser. The window is a working assumption (teachers enter most marks during lessons); if evening marks turn out to be common, add a single evening run rather than widening the hourly window.
+
+The schedule above describes the ideal day. Section 10.4 describes what happens on every other day: the server is a home machine that can be off for an hour, a day or a week, and the diary can be down. The scheduler is therefore not a list of cron expressions but a planner that looks at recorded state and decides what to fetch now.
+
+### 10.4 Resilience: planner, coverage, failures, retention
+
+**Principle.** Every attempt to talk to a diary is recorded with its outcome and timestamps, and every week of data carries the time it was last verified. The planner never asks "is it the top of the hour"; it asks "what has not been verified recently, and am I allowed to ask for it now".
+
+**Tick, not cron.** `node-cron` fires a tick every 5 minutes (jittered by a few seconds) and once at process start after a 1 to 3 minute delay. The tick is idempotent and takes a Postgres advisory lock per diary account so two ticks never overlap. It compares wall-clock times from the database, so a machine that was asleep or off for a week behaves exactly like one that was never off: the first tick sees the gap and plans a catch-up. If the clock went backwards (`now < last_attempt_at`), the login interval is treated as elapsed.
+
+**Coverage.** `sync_coverage` has one row per `(student_id, week_start)` with `verified_at`, `run_id` and `status`. A week is *verified* when it was fetched and upserted completely in one run; a run that dies halfway keeps the weeks it finished, so progress is never lost and a short run after a long outage still moves the watermark. Per student the planner derives:
+
+- *standing set*: the current week and the previous week (late marks and corrections are normal);
+- *gap set*: every school week between the oldest unverified week after the last successful run and today, newest first;
+- *re-scan set*: all weeks of the current term when the term's `last_full_rescan_at` is older than 7 days (or null), and once more two weeks after a term ends so final marks and late edits are caught;
+- *backfill set*: all weeks of the school year not yet verified, right after a diary is connected.
+
+**One run** = standing set, then gap set, then re-scan or backfill until the manifest's `limits.maxRequestsPerRun` (by-eschools: 40) is used. Whatever did not fit is simply still unverified and is first in line next time, so a week-long outage is caught up over two or three runs with the freshest data first. Nothing is ever "scheduled for later"; the queue is the coverage table itself.
+
+**When a run may start.** All of these must hold: `paused_until` is null or past; `last_attempt_at + minLoginIntervalMinutes <= now` (an attempt counts even if it failed, because the diary saw a login); and either now is inside the school-day window on a school day, or the run is a *catch-up* (last success older than 24 hours, or an unverified week older than the standing set exists). A catch-up may run at any hour because the data it fetches already exists; the 14:00 cut-off only argues that *today's* marks will not appear after lunch. Manual "Обновить" is a run like any other and draws from the same login budget; the UI shows when it becomes possible.
+
+**Connectivity first.** Before logging in, the run checks that this machine is online at all: DNS resolution and a TCP connect to the provider host, no HTTP request. If that fails the run ends as `skipped_offline`, nothing is counted against the provider, and the next tick retries in 10 minutes. Being offline is the home server's problem, not the diary's, and must never trigger a pause.
+
+**Failure classes and what they do**
+
+| Class | Examples | Effect |
+|---|---|---|
+| `offline` | DNS or TCP to the provider host fails | run `skipped_offline`, retry at the next tick after 10 min, no counter touched |
+| `provider_unavailable` | 5xx, 429, timeout, reset after the connection was made | run `failed`, `consecutive_failures += 1`, next attempt at the next allowed time |
+| `auth` | 401 or the provider's "wrong credentials" shape | account `status = auth_failed`, `paused_until = null` but `requires_action = true`: no login is attempted until the credentials row changes; admin notified once |
+| `blocked` / `needs_2fa` | provider says the account is locked or needs a second factor | same as `auth`, with its own status so the UI can explain |
+| `drift` | unexpected shape, parse error on part of the body | run `success` with `warnings`, raw body kept, `api_drift_events` row (10.3); never counted as a failure |
+| `partial` | some weeks fetched, then a provider error | finished weeks verified, run `partial`, the rest stays unverified; counts as one failure |
+
+**Pause after repeated failures.** When `consecutive_failures` reaches `SYNC_FAILURES_BEFORE_PAUSE` (default 3), the account gets `paused_until = now + SYNC_PAUSE_HOURS` (default 24 hours), the admin is notified once ("Дневник не отвечает, следующая попытка завтра после 08:00") and the Sync screen shows the reason. With one attempt per hour, three consecutive failures mean the diary was down for roughly three hours of the window, which is not a blip. If the first run after a pause fails again, the pause doubles (48 h, 96 h, cap 7 days); a single success resets both the counter and the pause length. A manual refresh is allowed during a pause (one attempt, still inside the login interval) because a human pressing the button is the best signal that the service is back; if it fails, the pause stays as it was. Auth failures never auto-retry at all: repeated bad logins can lock the real diary account.
+
+**What the user sees.** When the last successful run is older than 24 hours, or the account is paused or needs action, every student screen shows one `FreshnessBanner` under the header ("Данные от пн 12 окт, 13:05. Приложение не обновлялось 3 дня…") that opens the Sync screen; when data is fresh nothing is shown except the "Обновлено сегодня в 12:17" footer on Overview. The Sync screen shows state (last data, last attempt and its outcome, failures in a row, next run and why), what the next run will take (the planned sets and an estimate of requests), the re-scan card, drift events, the refresh and re-scan buttons, and the run log. Prototype: rail toggle "Состояние синхронизации" with four scenarios.
+
+**Retention.** Operational data is kept only as long as it is useful; marks and their history are kept for as long as the student is in the family, because that is the product.
+
+| Data | Keep | Why |
+|---|---|---|
+| `sync_runs` | 90 days, then one row per day is compacted into `sync_daily` (date, runs, failures, requests) | the log is for diagnosing recent problems; the daily line is enough for "how often did this break" |
+| `sync_coverage` | current and previous school year; older rows deleted with the year's compaction | the planner never looks further back |
+| `raw_responses` | 14 days; the response of the last successful run per `(student, week)` is kept for the current term | re-parsing after a drift fix needs recent bodies, not a year of them |
+| `api_drift_events` | until acknowledged plus 180 days; `count` and `last_seen_at` keep updating | an acknowledged event that stopped occurring is noise |
+| `mark_events`, `lesson_prep_events`, `notifications` (the inbox, which is also the delivery log) | 180 days | the feed shows "new since last visit", not an audit trail; `mark_history` keeps the versions themselves |
+| `study_sessions` | current and previous school year; `inferred` rows are replaced on every recompute | the comparison goes back a year at most |
+| `study_session_events` | 180 days | pauses are for the running session, not history |
+| `lesson_overrides` | current and previous school year | "N уроков назад" and `callAfter` count real lessons of this year; older overrides change nothing on screen |
+| `lesson_tag_hits` | until 30 days after the due date; recomputed hits replace removed ones | the schedule and Внимание look ahead, not back |
+| `mark_history` | lifetime of the mark | that is the change detection the product promises |
+| `user_files` (wallpaper) | while the user exists; replaced on upload, deleted with the user | a personal picture, one per user |
+| `user_seen`, sessions | sessions expire by TTL; `user_seen` keeps only the last visit per screen | nothing historical is needed |
+
+A daily janitor job (same process, after the first run of the day) applies these limits; each limit is a constant in `server/src/retention.ts` with a matching `RETENTION_*` env override in `.env.example`. Deleting a diary account or a student cascades to everything under it immediately; retention never keeps data about a student who left the family.
+
+### 10.3 API drift detection
+
+Unofficial APIs change. Every provider's response passes through its Zod schema built with `.passthrough()` and `ctx.drift` records what the schema did not expect:
+
+- unknown top-level or nested field, missing required field, type mismatch, new value of `kind`, `type`, `lesson type`, `time_activities.type`, unexpected HTTP status, unknown error body shape;
+- each finding becomes an `api_drift_events` row keyed by `(endpoint, kind, path)` with a sanitised sample (names, uuids and comments replaced, same rules as fixtures), `count` and `last_seen_at`;
+- the first occurrence is logged at `warn` and pushed to the admin through their notification channels ("e-schools API: новое поле `slots[].foo` в lessons"), later occurrences only increment `count`;
+- parsing never fails on unknown fields; the raw body is in `raw_responses`, so support can be added later without re-fetching;
+- the probe script from `api-spec.md` section 10 doubles as a contract check: `pnpm probe --compare` runs each endpoint once and diffs against `fixtures/`, usable on demand when a drift event appears.
+
+## 11. Notifications
+
+Events come from `mark_events`, `api_drift_events`, account status and lessons (tests scheduled, homework). Delivery is a small worker inside the same process, run right after each sync and on a 5-minute tick for digests. Each user has their own channels and rules; a child's phone never receives the parents' alerts.
+
+| Rule | Trigger | Default |
+|---|---|---|
+| `new_mark` | any `mark_events(new)` | on for students, off for parents (digest instead) |
+| `mark_changed` | `mark_events(changed|removed|restored)` | on for parents, grouped per run |
+| `api_drift` | first occurrence of an `api_drift_events` row; account `auth_failed` | admin only, always on |
+| `mark` with condition | new mark that is: any / worse than a value / not worse than a value / in a band | defaults: any (students), worse than first threshold (parents), top band in the evening digest (parents) |
+| `average` with condition | a subject's average dropped / rose / changed by more than a step over a chosen calendar period (week, month, term, year) versus the previous period of the same kind, on at least N marks | one rule, off: dropped by 0.5 over a week, 2 marks |
+| `absence` | new `ABSENT` | on for parents |
+| `tag` | a lesson carries one of the chosen tags (6.3); sent at the chosen moments: when the hit first appears, N days before the lesson, the evening before (19:00), in the Saturday 09:00 list of next week | "Контрольная, Стихотворение" (appears, evening before, Saturday) on for everyone who follows the student; "Принести" (evening before) on for students |
+| `homework_digest` | daily at `time` (default 19:00): tomorrow's lessons with homework and ticks, what is still open, today's study time | on for students and grade 1 parents |
+| `prep_open` | tomorrow's lessons not all ticked at `time` (default 20:00) | off; parents may switch it on (6.5) |
+| `study_long` | a timer session running longer than `hours` without a pause (6.7): a reminder to take a break, to the child and the parents who follow them | off |
+| `weekly_summary` | Sunday 18:00: averages, movers, absences | on for parents |
+
+- Quiet hours (default 22:00 to 07:00): events are queued and sent as one message afterwards.
+- Grouping: several marks found in one sync go out as one message per student.
+- Web Push via `web-push` with VAPID keys in `.env`; service worker shows the notification and deep-links to the feed. iOS needs the PWA installed to the home screen.
+- Telegram via `grammy`: `/start <code>` links a chat to a user; messages in Russian with mark chips as text (`Алгебра: 9 (контрольная)`).
+- Every message states the student, so a parent with two children is never confused.
+- **Inbox.** Every message sent is stored once per user in `notifications` with its text and deep link, whatever the channel, and listed on Уведомления (5.2b) for 180 days. Grouped messages are one row. The unread count on the bell is the number of rows without `read_at`; opening a row or "Прочитать все" sets it. A notification that matches a Внимание row (same student and fact) is shown there as "пришло …".
+
+## 12. Design tokens and Tailwind
+
+`docs/tokens.json` is the single source for colours, type, radius and spacing. A small script (`web/scripts/tokens-to-css.ts`) writes `web/src/styles/tokens.css` (CSS custom properties for light and dark) and `tailwind.config.ts` reads the same JSON for `theme.extend.colors`, `fontFamily`, `borderRadius`, `spacing`. Components use Tailwind classes that resolve to the variables (`bg-surface`, `text-ink`, `text-band-good`), so no hex value exists outside `tokens.json`. The prototype in `docs/mockups.html` uses the same variable names. Band *ranges* are not tokens: they belong to the grading scale and come from the API per student; tokens only give the four band roles their colours.
+
+Token groups: `color.bg`, `color.surface`, `color.surface2`, `color.ink`, `color.ink2`, `color.ink3`, `color.line`, `color.accent`, `color.accentInk`, `color.band.{critical,low,ok,good}` with `bg` and `fg` each, `font.display`, `font.body`, `radius.{sm,md,lg,pill}`, `space` scale, `shadow.card`.
+
+Typography: Manrope for UI text and numbers (tabular figures), Fraunces for the large average on the hero and tiles. Both from Google Fonts, with system fallbacks.
+
+## 13. Frontend structure
+
+```
+web/src/
+  app/            router, providers, auth guard
+  api/            typed client generated from the OpenAPI document (openapi-typescript)
+  features/
+    auth/  overview/  marks/  subjects/  subject/  schedule/  more/  notifications/  settings/
+  hooks/          useScale(studentId), useCapabilities(studentId): every scale- or capability-dependent
+                  element reads these; no component checks a provider id
+  components/     ScreenHeader, StudentBar (avatars only), Avatar (SVG from traits or photo), StudentPickerCard, MarkChip, StatBlock, SubjectRow, HintRow, LessonRow, LessonNote, LessonMenu, StudyBar, SessionRow, StudyChart, SegmentedControl,
+                  BottomSheet, TabBar, EmptyState   (one component per kind of information; a block that
+                  exists on one screen is reused, never re-implemented, on another)
+  lib/            marks.ts (bands, averages, target calculator), guidance.ts (rules from 6.2),
+                  tags.ts (tag matching, where a tag lands, hits from 6.3), period.ts
+  i18n/           react-i18next setup over packages/i18n (see docs/i18n.md)
+  styles/         tokens.css, base.css
+  sw.ts           service worker: offline shell, push handler
+```
+
+State: TanStack Query for server data (keys by student and period), a tiny Zustand store for selected student, period and theme. `lib/marks.ts` is pure and unit-tested; the same logic exists in SQL for the API, and a Vitest test compares both on the fixtures.
+
+## 13.1 Localisation
+
+Summary of `docs/i18n.md`: one `packages/i18n` package with a JSON file per language, consumed by the web app (react-i18next) and by the server for notifications and user-facing errors; `en.json` is the source of truth and the fallback, `ru.json` the second complete file; CLDR plurals; dates and numbers through `Intl` with the user's locale, never through translation files; diary content (subject names, topics, homework, comments) is never translated; grading scale labels and canonical enums (work types, mark kinds) are keys. Language resolution: user setting, then provider default, then browser, then English. CI fails on missing keys and on literal strings in components. German and French are the layout stress test: the five bottom tabs, tiles and chips must fit their labels without truncation.
+
+## 14. Non-functional
+
+### 14.1 Data protection
+
+Marksy stores data about children, and a public project will be run in jurisdictions with different rules (GDPR in the EU and UK, FERPA and COPPA in the US, national laws elsewhere). The design gives every instance the same tools; which rules apply is the operator's decision.
+
+- **Consent record.** Connecting a diary stores `families.consent_version`, `consent_at`, `consent_by`: the text shown on the connect screen (per interface language, versioned in `packages/i18n`) says what is collected, where it is stored, and that the collector only reads. Changing the text bumps the version and asks again.
+- **Retention.** `families.settings.retention_years` (default: keep everything, which is the point of the product; a family or operator can set a limit). Raw responses have their own shorter retention (`RAW_RETENTION_DAYS`, default 90) because they hold more than the app needs.
+- **Export.** `GET /api/family/export` returns everything the family owns as JSON (students, marks, history, rules, settings), admin only.
+- **Erasure.** `DELETE /api/family` removes the family and all its rows, including raw responses and notification subscriptions, after a typed confirmation; a member can leave and be erased without deleting the family.
+- **Hosted instances.** When one server serves many families (friends, a school club), each family's credentials are encrypted with a per-family key derived from `CREDENTIALS_KEY` and the family id, so a database dump does not expose every diary login at once; operators are told in `README` that hosting other people's children's data makes them a data controller, and the consent text names the operator.
+- **Minors' accounts.** Marksy stores no birth dates. A student user is a minor by assumption; student accounts cannot change family settings, export data or invite others.
+- **No third parties.** No analytics, no crash reporting that sends content, fonts optionally self-hosted (`SELF_HOST_FONTS=true`) for operators who do not want Google Fonts requests from children's phones.
+
+- Privacy: data about minors. HTTPS only, httpOnly cookies, no analytics, no third-party scripts except fonts. Credentials encrypted at rest; `CREDENTIALS_KEY` never in the repo. Logs redact login, password, tokens, full names.
+- Performance: the overview query returns in under 100 ms on a few thousand marks; the PWA shell loads in under 1 s on 4G.
+- Offline: the shell and the last overview, feed and lessons per student are cached; a banner shows the age of the data.
+- Accessibility: band colours always paired with the number or a label; 44 px tap targets; focus states; `prefers-reduced-motion`.
+- Timezone: from the provider manifest per account on the server; dates stored as `date` for lessons, `timestamptz` for events; displayed in the user's locale. Week start and weekend from `manifest.calendar`, never from code.
+- Localisation: twelve interface languages, per user, section 13.1 and `docs/i18n.md`.
+
+## 15. Repository layout and local setup
+
+```
+packages/core/        canonical types, DiaryProvider interface, grading scales, marks math,
+                      guidance rules, throttled HTTP client, provider conformance tests
+providers/_template/  starting point for a new provider
+providers/by-eschools/  Belarus, diary.e-schools.by: manifest, schemas, mapper, fixtures
+server/               Express API + collector + Drizzle schema and migrations, Vitest + Supertest
+web/                  Vite + React PWA, Vitest
+docs/                 design.md, providers.md, api-spec.md (by-eschools system notes), tokens.json,
+                      mockups.html
+docker-compose.yml    postgres:16 with a named volume, port 5432; docker/postgres/init.sql adds marksy_test
+.env.example          every variable the code reads, with a comment
+pnpm-workspace.yaml   packages/*, providers/*, server, web
+scripts/              privacy-check.mjs (pnpm privacy)
+.claude/              Claude Code: settings.json (permissions), skills next, check, ui-check, privacy-check;
+                      agents privacy-reviewer, ux-reviewer
+.vscode/              recommended extensions and shared editor settings
+```
+
+Build order, milestones, acceptance criteria and the way of working with Claude Code: `docs/build-plan.md`.
+
+## 16. Screen audit: what each element depends on
+
+Every element on every screen was checked against the three layers of section 6.4 and the capability table in `docs/providers.md` section 10. The result is the contract for the implementation: an element may depend only on what its row says.
+
+| Screen | Element | Depends on | Without it |
+|---|---|---|---|
+| Start | student picker with per-child facts | number of students the user may see; facts gated like Overview | skipped for one student and for student users |
+| Every student screen | StudentBar | number of students | hidden for one student; segmented for 2–3, pill with sheet for 4+ |
+| Login | provider picker, credential fields, role toggle | provider registry, manifest `auth`, `roles` | one-role providers show no toggle |
+| Login | school or district picker | manifest `tenant` | omitted for single-instance systems (by-eschools) |
+| Login | language picker | i18n (all twelve, provider only orders) | never hidden |
+| Overview | period presets | calendar; the fourth preset from `terms` | three presets when `terms: none` |
+| Overview | StatBlock average, count, bands | scale | ordinal scales: level counts, no average |
+| Overview | absences column | capability `attendance` | hidden |
+| Overview | last school day's marks | marks by date | n/a |
+| Overview | Внимание rows | family rules over capabilities: drops, tag hits (tests are the tag "Контрольная"), low marks (`lowMark`), absences (`attendance`), changed marks, account status | each row type disappears with its capability |
+| Overview | next school day | capability `futureTimetable` | hidden |
+| Overview | "до конца четверти N дней" | `terms` | hidden |
+| Marks | filters new / all | always | |
+| Marks | tag filter | `lessons` (a mark needs its lesson to carry tags) | hidden |
+| Marks | worse-than filters | scale thresholds | hidden for ordinal and pass-fail |
+| Marks | absences filter | `attendance` | hidden |
+| Marks | StatBlock over the selection | scale | same as Overview |
+| Marks | row: work type label, topic, comment icon | `workTypes` / `workTypeRaw`, `topics`, `comments` | each omitted |
+| Marks | row: cohort line "class average 72, rank 5/32" | `cohortStats` | omitted (by-eschools) |
+| Marks | status chips: missing, excused, late, proposed | `Mark.status`, `FinalMark.role` | omitted; a missing assignment is a zero-valued chip with a "missing" style and counts in the average as the system does |
+| Marks | weight badge "×3" | `weights` | omitted |
+| Subjects | Период list with trend and "было" | scale compare | ordinal: trend by level |
+| Оценки → Итоги | Четверти table | `terms` and, for finals, `finalMarks`; named by term kind | the Итоги view itself needs `finalMarks`; Четверти hidden when `terms: none`; exam table when `exams` |
+| Оценки → Итоги | Годы table, manual entry | Marksy's own history; scale per year | always; "другая шкала" badge when scales differ |
+| Subject | StatBlock with deltas | scale, `attendance` for the absences column | |
+| Subject | "итог за четверть" line, По четвертям strip | `terms`, `finalMarks` | hidden |
+| Subject | target / predicted / current row | `targets` | hidden (by-eschools) |
+| Subject | distribution chart | scale `distribution` | buckets for points and percent |
+| Subject | trend chart: buckets by the selected period, labels under points, band lines | scale, calendar (week start), terms | |
+| Subject | goal row in Обратить внимание | `terms` + scale `finalRule` not unknown; goals from scale | hidden; a plain average target calculator stays |
+| Subject | Обратить внимание hints | each rule's `requires` | rules skipped |
+| Subject | timeline rows | as Marks rows | |
+| Schedule | tab itself | `lessons` | tab hidden; homework items still listed under Главная when `homeworkAssignments` |
+| Schedule | slot number, time, topic, homework, attachments | each optional field | line omitted |
+| Schedule | lesson type badge | `lessonTypes` | omitted |
+| Schedule | lesson hints | rule `requires` | skipped |
+| Schedule | тег notes and "Обратить внимание" | tags over `homework` / `topics` / `lessonTypes` / `homeworkAssignments` | fields that exist |
+| Schedule | several mark chips on one lesson | `marksPerLesson: many` | one chip |
+| More | Теги | `lessons` or `homeworkAssignments` | hidden |
+| Notifications | alert rules list | family rules; each rule's capability | rules hidden with their capability |
+| Family | diary accounts with provider name and status | registry | |
+| Sync | "перепроверка четверти" | `terms` ("перепроверка периода" otherwise) | wording |
+| Sync | API drift card | always | |
+
+Two things were found by this audit and fixed in the design: notification thresholds were scale constants and are now family rules with scale defaults (section 6.4), and the term vocabulary ("четверть") was hard-coded in several labels and is now taken from `Term.kind` through i18n keys (`term.quarter`, `term.trimester`, `term.semester`, `term.other`).
+
+### 16.1 Assumptions that were found and folded into the model
+
+Each of these was a hidden assumption in the first design and is now an explicit field or setting (details in `docs/providers.md`, "Calendar, names and the rest"):
+
+- Week start and weekend: `manifest.calendar`, used by period presets, "next school day" and tag advice. The prototype's rail switches between Monday / Saturday–Sunday and Sunday / Friday–Saturday.
+- Names: `givenName`, `familyName`, `displayName` and `manifest.nameOrder`.
+- A child followed by two households: detected at connect by `(provider_id, student external_id)`; the second parent chooses between joining the existing family and creating a separate one (section 7.2).
+- Simple mode for the youngest students: `users.ui_mode` (section 5.7).
+- Guidance can be switched off per family and per user; facts stay, advice goes.
+- Data protection: section 14.1.
+- The thinnest provider, `providers/demo-minimal`, is part of CI, so "works without lessons, work types, comments, attendance, terms and finals" is tested on every change rather than assumed.
+
+## 17. Open questions
+
+- The first non-Belarusian provider will test the canonical model. Candidates with a public or semi-public API and many families: Russia (dnevnik.ru, МЭШ), Ukraine (nz.ua), Poland (Librus, Vulcan), Germany (regional portals), Kazakhstan (Kundelik). Each has its own grading scale and auth; `docs/providers.md` is written so that the second provider is a pull request, not a redesign.
+
+- Student e-schools login endpoint and whether a student token can read the same diary routes (section 7.5).
+- Whether teachers enter marks after 14:00 often enough to justify an evening run (section 10.2). Measure with `marks.first_seen_at` versus `lessons.date` after a month.
+- How the school computes the quarter final from the marks (plain rounded average, weighted tests, or teacher's judgement). Compare projected finals with real ones after 2026-10-30 and adjust the goal calculator (section 6.2).
+- Whether re-fetched weeks ever return a lesson with a different `lesson_uuid` for the same slot (timetable edits). If so, the removal logic needs a match on `(date, number, subject_id)` as a fallback.
+- `final/whole` populated shape (after 2026-10-30).
+- Whether `subjects.id` is stable across school years and shared across classes of the same school.
+- Whether the API can return a past school year (a `school_year` parameter on the diary routes, or a different `school_year` uuid in `time_activities`). If yes, backfill previous years automatically; if not, manual entry of year finals stays the only source for history before Marksy.
+- Hosting of the PWA: same home machine via Cloudflare Tunnel, or a split setup with the API in the cloud reading a database the home collector writes to (api-spec 9.1). The schema supports both; `SYNC_ENABLED` switches the collector off in the cloud copy.

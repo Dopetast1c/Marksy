@@ -1,0 +1,24 @@
+# Local PostgreSQL 16 for development and tests. Data lives in a named volume, never in the repo.
+# `pnpm db:up` starts it and waits for the health check; `pnpm db:reset` wipes it.
+services:
+  postgres:
+    image: postgres:16
+    container_name: marksy-postgres
+    environment:
+      POSTGRES_USER: marksy
+      POSTGRES_PASSWORD: marksy
+      POSTGRES_DB: marksy
+      TZ: Europe/Minsk
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U marksy -d marksy']
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+volumes:
+  pgdata:

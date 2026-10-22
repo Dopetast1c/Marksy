@@ -1,0 +1,42 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Local data: DB, raw API responses, HAR exports (contain personal data and tokens)
+data/
+*.sqlite
+*.sqlite3
+*.db
+*.har
+raw/
+
+# Dependencies and builds
+node_modules/
+dist/
+build/
+.vite/
+coverage/
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Logs
+*.log
+logs/
+
+# Screenshots and scratch files from Claude sessions
+Claude outputs/
+
+# Shared VS Code settings are committed
+!.vscode/settings.json
+
+# Setup files copied in by Claude on the first run (docs/first-run.md), removed after it
+_setup/

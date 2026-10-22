@@ -1,0 +1,5 @@
+# Same line endings on Windows and Linux: the repo is LF everywhere
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.woff2 binary

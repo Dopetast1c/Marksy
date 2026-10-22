@@ -1,0 +1,176 @@
+# Marksy build plan
+
+The order in which Marksy is built with Claude Code, what each milestone must deliver and how to tell it is done. `docs/design.md` says what the product is; this file says in which order to make it. When a milestone is finished, tick it here and write one line under "Notes" if something was decided on the way.
+
+## Status
+
+| | Milestone | Branch | Status |
+|---|---|---|---|
+| M0 | Workspace scaffold, first run (`docs/first-run.md`) | `main` | done |
+| M1 | Core: canonical model, grading scales, marks math, HTTP client, i18n package | `m1-core` | todo |
+| M2 | Provider `by-eschools` and the probe | `m2-eschools` | todo |
+| M3 | Server: schema, collector, planner, seed data | `m3-server` | todo |
+| M4 | Accounts, families and the read API | `m4-api` | todo |
+| M5a | Web: tokens, shell, login, student pick, Главная, Внимание | `m5a-shell` | todo |
+| M5b | Web: Оценки, Итоги, Предметы, Предмет | `m5b-marks` | todo |
+| M5c | Web: Расписание, lesson menu, ready ticks, own homework | `m5c-schedule` | todo |
+| M5d | Web: Ещё, Семья, Синхронизация, Оформление | `m5d-more` | todo |
+| M6 | Tags | `m6-tags` | todo |
+| M7 | Study time | `m7-study` | todo |
+| M8 | PWA: install, offline, service worker | `m8-pwa` | todo |
+| M9 | Notifications: inbox, rules, Web Push, Telegram | `m9-notify` | todo |
+| M10 | Running at home: production build, backups, remote access | `m10-run` | todo |
+
+M9 and M10 come last on purpose: the app is complete and usable without them (Внимание on Главная already shows what matters), so they can wait until everything else works.
+
+## How to work with Claude Code
+
+- **One milestone, one branch.** Start a session in VS Code on the milestone branch and type `/next` (or `/next M3`). The skill reads this file, the doc sections listed for the milestone and `CLAUDE.md`, proposes a plan and waits for approval before writing code. Large milestones take several sessions; each ends with green checks and a commit.
+- **Plan first.** For anything bigger than a small fix, ask for the plan in plan mode (Shift+Tab) and read it. A good plan names the files, the tests and the doc sections it relies on, and lists the questions it could not answer from the docs.
+- **Checks before every commit.** `/check` runs formatting, typecheck, lint, tests and the privacy check, and fixes what fails. `/privacy-check` adds a review of the diff by the privacy reviewer agent; run it before merging a milestone and whenever fixtures, logging, auth or queries changed.
+- **UI against the prototype.** `/ui-check <screen>` compares a screen with `docs/mockups.html` and the invariants in `docs/ux-principles.md`. The prototype is the reference for layout, order of blocks and copy; the docs win when they disagree with it.
+- **Docs move with the code.** When a decision changes, the doc is edited in place in the same commit (design.md, ux-principles.md decision log, providers.md, api-spec.md). No changelog sections.
+- **Git is Claude Code's job.** It commits after each green step, pushes the milestone branch, and when the acceptance list is met and `/check` and `/privacy-check` are green, merges the branch into `main` (`--no-ff`) and pushes. Force-push is forbidden in `.claude/settings.json`. The first run on a new machine (`docs/first-run.md`) also sets up git and makes the first push.
+- **Runs on a phone from M5a.** From M5a on, every milestone ends with the app working on the owner's own data (and on the seed) in a desktop browser and on a phone in the home network (`pnpm dev:lan`, README "Testing on a phone"). The browser only ever talks to the PWA origin (relative `/api`), the API stays on 127.0.0.1 behind the proxy, cookies are `Secure` only under https. A milestone that breaks phone access is not done.
+- **Product questions go to the owner.** If the docs do not answer a product question, Claude Code asks instead of guessing, and the answer goes into the docs.
+
+### Data for testing
+
+Two kinds of data, kept apart:
+
+- **The owner's own family (real).** The diary login lives in `.env` (`DIARY_LOGIN`, `DIARY_PASSWORD`, plus `MARKSY_DEV_EMAIL` and `MARKSY_DEV_PASSWORD` for the Marksy account), which is gitignored, flagged by `pnpm privacy` if it is ever added, and not readable by Claude Code. The data lands only in the local `marksy` database inside the Docker volume. It is used as soon as it makes sense: the probe in M2, the first real sync in M3 (`pnpm sync:once`), and from M4 on the owner's daily testing (`pnpm dev:connect` creates the family through the same code as «Подключить дневник» and starts the sync). These commands talk to the real diary, so only the owner runs them.
+- **A fictional family (seed and fixtures).** Used by automated tests (in the separate `marksy_test` database), by anyone who clones the public repo without a diary account, and for cases the real family does not have (a class without marks, a missing capability, an empty period). `pnpm db:seed` creates it with demo logins at example.com.
+
+Claude Code works with the fictional data. It does not read rows of the real family from the `marksy` database into the conversation (schema, counts and ids are fine); a bug seen on real data is reproduced in a test with fictional data.
+
+### Definition of done (every milestone)
+
+- `pnpm check` is green: typecheck, lint, tests, privacy check.
+- New code has tests: units for logic, Supertest for every route, the conformance suite for providers.
+- No real data anywhere: fixtures are sanitised and fictional, examples use example.com, nothing personal in logs.
+- Every user-facing string is an i18n key with `en` and `ru` values (from M1 on).
+- `.env.example` lists every variable the code reads.
+- The docs listed for the milestone still describe what the code does.
+- From M5a on: the app starts with `pnpm dev:lan` and the milestone's screens work on a phone over the home network, on the owner's family and on the seed.
+
+## M0. Workspace scaffold (done)
+
+pnpm workspace (`packages/*`, `providers/*`, `server`, `web`), TypeScript 6 strict, ESLint with a few codebase rules (no `getDay() === N`, no `fetch` in providers, no hex colours in `web`), Prettier, Vitest in every package, Docker Compose with PostgreSQL 16 and a separate `marksy_test` database, `scripts/privacy-check.mjs`, Claude Code skills and agents in `.claude/`, VS Code recommendations in `.vscode/`. `server` answers `GET /api/health`; `web` renders a placeholder; `pnpm dev` runs both with `/api` proxied; `pnpm dev:lan` also opens the PWA to the home network (the API stays on 127.0.0.1 behind the proxy).
+
+Local check: `pnpm install`, `pnpm db:up`, `pnpm check`, `pnpm dev`, then open http://localhost:5173 and http://localhost:5173/api/health. Phone check: `pnpm dev:lan`, then open the `Network:` address Vite prints, plus `/api/health`, on the phone.
+
+## M1. Core
+
+**Read:** `docs/providers.md` (all), `docs/design.md` 6, 6.1, 6.2, 6.4, `docs/i18n.md`, `CLAUDE.md` "Provider boundary".
+
+**Deliver:**
+- `packages/core`: canonical types with Zod schemas (student, subject, lesson, mark, homework, term, final mark, attendance), the `DiaryProvider` interface and manifest type with capabilities, provider registry.
+- `GradingScale` model and helpers (bands, thresholds, compare, rounding, finals projection, `neededAverage`, `targetPlan`, `keepMark`), the `by-10` scale and its snapshot test (`docs/providers.md` 5.4).
+- Marks math: averages per period, previous-period comparison with the four missing-data cases (design 6.1), trend, movers, period ranges and instance navigation (current instance to date for marks, whole period for lessons).
+- Guidance rules as pure functions that return facts and optional advice separately (design 6.2), so advice can be switched off.
+- Throttled HTTP client: serial queue, randomised delays and backoff from the manifest, `readOnlyAllowList` enforced (anything else throws), one login per run.
+- Conformance test harness (`pnpm test:provider <id>`), `providers/_template`, `providers/demo-minimal` with fictional fixtures passing the harness.
+- `packages/i18n`: `en.json` (source) and `ru.json`, typed `t()` with plural rules, a test that every key exists in both files.
+
+**Done when:** the `by-10` snapshot, the marks math tests and the conformance suite for `demo-minimal` pass; core has no import of anything provider-specific.
+
+**Prompt:**
+```
+/next M1
+```
+
+## M2. Provider by-eschools
+
+**Read:** `docs/api-spec.md` (all, section 10 for the probe), `docs/providers.md`, `CLAUDE.md` "Hard rules".
+
+**Deliver:** `providers/by-eschools`: manifest (limits, window, allow-list, capabilities, `network.regionHint`), passthrough schemas that record drift instead of failing, mapper to canonical types, `sanitize()`, the probe script `pnpm probe` (logs in once, calls each read endpoint once, saves sanitised responses as fixtures, prints which open checklist items it confirmed), fixtures, green conformance suite.
+
+**Important:** the probe uses the owner's login from `.env` and needs a Belarusian IP. Claude Code never reads `.env` and never runs the probe; the owner runs `pnpm probe` and commits only what `sanitize()` produced, after `pnpm privacy` passes. Until then the mapper is built and tested against fictional fixtures shaped from `docs/api-spec.md`.
+
+**Done when:** conformance passes on fixtures, drift on an unknown field is recorded and does not throw, a non-allow-listed URL throws, the privacy check passes on the fixtures.
+
+## M3. Server: schema, collector, planner, seed
+
+**Read:** `docs/design.md` 8, 10 (all subsections), 14.1, `CLAUDE.md` "Hard rules".
+
+**Deliver:**
+- Drizzle schema and migrations for every table in design 8; `pnpm db:migrate`, `pnpm db:studio`.
+- Collector over the provider interface: upsert with change and removal detection, `mark_history`, `mark_events`, `sync_runs`, `sync_coverage`, drift events, raw responses with retention.
+- Planner (design 10.4): tick, window and jitter from the manifest, catch-up after downtime, request cap per run, pause and doubling after failures, offline detection, weekly re-scan, backfill. Retention janitor.
+- `pnpm sync:once`: one collector run for the owner's account from `.env` into the local database (creates a minimal family on first run), so the schema and the mapper meet real data early. Run by the owner.
+- `pnpm db:seed`: a fictional family matching the prototype (two children, one in a class without marks), a school year of marks, lessons, homework, tags and study sessions, so every screen can be built without the diary. It creates demo logins (a parent and a student, e-mails at example.com, a fixed demo password printed by the command) and is safe to re-run (`pnpm db:seed --reset`). No diary account is attached: the planner skips families without one.
+- Swagger skeleton at `/api/docs` generated from Zod.
+
+**Done when:** collector tests run against `demo-minimal` and the test database, a re-fetched week with a changed mark produces `mark_history` and `mark_events(changed)`, the planner tests cover window, catch-up, cap and pause, `pnpm db:seed` runs on an empty database, and the owner's `pnpm sync:once` fills the local database without drift errors.
+
+## M4. Accounts, families and the read API
+
+**Read:** `docs/design.md` 7 (all), 9, 14.1.
+
+**Deliver:** `pnpm dev:connect` (reads the owner's logins from `.env`, runs the same service as «Подключить дневник», idempotent after a database reset), connect a diary with the provider picker (creates the family), Marksy login with argon2id and session cookies, invites with a 48-hour code, roles and student access, family management; credentials encrypted with AES-256-GCM; read routes for providers, overview, marks feed, subjects, subject, schedule, finals, attention, sync status; everything in Swagger.
+
+**Done when:** every route has Supertest tests including "another family's data is not reachable" and "no session, no data"; no route returns or logs a credential; the owner (after `pnpm dev:connect`) and the seeded demo parent can log in and read data through the `/api` proxy from another device on the home network (session cookie `SameSite=Lax`, `Secure` only when `PUBLIC_URL` is https).
+
+## M5a. Web: tokens, shell, login, pick, Главная, Внимание
+
+**Read:** `docs/ux-principles.md` (all), `docs/design.md` 4, 5.1, 5.2, 5.2a, 6, 12, 13, 13.1, the prototype screens Вход, С кого начнём, Главная, Внимание.
+
+**Deliver:** tokens pipeline (`docs/tokens.json` to CSS variables and Tailwind theme, light and dark), i18n wiring, app shell (ScreenHeader with StudentBar and bell, tab bar, PeriodBar plus PeriodNav with swipe, bottom sheets), API client from OpenAPI, `useScale`, `useCapabilities`, login (three paths), «С кого начнём?» with the rule that child screens need a pick, Главная including the class-without-marks variant, the Внимание block and the Внимание screen (design 5.2a, computed on read). The bell in the header and the inbox come with M9; until then the header has no bell.
+
+**Done when:** `/ui-check` on these screens reports no differences that matter, the shell works at 360 px and on a tablet, no hex colours and no literal strings in components; `pnpm dev:lan` opens the login, the student pick, Главная and Внимание on a phone in the home network, on the owner's family and on the seed.
+
+## M5b. Web: Оценки, Итоги, Предметы, Предмет
+
+**Read:** `docs/design.md` 5.3, 5.3a, 5.3b, 5.4, 6.1, 6.6; prototype screens Оценки, Итоговые отметки, Предметы, Предмет.
+
+**Deliver:** MarkFilter (Все and Теги with any/all, one shared state), StatBlock, TrendCard, distribution, finals table, subject list with sorting, subject screen with accent colour, settings sheet (goal, colour), «Обратить внимание», «Ближайшие уроки», the class-without-marks variants.
+
+**Done when:** the whole read side of the app (login, pick, Главная, Внимание, Оценки, Итоги, Предметы, Предмет, every child, every period) runs locally on the owner's family and on the seed in a desktop browser and on a phone over the home network with `pnpm dev:lan`. This is the first milestone the owner uses day to day for testing.
+
+## M5c. Web: Расписание
+
+**Read:** `docs/design.md` 5.5, 6.5; prototype screen Расписание.
+
+**Deliver:** day and week views with the period navigator, LessonRow with пометки, LessonMenu (готово first, задание, урока не будет), ready ticks with `lesson_prep_events`, own homework items, missing slots, «Обратить внимание» for the selected range.
+
+## M5d. Web: Ещё and settings screens
+
+**Read:** `docs/design.md` 5.6, 5.6a, 5.7; prototype screens Ещё, Семья, Синхронизация, Оформление, Аватар.
+
+**Deliver:** Ещё in the documented order (the row «Настройки уведомлений» comes with M9), Семья (members, invites, diary accounts, students), avatars, Синхронизация (status, history, manual refresh within the login limit), Оформление (theme, palette, wallpaper, font, subject colours), student mode and simple mode.
+
+## M6. Tags
+
+**Read:** `docs/design.md` 6.3; prototype screens Теги, Тег, Расписание, Главная.
+
+**Deliver:** presets, matching at sync into `lesson_tag_hits`, recompute on tag change, the Теги screen and editor with the live check (its entry «Уведомления по тегам» comes with M9), the тег пометка in the schedule, tags on marks for the filter, tag hits in «Обратить внимание» and «С кого начнём?».
+
+## M7. Study time
+
+**Read:** `docs/design.md` 5.8, 6.7; prototype screens Занятия, Главная, Предмет.
+
+**Deliver:** sessions and events, timer endpoints, StudyBar, the two-step start sheet, estimates from ticks (gaps 3 to 90 minutes, batches), Занятия screen, «Занятия сегодня», the subject's Занятия section. Time is neutral and never compared with marks.
+
+## M8. PWA
+
+**Read:** `docs/design.md` 13, 14.
+
+**Deliver:** manifest and icons, service worker with an offline shell and cached last data, install prompt, update flow. Push handling is added with M9.
+
+**HTTPS on the phone.** Browsers allow a service worker, installation and push only on https (or localhost), so plain `http://<ip>:5173` is not enough here. Add `pnpm dev:lan:https` with a locally trusted certificate (mkcert: its root installed on the phone once) and document it in README; or use the remote-access route chosen for M10 if it is ready. **Done when:** the PWA installs on the phone from the home network and opens offline with the last data.
+
+## M9. Notifications
+
+**Read:** `docs/design.md` 5.2b, 11, 6.4; prototype screens Уведомления, Настройки уведомлений, Правило уведомления, Внимание (the «пришло …» line).
+
+**Deliver:** the bell in every header (and on «С кого начнём?»), the `notifications` inbox with unread count and deep links, «пришло …» on Внимание rows, alert rules and the rule editor with the live check, quiet hours and grouping, Web Push (VAPID), Telegram (link code, webhook), digests, tag reminders at their moments, drift and auth alerts for the admin, push handling in the service worker (deep links on tap).
+
+## M10. Running at home
+
+**Read:** `docs/design.md` 10.1, 14, 17 (hosting question).
+
+**Decide first:** how the app is reached from outside the home network (Cloudflare Tunnel or Tailscale, design 17). **Deliver:** production Docker Compose for API, web and database, daily `pg_dump` to a local folder outside the repo with rotation, restore instructions in README, health monitoring of the collector.
+
+## Notes
+
+- M0: TypeScript is pinned to 6.0 because typescript-eslint does not support TypeScript 7 yet. Raise it when typescript-eslint does.
