@@ -7,3 +7,6 @@ packages:
 # pnpm 10 runs no dependency build scripts unless they are listed here
 onlyBuiltDependencies:
   - esbuild
+# install-time telemetry of swagger-ui-dist: never run (no third parties, docs/design.md 14.1)
+ignoredBuiltDependencies:
+  - '@scarf/scarf'
