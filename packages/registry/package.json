@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "description": "The list of diary providers; the only package that imports providers/*",
+  "license": "PolyForm-Noncommercial-1.0.0",
   "exports": {
     ".": "./src/index.ts"
   },

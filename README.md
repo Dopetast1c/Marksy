@@ -2,9 +2,9 @@
 
 **Your children's school year, in one calm, clear place.**
 
-Marksy is an open-source family app for school marks. It connects to the electronic diary your school already uses, reads the marks, timetable and homework through the diary's own API, and builds a richer layer on top: averages and trends for every subject and period, a full history of every mark, a plan for the days ahead, a study timer, notifications, and separate logins for every parent and child. It runs on your own computer, installs on any phone as an app, and speaks twelve languages.
+Marksy is a family app for school marks, source-available and free for personal and other non-commercial use. It connects to the electronic diary your school already uses, reads the marks, timetable and homework through the diary's own API, and builds a richer layer on top: averages and trends for every subject and period, a full history of every mark, a plan for the days ahead, a study timer, notifications, and separate logins for every parent and child. It runs on your own computer, installs on any phone as an app, and speaks twelve languages.
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![License: PolyForm Noncommercial 1.0.0](https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-blue.svg)](LICENSE)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6.svg)
 ![PWA](https://img.shields.io/badge/app-PWA-5a0fc8.svg)
 ![Self-hosted](https://img.shields.io/badge/data-self--hosted-2f7a4a.svg)
@@ -98,7 +98,7 @@ Marksy works on a common model (students, terms, subjects, lessons, marks, final
 
 Everything a diary may or may not have is optional: lesson types, mark categories, comments, attendance, terms, official finals, even a timetable. A provider declares what is there, and every screen shows what exists instead of empty columns.
 
-To connect a new system you write one provider: a manifest (credentials, scale, capabilities, rate limits), a sign-in function, a handful of fetch functions that map responses to the common types, a `sanitize()` for test fixtures, and the shared conformance test. The contract, a step-by-step guide and a review checklist are in [`docs/providers.md`](docs/providers.md); `providers/_template` is a compiling starting point. Providers for national systems, regional portals and single schools are welcome as pull requests.
+To connect a new system you write one provider: a manifest (credentials, scale, capabilities, rate limits), a sign-in function, a handful of fetch functions that map responses to the common types, a `sanitize()` for test fixtures, and the shared conformance test. The contract, a step-by-step guide and a review checklist are in [`docs/providers.md`](docs/providers.md); `providers/_template` is a compiling starting point. If you would like Marksy to support your school's system, open an issue describing it.
 
 ## Respectful by design
 
@@ -212,18 +212,26 @@ The full plan with acceptance criteria is in [`docs/build-plan.md`](docs/build-p
 
 ## Contributing
 
-Issues and pull requests are welcome, in English or Russian. The project is built with Claude Code following `docs/build-plan.md`; the skills and agents it uses are in `.claude/`. Before contributing code, read `CLAUDE.md` (the rules the codebase follows, including how diaries may be called) and `docs/design.md`. To add a diary system, follow `docs/providers.md`; to add or improve a translation, `docs/i18n.md`. Run `pnpm check` before every commit, keep commits small and update the docs in place when a decision changes.
+Pull requests are not accepted. Bug reports, ideas and translation fixes are very welcome as [Issues](https://github.com/Dopetast1c/Marksy/issues), in English or Russian.
 
 If a diary API changes, open an issue with a sanitised response (names, ids and comments replaced), the provider id and the date.
 
+The project is built with Claude Code following `docs/build-plan.md`; the skills and agents it uses are in `.claude/`, and the rules the codebase follows are in `CLAUDE.md`. If you change Marksy for your own non-commercial use, `docs/providers.md` explains how to add a diary system and `docs/i18n.md` how to add a language.
+
 ## Disclaimer
 
-Marksy is an independent open-source project. It is not affiliated with, endorsed by or supported by any school, education authority or diary vendor. It uses a diary's API on behalf of a parent or student who has an account there, only reads data, and is meant for your own family.
+Marksy is an independent, source-available project. It is not affiliated with, endorsed by or supported by any school, education authority or diary vendor. It uses a diary's API on behalf of a parent or student who has an account there, only reads data, and is meant for your own family.
 
 ## По-русски
 
-Marksy: семейное приложение для школьных оценок с открытым кодом. Оно подключается к электронному дневнику, которым уже пользуется школа, получает через его API оценки, расписание и домашние задания и строит поверх них то, что удобно семье: средние баллы по предметам за неделю, месяц, четверть и год со сравнением с прошлым периодом, полную историю каждой оценки, план на ближайшие дни с контрольными и тем, что выучить или принести, таймер занятий, уведомления в телефон и Telegram и отдельные входы для каждого родителя и ребёнка. Приложение работает на вашем компьютере, ставится на телефон как приложение и говорит на двенадцати языках. Подключить другую систему дневников можно отдельным модулем по инструкции в `docs/providers.md`, весь интерфейс при этом общий. Проект независимый и ни с одной школой или дневником не связан.
+Marksy: семейное приложение для школьных оценок, бесплатное для личного и любого некоммерческого использования; исходный код доступен для чтения. Оно подключается к электронному дневнику, которым уже пользуется школа, получает через его API оценки, расписание и домашние задания и строит поверх них то, что удобно семье: средние баллы по предметам за неделю, месяц, четверть и год со сравнением с прошлым периодом, полную историю каждой оценки, план на ближайшие дни с контрольными и тем, что выучить или принести, таймер занятий, уведомления в телефон и Telegram и отдельные входы для каждого родителя и ребёнка. Приложение работает на вашем компьютере, ставится на телефон как приложение и говорит на двенадцати языках. Подключить другую систему дневников можно отдельным модулем по инструкции в `docs/providers.md`, весь интерфейс при этом общий. Проект независимый и ни с одной школой или дневником не связан. Лицензия PolyForm Noncommercial 1.0.0: пользоваться можно семье, для учёбы и хобби, школам, некоммерческим и государственным организациям; коммерческое использование (продажа, платный хостинг, включение в платный продукт) не разрешено, коммерческую лицензию можно запросить у автора. Пул-реквесты не принимаются; ошибки, идеи и изменения API дневника присылайте через [Issues](https://github.com/Dopetast1c/Marksy/issues).
 
 ## License
 
-MIT, see [`LICENSE`](LICENSE).
+Marksy is licensed under the [PolyForm Noncommercial License 1.0.0](LICENSE).
+
+**You may** use, copy and change it for any non-commercial purpose: at home for your own family, for study, research, hobby projects and testing, and in schools, other educational institutions, charities, public research organisations and government institutions.
+
+**You may not** use it commercially: no selling it, no paid hosting or paid service built on it, no including it in a paid product, and no use by a business for its own purposes.
+
+If you need a commercial licence, ask the author through an [issue](https://github.com/Dopetast1c/Marksy/issues). The [full text of the licence](LICENSE) is what counts; this summary is only a guide.

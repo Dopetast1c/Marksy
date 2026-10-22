@@ -2,7 +2,7 @@
 
 Marksy is split in two. Everything a parent or child sees (overview, feed, subjects, quarters and years, schedule, guidance, notifications, family) works on one canonical data model and knows nothing about where the data came from. A **provider** is the only part that talks to a specific diary system. Belarus's `diary.e-schools.by` is the first provider, `by-eschools`. Adding a new country, region or a single school means writing one more provider and nothing else.
 
-This document is the contract. If you want to connect your school's system, read this, copy `providers/_template`, and open a pull request.
+This document is the contract. If you want to connect your school's system in your own copy, read this and copy `providers/_template`. Pull requests are not accepted; to ask for a provider in Marksy itself, open an issue describing the system.
 
 ## 1. What a provider is
 
@@ -348,7 +348,7 @@ When `finalRule` is `teacher-decides` or `unknown`, `neededAverage` and `marksNe
 
 ### 5.2 Built-in scales
 
-`packages/core/src/grading/scales/` ships one file per scale. A provider references a scale by id in its manifest, or inlines a full object when its system is unusual. New built-in scales are welcome as pull requests; each comes with a unit test that pins its band table and a sample average.
+`packages/core/src/grading/scales/` ships one file per scale. A provider references a scale by id in its manifest, or inlines a full object when its system is unusual. A scale your school needs can be proposed in an issue; each built-in scale comes with a unit test that pins its band table and a sample average.
 
 | id | Kind | Range | Better | Bands (critical / low / good / top) | Thresholds | Goals | Final rule (assumed) |
 |---|---|---|---|---|---|---|---|
@@ -454,13 +454,13 @@ The suite lives in `@marksy/core/conformance`. A provider calls it from its own 
 
 ## 9. How to add a provider, step by step
 
-1. Fork, then `cp -r providers/_template providers/<id>`.
+1. In your copy of the repository: `cp -r providers/_template providers/<id>`.
 2. Fill in `provider.json`. Pick or define the grading scale.
 3. Open the diary in a browser with the network tab open and write down the requests the official site makes: login, who am I, calendar, lessons, marks. Put what you learn in `providers/<id>/README.md` with a verification status per field, the way `docs/api-spec.md` does for Belarus.
 4. Write Zod schemas with `.passthrough()` in `schemas.ts`, the mapper in `map.ts`, and the interface in `index.ts` using only `ctx.http`.
 5. Implement `sanitize()` and run `pnpm probe --provider <id>` against your own account. Commit the sanitised fixtures only. Check them twice for names.
 6. Run `pnpm test:provider <id>` until it is green.
-7. Add the provider to `packages/registry/src/index.ts`, set `"status": "beta"`, add yourself to `maintainers`, open a pull request. The PR template asks for the README, fixtures, and a short note on the system's terms of use.
+7. Add the provider to `packages/registry/src/index.ts`, set `"status": "beta"`, add yourself to `maintainers`. Keep the README, the fixtures and a short note on the system's terms of use with it. Marksy itself does not take pull requests; if the provider would help other families, describe it in an issue.
 8. After a few families used it for a term without drift events, `status` becomes `stable`.
 
 Everything in the UI works at once: averages, bands, filters, goals, guidance, schedule, notifications and family. If something in your system does not map, say so in the README (`capabilities` with `false` make the UI hide the feature gracefully).

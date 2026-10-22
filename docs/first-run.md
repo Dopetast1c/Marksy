@@ -40,10 +40,10 @@ All must be green. Then start `pnpm dev`, check that http://localhost:5173/api/h
 The repository is public, so its page should explain the app well. The README already does; set the short description and topics too. If `gh` is installed and `gh auth status` succeeds:
 
 ```
-gh repo edit Dopetast1c/Marksy --description "Open-source family app for school marks. Connects to your school's e-diary through its API and adds averages and trends, the full history of every mark, a plan for the days ahead, study time, notifications and a login for every parent and child. Self-hosted PWA in twelve languages." --add-topic school --add-topic education --add-topic grades --add-topic e-diary --add-topic parents --add-topic family --add-topic pwa --add-topic self-hosted --add-topic typescript --add-topic react --add-topic nodejs --add-topic postgresql
+gh repo edit Dopetast1c/Marksy --description "Family app for school marks, free for non-commercial use. Connects to your school's e-diary through its API and adds averages and trends, the full history of every mark, a plan for the days ahead, study time, notifications and a login for every parent and child. Self-hosted PWA in twelve languages." --add-topic school --add-topic education --add-topic grades --add-topic e-diary --add-topic parents --add-topic family --add-topic pwa --add-topic self-hosted --add-topic typescript --add-topic react --add-topic nodejs --add-topic postgresql
 ```
 
-Otherwise give the owner the description and topics to paste into the repository's About settings. Copy for the GitHub page (README, description, topics) is positive and generic: it describes what Marksy builds on top of a school diary's API, does not name a country or a specific diary system, and does not criticise any existing diary.
+Otherwise give the owner the description and topics to paste into the repository's About settings. Copy for the GitHub page (README, description, topics) is positive and generic: it describes what Marksy builds on top of a school diary's API, does not name a country or a specific diary system, does not criticise any existing diary, and never calls the project open source (it is source-available under PolyForm Noncommercial 1.0.0).
 
 ## 7. Report
 

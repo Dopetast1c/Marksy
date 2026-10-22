@@ -2,7 +2,7 @@
   "name": "marksy",
   "private": true,
   "description": "Family PWA for school marks from the e-diary",
-  "license": "MIT",
+  "license": "PolyForm-Noncommercial-1.0.0",
   "type": "module",
   "packageManager": "pnpm@10.28.0",
   "engines": {

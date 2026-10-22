@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "description": "Fictional fixture-only provider with the thinnest capability set; the thinnest system every change is checked against",
+  "license": "PolyForm-Noncommercial-1.0.0",
   "exports": {
     ".": "./src/index.ts"
   },

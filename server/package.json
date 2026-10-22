@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "description": "Express API, collector, Drizzle schema and migrations",
+  "license": "PolyForm-Noncommercial-1.0.0",
   "scripts": {
     "dev": "tsx watch --env-file-if-exists=../.env src/main.ts",
     "dev:lan": "tsx watch --env-file-if-exists=../.env src/main.ts",
