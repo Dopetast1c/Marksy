@@ -537,10 +537,11 @@ invites             code (unique), family_id, created_by, role, student_ids (uui
 diary_accounts      id, family_id, provider_id, tenant (jsonb: url | code | id, nullable), role (parent|student),
                     label (login or email shown in the UI), credentials_enc (bytea, encrypted JSON of the manifest's auth fields),
                     external_user_id, status (ok|auth_failed|blocked|needs_2fa), last_ok_at,
-                    last_login_at, last_error
-students            id, family_id, diary_account_id, provider_id, external_id, full_name, given_name,
-                    family_name, display_name, school_id, class_label, grade, grade_label,
-                    grading_scale_id, is_active, avatar (jsonb: traits or {photo: storage key})
+                    last_login_at, last_error, created_at
+students            id, family_id, diary_account_id (null for the seeded demo family), provider_id, external_id,
+                    full_name, given_name, family_name, display_name, school_id, class_external_id (the provider's
+                    class id, StudentRef.classExternalId), class_label, grade, grade_label, grading_scale_id (the
+                    current year's, see student_years), is_active, avatar (jsonb: traits or {photo: storage key}), created_at
 users               + avatar (jsonb), same shape
 user_student_access user_id, student_id, PK(user_id, student_id)
 
@@ -553,12 +554,13 @@ subjects            id, student_id, school_year_id, provider_id, external_id, na
 subject_links       student_id, from_subject_id, to_subject_id      (manual mapping across years)
 subject_colors      student_id, subject_id, color (palette key, null = auto), set_by (user_id), updated_at   (6.6)
 subject_goals       student_id, subject_id, term_goal (any value of the scale, null = без цели), set_by (user_id), updated_at   (5.4)
-student_years       student_id, school_year_id, class_label, grade
-lessons             id, family_id, student_id, provider_id, external_id, date, slot, start_time,
+student_years       student_id, school_year_id, class_label, grade, grading_scale_id (a built-in scale id, "manifest" for
+                    an inline manifest scale, null = a year without marks, ux-principles D49)
+lessons             id, family_id, student_id, provider_id, external_id, date, slot, start_time, end_time,
                     subject_id, subject_name, teacher_external_id, teacher_name, lesson_type,
-                    topic, homework, has_attachments, cancelled, fetched_at, removed_at
+                    topic, homework, homework_due_date, has_attachments, cancelled, first_seen_at, fetched_at, removed_at
 marks               id, family_id, student_id, provider_id, external_id, lesson_id (nullable), date,
-                    posted_at, subject_id, raw, kind, values (numeric[]), work_type, work_type_raw, title,
+                    posted_at, subject_id, raw, kind, values (double precision[]), scale_id, work_type, work_type_raw, title,
                     assessment_type, dimension, criterion, weight, max_points, modifier, status,
                     cohort (jsonb), comment, first_seen_at, changed_at, removed_at, last_seen_at
 subjects            + teacher_name, level, credits, grading_scheme (jsonb)   (US courses)
@@ -585,14 +587,15 @@ final_marks_raw     student_id, family_id, school_year_id, raw_json (jsonb), fet
 final_marks         id, family_id, student_id, school_year_id, subject_id (nullable for manual rows
                     with no API subject), subject_name, period_id (nullable = year), role (final|current|
                     predicted|proposed|adjusted|target|thematic|effort|behaviour), criterion, label, date,
-                    mark, kind, source (api|manual), entered_by, updated_at
+                    raw (what the diary shows), mark, kind, source (api|manual), entered_by, updated_at
                     UNIQUE(student_id, school_year_id, subject_name, period_id)
                     (API parser for `final/whole` written after 2026-10-30)
 diary_accounts      + consecutive_failures, paused_until, pause_hours (current pause length),
-                    requires_action (auth|blocked|needs_2fa|null), last_attempt_at, last_success_at
+                    requires_action (auth|blocked|needs_2fa|null), last_attempt_at, last_success_at,
+                    alerted_at (the admin was told about the current pause or required action; cleared on success)
 sync_runs           id, family_id, diary_account_id, provider_id, kind (scheduled|catchup|weekly_rescan|
                     manual|rescan|backfill|connect), scope (jsonb: student_ids, weeks planned), trigger
-                    (schedule|startup|user:<id>), started_at, finished_at, status (success|partial|failed|
+                    (schedule|startup|cli|user:<id>), started_at, finished_at, status (running|success|partial|failed|
                     skipped_offline|skipped_paused|skipped_interval), error_class (offline|
                     provider_unavailable|auth|blocked|needs_2fa|partial|null), error (sanitised text),
                     requests, duration_ms, stats (jsonb: weeks_verified, new, changed, removed, warnings)
@@ -600,8 +603,9 @@ sync_coverage       student_id, week_start, verified_at, run_id, status (verifie
                     PK(student_id, week_start)          (the planner's queue, see 10.4)
 term_rescans        term_id, student_id, last_full_rescan_at, post_term_rescan_done
 sync_daily          diary_account_id, date, runs, failures, requests   (compacted sync_runs older than 90 days)
-raw_responses       id, sync_run_id, provider_id, endpoint, params (jsonb), status, body (jsonb),
-                    fetched_at
+raw_responses       id, sync_run_id, provider_id, endpoint (the allow-list entry the request matched, no ids), params
+                    (jsonb), status, body (jsonb), student_id, week_start (what the collector was fetching), fetched_at;
+                    the login response is never stored
 api_drift_events    id, sync_run_id, provider_id, endpoint, kind (unknown_field|missing_field|
                     new_enum_value|type_mismatch|new_error_shape|status_change), path,
                     sample (jsonb, sanitised), first_seen_at, last_seen_at, count, acknowledged_at
@@ -609,7 +613,8 @@ api_drift_events    id, sync_run_id, provider_id, endpoint, kind (unknown_field|
 notification_channels id, user_id, type (webpush|telegram), config (jsonb), enabled, created_at
 notifications         id, user_id, student_id (null = family-wide), rule_id (nullable), event_key (what fact it was
                       about, for "пришло" on Внимание and for deduplication), severity, title, body, link (screen +
-                      params), channels (text[]: push|telegram), sent_at, read_at (nullable)   (180 days, 10.4)
+                      params), params (jsonb: the i18n parameters of title and body, which are keys), channels (text[]:
+                      push|telegram), created_at, sent_at, read_at (nullable)   (180 days, 10.4)
                       webpush: {endpoint, keys}; telegram: {chat_id}
 alert_rules           id, user_id, event (mark|average|changed|absence|tag|homework|summary),
                       condition (jsonb: mark {dir any|worse|better|band, value, band}; average {dir down|up|any,
@@ -632,7 +637,7 @@ Upsert rules, applied to every fetched date range whatever the run kind:
 - lessons by `(provider_id, student_id, external_id)`, and when no row has that id, by the natural key `(student_id, date, slot, subject external id)`: a match there is the same lesson, its `external_id` is updated (a system that later assigns a real id, e.g. e-schools' null `lesson_uuid`, api-spec 7.5) and its ticks, homework and history stay. A lesson that disappears from a re-fetched range under both keys is soft-deleted (`removed_at`). The natural key is computed from canonical fields, so the rule works for every provider.
 - marks by `(provider_id, student_id, external_id)`. New id: insert, `mark_events(new)`. Existing id with a different `raw_mark`, `kind`, `work_type` or `comment`: copy the old version to `mark_history`, update, set `changed_at`, `mark_events(changed)` with the diff. Existing mark whose lesson was fetched but which is no longer in the response: set `removed_at`, `mark_events(removed)`; if it comes back later, clear `removed_at`, `mark_events(restored)`. `last_seen_at` is updated on every fetch that contains the mark.
 - Averages and feeds exclude marks with `removed_at`; the feed shows removed and changed marks as their own items ("оценка 6 изменена на 7", "оценка удалена") for 14 days.
-- A week counts as "verified at" the `finished_at` of the last run that fetched it; the Sync screen shows the oldest verified-at of the quarter so it is visible how stale the history is.
+- A week counts as "verified at" the moment a run stored it completely (one transaction per week); the Sync screen shows the oldest verified-at of the quarter so it is visible how stale the history is.
 
 Materialised reads: averages are computed in SQL with a view `subject_period_stats(student_id, subject_id, period_id)`; small data, no caching needed.
 
@@ -770,12 +775,12 @@ One Node process (`server/`) runs the HTTP API and the scheduler (`node-cron`, t
 
 Goal: look like a parent who opens the diary a few times during the school day, not like a cron job.
 
-- **Hourly run** on school days only (Mon to Sat, skipping `HOLIDAYS` periods from `time_activities` and a manual `no_school_dates` list in family settings), inside `sync_window` (default `08:00` to `14:00`). The scheduler ticks at the top of each hour and sleeps a random `0 to 20 minutes` plus random seconds before the run, so the timestamps in the school's logs drift from run to run. Scope: current week and previous week per student, plus `final/whole` once a day.
+- **Hourly run** on school days only (the manifest's `calendar.schoolDays`, skipping the provider's holidays and a manual `no_school_dates` list in family settings), inside the sync window (the manifest's `syncWindow`, by-eschools `08:00` to `14:00`). A run starts a random 0 to `SYNC_JITTER_MIN` (20) minutes after the moment the login interval allows it (the delay is fixed per account and slot, so tests can rely on it), and the tick itself fires a few seconds late, so the timestamps in the school's logs drift from run to run. Scope: current week and previous week per student, plus final marks once a day.
 - **One diary login per `minLoginIntervalMinutes` (60 for by-eschools) per account, hard limit.** Hourly run, manual "Обновить", manual re-scan and the weekly re-scan all draw from the same budget (`diary_accounts.last_login_at`). When the budget is used the manual action is queued for the next allowed time and the UI shows it.
-- **Weekly re-scan** of the current quarter: default Friday between 20:00 and 23:00 (random start), fallback Saturday or Sunday if the Friday run failed. Scope: every week of the current quarter for every student, same parser, same upsert, so changed and removed marks are detected (section 8). About 8 to 12 requests per student per week of the quarter; spacing grows to 3 to 5 s for runs longer than 40 requests.
+- **Weekly re-scan** of the current term, in the manifest's `weeklyRescan` slot (by-eschools Friday 20:00 to 23:00; `SYNC_WEEKLY` may move it to another evening). Scope: every week of the current term last verified more than 6 days ago, for every student, same parser, same upsert, so changed and removed marks are detected (section 8). If the slot was missed because the machine was off, any allowed run takes those weeks once they are more than 8 days old. About one request per student and week of the term, within the per-run cap (10.4).
 - **Manual re-scan** from the Sync screen: student(s) and period (current quarter, school year, specific weeks). The API fetches per week, not per subject, so a subject filter in the UI does not reduce requests; the UI offers period and student only and explains why.
-- **Backfill** after connecting a diary: all weeks of the school year so far, run at the next night window (23:00 to 02:00), spread over two nights if more than 60 requests.
-- Defaults come from the provider manifest (`limits`), can be tightened globally in `.env` (`SYNC_WINDOW`, `SYNC_JITTER_MIN`, `SYNC_WEEKLY`, `SYNC_MIN_LOGIN_INTERVAL`) and per family in `families.settings`; a family can only make them stricter than the manifest, never looser. The window is a working assumption (teachers enter most marks during lessons); if evening marks turn out to be common, add a single evening run rather than widening the hourly window.
+- **Backfill** after connecting a diary: every week of the school year so far that was never verified, newest first. It is the lowest-priority set of any allowed run (10.4), so a school year arrives over a few runs, each within the request cap; a new account starts its first run at once, at any hour.
+- Defaults come from the provider manifest (`limits`), can be tightened globally in `.env` (`SYNC_WINDOW`, `SYNC_MIN_LOGIN_INTERVAL`, `SYNC_MAX_REQUESTS_PER_RUN`) and per family in `families.settings.sync_window`; windows are intersected and limits take the stricter value, never the looser one. `SYNC_WEEKLY` only moves the re-scan slot and `SYNC_JITTER_MIN` sets the delay; neither adds requests. The window is a working assumption (teachers enter most marks during lessons); if evening marks turn out to be common, add a single evening run rather than widening the hourly window.
 
 The schedule above describes the ideal day. Section 10.4 describes what happens on every other day: the server is a home machine that can be off for an hour, a day or a week, and the diary can be down. The scheduler is therefore not a list of cron expressions but a planner that looks at recorded state and decides what to fetch now.
 
@@ -788,13 +793,13 @@ The schedule above describes the ideal day. Section 10.4 describes what happens 
 **Coverage.** `sync_coverage` has one row per `(student_id, week_start)` with `verified_at`, `run_id` and `status`. A week is *verified* when it was fetched and upserted completely in one run; a run that dies halfway keeps the weeks it finished, so progress is never lost and a short run after a long outage still moves the watermark. Per student the planner derives:
 
 - *standing set*: the current week and the previous week (late marks and corrections are normal);
-- *gap set*: every school week between the oldest unverified week after the last successful run and today, newest first;
-- *re-scan set*: all weeks of the current term when the term's `last_full_rescan_at` is older than 7 days (or null), and once more two weeks after a term ends so final marks and late edits are caught;
-- *backfill set*: all weeks of the school year not yet verified, right after a diary is connected.
+- *gap set*: every school week from the week before the last successful run up to today that was not fetched after it ended, newest first (a week fetched only while it was still running may have missed marks);
+- *re-scan set*: the weeks of the current term last verified more than 6 days ago, inside the weekly slot or anywhere once older than 8 days (10.2); and once more two weeks after a term ends, every week of that term not fetched since, so final marks and late edits are caught (`term_rescans.post_term_rescan_done` then marks the term finished; `last_full_rescan_at` records when the current term last had no stale week);
+- *backfill set*: every week of the school year never verified, newest first: the whole year so far right after a diary is connected, and any week no run has reached yet.
 
-**One run** = standing set, then gap set, then re-scan or backfill until the manifest's `limits.maxRequestsPerRun` (by-eschools: 40) is used. Whatever did not fit is simply still unverified and is first in line next time, so a week-long outage is caught up over two or three runs with the freshest data first. Nothing is ever "scheduled for later"; the queue is the coverage table itself.
+**One run** = standing set (every student's, before anyone's gap), the final marks once a day, then gap set, then re-scan, then backfill, until the manifest's `limits.maxRequestsPerRun` (by-eschools: 40, `SYNC_MAX_REQUESTS_PER_RUN` may lower it) is used; the standing weeks are fetched again in every run, so a long backlog moves by what is left of the cap after them. Whatever did not fit is simply still unverified and is first in line next time, so a week-long outage is caught up over two or three runs with the freshest data first. Nothing is ever "scheduled for later"; the queue is the coverage table itself.
 
-**When a run may start.** All of these must hold: `paused_until` is null or past; `last_attempt_at + minLoginIntervalMinutes <= now` (an attempt counts even if it failed, because the diary saw a login); and either now is inside the school-day window on a school day, or the run is a *catch-up* (last success older than 24 hours, or an unverified week older than the standing set exists). A catch-up may run at any hour because the data it fetches already exists; the 14:00 cut-off only argues that *today's* marks will not appear after lunch. Manual "Обновить" is a run like any other and draws from the same login budget; the UI shows when it becomes possible.
+**When a run may start.** All of these must hold: the account needs no action (`requires_action` is null; nothing, not even the button, logs in with credentials the diary refused); `paused_until` is null or past (a manual refresh may try once anyway, see below); `last_attempt_at + minLoginIntervalMinutes <= now` (an attempt counts even if it failed, because the diary saw a login); and either now is inside the school-day window on a school day, or the run is a *catch-up* (last success older than 24 hours, or an unverified week older than the standing set exists). A new account (no success yet) runs at once, at any hour, and backfills; in the weekly slot a run starts when re-scan weeks are due. A catch-up may run at any hour because the data it fetches already exists; the 14:00 cut-off only argues that *today's* marks will not appear after lunch. Manual "Обновить" is a run like any other and draws from the same login budget; the UI shows when it becomes possible.
 
 **Connectivity first.** Before logging in, the run checks that this machine is online at all: DNS resolution and a TCP connect to the provider host, no HTTP request. If that fails the run ends as `skipped_offline`, nothing is counted against the provider, and the next tick retries in 10 minutes. Being offline is the home server's problem, not the diary's, and must never trigger a pause.
 
@@ -806,10 +811,11 @@ The schedule above describes the ideal day. Section 10.4 describes what happens 
 | `provider_unavailable` | 5xx, 429, timeout, reset after the connection was made | run `failed`, `consecutive_failures += 1`, next attempt at the next allowed time |
 | `auth` | 401 or the provider's "wrong credentials" shape | account `status = auth_failed`, `paused_until = null` but `requires_action = true`: no login is attempted until the credentials row changes; admin notified once |
 | `blocked` / `needs_2fa` | provider says the account is locked or needs a second factor | same as `auth`, with its own status so the UI can explain |
-| `drift` | unexpected shape, parse error on part of the body | run `success` with `warnings`, raw body kept, `api_drift_events` row (10.3); never counted as a failure |
+| `drift` | unexpected shape, parse error on part of the body | run `success` with `warnings`, raw body kept, `api_drift_events` row (10.3); never counted as a failure. A week whose response cannot be used at all stays unverified and the run goes on |
 | `partial` | some weeks fetched, then a provider error | finished weeks verified, run `partial`, the rest stays unverified; counts as one failure |
+| our own error | a request refused by our own policy, a database error | run `failed` with the error name, logged; never counted against the diary, never pauses |
 
-**Pause after repeated failures.** When `consecutive_failures` reaches `SYNC_FAILURES_BEFORE_PAUSE` (default 3), the account gets `paused_until = now + SYNC_PAUSE_HOURS` (default 24 hours), the admin is notified once ("Дневник не отвечает, следующая попытка завтра после 08:00") and the Sync screen shows the reason. With one attempt per hour, three consecutive failures mean the diary was down for roughly three hours of the window, which is not a blip. If the first run after a pause fails again, the pause doubles (48 h, 96 h, cap 7 days); a single success resets both the counter and the pause length. A manual refresh is allowed during a pause (one attempt, still inside the login interval) because a human pressing the button is the best signal that the service is back; if it fails, the pause stays as it was. Auth failures never auto-retry at all: repeated bad logins can lock the real diary account.
+**Pause after repeated failures.** When `consecutive_failures` reaches `SYNC_FAILURES_BEFORE_PAUSE` (default 3), the account gets `paused_until = now + SYNC_PAUSE_HOURS` (default 24 hours), the admin is notified once ("Дневник не отвечает, следующая попытка завтра после 08:00"; an inbox row with i18n keys from M3, delivery over push and Telegram with M9) and the Sync screen shows the reason. With one attempt per hour, three consecutive failures mean the diary was down for roughly three hours of the window, which is not a blip. If the first run after a pause fails again, the pause doubles (48 h, 96 h, cap 7 days); a single success resets both the counter and the pause length. A manual refresh is allowed during a pause (one attempt, still inside the login interval) because a human pressing the button is the best signal that the service is back; if it fails, the pause stays as it was. Auth failures never auto-retry at all: repeated bad logins can lock the real diary account.
 
 **What the user sees.** When the last successful run is older than 24 hours, or the account is paused or needs action, every student screen shows one `FreshnessBanner` under the header ("Данные от пн 12 окт, 13:05. Приложение не обновлялось 3 дня…") that opens the Sync screen; when data is fresh nothing is shown except the "Обновлено сегодня в 12:17" footer on Overview. The Sync screen shows state (last data, last attempt and its outcome, failures in a row, next run and why), what the next run will take (the planned sets and an estimate of requests), the re-scan card, drift events, the refresh and re-scan buttons, and the run log. Prototype: rail toggle "Состояние синхронизации" with four scenarios.
 
@@ -827,10 +833,11 @@ The schedule above describes the ideal day. Section 10.4 describes what happens 
 | `lesson_overrides` | current and previous school year | "N уроков назад" and `callAfter` count real lessons of this year; older overrides change nothing on screen |
 | `lesson_tag_hits` | until 30 days after the due date; recomputed hits replace removed ones | the schedule and Внимание look ahead, not back |
 | `mark_history` | lifetime of the mark | that is the change detection the product promises |
+| `lessons`, `marks`, `attendance` | while the student is in the family; older than `families.settings.retention_years` when a family set that limit (14.1) | the product; the limit is the family's choice |
 | `user_files` (wallpaper) | while the user exists; replaced on upload, deleted with the user | a personal picture, one per user |
 | `user_seen`, sessions | sessions expire by TTL; `user_seen` keeps only the last visit per screen | nothing historical is needed |
 
-A daily janitor job (same process, after the first run of the day) applies these limits; each limit is a constant in `server/src/retention.ts` with a matching `RETENTION_*` env override in `.env.example`. Deleting a diary account or a student cascades to everything under it immediately; retention never keeps data about a student who left the family.
+A daily janitor job (same process, after the first planner tick of each day) applies these limits; each limit is a constant in `server/src/retention.ts` with a matching `RETENTION_*` env override in `.env.example`. Deleting a diary account or a student cascades to everything under it immediately; retention never keeps data about a student who left the family.
 
 ### 10.3 API drift detection
 
@@ -908,10 +915,10 @@ Summary of `docs/i18n.md`: one `packages/i18n` package with a JSON file per lang
 Marksy stores data about children, and a public project will be run in jurisdictions with different rules (GDPR in the EU and UK, FERPA and COPPA in the US, national laws elsewhere). The design gives every instance the same tools; which rules apply is the operator's decision.
 
 - **Consent record.** Connecting a diary stores `families.consent_version`, `consent_at`, `consent_by`: the text shown on the connect screen (per interface language, versioned in `packages/i18n`) says what is collected, where it is stored, and that the collector only reads. Changing the text bumps the version and asks again.
-- **Retention.** `families.settings.retention_years` (default: keep everything, which is the point of the product; a family or operator can set a limit). Raw responses have their own shorter retention (`RAW_RETENTION_DAYS`, default 90) because they hold more than the app needs.
+- **Retention.** `families.settings.retention_years` (default: keep everything, which is the point of the product; a family or operator can set a limit, applied by the janitor of 10.4). Operational data has its own limits (10.4, `RETENTION_*` in `.env.example`); raw responses are kept 14 days (`RETENTION_RAW_RESPONSES_DAYS`) because they hold more than the app needs.
 - **Export.** `GET /api/family/export` returns everything the family owns as JSON (students, marks, history, rules, settings), admin only.
 - **Erasure.** `DELETE /api/family` removes the family and all its rows, including raw responses and notification subscriptions, after a typed confirmation; a member can leave and be erased without deleting the family.
-- **Hosted instances.** When one server serves many families (friends, a school club), each family's credentials are encrypted with a per-family key derived from `CREDENTIALS_KEY` and the family id, so a database dump does not expose every diary login at once; operators are told in `README` that hosting other people's children's data makes them a data controller, and the consent text names the operator.
+- **Hosted instances.** Every family's credentials are encrypted with a per-family key derived from `CREDENTIALS_KEY` and the family id (HKDF, AES-256-GCM, `server/src/crypto/credentials.ts`), so when one server serves many families (friends, a school club) a database dump does not expose every diary login at once; operators are told in `README` that hosting other people's children's data makes them a data controller, and the consent text names the operator.
 - **Minors' accounts.** Marksy stores no birth dates. A student user is a minor by assumption; student accounts cannot change family settings, export data or invite others.
 - **No third parties.** No analytics, no crash reporting that sends content, fonts optionally self-hosted (`SELF_HOST_FONTS=true`) for operators who do not want Google Fonts requests from children's phones.
 

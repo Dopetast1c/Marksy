@@ -126,7 +126,7 @@ Marksy handles data about children, and its defaults reflect that.
 
 ## Quick start
 
-The workspace runs today (an API health route and a placeholder app); the screens arrive milestone by milestone, see `docs/build-plan.md`. You need Node.js 22, pnpm (`npm install -g pnpm` or `corepack enable`) and Docker.
+The workspace runs today: the database schema, the collector with its planner, a fictional demo family, the API health route and API docs, and a placeholder app. The screens arrive milestone by milestone, see `docs/build-plan.md`. You need Node.js 22, pnpm (`npm install -g pnpm` or `corepack enable`) and Docker.
 
 ```bash
 git clone https://github.com/Dopetast1c/Marksy.git
@@ -134,12 +134,16 @@ cd Marksy
 pnpm setup:env                  # creates .env and generates its secrets
 pnpm install
 pnpm db:up                      # PostgreSQL 16 in Docker (dev and test databases)
+pnpm db:migrate                 # creates the schema
+pnpm db:seed                    # a fictional demo family with demo logins (--reset replaces it)
 pnpm check                      # formatting, typecheck, lint, tests, privacy check
 pnpm test:provider demo-minimal # the shared conformance suite for one provider
-pnpm dev                        # API on :3000, app on :5173
+pnpm dev                        # API on :3000, app on :5173, API docs at /api/docs
 ```
 
-With the server milestone, `pnpm db:migrate` creates the schema and `pnpm db:seed` adds a fictional family with demo logins, so the app can be explored without a diary account. With a diary account, open the app, choose "Connect a diary", pick your diary system and sign in: Marksy checks the credentials once, creates your family and starts the first sync. Invite the rest of the family from More, then Family.
+The demo family belongs to a fictional diary and has two children, one of them in a class without marks, so every screen can be explored without a diary account; its logins (`parent@example.com` and `student@example.com`, password printed by `pnpm db:seed`) work once sign-in arrives. `pnpm db:studio` opens the database in Drizzle Studio. With a diary account, open the app, choose "Connect a diary", pick your diary system and sign in: Marksy checks the credentials once, creates your family and starts the first sync. Invite the rest of the family from More, then Family.
+
+Until the connect screen exists, a developer with a diary account can fill the local database from the command line: put the diary login into `DIARY_LOGIN` and `DIARY_PASSWORD` in `.env` and run `pnpm sync:once`. It creates a minimal family on first use and runs one sync under the same rules as every other run (one sign-in per hour, the request cap, the offline check). It prints counts and statuses only, and exits with 0 also when the rules hold the run back. While `SYNC_ENABLED` is `true`, `pnpm dev` keeps that account in sync on its own.
 
 ### On a phone in the home network
 
@@ -160,11 +164,11 @@ All configuration is in `.env` (created by `pnpm setup:env` from `.env.example`)
 | `SESSION_SECRET` | Random string for session cookies (generated) |
 | `CREDENTIALS_KEY` | 32-byte key (base64) that encrypts diary passwords at rest (generated) |
 | `SYNC_ENABLED` | `true` on the machine that talks to the diary, `false` on an API-only copy |
-| `SYNC_WINDOW`, `SYNC_WEEKLY` | Optional overrides of the provider's school-day window and weekly full re-scan slot; they can only narrow them |
+| `SYNC_WINDOW`, `SYNC_WEEKLY` | Optional: a narrower school-day window than the provider's (it can only narrow it), and another evening for the weekly re-scan |
 | `SYNC_JITTER_MIN`, `SYNC_MIN_LOGIN_INTERVAL` | Random delay for scheduled runs; minimum time between sign-ins per account (can only be raised) |
 | `SYNC_TICK_MIN`, `SYNC_CATCHUP_AFTER`, `SYNC_MAX_REQUESTS_PER_RUN` | Planner: how often it decides, when a catch-up run is allowed, how much one run may fetch |
 | `SYNC_FAILURES_BEFORE_PAUSE`, `SYNC_PAUSE_HOURS`, `SYNC_PAUSE_MAX_HOURS`, `SYNC_OFFLINE_RETRY_MIN` | Failure handling: failures before a pause, the pause (doubling up to a week), retry when this machine is offline |
-| `RETENTION_*` | How long operational data is kept |
+| `RETENTION_*` | How long operational data is kept (sync log, raw responses, event feeds, coverage) |
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Web Push keys |
 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET` | Telegram bot (optional) |
 | `DIARY_LOGIN`, `DIARY_PASSWORD`, `MARKSY_DEV_EMAIL`, `MARKSY_DEV_PASSWORD` | Development only: your own diary login for `pnpm probe`, `pnpm sync:once` and `pnpm dev:connect`, and the Marksy login `dev:connect` creates. The app itself keeps diary credentials in the database, encrypted |
@@ -179,6 +183,7 @@ packages/i18n/          interface languages: en.json as the source of truth, ru 
 packages/registry/      the list of providers the app offers
 providers/_template/    starting point for a new provider
 providers/demo-minimal/ a fictional diary with the fewest features, served from fixtures
+providers/demo-full/    a fictional diary with many features: the demo family and the collector tests use it
 providers/<id>/         one folder per diary system: manifest, schemas, mapper, fixtures
 server/                 Express API, collector, Drizzle schema and migrations
 web/                    React + Vite PWA, Tailwind driven by docs/tokens.json
