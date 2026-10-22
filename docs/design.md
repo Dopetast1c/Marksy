@@ -837,7 +837,7 @@ A daily janitor job (same process, after the first run of the day) applies these
 Unofficial APIs change. Every provider's response passes through its Zod schema built with `.passthrough()` and `ctx.drift` records what the schema did not expect:
 
 - unknown top-level or nested field, missing required field, type mismatch, new value of `kind`, `type`, `lesson type`, `time_activities.type`, unexpected HTTP status, unknown error body shape;
-- each finding becomes an `api_drift_events` row keyed by `(endpoint, kind, path)` with a sanitised sample (names, uuids and comments replaced, same rules as fixtures), `count` and `last_seen_at`;
+- each finding becomes an `api_drift_events` row keyed by `(endpoint, kind, path)` with a sanitised sample (names, uuids and comments replaced, same rules as fixtures), `count` and `last_seen_at`. Core enforces it before anything is stored: a sample is kept only as an UPPER_SNAKE enum value, a short number or a type name, and every path segment that is not a schema key (uuids, numbers, hex ids, logins) becomes `*`, so one change in a map keyed by ids is one row, not one per id;
 - the first occurrence is logged at `warn` and pushed to the admin through their notification channels ("e-schools API: новое поле `slots[].foo` в lessons"), later occurrences only increment `count`;
 - parsing never fails on unknown fields; the raw body is in `raw_responses`, so support can be added later without re-fetching;
 - the probe script from `api-spec.md` section 10 doubles as a contract check: `pnpm probe --compare` runs each endpoint once and diffs against `fixtures/`, usable on demand when a drift event appears.

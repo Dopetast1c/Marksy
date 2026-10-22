@@ -7,14 +7,36 @@ import type { ThrottledClientOptions } from './throttled-client';
 // One collector run against one diary account: one throttled client, one login at most, drift collected for the
 // server to store (api_drift_events). The planner (docs/design.md 10.4) decides whether the run may log in at all.
 
-/** A drift sample is kept only when it looks like an enum value or a type name; anything else may be personal. */
-const SAFE_SAMPLE = /^[A-Za-z0-9_.:-]{1,40}$/;
+// Drift events are stored (api_drift_events) and pushed to the admin, so they carry the shape of a change, never data
+// (docs/design.md 10.4: names, uuids and comments replaced). A sample survives only as an UPPER_SNAKE enum value, a
+// short number or a type name; a path keeps its schema keys and every other segment (ids, uuids, logins) becomes *.
 
-/** Collects drift events once per kind, endpoint and path. */
+const SAFE_SAMPLE = /^(?:[A-Z][A-Z0-9_]{0,39}|\d{1,5}|string|number|boolean|object|array|null)$/;
+/** A path segment that is a schema key: a word, not an id */
+const SCHEMA_KEY = /^[A-Za-z_][A-Za-z_]*[A-Za-z0-9_]{0,3}$/;
+const SAFE_ENDPOINT = /^[a-z][a-z0-9_/-]{0,60}$/i;
+
+export function normaliseDriftPath(path: string): string {
+  return path
+    .split('.')
+    .map((segment) => {
+      const array = segment.endsWith('[]');
+      const key = array ? segment.slice(0, -2) : segment;
+      return (SCHEMA_KEY.test(key) && key.length <= 40 ? key : '*') + (array ? '[]' : '');
+    })
+    .join('.');
+}
+
+/** Collects drift events once per kind, endpoint and path shape. */
 export function createMemoryDrift(): DriftReporter & { readonly events: readonly DriftEvent[] } {
   const seen = new Map<string, DriftEvent>();
   return {
-    report({ sample, ...e }) {
+    report({ sample, ...raw }) {
+      const e = {
+        ...raw,
+        endpoint: SAFE_ENDPOINT.test(raw.endpoint) ? raw.endpoint : '*',
+        path: normaliseDriftPath(raw.path),
+      };
       const key = `${e.kind} ${e.endpoint} ${e.path}`;
       if (!seen.has(key)) seen.set(key, sample !== undefined && SAFE_SAMPLE.test(sample) ? { ...e, sample } : e);
     },

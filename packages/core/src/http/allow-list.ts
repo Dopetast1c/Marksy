@@ -23,7 +23,11 @@ function matchSegments(pattern: readonly string[], path: readonly string[]): boo
   return (head === '*' || head === path[0]) && matchSegments(rest, path.slice(1));
 }
 
-const ENCODED_SEPARATOR = /%(2f|5c|2e)/i;
+/**
+ * What a decoded segment may contain: ids, numbers, words, dates. No "/", "\", ";" (Java servers read "..;" as ".."),
+ * "%" (double encoding), spaces or control characters.
+ */
+const SAFE_SEGMENT = /^[A-Za-z0-9._~@:+=,-]+$/;
 
 /** The path's segments, decoded, or null when the path is ambiguous and must be refused. */
 export function safeSegments(path: string): string[] | null {
@@ -34,14 +38,13 @@ export function safeSegments(path: string): string[] | null {
   if (raw === '') return [];
   const out: string[] = [];
   for (const segment of raw.split('/')) {
-    if (segment === '' || ENCODED_SEPARATOR.test(segment)) return null;
     let decoded: string;
     try {
       decoded = decodeURIComponent(segment);
     } catch {
       return null;
     }
-    if (decoded === '.' || decoded === '..' || /[/\\]/.test(decoded)) return null;
+    if (!SAFE_SEGMENT.test(decoded) || decoded === '.' || decoded === '..') return null;
     out.push(decoded);
   }
   return out;
@@ -51,6 +54,16 @@ export function safeSegments(path: string): string[] | null {
 export function matchPath(pattern: string, path: string): boolean {
   const segments = safeSegments(path);
   return segments !== null && matchSegments(pattern.split('/').filter(Boolean), segments);
+}
+
+/**
+ * Is this request the login? Any method on a path matching the login pattern counts, and case is ignored:
+ * counting too many logins is the safe direction, retrying one is not.
+ */
+export function createLoginMatcher(loginRequest: string | null): (path: string) => boolean {
+  if (!loginRequest) return () => false;
+  const pattern = loginRequest.split(' ')[1]!.toLowerCase();
+  return (path) => matchPath(pattern, path.toLowerCase());
 }
 
 export function createAllowList(entries: readonly string[]): (method: HttpMethod, path: string) => boolean {

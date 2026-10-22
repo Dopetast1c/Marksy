@@ -178,7 +178,7 @@ describe('privacy review fixes', () => {
       expect(allowed('GET', path), path).toBe(false);
     }
     expect(allowed('GET', '/diary/')).toBe(true);
-    expect(allowed('GET', '/diary/week%201')).toBe(true);
+    expect(allowed('GET', '/diary/week_1')).toBe(true);
   });
 
   it('treats the manifest login request as a login even without the flag', async () => {

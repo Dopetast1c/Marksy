@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { manifestScale, studentYearScale } from '../grading/resolve';
-import { createAllowList } from '../http/allow-list';
+import { createAllowList, createLoginMatcher } from '../http/allow-list';
 import { addUnknownFields, createFixtureTransport } from '../http/fixture-transport';
 import { createRunContext } from '../http/run-context';
 import type { TransportRequest } from '../http/throttled-client';
@@ -24,9 +24,34 @@ export interface ConformanceOptions {
   credentials?: Record<string, string>;
 }
 
+const KNOWN_FOLDERS = new Set(['expected', 'unsanitised', 'raw']);
+
+/** Every string in a JSON value with its path: "children[0].first_name". */
+function stringLeaves(value: unknown, path = ''): [string, string][] {
+  if (typeof value === 'string') return [[path, value]];
+  if (Array.isArray(value)) return value.flatMap((v, i) => stringLeaves(v, `${path}[${i}]`));
+  if (value && typeof value === 'object') {
+    return Object.entries(value).flatMap(([k, v]) => stringLeaves(v, path ? `${path}.${k}` : k));
+  }
+  return [];
+}
+
+function valueAt(value: unknown, path: string): unknown {
+  return path
+    .split(/\.|(?=\[)/)
+    .filter(Boolean)
+    .reduce<unknown>((v, part) => {
+      if (v === null || typeof v !== 'object') return undefined;
+      const index = part.match(/^\[(\d+)\]$/);
+      return (v as Record<string, unknown>)[index ? Number(index[1]) : part];
+    }, value);
+}
+
 interface Denylist {
   strings?: string[];
   patterns?: string[];
+  /** Keys whose strings sanitize() may keep in fixtures/unsanitised/ (a class label, a type code) */
+  keep?: string[];
 }
 
 export interface CanonicalSnapshot {
@@ -149,9 +174,12 @@ export function defineConformanceSuite(opts: ConformanceOptions): void {
       need(caps.behaviour, 'getBehaviour');
     });
 
-    it('has fixtures and a denylist', () => {
+    it('has fixtures and a denylist, and no folder the suite would not check', () => {
       expect(Object.keys(fixtures).length).toBeGreaterThan(0);
       expect(existsSync(denyPath), 'fixtures/denylist.json').toBe(true);
+      const folders = readdirSync(fixturesDir, { withFileTypes: true }).filter((d) => d.isDirectory());
+      // raw/ is the maintainer's local, gitignored folder of real responses: never read, never served
+      expect(folders.map((d) => d.name).filter((n) => !KNOWN_FOLDERS.has(n))).toEqual([]);
     });
 
     it('returns canonical objects only, through allowed requests and one login', async () => {
@@ -171,8 +199,8 @@ export function defineConformanceSuite(opts: ConformanceOptions): void {
       const allowed = createAllowList(manifest.readOnlyAllowList);
       for (const r of requests) expect(allowed(r.method, new URL(r.url).pathname), `${r.method} ${r.url}`).toBe(true);
       if (manifest.auth.loginRequest) {
-        const isLogin = createAllowList([manifest.auth.loginRequest]);
-        const logins = requests.filter((r) => isLogin(r.method, new URL(r.url).pathname));
+        const isLogin = createLoginMatcher(manifest.auth.loginRequest);
+        const logins = requests.filter((r) => isLogin(new URL(r.url).pathname));
         expect(logins, 'exactly one login request per run').toHaveLength(1);
       }
     });
@@ -222,7 +250,24 @@ export function defineConformanceSuite(opts: ConformanceOptions): void {
           denylistHits(value, deny).length,
           `unsanitised/${name}.json shows what the denylist catches`,
         ).toBeGreaterThan(0);
-        expect(denylistHits(provider.sanitize(name, value), deny), `sanitize(unsanitised/${name}.json)`).toEqual([]);
+        const sanitised = provider.sanitize(name, value);
+        expect(denylistHits(sanitised, deny), `sanitize(unsanitised/${name}.json)`).toEqual([]);
+        // every string must change or disappear, except the keys declared safe in denylist.json "keep"
+        const kept = stringLeaves(value)
+          .filter(
+            ([path]) =>
+              !(deny.keep ?? []).includes(
+                path
+                  .split('.')
+                  .at(-1)!
+                  .replace(/\[\d+\]$/, ''),
+              ),
+          )
+          .filter(([path, s]) => valueAt(sanitised, path) === s);
+        expect(
+          kept.map(([path]) => path),
+          `sanitize(unsanitised/${name}.json) left these strings unchanged`,
+        ).toEqual([]);
       }
       if (existsSync(expectedPath))
         expect(denylistHits(readJson(expectedPath), deny), 'expected/canonical.json').toEqual([]);

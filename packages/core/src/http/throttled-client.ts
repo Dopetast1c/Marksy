@@ -1,7 +1,7 @@
 import { ProviderPolicyError } from '../providers/errors';
 import type { ProviderManifest } from '../providers/manifest';
 import type { Logger } from '../providers/types';
-import { createAllowList } from './allow-list';
+import { createAllowList, createLoginMatcher } from './allow-list';
 import { redacting } from './logger';
 import type { HttpClient, HttpMethod, HttpRequestOptions, HttpResponse } from './types';
 
@@ -46,6 +46,14 @@ export interface ThrottledClientOptions {
 
 export const MAX_ATTEMPTS = 3;
 const MAX_RETRY_WAIT_MS = 60_000;
+/** Headers a provider may not set: method overrides, the host, the length (the client owns them). */
+const FORBIDDEN_HEADERS = new Set([
+  'host',
+  'content-length',
+  'x-http-method-override',
+  'x-http-method',
+  'x-method-override',
+]);
 const RETRY_STATUS = (s: number) => s === 429 || s >= 500;
 
 const defaultSleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
@@ -57,9 +65,19 @@ export function createThrottledClient(opts: ThrottledClientOptions): HttpClient 
   const random = opts.random ?? Math.random;
   const timeoutMs = opts.timeoutMs ?? 30_000;
   const log = opts.log && redacting(opts.log);
-  const allowed = createAllowList(manifest.readOnlyAllowList);
-  const isLogin = createAllowList(manifest.auth.loginRequest ? [manifest.auth.loginRequest] : []);
+  // the manifest schema already says this; checked again here because the client may get an unparsed object
+  for (const entry of manifest.readOnlyAllowList) {
+    if (!/^(GET|HEAD) /.test(entry) && entry !== manifest.auth.loginRequest) {
+      throw new ProviderPolicyError(`${entry} cannot be in a read-only allow-list`);
+    }
+  }
+  // compiled once: changing the manifest object later changes nothing
+  const allowed = createAllowList([...manifest.readOnlyAllowList]);
+  const isLogin = createLoginMatcher(manifest.auth.loginRequest);
   const base = new URL(manifest.network.baseUrl);
+  if (base.protocol !== 'https:' || base.username || base.password) {
+    throw new ProviderPolicyError('baseUrl must be a plain https origin');
+  }
 
   const [minManifest, maxManifest] = manifest.limits.requestDelayMs;
   const [minEnv, maxEnv] = opts.stricter?.requestDelayMs ?? [0, 0];
@@ -86,7 +104,11 @@ export function createThrottledClient(opts: ThrottledClientOptions): HttpClient 
     if (sent >= maxRequests) throw new ProviderPolicyError(`Request budget of ${maxRequests} per run is used up`);
     if (sent > 0) await pause();
     sent++;
-    const headers: Record<string, string> = { accept: 'application/json', ...options.headers };
+    const headers: Record<string, string> = { accept: 'application/json' };
+    for (const [k, v] of Object.entries(options.headers ?? {})) {
+      // a header must not turn a GET into something else, or point the request at another host
+      if (!FORBIDDEN_HEADERS.has(k.toLowerCase())) headers[k] = v;
+    }
     let body: string | undefined;
     if (options.body !== undefined) {
       body = JSON.stringify(options.body);
@@ -105,8 +127,11 @@ export function createThrottledClient(opts: ThrottledClientOptions): HttpClient 
     if (!allowed(method, url.pathname)) {
       throw new ProviderPolicyError(`${method} ${url.pathname} is not in the read-only allow-list`);
     }
-    // the manifest decides what a login is; the provider's flag can only add to it, never hide one
-    const login = options.login === true || isLogin(method, url.pathname);
+    if ((method === 'GET' || method === 'HEAD') && options.body !== undefined) {
+      throw new ProviderPolicyError(`${method} cannot carry a body`);
+    }
+    // the manifest decides what a login is, on any method; the provider's flag can only add to it, never hide one
+    const login = options.login === true || isLogin(url.pathname);
     if (login) {
       if (loggedIn) throw new ProviderPolicyError('One login per run');
       loggedIn = true;

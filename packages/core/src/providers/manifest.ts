@@ -43,13 +43,20 @@ const weeklyWindow = z.string().regex(/^(mon|tue|wed|thu|fri|sat|sun) \d{2}:\d{2
  * "GET /education/diary/**": method, space, path pattern where * is one segment and ** any rest. Read methods only;
  * PUT, PATCH and DELETE can never be listed, and POST only as the login request (refined below).
  */
-const allowEntry = z.string().regex(/^(GET|HEAD|POST) \/\S*$/);
+// the first segment is literal: "GET /**" or "GET /*/x" would open every endpoint of the host
+const allowEntry = z.string().regex(/^(GET|HEAD|POST) \/[^*/\s]\S*$/);
 
 /** The API origin: https, no credentials in the URL, no path (the client resolves paths against the origin). */
 const apiOrigin = z.url().refine((u) => {
   const url = new URL(u);
-  return url.protocol === 'https:' && !url.username && !url.password && url.pathname === '/' && !url.search;
-}, 'baseUrl must be a plain https origin');
+  // a host name with a dot: no IP literals, no localhost, nothing that points into the home network by address
+  const host = url.hostname;
+  const namedHost =
+    host.includes('.') && !/^[\d.]+$/.test(host) && !host.startsWith('[') && !host.endsWith('.localhost');
+  return (
+    url.protocol === 'https:' && !url.username && !url.password && url.pathname === '/' && !url.search && namedHost
+  );
+}, 'baseUrl must be a plain https origin with a host name');
 
 export const providerManifest = z
   .object({
