@@ -1,0 +1,26 @@
+{
+  "name": "@marksy/provider-by-eschools",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Belarus, diary.e-schools.by: manifest, raw schemas, mapper, sanitize, probe, fixtures",
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "probe": "tsx --env-file-if-exists=../../.env scripts/probe.ts"
+  },
+  "dependencies": {
+    "@marksy/core": "workspace:*",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.5",
+    "tsx": "^4.23.15"
+  }
+}

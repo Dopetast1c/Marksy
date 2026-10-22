@@ -1,0 +1,283 @@
+import type {
+  AccountInfo,
+  Attendance,
+  Calendar,
+  DriftCheck,
+  FinalMark,
+  Lesson,
+  LessonType,
+  Mark,
+  MarkKind,
+  StudentRef,
+  Subject,
+  Term,
+  WorkType,
+} from '@marksy/core';
+import { dayRange, toISODate } from './dates';
+import {
+  educationalSubject,
+  finalMarkCell,
+  LESSON_TYPES,
+  MARK_KINDS,
+  QUARTER_TITLES,
+  slot as slotSchema,
+  TIME_ACTIVITY_TYPES,
+  WORK_TYPES,
+} from './schemas';
+import type {
+  FinalWholeResponse,
+  LessonMark,
+  LessonsDay,
+  MeResponse,
+  SchoolClass,
+  SchoolYearResponse,
+  Slot,
+  TimeActivity,
+} from './schemas';
+
+// Raw e-schools.by -> canonical types. The only place that knows the system's field names and enum values.
+
+/** Belarusian grades 1 and 2 get no marks (docs/api-spec.md 5): their school year has no grading scale (ux D49). */
+export const LAST_UNMARKED_GRADE = 2;
+
+const LESSON_TYPE: Record<(typeof LESSON_TYPES)[number], LessonType> = {
+  TEST: 'test',
+  LABORATORY_WORK: 'lab',
+  PRACTICAL_WORK: 'practical',
+  EXCURSION: 'excursion',
+  INDEPENDENT_WORK: 'other',
+};
+
+const WORK_TYPE: Record<(typeof WORK_TYPES)[number], WorkType> = {
+  CLASSWORK: 'classwork',
+  HOMEWORK: 'homework',
+  PRACTICAL_WORK: 'practical',
+  LABORATORY_WORK: 'lab',
+  CREATIVE_WORK: 'other',
+  SUMMARY: 'other',
+  DICTATION: 'dictation',
+  TEST: 'test',
+  INDEPENDENT_WORK: 'quiz',
+  ESSAY: 'essay',
+  KNOWLEDGE_CONTROL: 'test',
+  BY_HEART: 'other',
+  TRANSLATION: 'other',
+};
+
+const MARK_KIND: Record<Exclude<(typeof MARK_KINDS)[number], 'ABSENT'>, MarkKind> = {
+  SINGLE: 'numeric',
+  DOUBLE: 'numeric',
+  PASS: 'pass',
+  NOT_PASS: 'fail',
+  EXEMPT: 'exempt',
+  MASTERED: 'pass',
+  NOT_MASTERED: 'fail',
+  NOT_TAKEN: 'not_assessed',
+};
+
+/** What the official diary prints in the mark cell when `mark` is empty (docs/api-spec.md 7.2). */
+const KIND_LABEL: Record<string, string> = {
+  ABSENT: 'н',
+  PASS: 'зач.',
+  NOT_PASS: 'незач.',
+  EXEMPT: 'освоб.',
+  MASTERED: 'осв.',
+  NOT_MASTERED: 'не осв.',
+  NOT_TAKEN: 'н/а',
+};
+
+const nonEmpty = (s: string | null | undefined) => (s && s.trim() ? s : undefined);
+const is = <T extends string>(list: readonly T[], v: string | null | undefined): v is T =>
+  v != null && (list as readonly string[]).includes(v);
+
+/** The class the student is in now: not disbanded, or the first one. */
+export function currentClass(classes: readonly SchoolClass[]): SchoolClass | undefined {
+  return classes.find((c) => c.dt_disbanded == null) ?? classes[0];
+}
+
+export function mapStudent(s: MeResponse['students_for_parent'][number], cls: SchoolClass | undefined): StudentRef {
+  const className = nonEmpty(cls?.class_number) ?? (cls?.level != null ? `${cls.level}${cls.label ?? ''}` : undefined);
+  return {
+    externalId: s.profile_id,
+    fullName: s.full_name,
+    schoolId: s.school_id,
+    ...(cls && { classExternalId: cls.uuid }),
+    ...(className && { className }),
+    ...(cls?.level != null && { grade: cls.level }),
+  };
+}
+
+export function mapAccount(me: MeResponse, classes: ReadonlyMap<string, SchoolClass | undefined>): AccountInfo {
+  return {
+    externalUserId: me.user_id,
+    displayName: nonEmpty(me.full_name) ?? null,
+    role: 'parent',
+    students: me.students_for_parent.map((s) => mapStudent(s, classes.get(s.profile_id))),
+  };
+}
+
+export function mapCalendar(
+  year: SchoolYearResponse,
+  activities: readonly TimeActivity[],
+  student: Pick<StudentRef, 'grade'>,
+  timeZone: string,
+  check: DriftCheck,
+): Calendar {
+  const range = (a: TimeActivity) => dayRange({ start: a.start_date, end: a.end_date }, timeZone);
+  const quarters = activities
+    .filter((a) => check.known(a.type, TIME_ACTIVITY_TYPES, 'time_activities[].type') && a.type === 'QUARTER')
+    .sort((a, b) => a.start_date - b.start_date);
+  const terms: Term[] = quarters.map((q, i) => {
+    check.known(q.title, QUARTER_TITLES, 'time_activities[].title');
+    const byTitle = (QUARTER_TITLES as readonly string[]).indexOf(q.title);
+    const { from, to } = range(q);
+    return {
+      externalId: q.uuid,
+      kind: 'quarter',
+      index: byTitle >= 0 ? byTitle + 1 : i + 1,
+      label: nonEmpty(q.description) ?? q.title,
+      start: from,
+      end: to,
+    };
+  });
+  const holidays = activities.filter((a) => a.type === 'HOLIDAYS').map(range);
+  const yearRange = dayRange({ start: year.start_ts, end: year.end_ts }, timeZone);
+  return {
+    schoolYear: {
+      externalId: year.uuid,
+      label:
+        nonEmpty(year.label) ??
+        (year.start_year && year.end_year ? `${year.start_year}/${year.end_year}` : yearRange.from.slice(0, 4)),
+      start: yearRange.from,
+      end: yearRange.to,
+    },
+    terms,
+    ...(holidays.length && { holidays }),
+    ...(student.grade != null && student.grade <= LAST_UNMARKED_GRADE && { gradingScaleId: null }),
+  };
+}
+
+export function mapSubjects(raw: unknown, check: DriftCheck): Subject[] {
+  return check
+    .items(educationalSubject, raw, 'educational_subjects')
+    .map((s) => ({ externalId: s.uuid, name: s.name }));
+}
+
+interface MappedCell {
+  mark?: Mark;
+  attendance?: Attendance;
+}
+
+/** A lesson_mark: a mark, or for ABSENT an attendance record (absences are never marks). */
+export function mapLessonMark(m: LessonMark, s: Slot, date: string, check: DriftCheck): MappedCell {
+  check.known(m.kind, MARK_KINDS, 'lesson_mark.kind');
+  const raw = nonEmpty(m.mark) ?? KIND_LABEL[m.kind] ?? m.kind;
+  if (m.kind === 'ABSENT') {
+    return {
+      attendance: {
+        externalId: m.uuid,
+        date,
+        lessonExternalId: s.lesson_uuid,
+        subjectExternalId: s.subject_id,
+        status: 'absent',
+        code: raw,
+      },
+    };
+  }
+  let kind: MarkKind = is(MARK_KINDS, m.kind) ? MARK_KIND[m.kind as keyof typeof MARK_KIND] : 'other';
+  // "7/9" is two marks; each value counts once in averages (api-spec 7.4)
+  const values = kind === 'numeric' ? (m.mark ?? '').split('/').map(Number).filter(Number.isFinite) : [];
+  if (kind === 'numeric' && !values.length) kind = 'other';
+  check.known(m.type, WORK_TYPES, 'lesson_mark.type');
+  const workType = is(WORK_TYPES, m.type) ? WORK_TYPE[m.type] : m.type ? 'other' : undefined;
+  return {
+    mark: {
+      externalId: m.uuid,
+      date,
+      subjectExternalId: s.subject_id,
+      subjectName: s.subject_title,
+      lessonExternalId: s.lesson_uuid,
+      raw,
+      kind,
+      values,
+      ...(workType && { workType }),
+      ...(m.type && { workTypeRaw: m.type }),
+      ...(nonEmpty(m.comment) && { comment: m.comment!.trim() }),
+      ...(nonEmpty(m.author) && { authorExternalId: m.author! }),
+    },
+  };
+}
+
+export function mapLesson(s: Slot, date: string, check: DriftCheck): Lesson {
+  check.known(s.type, LESSON_TYPES, 'slots[].type');
+  const cell = s.lesson_mark ? mapLessonMark(s.lesson_mark, s, date, check) : {};
+  return {
+    externalId: s.lesson_uuid,
+    date,
+    ...(s.number != null && { slot: s.number }),
+    ...(nonEmpty(s.start_time) && { startTime: s.start_time! }),
+    subjectExternalId: s.subject_id,
+    subjectName: s.subject_title,
+    ...(nonEmpty(s.teacher_id) && { teacherExternalId: s.teacher_id! }),
+    ...(nonEmpty(s.topic) && { topic: s.topic!.trim() }),
+    ...(nonEmpty(s.homework) && { homework: s.homework!.trim() }),
+    ...(s.has_attachments_or_links != null && { hasAttachments: s.has_attachments_or_links }),
+    ...(is(LESSON_TYPES, s.type) && { lessonType: LESSON_TYPE[s.type] }),
+    marks: cell.mark ? [cell.mark] : [],
+    ...(cell.attendance && { attendance: [cell.attendance] }),
+  };
+}
+
+/** One week's response (six days) -> lessons. A broken slot is reported and skipped, the rest of the week stays. */
+export function mapLessonsWeek(days: readonly LessonsDay[], timeZone: string, check: DriftCheck): Lesson[] {
+  return days.flatMap((day) => {
+    const date = toISODate(day.date, timeZone);
+    return check.items(slotSchema, day.slots, 'days[].slots').map((s) => mapLesson(s, date, check));
+  });
+}
+
+/** Words of a final-marks period key that mean the whole year (provisional: the populated shape is unverified). */
+const YEAR_KEY = /year|annual|whole|^god$/i;
+
+/**
+ * final/whole -> FinalMark[]. Provisional (docs/api-spec.md 6.9): marks[subjectId][period] = { mark, kind }, period
+ * being a quarter's time_activity uuid or a year key. Unknown periods and cells are reported as drift and skipped.
+ */
+export function mapFinals(
+  raw: FinalWholeResponse,
+  subjects: readonly Subject[],
+  terms: readonly Term[],
+  check: DriftCheck,
+): FinalMark[] {
+  const names = new Map(subjects.map((s) => [s.externalId, s.name]));
+  const termIds = new Set(terms.map((t) => t.externalId));
+  const out: FinalMark[] = [];
+  for (const [subjectId, periods] of Object.entries(raw.marks)) {
+    for (const [period, value] of Object.entries(periods)) {
+      const isTerm = termIds.has(period);
+      if (!isTerm && !YEAR_KEY.test(period)) {
+        check.known(period, [], 'final.marks.*.period');
+        continue;
+      }
+      const cell = check.items(finalMarkCell, [value], 'final.marks.*.*')[0];
+      if (!cell) continue;
+      check.known(cell.kind, MARK_KINDS, 'final.marks.*.*.kind');
+      const rawMark = nonEmpty(cell.mark) ?? (cell.kind ? (KIND_LABEL[cell.kind] ?? cell.kind) : '');
+      const numeric = /^\d+$/.test(rawMark.trim());
+      out.push({
+        subjectExternalId: subjectId,
+        subjectName: names.get(subjectId) ?? subjectId,
+        termExternalId: isTerm ? period : null,
+        raw: rawMark,
+        value: numeric ? Number(rawMark) : null,
+        kind: numeric
+          ? 'numeric'
+          : is(MARK_KINDS, cell.kind) && cell.kind !== 'ABSENT'
+            ? MARK_KIND[cell.kind as keyof typeof MARK_KIND]
+            : 'other',
+        role: 'final',
+      });
+    }
+  }
+  return out;
+}
