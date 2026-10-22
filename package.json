@@ -24,6 +24,7 @@
     "db:down": "docker compose down",
     "db:reset": "docker compose down -v && docker compose up -d --wait",
     "db:migrate": "pnpm --filter @marksy/server db:migrate",
+    "db:seed": "pnpm --filter @marksy/server db:seed",
     "db:studio": "pnpm --filter @marksy/server db:studio",
     "i18n:check": "pnpm --filter @marksy/i18n i18n:check",
     "test:provider": "node scripts/test-provider.mjs",

@@ -33,6 +33,17 @@ export function localTime(at: Date, timeZone: string): LocalTime {
   return { date, minutes: Number(parts.hour) * 60 + Number(parts.minute), weekday: weekdayOf(date) };
 }
 
+/** The moment a local date and time names in a time zone (the offset is taken at that moment, so DST is right) */
+export function fromLocal(date: ISODate, minutes: number, timeZone: string): Date {
+  const guess =
+    Date.UTC(Number(date.slice(0, 4)), Number(date.slice(5, 7)) - 1, Number(date.slice(8, 10))) + minutes * 60_000;
+  const seen = localTime(new Date(guess), timeZone);
+  const seenMs =
+    Date.UTC(Number(seen.date.slice(0, 4)), Number(seen.date.slice(5, 7)) - 1, Number(seen.date.slice(8, 10))) +
+    seen.minutes * 60_000;
+  return new Date(guess - (seenMs - guess));
+}
+
 /** "08:00-14:00" -> [480, 840] */
 export function parseWindow(window: string): [number, number] {
   const [from, to] = window.split('-').map((t) => {
