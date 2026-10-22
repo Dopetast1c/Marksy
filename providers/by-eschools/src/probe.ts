@@ -7,6 +7,16 @@ import type { Place } from './sanitize';
 
 const D = '/api/v1/education/diary';
 
+export const MAX_WEEKS = 8;
+
+/** --weeks N: how many of the most recent school weeks to read; 1 by default, at most MAX_WEEKS; null if invalid. */
+export function weeksArg(argv: readonly string[]): number | null {
+  const i = argv.indexOf('--weeks');
+  if (i < 0) return 1;
+  const n = Number(argv[i + 1]);
+  return Number.isInteger(n) && n >= 1 && n <= MAX_WEEKS ? n : null;
+}
+
 /** The fixture name of a request: me, classes-1, lessons-2-w1, final-1 ... (students and weeks numbered in order). */
 export function endpointName(
   method: string,

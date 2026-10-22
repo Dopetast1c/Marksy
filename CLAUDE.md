@@ -113,6 +113,7 @@ The owner's machine is Windows; the shell is Git Bash.
 
 - Never call `python` or `python3`: on Windows it is usually the Microsoft Store stub, which hangs waiting for input. Helper scripts are Node only (`node -e`, `node scripts/*.mjs`).
 - Write and change files with the editing tools (Write, Edit), not with `printf`, `echo` or heredocs in the shell: Git Bash eats backslashes in them (`\\w` in a JSON regex arrives as `\w`).
+- Never run, import or `tsx --eval` a probe script (`providers/*/scripts/probe.ts`): importing it starts a real login. Test the launcher only with `MARKSY_PROBE_DRY_RUN=1 node scripts/probe.mjs …`; test probe logic through `src/probe.ts`.
 - One `git push` at a time: before a new push, make sure the previous one has finished. `.claude/settings.json` sets `GCM_INTERACTIVE=never`, so a push without stored credentials fails with an error instead of waiting for the Git Credential Manager account window; when that happens, tell the owner to sign in once (`git push` in their own terminal) instead of retrying.
 
 ## Build order and workflow

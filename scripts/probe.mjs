@@ -1,4 +1,4 @@
-// pnpm probe [--provider <id>]: runs a provider's own probe script (docs/providers.md 8). It logs in to the real
+// pnpm probe [--provider <id>] [--weeks <1-8>]: runs a provider's own probe script (docs/providers.md 8). It logs in to the real
 // diary with the logins in .env, so only the owner runs it, from their own terminal. Without --provider it picks the
 // only provider that has a probe.
 import { spawnSync } from 'node:child_process';
@@ -24,5 +24,18 @@ if (!/^[a-z0-9_-]+$/.test(id) || !withProbe.includes(id)) {
   console.error(`no probe for provider "${id}"; providers with a probe: ${withProbe.join(', ') || 'none'}`);
   process.exit(2);
 }
-const res = spawnSync('pnpm', ['--dir', `providers/${id}`, 'probe'], { stdio: 'inherit', shell: true });
+// the rest goes to the provider's probe; it ends up in a shell command too, so only known options are passed on
+const rest = flag >= 0 ? args.filter((_, i) => i !== flag && i !== flag + 1) : args;
+const known = rest.length === 0 || (rest.length === 2 && rest[0] === '--weeks' && /^\d{1,2}$/.test(rest[1]));
+if (!known) {
+  console.error('options: --provider <id>, --weeks <1-8>');
+  process.exit(2);
+}
+const command = ['--dir', `providers/${id}`, 'probe', ...rest];
+// MARKSY_PROBE_DRY_RUN=1 prints what would run and stops: the launcher can be tested without ever logging in
+if (process.env.MARKSY_PROBE_DRY_RUN === '1') {
+  console.log(`dry run: pnpm ${command.join(' ')}`);
+  process.exit(0);
+}
+const res = spawnSync('pnpm', command, { stdio: 'inherit', shell: true });
 process.exit(res.status ?? 1);

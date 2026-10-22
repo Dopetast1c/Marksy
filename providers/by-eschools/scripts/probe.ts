@@ -9,8 +9,17 @@ import { fileURLToPath } from 'node:url';
 import { createRunContext, fetchTransport, ProviderError } from '@marksy/core';
 import type { Transport } from '@marksy/core';
 import { dayRange, toISODate } from '../src/dates';
-import { byEschools, currentWeekRange, manifest } from '../src/index';
-import { endpointName, findLeaks, report, reportable, sanitisedRoute, sensitiveValues } from '../src/probe';
+import { byEschools, manifest, recentWeekRanges } from '../src/index';
+import {
+  endpointName,
+  findLeaks,
+  MAX_WEEKS,
+  report,
+  reportable,
+  sanitisedRoute,
+  sensitiveValues,
+  weeksArg,
+} from '../src/probe';
 import { sanitize } from '../src/sanitize';
 
 const root = fileURLToPath(new URL('../../..', import.meta.url));
@@ -33,6 +42,12 @@ function safeJson(text: string): unknown {
 }
 
 async function main(): Promise<number> {
+  // checked before anything touches the network
+  const weeksWanted = weeksArg(process.argv.slice(2));
+  if (weeksWanted === null) {
+    console.error(`--weeks takes a whole number from 1 to ${MAX_WEEKS}.`);
+    return 2;
+  }
   const login = process.env.DIARY_LOGIN;
   const password = process.env.DIARY_PASSWORD;
   if (!login || !password) {
@@ -49,16 +64,31 @@ async function main(): Promise<number> {
   const run = createRunContext(byEschools, { transport });
   const { ctx } = run;
 
-  // the read, exactly once per endpoint: login, me, classes, calendar, weeks, subjects, this week's lessons, finals
+  // the read, once per endpoint: login, me, classes, calendar, weeks, subjects, the recent weeks' lessons, finals;
+  // strictly one request after another with the manifest's pauses (the shared client enforces both)
   const session = await run.login({ login, password });
   const account = await byEschools.getAccount(session, ctx);
   const today = toISODate(Date.now(), manifest.timezone);
-  const week = await currentWeekRange(session, ctx, today);
+  const recentWeeks = await recentWeekRanges(session, ctx, today, weeksWanted);
+  // calendar (2, once), then per student: subjects, one request per week, finals
+  const needed = 2 + account.students.length * (2 + recentWeeks.length);
+  const left = manifest.limits.maxRequestsPerRun - ctx.http.requestCount;
+  if (needed > left) {
+    console.error(
+      `--weeks ${weeksWanted} needs about ${needed} more requests, the manifest allows ${left} in one run.`,
+    );
+    return 2;
+  }
+  console.log(
+    `Reading ${recentWeeks.length} week(s) for ${account.students.length} student(s), about ${needed + ctx.http.requestCount} requests.`,
+  );
   const perStudent = [];
   for (const student of account.students) {
     const calendar = await byEschools.getCalendar(session, student, ctx);
     const subjects = await byEschools.getSubjects(session, student, ctx);
-    const lessons = week ? await byEschools.getLessons!(session, student, week, ctx) : [];
+    const lessons = [];
+    // one request per week, so each week becomes its own fixture
+    for (const week of recentWeeks) lessons.push(...(await byEschools.getLessons!(session, student, week, ctx)));
     const finals = await byEschools.getFinalMarks!(session, student, ctx);
     perStudent.push({ student, calendar, subjects, lessons, finals });
   }

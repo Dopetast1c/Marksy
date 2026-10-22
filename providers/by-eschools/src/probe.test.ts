@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { countLeaks, endpointName, findLeaks, report, reportable, sanitisedRoute, sensitiveValues } from './probe';
+import {
+  countLeaks,
+  endpointName,
+  findLeaks,
+  MAX_WEEKS,
+  report,
+  reportable,
+  sanitisedRoute,
+  sensitiveValues,
+  weeksArg,
+} from './probe';
 import { createSanitizer, fakeUuid, sanitize } from './sanitize';
 import type { ProbeFacts } from './probe';
 
@@ -156,6 +166,16 @@ describe('second review: places, real values, keys', () => {
     ]);
     const numbers = sensitiveValues('me', { code: 4000 });
     expect(findLeaks([{ id: fakeUuid('a') }], numbers)).toEqual([]);
+  });
+});
+
+describe('--weeks', () => {
+  it('defaults to 1, accepts 1 to 8, refuses anything else', () => {
+    expect(weeksArg([])).toBe(1);
+    expect(weeksArg(['--weeks', '6'])).toBe(6);
+    expect(weeksArg(['--weeks', '8'])).toBe(MAX_WEEKS);
+    for (const bad of [['--weeks'], ['--weeks', '0'], ['--weeks', '9'], ['--weeks', '2.5'], ['--weeks', 'six']])
+      expect(weeksArg(bad), bad.join(' ')).toBeNull();
   });
 });
 

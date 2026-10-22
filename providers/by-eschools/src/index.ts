@@ -148,13 +148,16 @@ async function weeksOf(session: Session, ctx: ProviderContext): Promise<WeekActi
   return cache.weeks;
 }
 
-/** The school week containing `today`, or during holidays the last one that has started; null before the year. */
-export async function currentWeekRange(session: Session, ctx: ProviderContext, today: string) {
-  const ranges = (await weeksOf(session, ctx))
+/**
+ * The last `count` school weeks that have started by `today`, oldest first: the current week (or during holidays
+ * the last one) and the ones before it. Empty before the school year.
+ */
+export async function recentWeekRanges(session: Session, ctx: ProviderContext, today: string, count: number) {
+  return (await weeksOf(session, ctx))
     .map((w) => dayRange({ start: w.start_ts, end: w.end_ts }, manifest.timezone))
     .filter((r) => r.from <= today)
-    .sort((a, b) => a.from.localeCompare(b.from));
-  return ranges.at(-1) ?? null;
+    .sort((a, b) => a.from.localeCompare(b.from))
+    .slice(-count);
 }
 
 export const byEschools: DiaryProvider = {
