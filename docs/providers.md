@@ -65,7 +65,8 @@ docs/                   product docs (this file, design.md, api-spec.md, tokens.
     "fields": [
       { "key": "login", "label": { "ru": "Логин", "en": "Login" }, "type": "text" },
       { "key": "password", "label": { "ru": "Пароль", "en": "Password" }, "type": "password" }
-    ]
+    ],
+    "loginRequest": "POST /auth/login/*"   // the allow-list entry of the login call: every matching request is a login for the client (never retried, one per run), whatever the provider code says; null for token auth without a call
   },
   "gradingScale": "by-10",              // id from packages/core/src/grading/scales.ts, or inline object
   "capabilities": {                     // what the system can give; the UI adapts to every false (section 12)
@@ -109,7 +110,7 @@ docs/                   product docs (this file, design.md, api-spec.md, tokens.
 }
 ```
 
-The server enforces `limits`, `network.regionHint` (as a warning in Sync, since it cannot know the IP's country for sure) and `readOnlyAllowList` in the shared HTTP client. A provider cannot loosen them from code.
+The server enforces `limits`, `network.regionHint` (as a warning in Sync, since it cannot know the IP's country for sure) and `readOnlyAllowList` in the shared HTTP client. A provider cannot loosen them from code. The manifest schema itself keeps the list read-only: entries are `GET`, `HEAD` or `POST`, and `POST` only for `auth.loginRequest`; `PUT`, `PATCH` and `DELETE` cannot be listed. `network.baseUrl` must be a plain `https` origin without credentials or a path. The client refuses any path the server could read differently from the allow-list: encoded `/`, `\` or `.` (`%2F`, `%5C`, `%2E`), `.` and `..` segments, empty segments and broken escapes.
 
 Providers do not schedule anything and do not handle outages. The core planner (`design.md` 10.4) decides which `fetchUnit`s to ask for, records coverage and failures, pauses after repeated provider errors and catches up after the home server was off. A provider's job on failure is only to throw a typed error: `ProviderAuthError` (wrong credentials), `ProviderBlockedError`, `ProviderNeeds2FAError`, `ProviderUnavailableError` (5xx, 429, timeout) or let a network error propagate; the core maps these to the failure classes. Mapping an HTTP status or an error body to one of these classes is the one piece of outage knowledge that lives in the provider, because error shapes differ per system.
 
@@ -444,12 +445,12 @@ The suite lives in `@marksy/core/conformance`. A provider calls it from its own 
 
 - the manifest validates against the schema and the grading scale resolves;
 - every method the capabilities promise exists (`lessons` needs `getLessons`, `marksPerLesson: 'none'` needs `getMarks`, and so on);
-- every method returns objects that pass the canonical Zod schemas, and every request matched `readOnlyAllowList`;
+- every method returns objects that pass the canonical Zod schemas, every request matched `readOnlyAllowList`, and a full read made exactly one request to `auth.loginRequest`;
 - ids are stable and unique per student and kind: mapping the same fixtures twice gives the same `externalId`s;
 - marks parse: every numeric mark has `values` within the student's scale, every other kind has none, and a year without marks has no numeric marks;
 - the provider tolerates unknown fields (every object in every fixture gets an extra key and the canonical output must not change);
-- sanitising works: no fixture contains a string or matches a pattern in `fixtures/denylist.json` (`{"strings": [...], "patterns": [...]}`, for example e-mail addresses and long ids), `sanitize()` leaves an already sanitised fixture unchanged, and `sanitize()` of the optional fictional raw samples in `fixtures/raw/` removes everything on the denylist;
-- the output equals `fixtures/expected/canonical.json`. `MARKSY_UPDATE_EXPECTED=1 pnpm test:provider <id>` rewrites that file; review the diff before committing it.
+- sanitising works: no fixture contains a string or matches a pattern in `fixtures/denylist.json` (`{"strings": [...], "patterns": [...]}`, for example e-mail addresses and long ids), `sanitize()` leaves an already sanitised fixture unchanged, at least one fictional unsanitised sample exists in `fixtures/unsanitised/` and contains denylisted values, and `sanitize()` removes every one of them (not `fixtures/raw/`: `raw/` is gitignored because it holds real responses on the maintainer's machine). `fixtures/expected/canonical.json` is scanned against the denylist too;
+- the output equals `fixtures/expected/canonical.json`. `MARKSY_UPDATE_EXPECTED=1 pnpm test:provider <id>` rewrites that file, and refuses to while any fixture or the output carries something on the denylist; review the diff before committing it.
 
 ## 9. How to add a provider, step by step
 

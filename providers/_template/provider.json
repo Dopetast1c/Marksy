@@ -39,7 +39,8 @@
         },
         "type": "password"
       }
-    ]
+    ],
+    "loginRequest": "POST /TODO/login"
   },
   "gradingScale": "by-10",
   "capabilities": {

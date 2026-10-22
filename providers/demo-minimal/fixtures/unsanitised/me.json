@@ -1,0 +1,9 @@
+{
+  "id": "u-90210",
+  "name": "Jordan Riverstone",
+  "email": "jordan.riverstone@example.com",
+  "children": [
+    { "id": "c-4471", "first_name": "Casey", "last_name": "Riverstone", "group": "Year 5" },
+    { "id": "c-4472", "first_name": "Sam", "last_name": "Riverstone", "group": "Year 1" }
+  ]
+}

@@ -2,6 +2,7 @@ import { ProviderPolicyError } from '../providers/errors';
 import type { ProviderManifest } from '../providers/manifest';
 import type { Logger } from '../providers/types';
 import { createAllowList } from './allow-list';
+import { redacting } from './logger';
 import type { HttpClient, HttpMethod, HttpRequestOptions, HttpResponse } from './types';
 
 // The shared HTTP client every provider gets as ctx.http (docs/providers.md 7, CLAUDE.md "Hard rules"): strictly
@@ -31,7 +32,9 @@ export const fetchTransport: Transport = async ({ method, url, headers, body, si
 };
 
 export interface ThrottledClientOptions {
-  manifest: Pick<ProviderManifest, 'network' | 'limits' | 'readOnlyAllowList'>;
+  manifest: Pick<ProviderManifest, 'network' | 'limits' | 'readOnlyAllowList'> & {
+    auth: Pick<ProviderManifest['auth'], 'loginRequest'>;
+  };
   /** Stricter limits from the environment (docs: .env.example); they can only tighten the manifest's. */
   stricter?: { requestDelayMs?: [number, number]; maxRequestsPerRun?: number };
   transport?: Transport;
@@ -53,7 +56,9 @@ export function createThrottledClient(opts: ThrottledClientOptions): HttpClient 
   const sleep = opts.sleep ?? defaultSleep;
   const random = opts.random ?? Math.random;
   const timeoutMs = opts.timeoutMs ?? 30_000;
+  const log = opts.log && redacting(opts.log);
   const allowed = createAllowList(manifest.readOnlyAllowList);
+  const isLogin = createAllowList(manifest.auth.loginRequest ? [manifest.auth.loginRequest] : []);
   const base = new URL(manifest.network.baseUrl);
 
   const [minManifest, maxManifest] = manifest.limits.requestDelayMs;
@@ -100,16 +105,18 @@ export function createThrottledClient(opts: ThrottledClientOptions): HttpClient 
     if (!allowed(method, url.pathname)) {
       throw new ProviderPolicyError(`${method} ${url.pathname} is not in the read-only allow-list`);
     }
-    if (options.login) {
+    // the manifest decides what a login is; the provider's flag can only add to it, never hide one
+    const login = options.login === true || isLogin(method, url.pathname);
+    if (login) {
       if (loggedIn) throw new ProviderPolicyError('One login per run');
       loggedIn = true;
     }
     // a failed login is never retried: repeated bad logins can lock the real account
-    const attempts = options.login ? 1 : MAX_ATTEMPTS;
+    const attempts = login ? 1 : MAX_ATTEMPTS;
     for (let attempt = 1; ; attempt++) {
       try {
         const res = await sendOnce(method, url, options);
-        opts.log?.debug('http', { method, path: url.pathname, status: res.status, attempt });
+        log?.debug('http', { method, path: url.pathname, status: res.status, attempt });
         if (!RETRY_STATUS(res.status) || attempt >= attempts) return res;
         const retryAfter = Number(res.headers['retry-after']);
         const wait = Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : backoff(attempt);
@@ -118,7 +125,7 @@ export function createThrottledClient(opts: ThrottledClientOptions): HttpClient 
         await sleep(wait);
       } catch (err) {
         if (err instanceof ProviderPolicyError || attempt >= attempts) throw err;
-        opts.log?.warn('http network error', { method, path: url.pathname, attempt });
+        log?.warn('http network error', { method, path: url.pathname, attempt });
         await sleep(backoff(attempt));
       }
     }

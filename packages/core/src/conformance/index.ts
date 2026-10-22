@@ -124,7 +124,9 @@ export function defineConformanceSuite(opts: ConformanceOptions): void {
   const manifest = provider.manifest;
   const caps = manifest.capabilities;
   const fixtures = loadFixtures(fixturesDir);
-  const raw = loadFixtures(fixturesDir, 'raw');
+  // Fictional responses before sanitising, to prove sanitize() works. Not "raw/": that name is gitignored because it
+  // holds real responses on the owner's machine.
+  const unsanitised = loadFixtures(fixturesDir, 'unsanitised');
   const denyPath = join(fixturesDir, 'denylist.json');
   const deny: Denylist = existsSync(denyPath) ? (readJson(denyPath) as Denylist) : {};
   const expectedPath = join(fixturesDir, 'expected', 'canonical.json');
@@ -168,6 +170,11 @@ export function defineConformanceSuite(opts: ConformanceOptions): void {
       }
       const allowed = createAllowList(manifest.readOnlyAllowList);
       for (const r of requests) expect(allowed(r.method, new URL(r.url).pathname), `${r.method} ${r.url}`).toBe(true);
+      if (manifest.auth.loginRequest) {
+        const isLogin = createAllowList([manifest.auth.loginRequest]);
+        const logins = requests.filter((r) => isLogin(r.method, new URL(r.url).pathname));
+        expect(logins, 'exactly one login request per run').toHaveLength(1);
+      }
     });
 
     it('keeps ids stable and unique', async () => {
@@ -207,15 +214,27 @@ export function defineConformanceSuite(opts: ConformanceOptions): void {
         expect(denylistHits(value, deny), `fixtures/${name}.json`).toEqual([]);
         expect(provider.sanitize(name, value), `sanitize() changes the sanitised fixtures/${name}.json`).toEqual(value);
       }
-      for (const [name, value] of Object.entries(raw)) {
-        expect(denylistHits(provider.sanitize(name, value), deny), `sanitize(raw/${name}.json)`).toEqual([]);
+      expect(Object.keys(unsanitised).length, 'at least one fictional sample in fixtures/unsanitised/').toBeGreaterThan(
+        0,
+      );
+      for (const [name, value] of Object.entries(unsanitised)) {
+        expect(
+          denylistHits(value, deny).length,
+          `unsanitised/${name}.json shows what the denylist catches`,
+        ).toBeGreaterThan(0);
+        expect(denylistHits(provider.sanitize(name, value), deny), `sanitize(unsanitised/${name}.json)`).toEqual([]);
       }
+      if (existsSync(expectedPath))
+        expect(denylistHits(readJson(expectedPath), deny), 'expected/canonical.json').toEqual([]);
     });
 
     it('matches fixtures/expected/canonical.json', async () => {
       const { snapshot } = await readAll(opts, fixtures);
-      // MARKSY_UPDATE_EXPECTED=1 rewrites the file; review the diff before committing it
+      // MARKSY_UPDATE_EXPECTED=1 rewrites the file; review the diff before committing it. Nothing is written while any
+      // fixture or the output itself carries something on the denylist: an unsanitised response must not leak into it.
       if (process.env.MARKSY_UPDATE_EXPECTED === '1') {
+        const leaks = [...Object.values(fixtures), snapshot].flatMap((v) => denylistHits(v, deny));
+        expect(leaks, 'refusing to write expected/canonical.json').toEqual([]);
         mkdirSync(join(fixturesDir, 'expected'), { recursive: true });
         writeFileSync(expectedPath, `${JSON.stringify(snapshot, null, 2)}\n`);
       }

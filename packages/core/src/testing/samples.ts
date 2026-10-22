@@ -23,6 +23,7 @@ export const sampleManifest: ProviderManifest = {
       { key: 'login', label: { en: 'Login' }, type: 'text' },
       { key: 'password', label: { en: 'Password' }, type: 'password' },
     ],
+    loginRequest: 'POST /auth/login',
   },
   gradingScale: 'by-10',
   capabilities: {

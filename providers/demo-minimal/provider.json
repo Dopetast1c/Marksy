@@ -7,8 +7,15 @@
   "website": "https://demo.example.com",
   "status": "experimental",
   "maintainers": [],
-  "languages": { "default": "en", "preferred": ["en"] },
-  "calendar": { "weekStart": 0, "weekend": [5, 6], "schoolDays": [0, 1, 2, 3, 4] },
+  "languages": {
+    "default": "en",
+    "preferred": ["en"]
+  },
+  "calendar": {
+    "weekStart": 0,
+    "weekend": [5, 6],
+    "schoolDays": [0, 1, 2, 3, 4]
+  },
   "nameOrder": "given-first",
   "timezone": "Asia/Jerusalem",
   "roles": ["parent"],
@@ -16,9 +23,24 @@
   "auth": {
     "kind": "password",
     "fields": [
-      { "key": "login", "label": { "en": "Login", "ru": "Логин" }, "type": "text" },
-      { "key": "password", "label": { "en": "Password", "ru": "Пароль" }, "type": "password" }
-    ]
+      {
+        "key": "login",
+        "label": {
+          "en": "Login",
+          "ru": "Логин"
+        },
+        "type": "text"
+      },
+      {
+        "key": "password",
+        "label": {
+          "en": "Password",
+          "ru": "Пароль"
+        },
+        "type": "password"
+      }
+    ],
+    "loginRequest": "POST /api/session"
   },
   "gradingScale": "pct-100",
   "capabilities": {
