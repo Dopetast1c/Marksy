@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "description": "React + Vite PWA",
+  "license": "PolyForm-Noncommercial-1.0.0",
   "scripts": {
     "dev": "vite",
     "dev:lan": "vite --host",

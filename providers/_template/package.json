@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "description": "Copy this folder to start a provider (docs/providers.md 9). Compiles; fails conformance until filled in.",
+  "license": "PolyForm-Noncommercial-1.0.0",
   "exports": {
     ".": "./src/index.ts"
   },
