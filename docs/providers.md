@@ -201,10 +201,10 @@ export interface StudentRef {
 export interface Calendar {
   schoolYear: { externalId: string; label: string; start: ISODate; end: ISODate };
   terms: Term[];                                   // ordered
-  holidays?: DateRange[];
+  holidays?: (DateRange & { note?: string })[];  // note: the system's remark, e.g. dates that differ for some grades
   gradingScaleId?: string | null;                  // this student's scale this year; null = no marks this year (5.3); absent = manifest default
 }
-export interface Term { externalId: string; kind: 'quarter' | 'trimester' | 'semester' | 'other'; index: number; label: string; start: ISODate; end: ISODate }
+export interface Term { externalId: string; kind: 'quarter' | 'trimester' | 'semester' | 'other'; index: number; label: string; start: ISODate; end: ISODate; note?: string }
 // terms may be empty for systems with continuous assessment; the UI then has no term views and no term goal
 
 export interface Subject {

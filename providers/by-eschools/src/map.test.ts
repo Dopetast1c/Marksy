@@ -2,7 +2,8 @@ import { createMemoryDrift, driftChecker } from '@marksy/core';
 import { describe, expect, it } from 'vitest';
 import { toISODate } from './dates';
 import { currentClass, mapCalendar, mapFinals, mapLessonsWeek, mapStudent } from './map';
-import { lessonsDay } from './schemas';
+import timeActivities from '../fixtures/time_activities.json';
+import { lessonsDay, timeActivity } from './schemas';
 import type { LessonMark, SchoolYearResponse, TimeActivity } from './schemas';
 
 // Fictional data shaped like docs/api-spec.md 6 and 7. Times are Minsk midnights in milliseconds.
@@ -46,7 +47,7 @@ const week = (slots: unknown[]) => [lessonsDay.parse({ day_of_week: 1, date: min
 describe('dates', () => {
   it('reads millisecond midnights as Minsk days', () => {
     expect(toISODate(Date.parse('2026-08-31T21:00:00Z'), TZ)).toBe('2026-09-01');
-    expect(toISODate(minsk('2026-10-30'), TZ)).toBe('2026-10-30');
+    expect(toISODate(minsk('2026-10-31'), TZ)).toBe('2026-10-31');
   });
 });
 
@@ -74,30 +75,77 @@ describe('calendar', () => {
     start_ts: minsk('2026-09-01'),
     end_ts: minsk('2027-05-31'),
   };
-  const ta = (uuid: string, type: string, title: string, start: string, end: string): TimeActivity => ({
+  const ta = (
+    uuid: string,
+    type: string,
+    title: string,
+    start: string,
+    end: string,
+    description: string | null = null,
+  ): TimeActivity => ({
     uuid,
     type,
     title,
-    description: null,
+    description,
     start_date: minsk(start),
     end_date: minsk(end),
   });
   const activities = [
-    ta('q2', 'QUARTER', 'SECOND_QUARTER', '2026-11-08', '2026-12-23'),
-    ta('q1', 'QUARTER', 'FIRST_QUARTER', '2026-08-31', '2026-10-30'),
-    ta('h1', 'HOLIDAYS', 'AUTUMN_HOLIDAYS', '2026-10-31', '2026-11-07'),
+    ta('q2', 'QUARTER', 'SECOND_QUARTER', '2026-11-09', '2026-12-24'),
+    ta('q1', 'QUARTER', 'FIRST_QUARTER', '2026-09-01', '2026-10-31'),
+    ta('h1', 'HOLIDAYS', 'AUTUMN_HOLIDAYS', '2026-11-01', '2026-11-08'),
   ];
 
   it('maps quarters in order and holidays, inclusive ends', () => {
     const { check } = setup();
     const c = mapCalendar(year, activities, { grade: 7 }, TZ, check);
     expect(c.terms.map((t) => [t.externalId, t.index, t.start, t.end])).toEqual([
-      ['q1', 1, '2026-08-31', '2026-10-30'],
-      ['q2', 2, '2026-11-08', '2026-12-23'],
+      ['q1', 1, '2026-09-01', '2026-10-31'],
+      ['q2', 2, '2026-11-09', '2026-12-24'],
     ]);
-    expect(c.holidays).toEqual([{ from: '2026-10-31', to: '2026-11-07' }]);
+    expect(c.holidays).toEqual([{ from: '2026-11-01', to: '2026-11-08' }]);
     expect(c.schoolYear).toEqual({ externalId: 'y', label: '2026/2027', start: '2026-09-01', end: '2027-05-31' });
     expect(c.gradingScaleId).toBeUndefined();
+  });
+
+  it('reads the fixture as local days: the first quarter is 1 September to 31 October', () => {
+    const { check } = setup();
+    const c = mapCalendar(
+      year,
+      timeActivities.map((a) => timeActivity.parse(a)),
+      { grade: 7 },
+      TZ,
+      check,
+    );
+    expect(c.terms.map((t) => [t.label, t.start, t.end])).toEqual([
+      ['FIRST_QUARTER', '2026-09-01', '2026-10-31'],
+      ['SECOND_QUARTER', '2026-11-09', '2026-12-24'],
+      ['THIRD_QUARTER', '2027-01-11', '2027-03-20'],
+      ['FOURTH_QUARTER', '2027-03-29', '2027-05-31'],
+    ]);
+  });
+
+  it('ADDITIONAL_HOLIDAYS are holidays for grades 1 and 2 only; older grades have school then', () => {
+    const { check } = setup();
+    const extra = ta('h2', 'HOLIDAYS', 'ADDITIONAL_HOLIDAYS', '2027-02-15', '2027-02-21', 'для учащихся 1-2 классов');
+    const all = [...activities, extra];
+    const feb = (grade: number | undefined) =>
+      mapCalendar(year, all, { grade }, TZ, check).holidays!.filter((h) => h.from === '2027-02-15');
+    expect(feb(1)).toEqual([{ from: '2027-02-15', to: '2027-02-21', note: 'для учащихся 1-2 классов' }]);
+    expect(feb(2)).toHaveLength(1);
+    expect(feb(3)).toEqual([]);
+    expect(feb(7)).toEqual([]);
+    // an unknown grade shows school days rather than hide a week of lessons
+    expect(feb(undefined)).toEqual([]);
+  });
+
+  it('keeps a description as a note on the term or the holiday, never as its name', () => {
+    const { check } = setup();
+    const q4 = ta('q4', 'QUARTER', 'FOURTH_QUARTER', '2027-03-29', '2027-05-31', 'для 9 и 11 классов: 30.03 – 25.05');
+    const summer = ta('h5', 'HOLIDAYS', 'SUMMER_HOLIDAYS', '2027-06-01', '2027-08-31', '  ');
+    const c = mapCalendar(year, [q4, summer], { grade: 7 }, TZ, check);
+    expect(c.terms[0]).toMatchObject({ index: 4, label: 'FOURTH_QUARTER', note: 'для 9 и 11 классов: 30.03 – 25.05' });
+    expect(c.holidays).toEqual([{ from: '2027-06-01', to: '2027-08-31' }]);
   });
 
   it('a first grader has no grading scale this year', () => {
@@ -110,7 +158,7 @@ describe('calendar', () => {
     const { drift, check } = setup();
     const c = mapCalendar(
       year,
-      [...activities, ta('x', 'TRIMESTER', 'X', '2027-01-10', '2027-03-19')],
+      [...activities, ta('x', 'TRIMESTER', 'X', '2027-01-11', '2027-03-20')],
       { grade: 7 },
       TZ,
       check,
@@ -270,7 +318,14 @@ describe('lessons and marks', () => {
 describe('final marks (provisional shape)', () => {
   const subjects = [{ externalId: 's-alg', name: 'Алгебра' }];
   const terms = [
-    { externalId: 'q1', kind: 'quarter' as const, index: 1, label: 'I', start: '2026-08-31', end: '2026-10-30' },
+    {
+      externalId: 'q1',
+      kind: 'quarter' as const,
+      index: 1,
+      label: 'FIRST_QUARTER',
+      start: '2026-09-01',
+      end: '2026-10-31',
+    },
   ];
 
   it('maps term and year finals, skips unknown periods as drift', () => {

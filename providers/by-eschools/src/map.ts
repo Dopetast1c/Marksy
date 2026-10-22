@@ -39,6 +39,12 @@ import type {
 
 /** Belarusian grades 1 and 2 get no marks (docs/api-spec.md 5): their school year has no grading scale (ux D49). */
 export const LAST_UNMARKED_GRADE = 2;
+/**
+ * ADDITIONAL_HOLIDAYS (a February week inside the third quarter) are holidays only up to this grade; for older
+ * grades those days are school days (docs/api-spec.md 6.4). The diary says so only in prose, so it is a rule here.
+ */
+export const LAST_GRADE_WITH_ADDITIONAL_HOLIDAYS = 2;
+const ADDITIONAL_HOLIDAYS = 'ADDITIONAL_HOLIDAYS';
 
 const LESSON_TYPE: Record<(typeof LESSON_TYPES)[number], LessonType> = {
   TEST: 'test',
@@ -87,6 +93,11 @@ const KIND_LABEL: Record<string, string> = {
 };
 
 const nonEmpty = (s: string | null | undefined) => (s && s.trim() ? s : undefined);
+/** The description of a term or a holiday is a note for people ("для учащихся 9 классов …"), kept as it is */
+const noteOf = (a: { description?: string | null }) => {
+  const note = nonEmpty(a.description)?.trim();
+  return note ? { note } : {};
+};
 const is = <T extends string>(list: readonly T[], v: string | null | undefined): v is T =>
   v != null && (list as readonly string[]).includes(v);
 
@@ -135,12 +146,17 @@ export function mapCalendar(
       externalId: q.uuid,
       kind: 'quarter',
       index: byTitle >= 0 ? byTitle + 1 : i + 1,
-      label: nonEmpty(q.description) ?? q.title,
+      label: q.title,
       start: from,
       end: to,
+      ...noteOf(q),
     };
   });
-  const holidays = activities.filter((a) => a.type === 'HOLIDAYS').map(range);
+  // an unknown grade gets no extra holidays: a week of school days shown as such is safer than lessons hidden
+  const youngest = student.grade != null && student.grade <= LAST_GRADE_WITH_ADDITIONAL_HOLIDAYS;
+  const holidays = activities
+    .filter((a) => a.type === 'HOLIDAYS' && (a.title !== ADDITIONAL_HOLIDAYS || youngest))
+    .map((a) => ({ ...range(a), ...noteOf(a) }));
   const yearRange = dayRange({ start: year.start_ts, end: year.end_ts }, timeZone);
   return {
     schoolYear: {

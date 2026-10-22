@@ -548,8 +548,8 @@ user_student_access user_id, student_id, PK(user_id, student_id)
 school_years        id, student_id, provider_id, external_id, label, start_date, end_date,
                     source (api|manual)
 terms               id, school_year_id, external_id, kind (quarter|trimester|semester|other),
-                    index, label, start_date, end_date
-holidays            id, school_year_id, start_date, end_date
+                    index, label, start_date, end_date, note (the system's remark, shown as it is)
+holidays            id, school_year_id, start_date, end_date, note
 subjects            id, student_id, school_year_id, provider_id, external_id, name, name_norm
 subject_links       student_id, from_subject_id, to_subject_id      (manual mapping across years)
 subject_colors      student_id, subject_id, color (palette key, null = auto), set_by (user_id), updated_at   (6.6)

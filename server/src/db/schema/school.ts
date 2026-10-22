@@ -37,6 +37,8 @@ export const terms = pgTable(
     label: text('label').notNull(),
     startDate: day('start_date').notNull(),
     endDate: day('end_date').notNull(),
+    /** The system's remark (dates that differ for some grades), shown as it is */
+    note: text('note'),
   },
   (t) => [unique('terms_year_external_key').on(t.schoolYearId, t.externalId)],
 );
@@ -50,6 +52,7 @@ export const holidays = pgTable(
       .references(() => schoolYears.id, { onDelete: 'cascade' }),
     startDate: day('start_date').notNull(),
     endDate: day('end_date').notNull(),
+    note: text('note'),
   },
   (t) => [unique('holidays_year_range_key').on(t.schoolYearId, t.startDate, t.endDate)],
 );
