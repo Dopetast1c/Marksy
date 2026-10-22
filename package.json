@@ -17,15 +17,19 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "pnpm -r test",
-    "check": "pnpm typecheck && pnpm lint && pnpm test && pnpm privacy",
+    "check": "pnpm format:check && pnpm typecheck && pnpm lint && pnpm test && pnpm privacy",
     "privacy": "node scripts/privacy-check.mjs",
     "setup:env": "node scripts/init-env.mjs",
     "db:up": "docker compose up -d --wait",
     "db:down": "docker compose down",
     "db:reset": "docker compose down -v && docker compose up -d --wait",
+    "db:migrate": "pnpm --filter @marksy/server db:migrate",
+    "db:seed": "pnpm --filter @marksy/server db:seed",
+    "db:studio": "pnpm --filter @marksy/server db:studio",
     "i18n:check": "pnpm --filter @marksy/i18n i18n:check",
     "test:provider": "node scripts/test-provider.mjs",
-    "probe": "node scripts/probe.mjs"
+    "probe": "node scripts/probe.mjs",
+    "sync:once": "pnpm --filter @marksy/server sync:once"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

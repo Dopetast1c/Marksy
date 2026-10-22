@@ -10,6 +10,7 @@ import type { DiaryProvider, HttpResponse, ProviderContext, Session, StudentRef,
 import manifestJson from '../provider.json';
 import { dayRange, overlaps } from './dates';
 import { currentClass, mapAccount, mapCalendar, mapFinals, mapLessonsWeek, mapSubjects } from './map';
+import { redactRaw } from './redact';
 import { sanitize } from './sanitize';
 import {
   finalWholeResponse,
@@ -241,4 +242,5 @@ export const byEschools: DiaryProvider = {
   },
 
   sanitize,
+  redactRaw,
 };

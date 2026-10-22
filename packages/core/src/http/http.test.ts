@@ -7,7 +7,7 @@ import { createAllowList } from './allow-list';
 import { createLogger } from './logger';
 import { createMemoryDrift, createRunContext } from './run-context';
 import { createThrottledClient } from './throttled-client';
-import type { Transport, TransportRequest } from './throttled-client';
+import type { ObservedResponse, Transport, TransportRequest } from './throttled-client';
 
 function harness(statuses: (number | Error)[] = [], manifest = sampleManifest) {
   const calls: TransportRequest[] = [];
@@ -130,6 +130,22 @@ describe('throttled client', () => {
     await strict.get('/me');
     expect(sleeps).toEqual([1500, 5000]);
   });
+
+  it('shows the final response of each read to onResponse, named by its allow-list entry, never the login', async () => {
+    const seen: ObservedResponse[] = [];
+    const statuses = [200, 503, 200];
+    const client = createThrottledClient({
+      manifest: sampleManifest,
+      transport: async () => ({ status: statuses.shift() ?? 200, headers: {}, text: '{"token":"secret"}' }),
+      sleep: async () => undefined,
+      onResponse: (r) => void seen.push(r),
+    });
+    await client.post('/auth/login', { login: 'x' });
+    await client.get('/diary/42/lessons', { query: { week: '2025-09-08' } });
+    expect(seen).toEqual([
+      { endpoint: 'GET /diary/**', query: { week: '2025-09-08' }, status: 200, text: '{"token":"secret"}' },
+    ]);
+  });
 });
 
 describe('run context', () => {
@@ -143,6 +159,28 @@ describe('run context', () => {
     await run.login({ login: 'a', password: 'b' });
     await expect(run.login({ login: 'a', password: 'b' })).rejects.toThrow(/One login/);
     expect(logins).toBe(1);
+  });
+
+  it('never shows onResponse a response that came while provider.login ran, whatever its path', async () => {
+    const seen: ObservedResponse[] = [];
+    const provider = {
+      manifest: sampleManifest,
+      // a two-step login: a challenge on an ordinary read path, then the login request
+      async login(_c: unknown, ctx: { http: { get(p: string): Promise<unknown>; post(p: string): Promise<unknown> } }) {
+        await ctx.http.get('/me');
+        await ctx.http.post('/auth/login');
+        return {};
+      },
+    } as unknown as DiaryProvider;
+    const run = createRunContext(provider, {
+      transport: async () => ({ status: 200, headers: {}, text: '{"token":"secret"}' }),
+      sleep: async () => undefined,
+      onResponse: (r) => void seen.push(r),
+    });
+    await run.login({ login: 'a', password: 'b' });
+    expect(seen).toEqual([]);
+    await run.ctx.http.get('/me');
+    expect(seen.map((r) => r.endpoint)).toEqual(['GET /me']);
   });
 
   it('redacts credentials in logs', () => {

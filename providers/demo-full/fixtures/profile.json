@@ -1,0 +1,18 @@
+{
+  "user_id": "U-1",
+  "display_name": "Родитель",
+  "pupils": [
+    {
+      "pupil_id": "p-1",
+      "name": { "first": "Ученик А", "last": "Пример" },
+      "school": "S-1",
+      "class": { "id": "C-1", "title": "7 «Г»", "year": 7 }
+    },
+    {
+      "pupil_id": "p-2",
+      "name": { "first": "Ученик Б", "last": "Пример" },
+      "school": "S-1",
+      "class": { "id": "C-2", "title": "1 «Д»", "year": 1 }
+    }
+  ]
+}

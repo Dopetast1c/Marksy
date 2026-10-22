@@ -8,6 +8,11 @@ describe('registry', () => {
     expect(listProviders({ all: true }).map((p) => p.manifest.id)).toContain('demo-minimal');
   });
 
+  it('knows demo-full, the provider of the seeded family, but does not offer it', () => {
+    expect(getProvider('demo-full')?.manifest.capabilities.lessons).toBe(true);
+    expect(listProviders().map((p) => p.manifest.id)).not.toContain('demo-full');
+  });
+
   it('offers by-eschools as beta', () => {
     expect(listProviders().map((p) => [p.manifest.id, p.manifest.status])).toEqual([['by-eschools', 'beta']]);
   });

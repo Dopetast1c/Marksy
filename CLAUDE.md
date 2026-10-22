@@ -37,6 +37,7 @@ packages/i18n/          interface languages, en.json (source) and ru.json, t() w
 packages/registry/      the list of providers; the only package that imports providers/*
 providers/_template/    starting point for a new provider
 providers/demo-minimal/ fictional fixture-only provider with the thinnest capability set
+providers/demo-full/    fictional fixture-only provider with a rich capability set: the seed family and the collector tests
 providers/by-eschools/  Belarus, diary.e-schools.by: manifest, schemas, mapper, sanitize, fixtures
 server/                 Express API + collector + Drizzle schema and migrations
 web/                    PWA frontend
@@ -93,15 +94,18 @@ pnpm install            install the workspace (Node 22, pnpm via corepack)
 pnpm db:up              PostgreSQL 16 in Docker, waits until healthy (databases marksy and marksy_test)
 pnpm dev                API on 127.0.0.1:3000 (tsx watch) and PWA on :5173 (Vite, /api proxied)
 pnpm dev:lan            the same, with the PWA open to the home network for testing on a phone (README)
-pnpm check              typecheck, lint, tests, privacy check: must be green before every commit
+pnpm check              formatting, typecheck, lint, tests, privacy check: must be green before every commit
 pnpm format             Prettier over the workspace
 pnpm --filter @marksy/server test    one package
-pnpm test:provider <id> the shared conformance suite for one provider (demo-minimal, by-eschools)
+pnpm test:provider <id> the shared conformance suite for one provider (demo-minimal, demo-full, by-eschools)
 pnpm i18n:check         every key, plural form and placeholder in every language file
 pnpm privacy            scripts/privacy-check.mjs: secrets, forbidden files, personal data, provider names outside the provider
+pnpm db:migrate         applies server/drizzle to DATABASE_URL (pnpm --filter @marksy/server db:generate writes a new migration)
+pnpm db:seed [--reset]  the fictional demo family on demo-full, with demo logins; --reset replaces only that family
+pnpm db:studio          Drizzle Studio on DATABASE_URL
 ```
 
-Database commands (`db:migrate`, `db:seed`, `db:studio`) arrive with M3, `probe` with M2. You never read `.env` and never run `pnpm probe`, `pnpm sync:once` or `pnpm dev:connect`: they log in to the real diary with the owner's credentials; the owner runs them.
+Server tests use `marksy_test` (wiped and migrated at the start of every run); never point a test or a script you run at `marksy` except `db:migrate` and `db:seed`. You never read `.env` and never run `pnpm probe`, `pnpm sync:once` or `pnpm dev:connect`: they log in to the real diary with the owner's credentials; the owner runs them.
 
 ## Local and phone testing
 

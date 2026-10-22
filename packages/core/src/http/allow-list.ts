@@ -67,9 +67,18 @@ export function createLoginMatcher(loginRequest: string | null): (path: string) 
 }
 
 export function createAllowList(entries: readonly string[]): (method: HttpMethod, path: string) => boolean {
-  const rules = entries.map(compile);
+  const entryOf = createAllowListMatcher(entries);
+  return (method, path) => entryOf(method, path) !== undefined;
+}
+
+// The allow-list entry a request matches ("GET /children/*/grades"): a name for the endpoint without its ids.
+export function createAllowListMatcher(
+  entries: readonly string[],
+): (method: HttpMethod, path: string) => string | undefined {
+  const rules = entries.map((entry) => ({ entry, ...compile(entry) }));
   return (method, path) => {
     const segments = safeSegments(path);
-    return segments !== null && rules.some((r) => r.method === method && matchSegments(r.segments, segments));
+    if (segments === null) return undefined;
+    return rules.find((r) => r.method === method && matchSegments(r.segments, segments))?.entry;
   };
 }

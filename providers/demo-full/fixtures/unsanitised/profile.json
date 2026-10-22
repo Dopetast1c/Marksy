@@ -1,0 +1,18 @@
+{
+  "user_id": "U-55210",
+  "display_name": "Zoryana Kovalchyk",
+  "pupils": [
+    {
+      "pupil_id": "p-88120",
+      "name": { "first": "Ostap", "last": "Kovalchyk" },
+      "school": "S-993",
+      "class": { "id": "C-4471", "title": "7 «Г»", "year": 7 }
+    },
+    {
+      "pupil_id": "p-88131",
+      "name": { "first": "Lesia", "last": "Kovalchyk" },
+      "school": "S-993",
+      "class": { "id": "C-4472", "title": "1 «Д»", "year": 1 }
+    }
+  ]
+}

@@ -1,0 +1,95 @@
+{
+  "week": "2025-09-08",
+  "days": [
+    {
+      "date": "2025-09-08",
+      "lessons": [
+        {
+          "uid": "L-101",
+          "n": 1,
+          "starts": "08:30",
+          "subject": { "code": "alg", "title": "Алгебра" },
+          "topic": "Линейные уравнения",
+          "homework": "№ 120, 121",
+          "kind": null,
+          "marks": [{ "uid": "M-1", "value": "8", "type": "CLASS", "note": null }]
+        },
+        {
+          "uid": "L-102",
+          "n": 2,
+          "starts": "09:25",
+          "subject": { "code": "rus", "title": "Русский язык" },
+          "topic": "Причастие как часть речи",
+          "homework": "упр. 140",
+          "kind": null,
+          "marks": []
+        }
+      ]
+    },
+    {
+      "date": "2025-09-09",
+      "lessons": [
+        {
+          "uid": null,
+          "n": 1,
+          "starts": "08:30",
+          "subject": { "code": "phy", "title": "Физика" },
+          "topic": "Измерение физических величин",
+          "homework": "§ 1, упр. 1",
+          "kind": "LAB",
+          "marks": [{ "uid": "M-2", "value": "6", "type": "LAB", "note": "Оформить вывод" }]
+        },
+        {
+          "uid": "L-104",
+          "n": 2,
+          "starts": "09:25",
+          "subject": { "code": "eng", "title": "Английский язык" },
+          "topic": "Travelling",
+          "homework": "WB p. 24 ex. 3",
+          "kind": null,
+          "marks": [{ "uid": "M-3", "value": "7/9", "type": null, "note": null }]
+        }
+      ]
+    },
+    {
+      "date": "2025-09-10",
+      "lessons": [
+        {
+          "uid": "L-105",
+          "n": 1,
+          "starts": "08:30",
+          "subject": { "code": "alg", "title": "Алгебра" },
+          "topic": "К/р №1 «Линейные уравнения»",
+          "homework": null,
+          "kind": "TEST",
+          "marks": [{ "uid": "M-4", "value": "5", "type": "TEST", "note": "Повторить правило" }]
+        },
+        {
+          "uid": "L-106",
+          "n": 2,
+          "starts": "09:25",
+          "subject": { "code": "rus", "title": "Русский язык" },
+          "topic": "Причастный оборот",
+          "homework": "упр. 152",
+          "kind": null,
+          "marks": [{ "uid": "M-5", "value": "н", "type": null, "note": null }]
+        }
+      ]
+    },
+    {
+      "date": "2025-09-12",
+      "lessons": [
+        {
+          "uid": "L-107",
+          "n": 1,
+          "starts": "08:30",
+          "subject": { "code": "pe", "title": "Физическая культура" },
+          "topic": "Бег 60 м",
+          "homework": null,
+          "kind": null,
+          "marks": [{ "uid": "M-6", "value": "зач", "type": null, "note": null }]
+        }
+      ]
+    }
+  ]
+}

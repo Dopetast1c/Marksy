@@ -60,8 +60,17 @@ export function createRunContext(
   // whatever logger the server passes, providers only ever see a redacting one
   const log = options.log ? redacting(options.log) : silentLogger;
   const drift = createMemoryDrift();
+  // every request made while provider.login runs is part of the login (a challenge, a token), whatever its method or
+  // path: none of them is ever handed to onResponse, which stores bodies
+  let inLogin = false;
+  const observe = options.onResponse;
   const ctx: ProviderContext = {
-    http: createThrottledClient({ ...options, manifest: provider.manifest, log }),
+    http: createThrottledClient({
+      ...options,
+      manifest: provider.manifest,
+      log,
+      ...(observe && { onResponse: (res) => void (inLogin || observe(res)) }),
+    }),
     log,
     now: options.now ?? (() => new Date()),
     drift,
@@ -73,7 +82,12 @@ export function createRunContext(
     async login(credentials) {
       if (loggedIn) throw new ProviderPolicyError('One login per run');
       loggedIn = true;
-      return provider.login(credentials, ctx);
+      inLogin = true;
+      try {
+        return await provider.login(credentials, ctx);
+      } finally {
+        inLogin = false;
+      }
     },
   };
 }

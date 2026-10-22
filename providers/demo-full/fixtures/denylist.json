@@ -1,0 +1,5 @@
+{
+  "strings": ["Zoryana", "Kovalchyk", "Ostap", "Lesia", "p-88120", "p-88131", "U-55210", "S-993", "C-4471", "C-4472"],
+  "patterns": ["[\\w.]+@[\\w.]+", "\\b\\d{7,}\\b"],
+  "keep": ["title"]
+}

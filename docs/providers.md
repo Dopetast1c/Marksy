@@ -27,6 +27,8 @@ packages/
 providers/
   _template/            copy this to start a provider (compiles, fails conformance until filled in)
   demo-minimal/         fixture-only provider with the thinnest capability set; what CI and the UI snapshots run against
+  demo-full/            fixture-only fictional diary with a rich capability set (lessons, quarters, work types, comments,
+                        absences in the mark cell, finals); the seeded demo family and the collector tests use it
   by-eschools/          Belarus, diary.e-schools.by (reference implementation)
     provider.json       manifest
     src/index.ts        DiaryProvider implementation
@@ -40,7 +42,7 @@ web/                    the PWA; reads the grading scale and provider name from 
 docs/                   product docs (this file, design.md, api-spec.md, tokens.json, mockups.html)
 ```
 
-`packages/registry` (`@marksy/registry`) imports every provider under `providers/` and exposes `getProvider(id)` and `listProviders()`, built with `createRegistry()` from `packages/core/src/providers/registry.ts`. Core holds only the registry logic and never imports a provider, because every provider depends on core. A provider becomes available to users as soon as it is in the registry and its manifest `status` is `stable` or `beta`; `experimental` ones (such as `demo-minimal`) are reachable by id for tests but not offered.
+`packages/registry` (`@marksy/registry`) imports every provider under `providers/` and exposes `getProvider(id)` and `listProviders()`, built with `createRegistry()` from `packages/core/src/providers/registry.ts`. Core holds only the registry logic and never imports a provider, because every provider depends on core. A provider becomes available to users as soon as it is in the registry and its manifest `status` is `stable` or `beta`; `experimental` ones (such as `demo-minimal` and `demo-full`) are reachable by id for tests and for the seed but not offered. The registry also re-exports the fixture transports of the two demo providers, so server tests reach them without importing `providers/*`.
 
 ## 3. Manifest (`provider.json`)
 
@@ -167,6 +169,12 @@ export interface DiaryProvider {
 
   /** Replace names, ids and free text in a raw response before it is saved as a fixture. */
   sanitize(endpoint: string, raw: unknown): unknown;
+
+  /**
+   * Optional: drop the personal fields the mapper never uses before the collector stores a response (raw_responses,
+   * 14 days). Unlike sanitize() it keeps ids and texts, so the body can be parsed again after a drift fix.
+   */
+  redactRaw?(raw: unknown): unknown;
 }
 
 export interface ProviderContext {
@@ -434,11 +442,13 @@ A snapshot test in `packages/core` locks this table for `by-10`: if a change to 
 
 The scheduler is generic and reads the provider's `limits`:
 
-- hourly runs on school days inside `syncWindow`, with a random offset, scope: current and previous term weeks that overlap the last 14 days, plus final marks once a day;
-- `weeklyRescan` of the whole current term for change detection;
+- hourly runs on school days inside `syncWindow`, with a random offset; scope: the current and the previous week, then whatever was missed since the last success, plus final marks once a day (`design.md` 10.4);
+- in the `weeklyRescan` slot, every week of the current term that was not fetched for six days, for change detection;
+- the collector asks for one `fetchUnit` at a time (a week, or the whole term for `term` providers) and counts each as verified only when it was stored completely; the run stops at `maxRequestsPerRun` and the rest waits for the next run;
 - never more than one `login()` per `minLoginIntervalMinutes` per account, shared by scheduled, manual and re-scan runs;
 - strictly serial requests, `requestDelayMs` between them, exponential backoff on 429 / 5xx / network errors, stop after three failures until the next slot;
-- the shared HTTP client refuses any request that does not match `readOnlyAllowList`.
+- the shared HTTP client refuses any request that does not match `readOnlyAllowList`;
+- the collector keeps every read response for 14 days (`raw_responses`, named by the allow-list entry it matched, so no ids in the name); the login response, and every response that arrives while `login()` runs, is never kept; `redactRaw()` drops the personal fields the mapper does not use before a body is stored.
 
 If your system publishes a rate limit or terms of use, put them in the manifest and in your README. Be more conservative than the limit, not less.
 

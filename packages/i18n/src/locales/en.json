@@ -84,5 +84,16 @@
   "guidance.lessonRisk.fact": "The subject average is {{termAverage}}",
   "guidance.lessonRisk.advice": "Do the homework especially carefully",
   "guidance.lessonHomeworkWeak.fact": "Homework in this subject averages {{homeworkAverage}}",
-  "guidance.lessonHomeworkWeak.advice": "Homework here is checked and marked"
+  "guidance.lessonHomeworkWeak.advice": "Homework here is checked and marked",
+
+  "notification.syncPaused.title": "The diary is not answering",
+  "notification.syncPaused.body": "Marksy will try again after {{until}}.",
+  "notification.syncAuth.title": "The diary did not accept the login",
+  "notification.syncAuth.body": "Update the password under Family to resume syncing.",
+  "notification.syncBlocked.title": "The diary blocked the login",
+  "notification.syncBlocked.body": "Check the account in the diary, then update the sign-in details under Family.",
+  "notification.syncNeeds2fa.title": "The diary asks for a confirmation code",
+  "notification.syncNeeds2fa.body": "Sign in again under Family and enter the code.",
+  "notification.drift.title": "The diary changed its data format",
+  "notification.drift.body": "{{endpoint}}: {{kind}} at {{path}}. Syncing goes on."
 }

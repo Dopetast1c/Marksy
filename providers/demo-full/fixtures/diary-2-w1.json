@@ -1,0 +1,30 @@
+{
+  "week": "2025-09-08",
+  "days": [
+    {
+      "date": "2025-09-08",
+      "lessons": [
+        {
+          "uid": "L-201",
+          "n": 1,
+          "starts": "09:00",
+          "subject": { "code": "lit1", "title": "Обучение грамоте" },
+          "topic": "Буква М",
+          "homework": "Прописи с. 12",
+          "kind": null,
+          "marks": []
+        },
+        {
+          "uid": "L-202",
+          "n": 2,
+          "starts": "09:50",
+          "subject": { "code": "math1", "title": "Математика" },
+          "topic": "Число 5",
+          "homework": null,
+          "kind": null,
+          "marks": []
+        }
+      ]
+    }
+  ]
+}

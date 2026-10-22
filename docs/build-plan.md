@@ -9,7 +9,7 @@ The order in which Marksy is built with Claude Code, what each milestone must de
 | M0 | Workspace scaffold, first run (`docs/first-run.md`) | `main` | done |
 | M1 | Core: canonical model, grading scales, marks math, HTTP client, i18n package | `m1-core` | done |
 | M2 | Provider `by-eschools` and the probe | `m2-eschools` | done |
-| M3 | Server: schema, collector, planner, seed data | `m3-server` | todo |
+| M3 | Server: schema, collector, planner, seed data | `m3-server` | done |
 | M4 | Accounts, families and the read API | `m4-api` | todo |
 | M5a | Web: tokens, shell, login, student pick, Главная, Внимание | `m5a-shell` | todo |
 | M5b | Web: Оценки, Итоги, Предметы, Предмет | `m5b-marks` | todo |
@@ -46,7 +46,7 @@ Claude Code works with the fictional data. It does not read rows of the real fam
 
 ### Definition of done (every milestone)
 
-- `pnpm check` is green: typecheck, lint, tests, privacy check.
+- `pnpm check` is green: formatting, typecheck, lint, tests, privacy check.
 - New code has tests: units for logic, Supertest for every route, the conformance suite for providers.
 - No real data anywhere: fixtures are sanitised and fictional, examples use example.com, nothing personal in logs.
 - Every user-facing string is an i18n key with `en` and `ru` values (from M1 on).
@@ -187,4 +187,7 @@ Local check: `pnpm install`, `pnpm db:up`, `pnpm check`, `pnpm dev`, then open h
 - M0: TypeScript is pinned to 6.0 because typescript-eslint does not support TypeScript 7 yet. Raise it when typescript-eslint does.
 - M1: the provider list lives in `packages/registry`, not in core (core must not import providers, and providers depend on core). A grading scale is plain data sent to the web app; formatting is `formatValue/formatAverage/formatFinal(scale, v, locale)`. The trend tolerance is `0.3 × (max − min) / 9`, exactly 0.3 on by-10. The manifest has `network.baseUrl`; the client takes paths only. Guidance gets `isTest` per lesson from the server (the tag «Контрольная», M6) and returns facts with optional advice as i18n keys. `neededAverage` is `null` for final rules that cannot be inverted, which hides the goal card. A year without marks is a student year without a scale (`gradingScaleId = null`), never a grade number (ux-principles D49). Movers: core returns every subject with a trend sorted by the size of the change; screens apply their limits (design.md 6.1). The ten other languages moved to a milestone of their own, M5e. Fixed on the way: the prototype's `band()` puts averages between two bands (6.5, 8.5) into `top`; core puts them in the band whose edge they have reached.
 - M2: the allow-list names the login and nine reads exactly, no `**`. Two canonical fields were added: `StudentRef.classExternalId` and `Lesson.attendance` (derived attendance, an ABSENT cell is never a mark). A 401 after login is an expired token (`ProviderUnavailableError`), not a bad password. The User-Agent is `network.userAgent` in the manifest. The probe replaces topics, homework, messages and comments with placeholders, prints counts only and writes fixtures only when nothing of the raw ids, names and texts survived. Final marks are parsed provisionally (`marks[subject][period]`) until a real sample exists.
+- M3: a second fictional provider, `demo-full` (rich capabilities, by-10, Monday week), carries the seeded demo family and the lesson-based collector tests, so nothing outside `providers/by-eschools` names the real system. Backfill is the lowest-priority set of any allowed run (no night window); the weekly re-scan takes the term's weeks not verified for 6 days, in the weekly slot or anywhere once older than 8 days; every run fetches the standing weeks again. Raw bodies come from an `onResponse` hook of the HTTP client, named by allow-list entry; the login response is never stored. Every family's diary credentials use a key derived per family. Tag presets live in the seed until M6 moves them to core. `pnpm sync:once` exits 0 when the planner holds a run back (interval, pause, offline) and 1 only on a real failure. Schema additions beyond the first draft of design 8 are written into it (alerted_at, class_external_id, student_years.grading_scale_id, raw_responses.student_id/week_start, final_marks.raw, notifications.params).
+- M3 privacy review, for M4: store a SHA-256 of session tokens and invite codes, never the raw values, so a database dump gives no live session or usable invite.
+- M3: the collector does not fetch separate homework assignments (`getHomework`) or behaviour events (`getBehaviour`) yet: no provider has them. They are added together with the first provider that does; the tables already exist.
 - **Reminder:** the owner runs `pnpm probe` a second time after 2026-10-30, when the first-quarter finals appear in `final/whole`, and the final-marks parser (`mapFinals`, api-spec 6.9) is finalised from that sample.

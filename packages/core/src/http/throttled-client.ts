@@ -1,7 +1,7 @@
 import { ProviderPolicyError } from '../providers/errors';
 import type { ProviderManifest } from '../providers/manifest';
 import type { Logger } from '../providers/types';
-import { createAllowList, createLoginMatcher } from './allow-list';
+import { createAllowListMatcher, createLoginMatcher } from './allow-list';
 import { redacting } from './logger';
 import type { HttpClient, HttpMethod, HttpRequestOptions, HttpResponse } from './types';
 
@@ -26,6 +26,15 @@ export interface TransportResponse {
 
 export type Transport = (req: TransportRequest) => Promise<TransportResponse>;
 
+/** A read response as the collector stores it (raw_responses). Never called for the login, whose body is the token. */
+export interface ObservedResponse {
+  /** The allow-list entry the request matched: the endpoint without ids */
+  endpoint: string;
+  query: Record<string, string>;
+  status: number;
+  text: string;
+}
+
 export const fetchTransport: Transport = async ({ method, url, headers, body, signal }) => {
   const res = await fetch(url, { method, headers, body, signal, redirect: 'manual' });
   return { status: res.status, headers: Object.fromEntries(res.headers), text: await res.text() };
@@ -42,6 +51,8 @@ export interface ThrottledClientOptions {
   random?: () => number;
   log?: Logger;
   timeoutMs?: number;
+  /** Sees the final response of every read request (after retries); the login is never shown to it. */
+  onResponse?: (res: ObservedResponse) => void;
 }
 
 export const MAX_ATTEMPTS = 3;
@@ -73,7 +84,7 @@ export function createThrottledClient(opts: ThrottledClientOptions): HttpClient 
     }
   }
   // compiled once: changing the manifest object later changes nothing
-  const allowed = createAllowList([...manifest.readOnlyAllowList]);
+  const entryOf = createAllowListMatcher([...manifest.readOnlyAllowList]);
   const isLogin = createLoginMatcher(manifest.auth.loginRequest);
   const base = new URL(manifest.network.baseUrl);
   if (base.protocol !== 'https:' || base.username || base.password) {
@@ -126,7 +137,8 @@ export function createThrottledClient(opts: ThrottledClientOptions): HttpClient 
 
   async function run(method: HttpMethod, path: string, options: HttpRequestOptions): Promise<HttpResponse> {
     const url = buildUrl(path, options.query);
-    if (!allowed(method, url.pathname)) {
+    const endpoint = entryOf(method, url.pathname);
+    if (endpoint === undefined) {
       throw new ProviderPolicyError(`${method} ${url.pathname} is not in the read-only allow-list`);
     }
     if ((method === 'GET' || method === 'HEAD') && options.body !== undefined) {
@@ -144,15 +156,25 @@ export function createThrottledClient(opts: ThrottledClientOptions): HttpClient 
       try {
         const res = await sendOnce(method, url, options);
         log?.debug('http', { method, path: url.pathname, status: res.status, attempt });
-        if (!RETRY_STATUS(res.status) || attempt >= attempts) return res;
+        const observe = () => {
+          if (!login)
+            opts.onResponse?.({
+              endpoint,
+              query: Object.fromEntries(url.searchParams),
+              status: res.status,
+              text: res.text,
+            });
+          return res;
+        };
+        if (!RETRY_STATUS(res.status) || attempt >= attempts) return observe();
         const retryAfter = Number(res.headers['retry-after']);
         const wait = Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : backoff(attempt);
         // a server asking for more than the cap gets no retry in this run; the planner tries again later
-        if (wait > MAX_RETRY_WAIT_MS) return res;
+        if (wait > MAX_RETRY_WAIT_MS) return observe();
         await sleep(wait);
       } catch (err) {
         if (err instanceof ProviderPolicyError || attempt >= attempts) throw err;
-        log?.warn('http network error', { method, path: url.pathname, attempt });
+        log?.warn('http network error', { endpoint, attempt });
         await sleep(backoff(attempt));
       }
     }
