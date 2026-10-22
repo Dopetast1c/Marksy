@@ -137,7 +137,8 @@ export const WORK_TYPES = [
 export const LESSON_TYPES = ['INDEPENDENT_WORK', 'PRACTICAL_WORK', 'LABORATORY_WORK', 'TEST', 'EXCURSION'] as const;
 
 export const slot = z.looseObject({
-  lesson_uuid: id,
+  /** null in real responses for some lessons (first probe, 2026-10); the id then falls back, see map.ts lessonIdOf */
+  lesson_uuid: z.string().min(1).nullable(),
   lesson_template_id: seen,
   homework_source_id: seen,
   subject_id: id,

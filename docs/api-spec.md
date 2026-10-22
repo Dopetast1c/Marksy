@@ -103,7 +103,7 @@ Useful for a "paste session JSON" dev mode. `localStorage["e-school-auth-diary"]
 - **Hourly run (school days, 08:00 to 14:00):** current week + previous week per child (late marks are common), plus `final/whole` once a day. About 12 requests total.
 - **Weekly re-scan (Friday evening):** every week of the current quarter per child, to catch marks that teachers changed or removed.
 - **Backfill:** all past weeks of the school year (36 weeks per child), run once at night, throttled.
-- **Upsert key:** `(student_id, lesson_uuid)`; marks also have their own `uuid`. Track `first_seen_at`, `changed_at`, `removed_at` and keep previous versions (`mark_history`) to power "new marks" and to catch edits and deletions. Scheduling, change detection and API drift logging are specified in `design.md` sections 8 and 10.
+- **Upsert key:** `(student_id, lesson_uuid)`, and when `lesson_uuid` is null `(student_id, date, number, subject_id)` (7.5); marks also have their own `uuid`. Track `first_seen_at`, `changed_at`, `removed_at` and keep previous versions (`mark_history`) to power "new marks" and to catch edits and deletions. Scheduling, change detection and API drift logging are specified in `design.md` sections 8 and 10.
 - **Grade 1 child:** no marks at all (Belarus grades 1 to 2 are unmarked). Still sync lessons and homework; show "no marks" gracefully.
 
 ## 6. Endpoint reference (parent scope)
@@ -232,7 +232,7 @@ Array of 6 days (Mon to Sat).
   "day_of_week": 1,
   "date": 1791752400000,           // ms, local midnight
   "slots": [{
-    "lesson_uuid": "uuid",
+    "lesson_uuid": "uuid",          // or null [VERIFIED, first probe: 3 of 51 lessons]
     "lesson_template_id": "uuid",
     "subject_id": "uuid",          // -> educational_subjects.uuid
     "subject_title": "string",
@@ -356,6 +356,7 @@ The frontend counts weekly absences as slots with `lesson_mark.kind === "ABSENT"
 - `lesson_mark.type` (work type): CLASSWORK classwork, HOMEWORK homework, PRACTICAL_WORK practical, LABORATORY_WORK lab, DICTATION dictation, TEST and KNOWLEDGE_CONTROL test, INDEPENDENT_WORK quiz, ESSAY essay; CREATIVE_WORK, SUMMARY, BY_HEART and TRANSLATION are `other`. The original value is always kept in `workTypeRaw`. `null` stays without a work type ("Работа на уроке" in the UI).
 - `slot.type` (lesson type): TEST test, LABORATORY_WORK lab, PRACTICAL_WORK practical, EXCURSION excursion, INDEPENDENT_WORK other, `null` regular. The lesson type alone never makes a lesson "a test" in the app: that is the family's tag «Контрольная» (`design.md` 6.3).
 - Calendar: QUARTER entries are `Term`s (`kind: quarter`, index from FIRST_QUARTER ... FOURTH_QUARTER), HOLIDAYS are holidays. A class with `level` 1 or 2 gets `gradingScaleId: null`, the school year without marks (`ux-principles.md` D49); from grade 3 the manifest's `by-10` applies.
+- Lesson identity: `lesson_uuid` when present. When it is null, the lesson's id is `slot:<date>:<number>:<subject_id>` (start time instead of the number if that is missing too), which is unique within one student's week; its mark and absence point to that id. The collector (design.md 8) matches a fetched lesson first by id, then by `(student, date, slot, subject)`, so a lesson that gets a real `lesson_uuid` on a later fetch keeps its row, its ticks and its history instead of being removed and created again.
 - Students: `profile_id`, `full_name` and `school_id` from `/admin/auth/me`, class id, `class_number` and `level` from the class (`StudentRef.classExternalId`, `className`, `grade`).
 
 ## 8. Network and etiquette
@@ -401,6 +402,7 @@ Verified by the first `pnpm probe` run (2026-10, one week, two children):
 - [x] `end_ts` / `end_date` are the last day of the range, inclusive: weeks span 6 or 7 days (6.5).
 - [x] Students' `full_name` has three words (family name, given name, patronymic), as `nameOrder: family-first` assumes.
 - [x] The extra fields listed in 6.1 are present; personal ones are never stored or logged.
+- [x] `lesson_uuid` can be `null` (6.8); lesson identity then falls back as described in 7.5.
 
 Still open:
 

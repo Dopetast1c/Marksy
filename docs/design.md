@@ -629,7 +629,7 @@ lesson_tag_hits       id, family_id, student_id, tag_id, source_lesson_id, due_l
 
 Upsert rules, applied to every fetched date range whatever the run kind:
 
-- lessons by `(provider_id, student_id, external_id)`; a lesson that disappears from a re-fetched range is soft-deleted (`removed_at`).
+- lessons by `(provider_id, student_id, external_id)`, and when no row has that id, by the natural key `(student_id, date, slot, subject external id)`: a match there is the same lesson, its `external_id` is updated (a system that later assigns a real id, e.g. e-schools' null `lesson_uuid`, api-spec 7.5) and its ticks, homework and history stay. A lesson that disappears from a re-fetched range under both keys is soft-deleted (`removed_at`). The natural key is computed from canonical fields, so the rule works for every provider.
 - marks by `(provider_id, student_id, external_id)`. New id: insert, `mark_events(new)`. Existing id with a different `raw_mark`, `kind`, `work_type` or `comment`: copy the old version to `mark_history`, update, set `changed_at`, `mark_events(changed)` with the diff. Existing mark whose lesson was fetched but which is no longer in the response: set `removed_at`, `mark_events(removed)`; if it comes back later, clear `removed_at`, `mark_events(restored)`. `last_seen_at` is updated on every fetch that contains the mark.
 - Averages and feeds exclude marks with `removed_at`; the feed shows removed and changed marks as their own items ("оценка 6 изменена на 7", "оценка удалена") for 14 days.
 - A week counts as "verified at" the `finished_at` of the last run that fetched it; the Sync screen shows the oldest verified-at of the quarter so it is visible how stale the history is.
@@ -1015,7 +1015,6 @@ Each of these was a hidden assumption in the first design and is now an explicit
 - Student e-schools login endpoint and whether a student token can read the same diary routes (section 7.5).
 - Whether teachers enter marks after 14:00 often enough to justify an evening run (section 10.2). Measure with `marks.first_seen_at` versus `lessons.date` after a month.
 - How the school computes the quarter final from the marks (plain rounded average, weighted tests, or teacher's judgement). Compare projected finals with real ones after 2026-10-30 and adjust the goal calculator (section 6.2).
-- Whether re-fetched weeks ever return a lesson with a different `lesson_uuid` for the same slot (timetable edits). If so, the removal logic needs a match on `(date, number, subject_id)` as a fallback.
 - `final/whole` populated shape (after 2026-10-30).
 - Whether `subjects.id` is stable across school years and shared across classes of the same school.
 - Whether the API can return a past school year (a `school_year` parameter on the diary routes, or a different `school_year` uuid in `time_activities`). If yes, backfill previous years automatically; if not, manual entry of year finals stays the only source for history before Marksy.

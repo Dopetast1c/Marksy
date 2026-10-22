@@ -522,6 +522,17 @@
       ],
       "lessons": [
         {
+          "externalId": "slot:2026-10-19:1:00000000-0000-4000-8000-fe528a1ea4e4",
+          "date": "2026-10-19",
+          "slot": 1,
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-fe528a1ea4e4",
+          "subjectName": "Русская литература (литературное чтение)",
+          "teacherExternalId": "00000000-0000-4000-8000-563cc2b855e7",
+          "hasAttachments": false,
+          "marks": []
+        },
+        {
           "externalId": "00000000-0000-4000-8000-3ae3d3ae45e5",
           "date": "2026-10-19",
           "slot": 2,
@@ -582,6 +593,17 @@
           "teacherExternalId": "00000000-0000-4000-8000-46e756d2a946",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
+          "hasAttachments": false,
+          "marks": []
+        },
+        {
+          "externalId": "slot:2026-10-19:6:00000000-0000-4000-8000-7d0b6443f321",
+          "date": "2026-10-19",
+          "slot": 6,
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-7d0b6443f321",
+          "subjectName": "Беларуская літаратура (літаратурнае чытанне)",
+          "teacherExternalId": "00000000-0000-4000-8000-46e756d2a946",
           "hasAttachments": false,
           "marks": []
         },
@@ -669,6 +691,17 @@
           "teacherExternalId": "00000000-0000-4000-8000-6e4d2dd6835c",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
+          "hasAttachments": false,
+          "marks": []
+        },
+        {
+          "externalId": "slot:2026-10-21:2:00000000-0000-4000-8000-70e614343b7f",
+          "date": "2026-10-21",
+          "slot": 2,
+          "startTime": "[text]",
+          "subjectExternalId": "00000000-0000-4000-8000-70e614343b7f",
+          "subjectName": "Беларуская мова",
+          "teacherExternalId": "00000000-0000-4000-8000-46e756d2a946",
           "hasAttachments": false,
           "marks": []
         },

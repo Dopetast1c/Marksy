@@ -168,6 +168,16 @@ interface MappedCell {
   attendance?: Attendance;
 }
 
+/**
+ * The lesson's id. Real responses sometimes have lesson_uuid = null (api-spec 6.8); the id is then built from what
+ * identifies the lesson within the student's week: date, lesson number (or start time) and subject. The server
+ * matches lessons by this id and, when ids differ, by (student, date, slot, subject) (design.md 8), so a lesson that
+ * later gets a real uuid is the same lesson, not a removal plus a new one.
+ */
+export function lessonIdOf(s: Slot, date: string): string {
+  return s.lesson_uuid ?? `slot:${date}:${s.number ?? s.start_time ?? '-'}:${s.subject_id}`;
+}
+
 /** A lesson_mark: a mark, or for ABSENT an attendance record (absences are never marks). */
 export function mapLessonMark(m: LessonMark, s: Slot, date: string, check: DriftCheck): MappedCell {
   check.known(m.kind, MARK_KINDS, 'lesson_mark.kind');
@@ -177,7 +187,7 @@ export function mapLessonMark(m: LessonMark, s: Slot, date: string, check: Drift
       attendance: {
         externalId: m.uuid,
         date,
-        lessonExternalId: s.lesson_uuid,
+        lessonExternalId: lessonIdOf(s, date),
         subjectExternalId: s.subject_id,
         status: 'absent',
         code: raw,
@@ -196,7 +206,7 @@ export function mapLessonMark(m: LessonMark, s: Slot, date: string, check: Drift
       date,
       subjectExternalId: s.subject_id,
       subjectName: s.subject_title,
-      lessonExternalId: s.lesson_uuid,
+      lessonExternalId: lessonIdOf(s, date),
       raw,
       kind,
       values,
@@ -212,7 +222,7 @@ export function mapLesson(s: Slot, date: string, check: DriftCheck): Lesson {
   check.known(s.type, LESSON_TYPES, 'slots[].type');
   const cell = s.lesson_mark ? mapLessonMark(s.lesson_mark, s, date, check) : {};
   return {
-    externalId: s.lesson_uuid,
+    externalId: lessonIdOf(s, date),
     date,
     ...(s.number != null && { slot: s.number }),
     ...(nonEmpty(s.start_time) && { startTime: s.start_time! }),

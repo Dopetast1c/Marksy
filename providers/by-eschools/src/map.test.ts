@@ -176,6 +176,22 @@ describe('lessons and marks', () => {
     expect(lessons[0]!.marks[0]).toMatchObject({ externalId: 'm-1', lessonExternalId: 'l-1', authorExternalId: 't-1' });
   });
 
+  it('a lesson without lesson_uuid keeps an id from date, number and subject, and so do its mark and absence', () => {
+    const { drift, check } = setup();
+    const [withMark, absent] = mapLessonsWeek(
+      week([
+        slot({ lesson_uuid: null, number: 3, lesson_mark: mark({}) }),
+        slot({ lesson_uuid: null, number: 4, lesson_mark: mark({ uuid: 'm-2', kind: 'ABSENT', mark: null }) }),
+      ]),
+      TZ,
+      check,
+    );
+    expect(withMark!.externalId).toBe('slot:2026-10-12:3:s-alg');
+    expect(withMark!.marks[0]!.lessonExternalId).toBe('slot:2026-10-12:3:s-alg');
+    expect(absent!.attendance![0]!.lessonExternalId).toBe('slot:2026-10-12:4:s-alg');
+    expect(drift.events).toEqual([]);
+  });
+
   it('an absence is attendance, never a mark', () => {
     const { check } = setup();
     const [l] = mapLessonsWeek(week([slot({ lesson_mark: mark({ kind: 'ABSENT', mark: null }) })]), TZ, check);

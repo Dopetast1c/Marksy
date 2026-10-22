@@ -96,7 +96,7 @@ Local check: `pnpm install`, `pnpm db:up`, `pnpm check`, `pnpm dev`, then open h
 
 **Deliver:**
 - Drizzle schema and migrations for every table in design 8; `pnpm db:migrate`, `pnpm db:studio`.
-- Collector over the provider interface: upsert with change and removal detection, `mark_history`, `mark_events`, `sync_runs`, `sync_coverage`, drift events, raw responses with retention.
+- Collector over the provider interface: upsert with change and removal detection, `mark_history`, `mark_events`, `sync_runs`, `sync_coverage`, drift events, raw responses with retention. Lesson identity: by `external_id`, and when that finds nothing by `(student, date, slot, subject)`, so a lesson whose id changes (e-schools: `lesson_uuid` null, then a real one) keeps its row, ticks and history (design.md 8, api-spec 7.5); tested with a fixture week fetched twice.
 - Planner (design 10.4): tick, window and jitter from the manifest, catch-up after downtime, request cap per run, pause and doubling after failures, offline detection, weekly re-scan, backfill. Retention janitor.
 - `pnpm sync:once`: one collector run for the owner's account from `.env` into the local database (creates a minimal family on first run), so the schema and the mapper meet real data early. Run by the owner.
 - `pnpm db:seed`: a fictional family matching the prototype (two children, one in a class without marks), a school year of marks, lessons, homework, tags and study sessions, so every screen can be built without the diary. It creates demo logins (a parent and a student, e-mails at example.com, a fixed demo password printed by the command) and is safe to re-run (`pnpm db:seed --reset`). No diary account is attached: the planner skips families without one.
