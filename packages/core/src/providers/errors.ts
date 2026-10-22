@@ -34,5 +34,8 @@ export class ProviderUnavailableError extends ProviderError {
   }
 }
 
+/** A response that cannot be used at all (a required top-level field is missing); recorded as drift first. */
+export class ProviderSchemaError extends ProviderError {}
+
 /** A request outside the manifest's readOnlyAllowList, a second login in one run, or a foreign host. Always a bug. */
 export class ProviderPolicyError extends ProviderError {}

@@ -18,10 +18,22 @@ export interface ConformanceOptions {
   provider: DiaryProvider;
   /** Absolute path of the provider's fixtures/ folder */
   fixturesDir: string;
-  /** "METHOD /path/pattern" -> fixture file name without .json */
-  routes: Record<string, string>;
+  /**
+   * "METHOD /path/pattern" -> fixture file name without .json, first match wins. Absent: fixtures/routes.json, which
+   * the probe writes together with the fixtures.
+   */
+  routes?: Record<string, string>;
   /** Fictional credentials for login() */
   credentials?: Record<string, string>;
+  /** The dates the read asks lessons and marks for; default the whole school year. Week-based APIs pass their fixture weeks. */
+  range?: schemas.DateRange;
+}
+
+function routesOf(opts: ConformanceOptions): Record<string, string> {
+  if (opts.routes) return opts.routes;
+  const path = join(opts.fixturesDir, 'routes.json');
+  if (!existsSync(path)) throw new Error('No routes: pass them in code or write fixtures/routes.json');
+  return readJson(path) as Record<string, string>;
 }
 
 const KNOWN_FOLDERS = new Set(['expected', 'unsanitised', 'raw']);
@@ -78,7 +90,7 @@ function loadFixtures(dir: string, sub = ''): Record<string, unknown> {
   if (!existsSync(folder)) return {};
   return Object.fromEntries(
     readdirSync(folder)
-      .filter((f) => f.endsWith('.json') && f !== 'denylist.json')
+      .filter((f) => f.endsWith('.json') && f !== 'denylist.json' && f !== 'routes.json')
       .map((f) => [f.slice(0, -5), readJson(join(folder, f))]),
   );
 }
@@ -93,7 +105,7 @@ export async function readAll(
   const caps = provider.manifest.capabilities;
   const requests: TransportRequest[] = [];
   const run = createRunContext(provider, {
-    transport: createFixtureTransport({ fixtures, routes: opts.routes, mutate, log: requests }),
+    transport: createFixtureTransport({ fixtures, routes: routesOf(opts), mutate, log: requests }),
     sleep: async () => undefined,
     now: () => new Date('2026-10-14T09:00:00Z'),
   });
@@ -103,7 +115,7 @@ export async function readAll(
   const students: CanonicalSnapshot['students'] = {};
   for (const student of account.students) {
     const calendar = await provider.getCalendar(session, student, ctx);
-    const range = { from: calendar.schoolYear.start, to: calendar.schoolYear.end };
+    const range = opts.range ?? { from: calendar.schoolYear.start, to: calendar.schoolYear.end };
     const entry: CanonicalSnapshot['students'][string] = {
       calendar,
       subjects: await provider.getSubjects(session, student, ctx),
