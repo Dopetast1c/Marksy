@@ -161,6 +161,28 @@ describe('run context', () => {
     expect(logins).toBe(1);
   });
 
+  it('never shows onResponse a response that came while provider.login ran, whatever its path', async () => {
+    const seen: ObservedResponse[] = [];
+    const provider = {
+      manifest: sampleManifest,
+      // a two-step login: a challenge on an ordinary read path, then the login request
+      async login(_c: unknown, ctx: { http: { get(p: string): Promise<unknown>; post(p: string): Promise<unknown> } }) {
+        await ctx.http.get('/me');
+        await ctx.http.post('/auth/login');
+        return {};
+      },
+    } as unknown as DiaryProvider;
+    const run = createRunContext(provider, {
+      transport: async () => ({ status: 200, headers: {}, text: '{"token":"secret"}' }),
+      sleep: async () => undefined,
+      onResponse: (r) => void seen.push(r),
+    });
+    await run.login({ login: 'a', password: 'b' });
+    expect(seen).toEqual([]);
+    await run.ctx.http.get('/me');
+    expect(seen.map((r) => r.endpoint)).toEqual(['GET /me']);
+  });
+
   it('redacts credentials in logs', () => {
     const lines: unknown[] = [];
     const log = createLogger((_l, msg, data) => lines.push([msg, data]));

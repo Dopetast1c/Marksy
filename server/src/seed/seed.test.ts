@@ -4,7 +4,7 @@ import { resetDb, testDb } from '../../test/db';
 import { verifyPassword } from '../auth/password';
 import { families, lessons, lessonTags, marks, attendance, studySessions, users } from '../db/schema';
 import { generateGrade7, seedCalendar } from './generate';
-import { DEMO_LOGINS, DEMO_PASSWORD, demoStudents, seedDemo } from './seed';
+import { DEMO_LOGINS, DEMO_PASSWORD, demoStudents, seedAllowed, seedDemo } from './seed';
 
 const db = testDb();
 const NOW = new Date('2026-10-15T16:12:00Z'); // Thursday 15 October 2026, 19:12 in the demo's time zone
@@ -34,6 +34,22 @@ describe('seed generator', () => {
 
 describe('pnpm db:seed', () => {
   beforeEach(() => resetDb(db));
+
+  it('runs only where nobody outside the home can sign in with the demo password', () => {
+    for (const ok of [
+      undefined,
+      '',
+      'http://localhost:5173',
+      'http://192.168.1.20:5173',
+      'http://10.0.0.5',
+      'http://nas.local',
+    ]) {
+      expect(seedAllowed(ok), String(ok)).toBe(true);
+    }
+    for (const no of ['https://marks.example.com', 'http://172.32.0.1', 'http://8.8.8.8', 'not a url']) {
+      expect(seedAllowed(no), no).toBe(false);
+    }
+  });
 
   it('runs on an empty database: two children, one without marks, demo logins', async () => {
     const r = await seedDemo(db, { now: NOW });

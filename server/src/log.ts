@@ -8,3 +8,13 @@ export const log: Logger = createLogger((level, msg, data) => {
   if (level === 'debug') return;
   console[level](`[${new Date().toISOString()}] ${line}`);
 });
+
+/**
+ * An error as it may be shown: its class and, for database and network errors, the code. Never the message, which
+ * for a failed query carries the SQL parameters (a login, a name) and for a provider may carry a response.
+ */
+export function errorSummary(err: unknown): string {
+  if (!(err instanceof Error)) return 'Error';
+  const code = (err as { code?: unknown }).code ?? (err.cause as { code?: unknown } | undefined)?.code;
+  return typeof code === 'string' && /^[\w-]{1,20}$/.test(code) ? `${err.name} ${code}` : err.name;
+}

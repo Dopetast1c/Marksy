@@ -19,7 +19,10 @@ const config = readSyncConfig();
 if (config.enabled) {
   const db = createDb();
   // the retention janitor runs after the first tick of each day (docs/design.md 10.4)
-  const janitor = dailyJanitor(db, readRetention(), (report) => log.info('retention', report));
+  const janitor = dailyJanitor(db, readRetention(), (report) => {
+    // one line per table under safe keys: table names like raw_responses would be redacted as keys
+    for (const [kind, count] of Object.entries(report)) if (count) log.info('retention', { kind, count });
+  });
   createScheduler({ db, config, log, afterTick: janitor });
   log.info('collector scheduler on', { count: config.tickMinutes });
 } else {

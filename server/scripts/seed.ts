@@ -1,9 +1,15 @@
 import { createDb, migrateDb } from '../src/db/client';
-import { DEMO_LOGINS, DEMO_PASSWORD, seedDemo } from '../src/seed/seed';
+import { DEMO_LOGINS, DEMO_PASSWORD, seedAllowed, seedDemo } from '../src/seed/seed';
 
 // `pnpm db:seed [--reset]`: the fictional demo family with demo logins, for anyone without a diary account and for
 // building screens. It never touches another family; --reset replaces only the demo family.
 const reset = process.argv.includes('--reset');
+if (!seedAllowed(process.env.PUBLIC_URL) && !process.argv.includes('--allow-public')) {
+  console.error(
+    'PUBLIC_URL is a public address: the demo admin has a published password. Use --allow-public to seed anyway.',
+  );
+  process.exit(2);
+}
 const db = createDb();
 try {
   await migrateDb(db);

@@ -2,6 +2,7 @@ import type { Logger } from '@marksy/core';
 import { and, isNotNull, isNull } from 'drizzle-orm';
 import { schedule } from 'node-cron';
 import type { Db } from '../db/client';
+import { errorSummary } from '../log';
 import { diaryAccounts } from '../db/schema';
 import type { SyncConfig } from './config';
 import type { Trigger } from './plan';
@@ -50,10 +51,14 @@ export function createScheduler(opts: SchedulerOptions): Scheduler {
           if (r.outcome === 'ran')
             log.info('sync run', { outcome: r.status, reason: r.errorClass ?? '', count: r.requests });
         } catch (err) {
-          log.error('sync tick failed', { reason: err instanceof Error ? err.name : 'Error' });
+          log.error('sync run failed', { reason: errorSummary(err) });
         }
       }
       await opts.afterTick?.();
+    } catch (err) {
+      // never rethrown: node-cron would print the whole error (a failed query carries its parameters), and an
+      // unhandled rejection from the start-up tick would stop the process
+      log.error('sync tick failed', { reason: errorSummary(err) });
     } finally {
       busy = false;
     }

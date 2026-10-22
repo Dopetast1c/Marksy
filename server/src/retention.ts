@@ -105,6 +105,9 @@ export async function applyRetention(db: Db, limits: RetentionLimits, now = new 
   );
   await run('lesson_tag_hits', sql`delete from lesson_tag_hits where due_date < ${days(limits.tagHitsDays)}::date`);
   await run('sessions', sql`delete from sessions where expires_at < ${now}`);
+  // single-use secrets: an expired code is useless and should not linger
+  await run('invites', sql`delete from invites where expires_at < ${now}`);
+  await run('telegram_link_codes', sql`delete from telegram_link_codes where expires_at < ${now}`);
 
   // per student: the start of the oldest school year still kept (null while the student has fewer years)
   const keptFrom = (student: ReturnType<typeof sql>) => sql`(
@@ -121,13 +124,28 @@ export async function applyRetention(db: Db, limits: RetentionLimits, now = new 
         where l.id = o.lesson_id and l.date < ${keptFrom(sql`o.student_id`)}`,
   );
 
-  // a family that set families.settings.retention_years keeps diary data that long (docs/design.md 14.1)
-  for (const table of ['marks', 'attendance', 'lessons'] as const) {
+  // a family that set families.settings.retention_years keeps diary data that long (docs/design.md 14.1): every table
+  // with a day of its own, and finals by the end of their school year
+  const familyLimit = sql`(${now}::date - make_interval(years => (f.settings->>'retention_years')::int))`;
+  const limited = sql`f.id = x.family_id and (f.settings->>'retention_years') is not null`;
+  const dated = {
+    marks: sql`x.date`,
+    attendance: sql`x.date`,
+    behaviour_events: sql`x.date`,
+    homework_items: sql`coalesce(x.due_date, x.set_date)`,
+    lessons: sql`x.date`,
+  };
+  for (const [table, day] of Object.entries(dated)) {
     await run(
       `${table}_family_limit`,
-      sql`delete from ${sql.identifier(table)} x using families f
-          where f.id = x.family_id and (f.settings->>'retention_years') is not null
-            and x.date < (${now}::date - make_interval(years => (f.settings->>'retention_years')::int))`,
+      sql`delete from ${sql.identifier(table)} x using families f where ${limited} and ${day} < ${familyLimit}`,
+    );
+  }
+  for (const table of ['final_marks', 'final_marks_raw']) {
+    await run(
+      `${table}_family_limit`,
+      sql`delete from ${sql.identifier(table)} x using families f, school_years y
+          where ${limited} and y.id = x.school_year_id and y.end_date < ${familyLimit}`,
     );
   }
   return report;

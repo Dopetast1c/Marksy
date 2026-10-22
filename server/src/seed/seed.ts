@@ -36,6 +36,29 @@ export const DEMO_PROVIDER = 'demo-full';
 export const DEMO_PASSWORD = 'marksy-demo';
 export const DEMO_LOGINS = { parent: 'parent@example.com', student: 'student@example.com' } as const;
 
+/**
+ * The demo admin has a published password, so the seed only runs where nobody outside the home can sign in: PUBLIC_URL
+ * unset, localhost or a private network address. A public instance needs --allow-public.
+ */
+export function seedAllowed(publicUrl: string | undefined): boolean {
+  if (!publicUrl?.trim()) return true;
+  let host: string;
+  try {
+    host = new URL(publicUrl).hostname.replace(/^\[|\]$/g, '');
+  } catch {
+    return false;
+  }
+  return (
+    host === 'localhost' ||
+    host === '::1' ||
+    host.endsWith('.local') ||
+    /^127\./.test(host) ||
+    /^10\./.test(host) ||
+    /^192\.168\./.test(host) ||
+    /^172\.(1[6-9]|2\d|3[01])\./.test(host)
+  );
+}
+
 export interface SeedResult {
   created: boolean;
   familyId: string;

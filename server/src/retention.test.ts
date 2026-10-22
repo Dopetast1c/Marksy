@@ -1,8 +1,12 @@
+import { eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { resetDb, testDb } from '../test/db';
 import { createAccount } from '../test/factories';
 import {
   apiDriftEvents,
+  families,
+  homeworkItems,
+  invites,
   lessons,
   marks,
   markEvents,
@@ -204,5 +208,51 @@ describe('retention janitor', () => {
     expect(await db.select().from(notifications)).toEqual([]);
     expect((await db.select().from(apiDriftEvents)).map((d) => d.path).sort()).toEqual(['b', 'c']);
     expect(await db.select().from(marks)).toHaveLength(1);
+  });
+
+  it('expired codes go; a family limit removes old diary data of every kind', async () => {
+    const w = await world();
+    await db.insert(invites).values([
+      { code: 'OLD-CODE', familyId: w.family.id, role: 'parent', expiresAt: ago(1) },
+      { code: 'NEW-CODE', familyId: w.family.id, role: 'parent', expiresAt: new Date(NOW.getTime() + 86_400_000) },
+    ]);
+    await db
+      .update(families)
+      .set({ settings: { retention_years: 1 } })
+      .where(eq(families.id, w.family.id));
+    const [subject] = await db
+      .insert(subjects)
+      .values({
+        studentId: w.student.id,
+        schoolYearId: w.current.id,
+        providerId: 'demo-full',
+        externalId: 'alg',
+        name: 'Алгебра',
+        nameNorm: 'алгебра',
+      })
+      .returning();
+    const mark = (externalId: string, date: string) => ({
+      familyId: w.family.id,
+      studentId: w.student.id,
+      providerId: 'demo-full',
+      externalId,
+      date,
+      subjectId: subject!.id,
+      raw: '8',
+      kind: 'numeric' as const,
+      values: [8],
+    });
+    await db.insert(marks).values([mark('old', '2024-10-01'), mark('new', '2025-10-01')]);
+    await db.insert(homeworkItems).values({
+      familyId: w.family.id,
+      studentId: w.student.id,
+      title: 'Old',
+      source: 'manual',
+      dueDate: '2024-10-01',
+    });
+    await applyRetention(db, RETENTION_DEFAULTS, NOW);
+    expect((await db.select().from(invites)).map((i) => i.code)).toEqual(['NEW-CODE']);
+    expect((await db.select().from(marks)).map((m) => m.externalId)).toEqual(['new']);
+    expect(await db.select().from(homeworkItems)).toEqual([]);
   });
 });

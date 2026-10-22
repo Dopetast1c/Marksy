@@ -174,7 +174,8 @@ export async function runCollector(opts: CollectorOptions): Promise<CollectorRes
       endpoint: r.endpoint,
       params: r.query,
       status: r.status,
-      body: rawBody(r.text),
+      // the provider drops what it never maps (names, codes) before anything is stored
+      body: provider.redactRaw ? provider.redactRaw(rawBody(r.text)) : rawBody(r.text),
       studentId: scope.studentId,
       weekStart: scope.weekStart,
       fetchedAt: now(),
@@ -298,7 +299,7 @@ export async function runCollector(opts: CollectorOptions): Promise<CollectorRes
     for (const u of rest) if (!(await fetchUnit(u))) break;
   } catch (err) {
     failure = err;
-    opts.log?.warn('sync run failed', { error: describeError(err) });
+    opts.log?.warn('sync run failed', { reason: describeError(err) });
   } finally {
     await flushRaw().catch(() => undefined);
   }

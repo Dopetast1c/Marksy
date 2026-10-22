@@ -169,6 +169,12 @@ export interface DiaryProvider {
 
   /** Replace names, ids and free text in a raw response before it is saved as a fixture. */
   sanitize(endpoint: string, raw: unknown): unknown;
+
+  /**
+   * Optional: drop the personal fields the mapper never uses before the collector stores a response (raw_responses,
+   * 14 days). Unlike sanitize() it keeps ids and texts, so the body can be parsed again after a drift fix.
+   */
+  redactRaw?(raw: unknown): unknown;
 }
 
 export interface ProviderContext {
@@ -442,7 +448,7 @@ The scheduler is generic and reads the provider's `limits`:
 - never more than one `login()` per `minLoginIntervalMinutes` per account, shared by scheduled, manual and re-scan runs;
 - strictly serial requests, `requestDelayMs` between them, exponential backoff on 429 / 5xx / network errors, stop after three failures until the next slot;
 - the shared HTTP client refuses any request that does not match `readOnlyAllowList`;
-- the collector keeps every read response for 14 days (`raw_responses`, named by the allow-list entry it matched, so no ids in the name); the login response is never kept.
+- the collector keeps every read response for 14 days (`raw_responses`, named by the allow-list entry it matched, so no ids in the name); the login response, and every response that arrives while `login()` runs, is never kept; `redactRaw()` drops the personal fields the mapper does not use before a body is stored.
 
 If your system publishes a rate limit or terms of use, put them in the manifest and in your README. Be more conservative than the limit, not less.
 

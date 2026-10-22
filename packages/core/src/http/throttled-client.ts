@@ -174,7 +174,7 @@ export function createThrottledClient(opts: ThrottledClientOptions): HttpClient 
         await sleep(wait);
       } catch (err) {
         if (err instanceof ProviderPolicyError || attempt >= attempts) throw err;
-        log?.warn('http network error', { method, path: url.pathname, attempt });
+        log?.warn('http network error', { endpoint, attempt });
         await sleep(backoff(attempt));
       }
     }

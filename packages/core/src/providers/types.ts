@@ -83,4 +83,11 @@ export interface DiaryProvider {
 
   /** Replace names, ids and free text in a raw response before it is saved as a fixture. */
   sanitize(endpoint: string, raw: unknown): unknown;
+
+  /**
+   * Drop the personal fields the mapper never uses from a response before the collector stores it (raw_responses,
+   * 14 days). Unlike sanitize() it keeps ids and texts, so the body can be parsed again. Optional: a provider whose
+   * responses carry nothing beyond what it maps may leave it out.
+   */
+  redactRaw?(raw: unknown): unknown;
 }

@@ -825,7 +825,7 @@ The schedule above describes the ideal day. Section 10.4 describes what happens 
 |---|---|---|
 | `sync_runs` | 90 days, then one row per day is compacted into `sync_daily` (date, runs, failures, requests) | the log is for diagnosing recent problems; the daily line is enough for "how often did this break" |
 | `sync_coverage` | current and previous school year; older rows deleted with the year's compaction | the planner never looks further back |
-| `raw_responses` | 14 days; the response of the last successful run per `(student, week)` is kept for the current term | re-parsing after a drift fix needs recent bodies, not a year of them |
+| `raw_responses` | 14 days; the response that verified a `(student, week)` of the current term is kept until the term ends. Stored without the personal fields the mapper never uses (the provider's `redactRaw()`), never the login response | re-parsing after a drift fix needs recent bodies, not a year of them |
 | `api_drift_events` | until acknowledged plus 180 days; `count` and `last_seen_at` keep updating | an acknowledged event that stopped occurring is noise |
 | `mark_events`, `lesson_prep_events`, `notifications` (the inbox, which is also the delivery log) | 180 days | the feed shows "new since last visit", not an audit trail; `mark_history` keeps the versions themselves |
 | `study_sessions` | current and previous school year; `inferred` rows are replaced on every recompute | the comparison goes back a year at most |
@@ -833,7 +833,9 @@ The schedule above describes the ideal day. Section 10.4 describes what happens 
 | `lesson_overrides` | current and previous school year | "N уроков назад" and `callAfter` count real lessons of this year; older overrides change nothing on screen |
 | `lesson_tag_hits` | until 30 days after the due date; recomputed hits replace removed ones | the schedule and Внимание look ahead, not back |
 | `mark_history` | lifetime of the mark | that is the change detection the product promises |
-| `lessons`, `marks`, `attendance` | while the student is in the family; older than `families.settings.retention_years` when a family set that limit (14.1) | the product; the limit is the family's choice |
+| `lessons`, `marks`, `attendance`, `homework_items`, `behaviour_events`, `final_marks` | while the student is in the family; older than `families.settings.retention_years` when a family set that limit (14.1; finals by the end of their school year) | the product; the limit is the family's choice |
+| `sync_daily` | while the diary account exists | one small line per account and day |
+| `invites`, `telegram_link_codes` | until they expire | single-use secrets |
 | `user_files` (wallpaper) | while the user exists; replaced on upload, deleted with the user | a personal picture, one per user |
 | `user_seen`, sessions | sessions expire by TTL; `user_seen` keeps only the last visit per screen | nothing historical is needed |
 
@@ -915,10 +917,10 @@ Summary of `docs/i18n.md`: one `packages/i18n` package with a JSON file per lang
 Marksy stores data about children, and a public project will be run in jurisdictions with different rules (GDPR in the EU and UK, FERPA and COPPA in the US, national laws elsewhere). The design gives every instance the same tools; which rules apply is the operator's decision.
 
 - **Consent record.** Connecting a diary stores `families.consent_version`, `consent_at`, `consent_by`: the text shown on the connect screen (per interface language, versioned in `packages/i18n`) says what is collected, where it is stored, and that the collector only reads. Changing the text bumps the version and asks again.
-- **Retention.** `families.settings.retention_years` (default: keep everything, which is the point of the product; a family or operator can set a limit, applied by the janitor of 10.4). Operational data has its own limits (10.4, `RETENTION_*` in `.env.example`); raw responses are kept 14 days (`RETENTION_RAW_RESPONSES_DAYS`) because they hold more than the app needs.
+- **Retention.** `families.settings.retention_years` (default: keep everything, which is the point of the product; a family or operator can set a limit, applied by the janitor of 10.4). Operational data has its own limits (10.4, `RETENTION_*` in `.env.example`); raw responses are kept 14 days (`RETENTION_RAW_RESPONSES_DAYS`; the one that verified a week of the current term until the term ends) because they hold more than the app needs, and the provider's `redactRaw()` removes the personal fields the app never uses before they are stored.
 - **Export.** `GET /api/family/export` returns everything the family owns as JSON (students, marks, history, rules, settings), admin only.
 - **Erasure.** `DELETE /api/family` removes the family and all its rows, including raw responses and notification subscriptions, after a typed confirmation; a member can leave and be erased without deleting the family.
-- **Hosted instances.** Every family's credentials are encrypted with a per-family key derived from `CREDENTIALS_KEY` and the family id (HKDF, AES-256-GCM, `server/src/crypto/credentials.ts`), so when one server serves many families (friends, a school club) a database dump does not expose every diary login at once; operators are told in `README` that hosting other people's children's data makes them a data controller, and the consent text names the operator.
+- **Hosted instances.** Every family's credentials are encrypted with a per-family key derived from `CREDENTIALS_KEY` and the family id (HKDF, AES-256-GCM, `server/src/crypto/credentials.ts`), so when one server serves many families (friends, a school club) a database dump does not expose every diary password at once (the login itself is the account's label in Семья and is stored as it is); operators are told in `README` that hosting other people's children's data makes them a data controller, and the consent text names the operator.
 - **Minors' accounts.** Marksy stores no birth dates. A student user is a minor by assumption; student accounts cannot change family settings, export data or invite others.
 - **No third parties.** No analytics, no crash reporting that sends content, fonts optionally self-hosted (`SELF_HOST_FONTS=true`) for operators who do not want Google Fonts requests from children's phones.
 
