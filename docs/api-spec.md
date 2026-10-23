@@ -468,6 +468,9 @@ Second probe, six weeks of two children: 44 `SINGLE`, 1 `DOUBLE`, 27 `ABSENT`; n
 | `EXEMPT` | Exempt (освоб.) | non-numeric |
 | `MASTERED` / `NOT_MASTERED` | Mastered / not (осв. / не осв.) | non-numeric |
 | `NOT_TAKEN` | Not assessed (н/а) | non-numeric |
+| `null` [VERIFIED, 2026-10-23] | A teacher's comment without a mark: `type` null, `mark` empty, `comment` set | empty |
+
+A `lesson_mark` with neither a kind nor a mark becomes no mark, and its lesson stays (the comment has no place in the model yet; whether to show it, say as a пометка under the lesson, is open, design 17). Before 2026-10-23 such a slot failed the schema and its lesson was taken for removed. Now any slot that cannot be read makes the whole week unusable (it stays unverified, nothing is removed) instead of being skipped.
 
 The frontend counts weekly absences as slots with `lesson_mark.kind === "ABSENT"` and highlights a cell red if any numeric part of `mark` is below 4.
 

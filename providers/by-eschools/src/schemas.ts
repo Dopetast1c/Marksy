@@ -105,7 +105,8 @@ export const lessonMark = z.looseObject({
   summary: seen,
   type: z.string().nullable().optional(),
   mark: z.string().nullable().optional(),
-  kind: z.string(),
+  /** null with no mark: a teacher's comment without a mark (second sync:once, 2026-10-23) */
+  kind: z.string().nullable().optional(),
   comment: text,
   /** the teacher's id; mapped to authorExternalId as an opaque id, never a name */
   author: z.string().nullable().optional(),

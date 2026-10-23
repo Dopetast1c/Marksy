@@ -1094,6 +1094,7 @@ Each of these was a hidden assumption in the first design and is now an explicit
 
 - The first non-Belarusian provider will test the canonical model. Candidates with a public or semi-public API and many families: Russia (dnevnik.ru, МЭШ), Ukraine (nz.ua), Poland (Librus, Vulcan), Germany (regional portals), Kazakhstan (Kundelik). Each has its own grading scale and auth; `docs/providers.md` is written so that the second provider is a pull request, not a redesign.
 
+- A teacher's comment without a mark (api-spec 7.2, kind null): seen in real data, not kept today. Show it as a пометка under the lesson (5.5), keep it on the lesson without showing it, or leave it out? A product decision for the owner; it would need a canonical field (`Lesson.teacherComment?`) and a capability.
 - Student e-schools login endpoint and whether a student token can read the same diary routes (section 7.5).
 - Whether e-schools gives the same pupil id to two parents' logins (the shared-child match of 7.2 depends on it). Check when a second parent connects; until then a mismatch only means two copies, as before.
 - A child who changes school and system mid-year: two identities of one person. Not merged automatically; a later "это тот же ребёнок" action in Семья could link them like `subject_links` do for subjects.

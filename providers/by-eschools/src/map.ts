@@ -13,6 +13,7 @@ import type {
   Term,
   WorkType,
 } from '@marksy/core';
+import { ProviderSchemaError } from '@marksy/core';
 import { dayRange, toISODate } from './dates';
 import {
   educationalSubject,
@@ -203,7 +204,7 @@ export function timeOf(value: string | null | undefined): string | undefined {
 /** A lesson_mark: a mark, or for ABSENT an attendance record (absences are never marks). */
 export function mapLessonMark(m: LessonMark, s: Slot, date: string, check: DriftCheck): MappedCell {
   check.known(m.kind, MARK_KINDS, 'lesson_mark.kind');
-  const raw = nonEmpty(m.mark) ?? KIND_LABEL[m.kind] ?? m.kind;
+  const raw = nonEmpty(m.mark) ?? (m.kind ? (KIND_LABEL[m.kind] ?? m.kind) : '');
   if (m.kind === 'ABSENT') {
     return {
       attendance: {
@@ -242,7 +243,10 @@ export function mapLessonMark(m: LessonMark, s: Slot, date: string, check: Drift
 
 export function mapLesson(s: Slot, date: string, check: DriftCheck): Lesson {
   check.known(s.type, LESSON_TYPES, 'slots[].type');
-  const cell = s.lesson_mark ? mapLessonMark(s.lesson_mark, s, date, check) : {};
+  // a lesson_mark with neither a kind nor a mark is a teacher's comment without a mark: no mark (nothing in the model
+  // holds it yet, api-spec 7.4), and the lesson stays
+  const m = s.lesson_mark;
+  const cell = m && (m.kind || nonEmpty(m.mark)) ? mapLessonMark(m, s, date, check) : {};
   return {
     externalId: lessonIdOf(s, date),
     date,
@@ -262,11 +266,17 @@ export function mapLesson(s: Slot, date: string, check: DriftCheck): Lesson {
   };
 }
 
-/** One week's response (six days) -> lessons. A broken slot is reported and skipped, the rest of the week stays. */
+/**
+ * One week's response (six days) -> lessons. A slot that cannot be parsed is reported, and the week cannot be used:
+ * skipping it would make the collector take its lesson and marks for removed (the week stays unverified instead).
+ */
 export function mapLessonsWeek(days: readonly LessonsDay[], timeZone: string, check: DriftCheck): Lesson[] {
   return days.flatMap((day) => {
     const date = toISODate(day.date, timeZone);
-    return check.items(slotSchema, day.slots, 'days[].slots').map((s) => mapLesson(s, date, check));
+    const slots = check.items(slotSchema, day.slots, 'days[].slots');
+    if (Array.isArray(day.slots) && slots.length !== day.slots.length)
+      throw new ProviderSchemaError('lessons: a lesson in this week cannot be read');
+    return slots.map((s) => mapLesson(s, date, check));
   });
 }
 

@@ -1,4 +1,4 @@
-import { createMemoryDrift, driftChecker } from '@marksy/core';
+import { createMemoryDrift, driftChecker, ProviderSchemaError } from '@marksy/core';
 import { describe, expect, it } from 'vitest';
 import { toISODate } from './dates';
 import { currentClass, mapCalendar, mapFinals, mapLessonsWeek, mapStudent } from './map';
@@ -294,10 +294,7 @@ describe('lessons and marks', () => {
   it('unknown fields, kinds and types are drift, never a crash', () => {
     const { drift, check } = setup();
     const lessons = mapLessonsWeek(
-      week([
-        slot({ brand_new: 1, type: 'SEMINAR', lesson_mark: mark({ kind: 'TRIPLE', type: 'POSTER', mark: '9' }) }),
-        { lesson_uuid: 'broken' },
-      ]),
+      week([slot({ brand_new: 1, type: 'SEMINAR', lesson_mark: mark({ kind: 'TRIPLE', type: 'POSTER', mark: '9' }) })]),
       TZ,
       check,
     );
@@ -307,12 +304,29 @@ describe('lessons and marks', () => {
     expect(drift.events.map((e) => [e.kind, e.path])).toEqual(
       expect.arrayContaining([
         ['unknown_field', 'days[].slots[].brand_new'],
-        ['missing_field', 'days[].slots[].subject_id'],
         ['new_enum_value', 'slots[].type'],
         ['new_enum_value', 'lesson_mark.kind'],
         ['new_enum_value', 'lesson_mark.type'],
       ]),
     );
+  });
+
+  it('a slot that cannot be read makes the week unusable: reported, never a lesson silently left out', () => {
+    const { drift, check } = setup();
+    expect(() => mapLessonsWeek(week([slot(), { lesson_uuid: 'broken' }]), TZ, check)).toThrow(ProviderSchemaError);
+    expect(drift.events.map((e) => [e.kind, e.path])).toContainEqual(['missing_field', 'days[].slots[].subject_id']);
+  });
+
+  it("a teacher's comment without a mark (kind null, no mark) keeps the lesson and makes no mark", () => {
+    const { drift, check } = setup();
+    const lessons = mapLessonsWeek(
+      week([slot({ lesson_mark: mark({ kind: null, mark: '', type: null, comment: 'Комментарий' }) })]),
+      TZ,
+      check,
+    );
+    expect(lessons).toHaveLength(1);
+    expect(lessons[0]!.marks).toEqual([]);
+    expect(drift.events).toEqual([]);
   });
 });
 
