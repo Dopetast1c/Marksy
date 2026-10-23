@@ -175,6 +175,17 @@ export const PLACEHOLDERS: ReadonlySet<string> = new Set([
 
 const letter = (i: number) => String.fromCharCode(65 + (i % 26));
 
+/**
+ * The fictional bells of every fixture: lesson n from 07:05 + 55n for 45 minutes (lesson 1 at 08:00), in the form of
+ * the real value (with or without seconds). A time with no lesson number becomes the first lesson's.
+ */
+function fakeClock(real: string, key: 'start_time' | 'end_time', period: number | null | undefined): string {
+  const start = 7 * 60 + 5 + 55 * (period ?? 1);
+  const m = key === 'start_time' ? start : start + 45;
+  const hhmm = `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+  return real.split(':').length === 3 ? `${hhmm}:00` : hhmm;
+}
+
 export interface Sanitizer {
   sanitize(endpoint: string, raw: unknown): unknown;
   /** The fake uuid of a real id (any string: uuids, numeric ids, codes) */
@@ -204,7 +215,11 @@ export function createSanitizer(key: Buffer = randomBytes(32)): Sanitizer {
     return real.replace(/\d/g, () => String(createHash('sha256').update(`${seed}:${i++}`).digest()[0]! % 10));
   };
 
-  function walk(value: unknown, place: Place, ctx: { inStudents: boolean; index: number; seed: string }): unknown {
+  function walk(
+    value: unknown,
+    place: Place,
+    ctx: { inStudents: boolean; index: number; seed: string; period?: number | null },
+  ): unknown {
     const { key } = place;
     if (Array.isArray(value)) {
       return value.map((v, i) =>
@@ -215,6 +230,9 @@ export function createSanitizer(key: Buffer = randomBytes(32)): Sanitizer {
       const out: Record<string, unknown> = {};
       const own = (value as { uuid?: unknown }).uuid;
       const seed = typeof own === 'string' && own ? fakeId(own) : ctx.seed;
+      // a bell, a timetable slot or a lesson: its times follow its lesson number (see fakeClock)
+      const number = (value as { number?: unknown }).number;
+      const period = typeof number === 'number' ? number : null;
       for (const [k, v] of Object.entries(value)) {
         if (DROP.has(k) || dropsSchoolText(place.endpoint, k, key)) continue;
         // maps keyed by ids (final/whole: marks[subject][period]); any key that is not a schema word is data
@@ -222,7 +240,7 @@ export function createSanitizer(key: Buffer = randomBytes(32)): Sanitizer {
         out[outKey] = walk(
           v,
           { ...place, key: k, container: key, outer: place.container, depth: place.depth + 1 },
-          { ...ctx, seed: `${seed}/${outKey}` },
+          { ...ctx, seed: `${seed}/${outKey}`, period },
         );
       }
       return out;
@@ -234,6 +252,11 @@ export function createSanitizer(key: Buffer = randomBytes(32)): Sanitizer {
     const fixed = fixedValue(place);
     if (fixed !== undefined) return fixed;
     if (TOKENS.has(key)) return 'fixture-token';
+    // the school's bells are a fingerprint: every lesson time becomes one fictional scheme with the same lessons
+    if ((key === 'start_time' || key === 'end_time') && CLOCK.test(value)) return fakeClock(value, key, ctx.period);
+    // a subgroup keeps its number, never who is in it («(девочки)»)
+    if ((key === 'group_name' || (key === 'name' && place.container === 'study_group')) && GROUP_NAME.test(value))
+      return value.replace(/ \(.*\)$/, '');
     if (
       UUID.test(value) ||
       /(^|_)(id|uuid)$/.test(key) ||

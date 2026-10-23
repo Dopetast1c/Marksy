@@ -204,9 +204,9 @@ describe('third probe run: the forms real responses use', () => {
     expect(findLeaks([sanitize('school_year', { label: '2026-2027' })], sensitive)).toEqual([]);
   });
 
-  it('keeps HH:MM:SS start times', () => {
-    expect(sanitize('lessons', [{ slots: [{ start_time: '08:30:00' }] }])).toEqual([
-      { slots: [{ start_time: '08:30:00' }] },
+  it("keeps the HH:MM:SS form of a start time, never the school's time", () => {
+    expect(sanitize('lessons', [{ slots: [{ number: 2, start_time: '08:30:00' }] }])).toEqual([
+      { slots: [{ number: 2, start_time: '08:55:00' }] },
     ]);
   });
 });
