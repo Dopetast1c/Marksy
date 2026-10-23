@@ -410,6 +410,8 @@ button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--accent
 .card.about .ar { display: grid; grid-template-columns: 96px 1fr; gap: 10px; font-size: 13.5px; line-height: 1.35; } .card.about .ar .k { color: var(--ink3); }
 .lvl { display: inline-block; font-size: 10.5px; font-weight: 700; color: var(--ink2); background: var(--surface2); padding: 1px 6px; border-radius: 6px; margin-left: 6px; vertical-align: 2px; }
 .entry.slim { padding: 8px 12px; } .entry.slim .ic { width: 28px; height: 28px; }
+.row.rmk .rchip { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; background: var(--surface2); color: var(--ink2); flex: none; } .row.rmk .rchip svg { width: 16px; height: 16px; }
+.row.rmk .s { white-space: normal; color: var(--ink2); }
 .choice { display: flex; gap: 12px; align-items: flex-start; text-align: left; width: 100%; background: var(--surface); border-radius: var(--r-lg); box-shadow: var(--shadow-card); padding: 14px 16px; }
 .choice .rad { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--line); flex: none; margin-top: 1px; }
 .choice[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--accent); } .choice[aria-pressed="true"] .rad { border-color: var(--accent); background: radial-gradient(circle, var(--accent) 0 4px, transparent 5px); }
@@ -1053,11 +1055,11 @@ let DATA; // built by rebuildData() once SCALE is defined (bottom of the script)
 /* Provider capabilities (docs/providers.md section 10). All true for by-eschools. The rail lets you switch them off to see
    how every screen adapts; the demo data is post-processed to look like a system without that feature. */
 const CAPS_FULL = { lessons: true, futureTimetable: true, lessonTypes: true, workTypes: true, comments: true, attendance: true, terms: true, finalMarks: true,
-  bellSchedule: true, rooms: true, teachingGroups: true, teacherNames: true, weekTemplate: true };
+  bellSchedule: true, rooms: true, teachingGroups: true, teacherNames: true, weekTemplate: true, behaviour: true };
 /* Capabilities are the selected child's (ux-principles D53): each child has the provider of their own school. CAPS reads and
    writes the selected child's set; CAPS_BY[sid] is used where another child's card is drawn (the picker). The rail's
    «Семья (демо)» moves Марк to another school on another, thinner (fictional) diary system. */
-const CAPS_OTHER = { ...CAPS_FULL, lessonTypes: false, workTypes: false, attendance: false, rooms: false, teachingGroups: false, finalMarks: false };
+const CAPS_OTHER = { ...CAPS_FULL, behaviour: false, lessonTypes: false, workTypes: false, attendance: false, rooms: false, teachingGroups: false, finalMarks: false };
 const CAPS_BY = { k: { ...CAPS_FULL }, m: { ...CAPS_FULL } };
 function selSid() { try { return state.student || 'k'; } catch (e) { return 'k'; } }
 const CAPS = new Proxy({}, {
@@ -1068,7 +1070,7 @@ const CAPS = new Proxy({}, {
 });
 function anyCaps(k) { return Object.values(CAPS_BY).some(c => c[k]); }
 const CAP_LABELS = { lessons: 'расписание', futureTimetable: 'уроки наперёд', lessonTypes: 'типы уроков', workTypes: 'типы работ', comments: 'комментарии', attendance: 'посещаемость', terms: 'четверти', finalMarks: 'итоги' };
-Object.assign(CAP_LABELS, { bellSchedule: 'звонки', rooms: 'кабинеты', teachingGroups: 'подгруппы', teacherNames: 'учителя', weekTemplate: 'неделя' });
+Object.assign(CAP_LABELS, { bellSchedule: 'звонки', rooms: 'кабинеты', teachingGroups: 'подгруппы', teacherNames: 'учителя', weekTemplate: 'неделя', behaviour: 'комментарии без оценки' });
 function rebuildData() {
   DATA = { k: buildGrade7(), m: buildGrade1() };
   Object.entries(DATA).forEach(([sid, d]) => applySchool(sid, d));
@@ -1081,6 +1083,14 @@ function rebuildData() {
     if (!C.futureTimetable || !C.lessons) d.lessons = d.lessons.filter(l => l.date <= TODAY);
     if (!C.lessons) d.lessons.forEach(l => { l.topic = null; l.homework = null; });
     d.lessons.forEach(l => { l.mark = d.marks.find(m => m.lessonId === l.id) || null; });
+  }
+  // Teacher comments on a lesson without a mark (D56): kept per lesson, neutral, never a mark. Demo: a few on past lessons.
+  const RMK = { k: [[1, 1, 'Нет домашнего задания'], [3, 2, 'Хорошо отвечала у доски'], [10, 0, 'Забыла тетрадь']], m: [[2, 0, 'Аккуратно пишет, молодец']] };
+  for (const [sid, d] of Object.entries(DATA)) {
+    d.remarks = [];
+    if (!CAPS_BY[sid].behaviour || !CAPS_BY[sid].lessons) continue;
+    (RMK[sid] || []).forEach(([ago, idx, text]) => { const day = addDays(TODAY, -ago); const l = d.lessons.filter(x => sameDay(x.date, day)).sort((a, b) => a.number - b.number)[idx];
+      if (l) d.remarks.push({ id: 'r' + l.id, lessonId: l.id, date: l.date, subjectId: l.subjectId, subject: l.subject, number: l.number, text }); });
   }
   if (!CAPS.terms && state.period === 'quarter') state.period = 'month';
   if (!CAPS.terms && state.finalsMode === 'quarters') state.finalsMode = 'years';
@@ -1718,11 +1728,13 @@ function attentionItems() {
   drops.forEach(x => att.push({ cls: band(x.st.average) === 'critical' ? 'critical' : 'low', date: range[1], t: `${x.sub.name}: средний падает`, s: `было ${fmtAvg(x.st.prevAverage)}, стало ${fmtAvg(x.st.average)} за ${periodWord(state.period)} · ${x.st.count} ${plural(x.st.count, 'оценка', 'оценки', 'оценок')}`, subjectId: x.sub.id }));
   if (rise) att.push({ cls: 'good', date: range[1], t: `${rise.sub.name}: средний растёт`, s: `было ${fmtAvg(rise.st.prevAverage)}, стало ${fmtAvg(rise.st.average)} за ${periodWord(state.period)}`, subjectId: rise.sub.id });
   if (current) tagHits(d).filter(w => w.days <= tagLead(w)).forEach(w => att.push({ cls: w.tone, date: w.dueLesson.date, t: `${w.tag.name} · ${w.subject}`, s: `${w.ref}${w.cancelled ? ' · урока не будет' : ''} · ${w.src}`, subjectId: w.subjectId }));
+  // a neutral fact for 7 days: the teacher's comment without a mark (design.md 5.2a, D56)
+  if (current && CAPS.behaviour) (d.remarks || []).filter(r => r.date <= TODAY && daysBetween(r.date, TODAY) <= 7).forEach(r => att.push({ cls: 'ok', date: r.date, t: `Комментарий учителя · ${r.subject}, ${DAYS[r.date.getDay()]}`, s: `«${r.text}»`, rday: r.date.getTime() }));
   // a fact, no advice: holidays of this child within a week (design.md 5.2a)
   if (current && CAPS.terms) { const h = calendarOf(cur().id).find(x => x.kind === 'holiday' && x.from > TODAY && daysBetween(TODAY, x.from) <= 7); if (h) { const n = daysBetween(h.from, h.to) + 1; att.push({ cls: 'ok', date: h.from, t: `С ${fmtDay(h.from)} ${h.name.toLowerCase()}`, s: `до ${fmtDay(h.to)} · ${n} ${plural(n, 'день', 'дня', 'дней')}`, go: 'school' }); } }
   return att.sort((x, y) => HINT_RANK[x.cls] - HINT_RANK[y.cls] || y.date - x.date);
 }
-function eventRow(x) { const n = inboxFor(x); return `<button class="row" ${x.go ? `data-go="${x.go}"` : `data-subject="${x.subjectId}"`}><span class="stripe ${x.cls}"></span><span class="main"><span class="t">${esc(x.t)}</span><span class="s">${esc(x.s)}</span>${n ? `<span class="sent">${ICONS.bell}пришло ${CH_LABEL[n.ch]}, ${sameDay(inboxDate(n), TODAY) ? '' : fmtDayShort(inboxDate(n)).replace(/^[^,]+, /, '') + ', '}${n.at}</span>` : ''}</span><span class="chev">${ICONS.chev}</span></button>`; }
+function eventRow(x) { const n = inboxFor(x); return `<button class="row" ${x.rday ? `data-rmk-day="${x.rday}"` : x.go ? `data-go="${x.go}"` : `data-subject="${x.subjectId}"`}><span class="stripe ${x.cls}"></span><span class="main"><span class="t">${esc(x.t)}</span><span class="s">${esc(x.s)}</span>${n ? `<span class="sent">${ICONS.bell}пришло ${CH_LABEL[n.ch]}, ${sameDay(inboxDate(n), TODAY) ? '' : fmtDayShort(inboxDate(n)).replace(/^[^,]+, /, '') + ', '}${n.at}</span>` : ''}</span><span class="chev">${ICONS.chev}</span></button>`; }
 function renderEvents() {
   const att = attentionItems();
   return `<div class="hdr"><div class="hdr-row"><button class="back" id="backBtn" aria-label="Назад">${ICONS.back}</button><div class="htitle" style="flex:1"><h1>Внимание</h1>${state.role === 'parent' ? `<span class="hsub">${esc(cur().name)} · ${esc(cur().cls)}</span>` : ''}</div><div class="hright">${studentBar()}</div></div>${periodSeg()}</div>
@@ -1916,16 +1928,17 @@ function selTags() { return state.filterTags.map(id => TAGS.find(t => t.id === i
 function tagChipText() { const sel = selTags(); if (!sel.length) return 'Теги'; if (sel.length === 1) return esc(sel[0].name); return `${esc(sel[0].name)} +${sel.length - 1}`; }
 function filterChips() {
   const f = (key, val, label, on) => `<button class="fchip" data-f="${key}" data-v="${val}" aria-pressed="${on}">${label}</button>`;
-  return `<div class="filters">${f('filterType', 'all', 'Все', state.filterType === 'all' && !state.filterTags.length)}<button class="fchip" data-tagfilter aria-pressed="${state.filterTags.length > 0}">${ICONS.tag}${tagChipText()}${ICONS.down}</button></div>`;   // for now only Все and Теги (design.md 5.3)
+  return `<div class="filters">${f('filterType', 'all', 'Все', state.filterType === 'all' && !state.filterTags.length)}<button class="fchip" data-tagfilter aria-pressed="${state.filterTags.length > 0}">${ICONS.tag}${tagChipText()}${ICONS.down}</button>${CAPS.behaviour ? f('filterType', 'comments', 'Комментарии', state.filterType === 'comments') : ''}</div>`;   // Все, Теги and Комментарии (design.md 5.3, D56)
 }
 function applyFilters(list) {
   let items = list;
   if (state.filterTags.length) items = items.filter(m => tagMatch(markTagIds(m)));
   if (state.filterType === 'absent') items = items.filter(m => m.kind === 'ABSENT');
+  if (state.filterType === 'comments') items = [];
   if (state.filterBelow) items = items.filter(m => m.values.length && m.values.some(v => worseThan(v, state.filterBelow)));
   return items;
 }
-function filterLabel() { return [selTags().map(t => t.name.toLowerCase()).join(state.filterTagMode === 'all' ? ' и ' : ' или '), state.filterType === 'absent' ? 'пропуски' : '', state.filterBelow ? worseLabel(state.filterBelow).toLowerCase() : ''].filter(Boolean).join(', ') || 'все'; }
+function filterLabel() { return [selTags().map(t => t.name.toLowerCase()).join(state.filterTagMode === 'all' ? ' и ' : ' или '), state.filterType === 'absent' ? 'пропуски' : state.filterType === 'comments' ? 'комментарии учителя' : '', state.filterBelow ? worseLabel(state.filterBelow).toLowerCase() : ''].filter(Boolean).join(', ') || 'все'; }
 function filterIsOff() { return state.filterType === 'all' && !state.filterTags.length && !state.filterBelow; }
 // The tag sheet: tick one or several tags, choose how several combine, see how many marks that leaves.
 function filterBase() { const d = data(); return d.marks.filter(m => inRange(m.date, selRange()) && (state.screen !== 'subject' || m.subjectId === state.subjectId)); }
@@ -1958,7 +1971,9 @@ function renderMarks() {
   const items = applyFilters(d.marks.filter(m => inRange(m.date, range)));
   items.sort((a, b) => b.date - a.date || a.subject.localeCompare(b.subject, 'ru'));
   const groups = [];
-  items.forEach(m => { const g = groups.find(g => sameDay(g.date, m.date)); if (g) g.items.push(m); else groups.push({ date: m.date, items: [m] }); });
+  items.forEach(m => { const g = groups.find(g => sameDay(g.date, m.date)); if (g) g.items.push(m); else groups.push({ date: m.date, items: [m], rm: [] }); });
+  remarksIn(range).forEach(r => { const g = groups.find(g => sameDay(g.date, r.date)); if (g) g.rm.push(r); else groups.push({ date: r.date, items: [], rm: [r] }); });
+  groups.sort((a, b) => b.date - a.date);
   return `${screenHeader('Оценки', periodSeg() + filterChips())}
   <div class="body">
     ${periodNav()}
@@ -1967,7 +1982,7 @@ function renderMarks() {
     ${groups.length ? groups.map(g => `<div><div class="day-h"><b>${dayLabel(g.date)}</b><span>${fmtDay(g.date)}</span></div>
       <div class="list-card rows">${g.items.map(m => `<button class="row" data-subject="${m.subjectId}"><span class="stripe subj" style="${hueStyle(m.subject)}"></span>${chip(m)}
         <span class="main"><span class="t">${esc(m.subject)}</span><span class="s">${[CAPS.workTypes ? esc(WORK[m.workType] || WORK.null) : '', CAPS.lessons && m.topic ? esc(m.topic) : ''].filter(Boolean).join(' · ') || fmtDayShort(m.date)}</span></span>
-        ${CAPS.comments && m.comment ? `<span class="chev" title="${esc(m.comment)}">${ICONS.comment}</span>` : ''}</button>`).join('')}</div></div>`).join('')
+        ${CAPS.comments && m.comment ? `<span class="chev" title="${esc(m.comment)}">${ICONS.comment}</span>` : ''}</button>`).join('')}${g.rm.map(r => remarkRow(r)).join('')}</div></div>`).join('')
     : `<div class="card empty"><b>Ничего не нашлось</b><p>Попробуйте другой период или снимите фильтр.</p></div>`}
   </div>`;
 }
@@ -2072,7 +2087,7 @@ function renderSubject() {
     ${distCard(vals)}
     ${trendCard(m => m.subjectId === sub.id, applyFilters)}
     <div class="sect"><h2>Оценки</h2><span class="muted small">${inP.length} · ${periodHint(state.period)}</span></div>
-    <div class="list-card rows">${inP.length ? inP.map(m => `<div class="row">${chip(m)}
+    <div class="list-card rows">${inP.length || remarksIn(selRange(), sub.id).length ? remarksIn(selRange(), sub.id).map(r => remarkRow(r, true)).join('') + inP.map(m => `<div class="row">${chip(m)}
       <span class="main"><span class="t">${CAPS.workTypes ? esc(WORK[m.workType] || WORK.null) : fmtDayShort(m.date)}</span><span class="s">${CAPS.workTypes ? fmtDayShort(m.date) : ''}${CAPS.lessons && m.topic ? (CAPS.workTypes ? ' · ' : '') + esc(m.topic) : ''}</span>${CAPS.comments && m.comment ? `<span class="small muted2">${ICONS.comment} ${esc(m.comment)}</span>` : ''}</span></div>`).join('')
       : `<div class="empty"><b>Нет оценок</b><p>${filterIsOff() ? 'за этот период' : 'с таким фильтром за этот период'}</p></div>`}</div>
 
@@ -2525,6 +2540,8 @@ function lessonParts(l) {
     if (testTag) lines.push({ sev: 'low', icon: 'test', html: '<b>Контрольная</b>' });
     if (CAPS.comments && l.mark.comment) lines.push({ sev: 'info', icon: 'comment', html: `«${esc(l.mark.comment)}»` });
   }
+  { const rm = CAPS.behaviour ? remarkOf(l) : null; if (rm) lines.push({ sev: 'info', icon: 'comment', html: `Учитель: «${esc(rm.text)}»` });
+  }
   if (passed) { const notice = lines.length ? `<div class="nlines">${lines.map(noteHtml).join('')}</div>` : ''; const cls = `${done ? ' done' : ''} passed`; return { w, upcoming, passed, done, manual, badge, hwText, addHw: '', doneLine, watch: '', hint: '', notice, facts: '', cls }; }
   // готово: the first пометка of an upcoming lesson, drawn like a tag (green bar, check icon), with who and when
   if (done) lines.push({ sev: 'good', icon: 'check', html: `<b>Готово</b> · ${done.other ? 'в другой семье' : esc(done.by)}, ${done.at}` });
@@ -2594,6 +2611,10 @@ function gapRow(g) { return `<div class="frow gap"><div class="ftime">${timeCell
 const WEEKDAYS = ['воскресенье', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота'];
 function lessonDays() { return [...new Set(data().lessons.map(l => +new Date(l.date.getFullYear(), l.date.getMonth(), l.date.getDate())))].sort((a, b) => a - b).map(t => new Date(t)); }
 function curLday() { return state.lday || TODAY; }
+function remarkOf(l) { return (data().remarks || []).find(r => r.lessonId === l.id) || null; }
+// remarks follow the period and the subject, never a tag or a mark threshold: with those filters on they are not shown
+function remarksIn(range, subjectId) { if (!CAPS.behaviour || state.filterTags.length || state.filterBelow || state.filterType === 'absent') return []; return (data().remarks || []).filter(r => inRange(r.date, range) && (!subjectId || r.subjectId === subjectId)); }
+function remarkRow(r, inSubject) { return `<button class="row rmk" data-rmk-day="${r.date.getTime()}"><span class="stripe ok"></span><span class="rchip">${ICONS.comment}</span><span class="main"><span class="t">${inSubject ? 'Комментарий учителя' : esc(r.subject)}</span><span class="s">${inSubject ? `${fmtDayShort(r.date)} · ` : ''}«${esc(r.text)}»</span></span></button>`; }
 function dayTitle(d) { const l = dayLabel(d); return ['Сегодня', 'Завтра', 'Вчера'].includes(l) ? l : WEEKDAYS[d.getDay()].charAt(0).toUpperCase() + WEEKDAYS[d.getDay()].slice(1); }
 function weekStart(off) { return addDays(mondayOf(TODAY), 7 * off); }
 function lessonsStep(delta) {
@@ -2785,6 +2806,7 @@ function defaultAlertRules() {
     { id: 'a1', event: 'mark', cond: { dir: 'any' }, scope: { students: 'all', subjects: [] }, when: 'now', on: !parent },
     { id: 'a2', event: 'mark', cond: { dir: 'worse', value: SCALE.thresholds[0] }, scope: { students: 'all', subjects: [] }, when: 'now', on: parent },
     { id: 'a3', event: 'mark', cond: { dir: 'band', band: 'top' }, scope: { students: 'all', subjects: [] }, when: 'evening', on: parent },
+    { id: 'a12', event: 'comment', cond: {}, scope: { students: 'all', subjects: [] }, when: 'evening', on: parent },
     { id: 'a4', event: 'average', cond: { dir: 'down', step: 0.5, period: 'week', minMarks: 2 }, scope: { students: 'all', subjects: [] }, when: 'evening', on: false },
     { id: 'a5', event: 'changed', cond: {}, scope: { students: 'all', subjects: [] }, when: 'now', on: parent },
     { id: 'a6', event: 'absence', cond: {}, scope: { students: 'all', subjects: [] }, when: 'now', on: parent },
@@ -2799,6 +2821,7 @@ let ALERT_RULES = null;
 function alertRules() { if (!ALERT_RULES) ALERT_RULES = defaultAlertRules(); return ALERT_RULES; }
 const EVENTS = [
   ['mark', 'Новая оценка', 'оценка появилась в дневнике'],
+  ['comment', 'Комментарий учителя', 'учитель написал к уроку без оценки', 'behaviour'],
   ['average', 'Средний по предмету изменился', 'сравнение с предыдущим периодом'],
   ['changed', 'Оценка изменена или удалена', 'учитель поправил старую оценку', 'always'],
   ['absence', 'Пропуск урока', 'в день пропуска', 'attendance'],
@@ -3189,6 +3212,7 @@ document.getElementById('view').addEventListener('click', e => {
   }
   const ib = t.closest('[data-inbox]'); if (ib) { const n = INBOX.find(x => x.id === ib.dataset.inbox); if (n) openInboxItem(n); return; }
   if (t.closest('[data-inbox-readall]')) { inboxList().forEach(n => { state.inboxRead[n.id] = true; }); render(); return; }
+  const rmk = t.closest('[data-rmk-day]'); if (rmk) { state.lkind = 'day'; state.lday = new Date(Number(rmk.dataset.rmkDay)); go('lessons'); return; }
   const mch = t.closest('[data-match]'); if (mch) { state.matchChoice = mch.dataset.match; render(); return; }
   const stt = t.closest('[data-start]'); if (stt) { state.student = stt.dataset.start; state.unpicked = false; state.stack = []; go('home', false); return; }
   const ss = t.closest('[data-stu-switch]'); if (ss) { switchStudent(ss.dataset.stuSwitch); return; }
