@@ -106,6 +106,8 @@ pnpm privacy            scripts/privacy-check.mjs: secrets, forbidden files, per
 pnpm db:migrate         applies server/drizzle to DATABASE_URL (pnpm --filter @marksy/server db:generate writes a new migration)
 pnpm db:seed [--reset]  the fictional demo family on demo-full, with demo logins; --reset replaces only that family
 pnpm db:studio          Drizzle Studio on DATABASE_URL
+pnpm db:backup          pg_dump of marksy into data/backups/ (last five kept), verified by a restore into marksy_restore_check
+pnpm db:restore <f> --yes  puts a dump back into marksy (the owner's; stop pnpm dev first)
 ```
 
 Server tests use `marksy_test` (wiped and migrated at the start of every run); never point a test or a script you run at `marksy` except `db:migrate`, `db:backup`, `db:seed` and `sync:plan`.

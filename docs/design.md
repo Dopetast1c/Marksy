@@ -602,10 +602,12 @@ student_years       student_id, school_year_id, class_label, grade, grading_scal
 bell_schedules      id, student_id, school_year_id, external_id, label, days (int[]), periods (jsonb: [{slot, start,
                     end}]), valid_from, valid_to, fetched_at      (the student's class bells; providers.md BellSchedule)
 week_templates      id, student_id, term_id (nullable = whole year), cycle_weeks, entries (jsonb: [{cycle_week,
-                    weekday, slot, start, end, subject_id, group_label, room, teacher_external_id, teacher_name}]),
+                    weekday, slot, start, end, subject_id, group_label, room, teacher_external_id, teacher_name,
+                    template_ref}]),
                     fetched_at      (the student's own regular week; never another group's lessons)
 lessons             id, student_id, provider_id, external_id, date, slot, start_time, end_time,
-                    subject_id, subject_name, teacher_external_id, teacher_name, room, group_label, lesson_type,
+                    subject_id, subject_name, teacher_external_id, teacher_name, room, group_label, template_ref (the
+                    opaque key that matches the week template, providers.md 4), lesson_type,
                     topic, homework, homework_due_date, has_attachments, cancelled, first_seen_at, fetched_at, removed_at
 marks               id, student_id, provider_id, external_id, lesson_id (nullable), date,
                     posted_at, subject_id, raw, kind, values (double precision[]), scale_id, work_type, work_type_raw, title,
@@ -643,7 +645,8 @@ diary_accounts      + consecutive_failures, paused_until, pause_hours (current p
                     requires_action (auth|blocked|needs_2fa|null), last_attempt_at, last_success_at,
                     alerted_at (the admin was told about the current pause or required action; cleared on success)
 sync_runs           id, family_id, diary_account_id, provider_id, kind (scheduled|catchup|weekly_rescan|
-                    manual|rescan|backfill|connect), scope (jsonb: student_ids, weeks planned), trigger
+                    manual|rescan|backfill|connect|source_check: a login of an account that is not the active source of
+                    its children, only to confirm with getAccount() that it still shows them, 10.4), scope (jsonb: student_ids, weeks planned), trigger
                     (schedule|startup|cli|user:<id>), started_at, finished_at, status (running|success|partial|failed|
                     skipped_offline|skipped_paused|skipped_interval), error_class (offline|
                     provider_unavailable|auth|blocked|needs_2fa|partial|null), error (sanitised text),
@@ -863,6 +866,8 @@ The schedule above describes the ideal day. Section 10.4 describes what happens 
 **One run** = standing set (every student's, before anyone's gap), the final marks once a day, then gap set, then re-scan, then backfill, until the manifest's `limits.maxRequestsPerRun` (by-eschools: 40, `SYNC_MAX_REQUESTS_PER_RUN` may lower it) is used; the standing weeks are fetched again in every run, so a long backlog moves by what is left of the cap after them. Whatever did not fit is simply still unverified and is first in line next time, so a week-long outage is caught up over two or three runs with the freshest data first. Nothing is ever "scheduled for later"; the queue is the coverage table itself.
 
 **When a run may start.** All of these must hold: the account needs no action (`requires_action` is null; nothing, not even the button, logs in with credentials the diary refused); `paused_until` is null or past (a manual refresh may try once anyway, see below); `last_attempt_at + minLoginIntervalMinutes <= now` (an attempt counts even if it failed, because the diary saw a login); and either now is inside the school-day window of at least one child the account is the active source for (10.2), or the run is a *catch-up* (last success older than 24 hours, or an unverified week older than the standing set exists). A new account (no success yet) runs at once, at any hour, and backfills; in the weekly slot a run starts when re-scan weeks are due. A catch-up may run at any hour because the data it fetches already exists; the end of the window only argues that *today's* marks will not appear later. Manual "Обновить" is a run like any other and draws from the same login budget; the UI shows when it becomes possible.
+
+**Source checks.** An account that is not the active source of any of its children (the other parent's login, 7.1) logs in once a school day inside one of those children's windows for `getAccount()` only, as a run of kind `source_check`. It spends no requests on data: no calendar, subjects or weeks, so it does not count against `maxRequestsPerRun` beyond the login and the account call, and it never writes `sync_coverage` or moves any planner set. It updates `student_sources.last_seen_at`, and a child it no longer lists is handled as in 7.1 (the family's link is suspended when none of its accounts shows the child). It draws on the account's own login budget like any run.
 
 **Connectivity first.** Before logging in, the run checks that this machine is online at all: DNS resolution and a TCP connect to the provider host, no HTTP request. If that fails the run ends as `skipped_offline`, nothing is counted against the provider, and the next tick retries in 10 minutes. Being offline is the home server's problem, not the diary's, and must never trigger a pause.
 
