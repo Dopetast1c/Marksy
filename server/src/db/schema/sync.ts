@@ -50,7 +50,7 @@ export const syncRuns = pgTable(
     providerId: text('provider_id').notNull(),
     kind: text('kind').$type<SyncRunKind>().notNull(),
     scope: jsonb('scope').$type<SyncRunScope>().notNull().default({}),
-    /** schedule | startup | cli | user:<id> */
+    /** schedule | startup | cli | cli-claude | user:<id> */
     trigger: text('trigger').notNull(),
     startedAt: ts('started_at').notNull(),
     finishedAt: ts('finished_at'),
@@ -110,6 +110,26 @@ export const syncDaily = pgTable(
     requests: integer('requests').notNull(),
   },
   (t) => [primaryKey({ columns: [t.diaryAccountId, t.date] })],
+);
+
+/**
+ * Real logins started from the command line (`pnpm probe`, `pnpm sync:once`; CLAUDE.md "Real diary runs"), checked by
+ * the login guard: the login interval for everyone, and Claude Code's daily cap and hours. The login itself is never
+ * stored, only a hash, so a probe without a diary account yet still counts. 90 days.
+ */
+export const cliLogins = pgTable(
+  'cli_logins',
+  {
+    id: id(),
+    providerId: text('provider_id').notNull(),
+    diaryAccountId: uuid('diary_account_id').references(() => diaryAccounts.id, { onDelete: 'set null' }),
+    /** sha256 of the lower-cased login */
+    loginHash: text('login_hash').notNull(),
+    command: text('command').$type<'probe' | 'sync:once'>().notNull(),
+    runner: text('runner').$type<'owner' | 'claude'>().notNull(),
+    at: ts('at').notNull(),
+  },
+  (t) => [index('cli_logins_login_at_idx').on(t.providerId, t.loginHash, t.at)],
 );
 
 /**

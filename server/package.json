@@ -16,7 +16,8 @@
     "db:studio": "drizzle-kit studio",
     "sync:once": "tsx --env-file-if-exists=../.env scripts/sync-once.ts",
     "db:seed": "tsx --env-file-if-exists=../.env scripts/seed.ts",
-    "sync:plan": "tsx --env-file-if-exists=../.env scripts/sync-plan.ts"
+    "sync:plan": "tsx --env-file-if-exists=../.env scripts/sync-plan.ts",
+    "login:claim": "tsx --env-file-if-exists=../.env scripts/login-claim.ts"
   },
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "^9.1.0",

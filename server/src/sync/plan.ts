@@ -169,8 +169,9 @@ export const hasPostTerm = (requests: readonly WeekRequest[]) => requests.some((
 // ---------------------------------------------------------------------------------------------------------------
 // May a run start now?
 
-export type Trigger = 'schedule' | 'startup' | 'cli' | `user:${string}`;
-export const isManual = (t: Trigger) => t === 'cli' || t.startsWith('user:');
+/** cli: pnpm sync:once by the owner; cli-claude: the same started by Claude Code (CLAUDE.md, Real diary runs) */
+export type Trigger = 'schedule' | 'startup' | 'cli' | 'cli-claude' | `user:${string}`;
+export const isManual = (t: Trigger) => t === 'cli' || t === 'cli-claude' || t.startsWith('user:');
 
 export interface AccountState {
   pausedUntil: Date | null;

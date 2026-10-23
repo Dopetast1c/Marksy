@@ -891,6 +891,7 @@ The schedule above describes the ideal day. Section 10.4 describes what happens 
 
 | Data | Keep | Why |
 |---|---|---|
+| `cli_logins` | 90 days (`RETENTION_SYNC_RUNS_DAYS`) | the login guard of `pnpm probe` and `pnpm sync:once` needs a day; the rest is for diagnosis. Only a hash of the login is stored |
 | `sync_runs` | 90 days, then one row per day is compacted into `sync_daily` (date, runs, failures, requests) | the log is for diagnosing recent problems; the daily line is enough for "how often did this break" |
 | `sync_coverage` | current and previous school year; older rows deleted with the year's compaction | the planner never looks further back |
 | `raw_responses` | 14 days; the response that verified a `(student, week)` of the current term is kept until the term ends. Stored without the personal fields the mapper never uses (the provider's `redactRaw()`), never the login response | re-parsing after a drift fix needs recent bodies, not a year of them |

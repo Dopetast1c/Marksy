@@ -12,6 +12,8 @@ import type { RunSyncOptions, RunSyncResult } from './run';
 
 export interface SyncOnceOptions extends Omit<RunSyncOptions, 'accountId' | 'trigger' | 'provider'> {
   provider: DiaryProvider;
+  /** cli-claude when Claude Code runs it (MARKSY_RUNNER=claude) */
+  trigger?: 'cli' | 'cli-claude';
   login: string;
   password: string;
   credentialsKey: Buffer;
@@ -77,7 +79,7 @@ export async function syncOnce(opts: SyncOnceOptions): Promise<SyncOnceReport> {
   const result = await runSync({
     ...opts,
     accountId: account!.id,
-    trigger: 'cli',
+    trigger: opts.trigger ?? 'cli',
     provider: (id) => (id === providerId ? provider : undefined),
   });
   const [count] = await db

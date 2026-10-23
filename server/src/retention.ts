@@ -106,6 +106,8 @@ export async function applyRetention(db: Db, limits: RetentionLimits, now = new 
   );
   await run('lesson_tag_hits', sql`delete from lesson_tag_hits where due_date < ${days(limits.tagHitsDays)}::date`);
   await run('sessions', sql`delete from sessions where expires_at < ${now}`);
+  // the login guard looks back a day at most; kept as long as the sync runs for diagnosis
+  await run('cli_logins', sql`delete from cli_logins where at < ${days(limits.syncRunsDays)}`);
   // single-use secrets: an expired code is useless and should not linger
   await run('invites', sql`delete from invites where expires_at < ${now}`);
   await run('telegram_link_codes', sql`delete from telegram_link_codes where expires_at < ${now}`);
