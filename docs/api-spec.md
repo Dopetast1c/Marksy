@@ -102,7 +102,7 @@ Useful for a "paste session JSON" dev mode. `localStorage["e-school-auth-diary"]
 ```
 
 - **Hourly run (school days, 08:00 to 14:00):** current week + previous week per child (late marks are common), plus `final/whole` once a day. About 12 requests total.
-- **Weekly re-scan (Friday evening):** every week of the current quarter per child, to catch marks that teachers changed or removed.
+- **Re-scan inside the school day:** every week of the current quarter not checked for six days is taken again by the ordinary school-day runs, to catch marks that teachers changed or removed (design.md 10.2).
 - **Backfill:** all past weeks of the school year (36 weeks per child), run once at night, throttled.
 - **Upsert key:** `(student_id, lesson_uuid)`, and when `lesson_uuid` is null `(student_id, date, number, subject_id)` (7.5); marks also have their own `uuid`. Track `first_seen_at`, `changed_at`, `removed_at` and keep previous versions (`mark_history`) to power "new marks" and to catch edits and deletions. Scheduling, change detection and API drift logging are specified in `design.md` sections 8 and 10.
 - **Grade 1 child:** no marks at all (Belarus grades 1 to 2 are unmarked). Still sync lessons and homework; show "no marks" gracefully.
@@ -519,7 +519,7 @@ The frontend counts weekly absences as slots with `lesson_mark.kind === "ABSENT"
 - Through a VPN: 503 on everything, then connections hung. Treat 503 or a hanging connection as "probably wrong network path" first.
 - Real rate limits are unknown. Stay conservative:
   - strictly serial requests, 1.5 to 3 s apart; backfill and re-scans slower (3 to 5 s after 40 requests);
-  - at most one login per hour per account, whatever triggers the run; scheduled runs on school days inside a window (default 08:00 to 14:00 Europe/Minsk) with a random 0 to 20 minute offset, weekly re-scan Friday evening, backfill at night; details in `design.md` section 10.2;
+  - at most one login per hour per account, whatever triggers the run; scheduled runs only during each child's school day (from their timetable and bells; the manifest's 08:00 to 14:00 Europe/Minsk only when the day's times are unknown) with a random 0 to 20 minute offset, the term's re-scan inside those runs, backfill in any allowed run; details in `design.md` section 10.2;
   - on 503/429/network error: exponential backoff (30 s, 2 min, 10 min), then give up until the next schedule;
   - one login per run; never loop on failed logins (risk of account lock);
   - normal browser-like `User-Agent`; no parallel requests.

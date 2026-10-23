@@ -122,6 +122,12 @@ async function runLocked(opts: RunSyncOptions): Promise<RunSyncResult> {
     .orderBy(desc(syncRuns.startedAt))
     .limit(1);
 
+  // a source check happens once a school day: decided before the gate, whose jitter must not hide it
+  const checkedToday =
+    sourceCheck && !!account.lastSuccessAt && localTime(account.lastSuccessAt, manifest.timezone).date === local.date;
+  if (checkedToday && !isManual(opts.trigger)) {
+    return { outcome: 'skipped', decision: { start: false, reason: 'checked_today', record: null } };
+  }
   const decision = decideStart({
     now: started,
     local,
@@ -144,11 +150,6 @@ async function runLocked(opts: RunSyncOptions): Promise<RunSyncResult> {
     trigger: opts.trigger,
     startedAt: started,
   };
-  const checkedToday =
-    sourceCheck && !!account.lastSuccessAt && localTime(account.lastSuccessAt, manifest.timezone).date === local.date;
-  if (decision.start && checkedToday && !isManual(opts.trigger)) {
-    return { outcome: 'skipped', decision: { start: false, reason: 'checked_today', record: null } };
-  }
   const kind = sourceCheck && decision.start ? 'source_check' : decision.start ? decision.kind : 'manual';
   if (!decision.start) {
     if (!decision.record) return { outcome: 'skipped', decision };

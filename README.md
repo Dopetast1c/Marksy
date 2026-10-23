@@ -143,7 +143,7 @@ pnpm dev                        # API on :3000, app on :5173, API docs at /api/d
 
 The demo family belongs to a fictional diary and has two children, one of them in a class without marks, so every screen can be explored without a diary account; its logins (`parent@example.com` and `student@example.com`, password printed by `pnpm db:seed`) work once sign-in arrives. Because that password is published, the seed refuses to run when `PUBLIC_URL` is a public address (`--allow-public` overrides it). `pnpm db:studio` opens the database in Drizzle Studio. `pnpm db:backup` writes a dump of the local database to `data/backups/` (the last five are kept) and checks it by restoring it into a temporary database; `pnpm db:restore <file> --yes` puts one back. With a diary account, open the app, choose "Connect a diary", pick your diary system and sign in: Marksy checks the credentials once, creates your family and starts the first sync. Invite the rest of the family from More, then Family.
 
-Until the connect screen exists, a developer with a diary account can fill the local database from the command line: put the diary login into `DIARY_LOGIN` and `DIARY_PASSWORD` in `.env` and run `pnpm sync:once`. It only talks to diary systems offered to families, creates a minimal family on first use and runs one sync under the same rules as every other run (one sign-in per hour, the request cap, the offline check). It prints counts and statuses only, and exits with 0 also when the rules hold the run back. While `SYNC_ENABLED` is `true`, `pnpm dev` keeps that account in sync on its own.
+Until the connect screen exists, a developer with a diary account can fill the local database from the command line: put the diary login into `DIARY_LOGIN` and `DIARY_PASSWORD` in `.env` and run `pnpm sync:once`. It only talks to diary systems offered to families, creates a minimal family on first use and runs one sync under the same rules as every other run (one sign-in per hour, the request cap, the offline check). It prints counts and statuses only, and exits with 0 also when the rules hold the run back. While `SYNC_ENABLED` is `true`, `pnpm dev` keeps that account in sync on its own, only during each child's school day. `pnpm sync:plan` shows what the planner would do now (each child's window today, what is waiting, whether a run would start) without logging in anywhere.
 
 ### On a phone in the home network
 
@@ -164,7 +164,7 @@ All configuration is in `.env` (created by `pnpm setup:env` from `.env.example`)
 | `SESSION_SECRET` | Random string for session cookies (generated) |
 | `CREDENTIALS_KEY` | 32-byte key (base64) that encrypts diary passwords at rest (generated) |
 | `SYNC_ENABLED` | `true` on the machine that talks to the diary, `false` on an API-only copy |
-| `SYNC_WINDOW`, `SYNC_WEEKLY` | Optional: a narrower school-day window than the provider's (it can only narrow it), and another evening for the weekly re-scan |
+| `SYNC_WINDOW` | Optional: an outer bound on every child's school-day window (it can only narrow it) |
 | `SYNC_JITTER_MIN`, `SYNC_MIN_LOGIN_INTERVAL` | Random delay for scheduled runs; minimum time between sign-ins per account (can only be raised) |
 | `SYNC_TICK_MIN`, `SYNC_CATCHUP_AFTER`, `SYNC_MAX_REQUESTS_PER_RUN` | Planner: how often it decides, when a catch-up run is allowed, how much one run may fetch |
 | `SYNC_FAILURES_BEFORE_PAUSE`, `SYNC_PAUSE_HOURS`, `SYNC_PAUSE_MAX_HOURS`, `SYNC_OFFLINE_RETRY_MIN` | Failure handling: failures before a pause, the pause (doubling up to a week), retry when this machine is offline |

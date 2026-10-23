@@ -111,7 +111,6 @@ docs/                   product docs (this file, design.md, api-spec.md, tokens.
     "requestDelayMs": [1500, 3000],
     "maxRequestsPerRun": 40,              // one run stops here; unverified weeks wait for the next run (design.md 10.4)
     "syncWindow": "08:00-14:00",          // stand-in only: the real window is each child's school day from their timetable (design.md 10.2)
-    "weeklyRescan": "fri 20:00-23:00",
     "fetchUnit": "week",                  // week | day | term: the granularity the API hands data out in, i.e. the unit of sync_coverage
     "authFailureIsFinal": true            // true: a 401 stops syncing until credentials change (repeated bad logins can lock the real account)
   },
@@ -505,7 +504,7 @@ A snapshot test in `packages/core` locks this table for `by-10`: if a change to 
 The scheduler is generic and reads the provider's `limits`:
 
 - hourly runs only during each child's school day (an hour before the first lesson to two hours after the last, from the child's timetable and bells; `syncWindow` only when the day's times are unknown), with a random offset; scope: the current and the previous week, then whatever was missed since the last success, plus final marks once a day (`design.md` 10.4);
-- in the `weeklyRescan` slot, every week of the current term that was not fetched for six days, for change detection;
+- inside those school-day runs, every week of the current term that was not fetched for six days, for change detection (no evening slot: a provider has nothing to configure for it);
 - the collector asks for one `fetchUnit` at a time (a week, or the whole term for `term` providers) and counts each as verified only when it was stored completely; the run stops at `maxRequestsPerRun` and the rest waits for the next run;
 - never more than one `login()` per `minLoginIntervalMinutes` per account, shared by scheduled, manual and re-scan runs;
 - a child listed by several accounts (two parents' logins, possibly in two families) is read through one of them only; the others call `getAccount()` once a school day to confirm they still show the child;
