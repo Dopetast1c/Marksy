@@ -2984,13 +2984,13 @@ function renderSync() {
     ${S.plan.length ? `<div class="card" style="display:flex;flex-direction:column;gap:8px">
       <div class="sect"><h2>Следующий запуск возьмёт</h2></div>
       <div class="plan-list">${S.plan.map(p => `<span>${p}</span>`).join('')}<span>около ${S.reqs} запросов на ученика</span></div>
-      <span class="muted small">Всегда текущая и прошлая неделя. Если синхронизации давно не было, добавляются все пропущенные недели, сначала свежие. Раз в неделю сверяется вся ${CAPS.terms ? 'четверть' : 'история периода'}.</span>
+      <span class="muted small">Всегда текущая и прошлая неделя. Если синхронизации давно не было, добавляются все пропущенные недели, сначала свежие. Потом недели ${CAPS.terms ? 'четверти' : 'периода'}, которые не сверялись больше 6 дней.</span>
     </div>` : ''}
     <div class="card" style="display:flex;flex-direction:column;gap:8px">
-      <div class="sect"><h2>Перепроверка ${CAPS.terms ? 'четверти' : 'периода'}</h2><span class="muted small">каждую пятницу вечером</span></div>
-      <div class="kv"><span>Последняя</span><b>пт 9 окт, 21:48</b></div>
+      <div class="sect"><h2>Перепроверка ${CAPS.terms ? 'четверти' : 'периода'}</h2><span class="muted small">в учебные дни</span></div>
+      <div class="kv"><span>Последняя полная</span><b>вт 13 окт</b></div>
       <div class="kv"><span>Самая старая проверенная неделя</span><b>6 дней назад</b></div>
-      <span class="muted small">Учителя могут менять и удалять старые оценки. Раз в неделю все недели четверти сверяются заново; изменения попадают в ленту и уведомления.</span>
+      <span class="muted small">Учителя могут менять и удалять старые оценки. Недели четверти, которые не сверялись больше 6 дней, сверяются заново в обычных дневных запусках, после свежих недель; изменения попадают в ленту и уведомления. Вечером и в выходные дневник не читается.</span>
     </div>
     <div class="card" style="display:flex;flex-direction:column;gap:8px">
       <div class="sect"><h2>API дневника</h2><span class="status warn">1 новое</span></div>

@@ -106,7 +106,9 @@ pnpm db:seed [--reset]  the fictional demo family on demo-full, with demo logins
 pnpm db:studio          Drizzle Studio on DATABASE_URL
 ```
 
-Server tests use `marksy_test` (wiped and migrated at the start of every run); never point a test or a script you run at `marksy` except `db:migrate` and `db:seed`. You never read `.env` and never run `pnpm probe`, `pnpm sync:once` or `pnpm dev:connect`: they log in to the real diary with the owner's credentials; the owner runs them.
+Server tests use `marksy_test` (wiped and migrated at the start of every run); never point a test or a script you run at `marksy` except `db:migrate`, `db:backup`, `db:seed` and `sync:plan`.
+
+**Migrations are yours, not the owner's.** Whenever `main` (or the branch you are on) gains migrations that `marksy` does not have yet, after a merge, a pull or your own new migration, run `pnpm db:migrate` yourself and report which migrations were applied; never leave it as a step for the owner. Before a migration that rewrites, moves or deletes existing rows or columns (anything beyond a new table, a new nullable column or an index), run `pnpm db:backup` first and say where the dump is. If a migration fails, stop: do not edit applied migrations, do not restore the backup on your own, tell the owner what failed. After migrating, check with counts only (rows per table, links per child), never row contents. `pnpm db:seed --reset` is fine; `drizzle-kit push`, dropping the database or removing the Docker volume are not. `pnpm sync:plan` is yours too: it never logs in to a diary and prints ids, times and counts only. Syncing the real diary stays the owner's (`pnpm sync:once`). You never read `.env` and never run `pnpm probe`, `pnpm sync:once` or `pnpm dev:connect`: they log in to the real diary with the owner's credentials; the owner runs them.
 
 ## Local and phone testing
 
