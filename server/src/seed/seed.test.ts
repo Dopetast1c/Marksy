@@ -1,8 +1,21 @@
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { resetDb, testDb } from '../../test/db';
 import { verifyPassword } from '../auth/password';
-import { families, lessons, lessonTags, marks, memberships, attendance, studySessions, users } from '../db/schema';
+import {
+  attendance,
+  bellSchedules,
+  families,
+  familyStudents,
+  lessons,
+  lessonTags,
+  marks,
+  memberships,
+  notifications,
+  students,
+  studySessions,
+  users,
+} from '../db/schema';
 import { generateGrade7, seedCalendar } from '@marksy/demo-diary';
 import { DEMO_LOGINS, DEMO_PASSWORD, demoStudents, seedAllowed, seedDemo } from './seed';
 
@@ -71,6 +84,36 @@ describe('pnpm db:seed', () => {
     expect(await verifyPassword(parent.passwordHash, DEMO_PASSWORD)).toBe(true);
   });
 
+  it('matches the prototype: per-child schools, bells, subgroups and rooms; Марк followed by a second family', async () => {
+    const r = await seedDemo(db, { now: NOW });
+    const kids = await demoStudents(db);
+    const milena = kids.find((k) => k.grade === 7)!;
+    const mark = kids.find((k) => k.grade === 1)!;
+    expect([milena.providerId, mark.providerId]).toEqual(['demo-full', 'demo-lite']);
+    expect(milena.schoolLabel).not.toBe(mark.schoolLabel);
+    // each child's own bells
+    const bells = await db.select().from(bellSchedules);
+    expect(bells.map((b) => b.label).sort()).toEqual(['1 смена', '1-е классы']);
+    // Милена's English: her subgroup, room and teacher; Марк's thinner diary has no rooms or subgroups
+    const [english] = await db
+      .select()
+      .from(lessons)
+      .where(and(eq(lessons.studentId, milena.id), eq(lessons.subjectName, 'Английский язык')))
+      .limit(1);
+    expect(english).toMatchObject({ room: '412', groupLabel: '2-я подгруппа' });
+    expect(english!.endTime).toMatch(/^\d{2}:\d{2}$/);
+    const markLessons = await db.select().from(lessons).where(eq(lessons.studentId, mark.id));
+    expect(markLessons.every((l) => l.room === null && l.groupLabel === null)).toBe(true);
+    expect(markLessons.some((l) => l.teacherName)).toBe(true);
+    // a second household follows Марк only, and the first family was told once
+    const links = await db.select().from(familyStudents).where(eq(familyStudents.studentId, mark.id));
+    expect(links).toHaveLength(2);
+    expect(await db.select().from(familyStudents).where(eq(familyStudents.studentId, milena.id))).toHaveLength(1);
+    const notes = await db.select().from(notifications);
+    expect(notes.map((n) => n.title)).toEqual(['notification.childFollowed.title']);
+    expect(r.familyId).toBeDefined();
+  });
+
   it('is safe to re-run, and --reset replaces only the demo family', async () => {
     const [other] = await db.insert(families).values({ name: 'Another family' }).returning();
     const first = await seedDemo(db, { now: NOW });
@@ -80,6 +123,11 @@ describe('pnpm db:seed', () => {
     expect(again.created).toBe(true);
     expect(again.familyId).not.toBe(first.familyId);
     expect((await db.select().from(marks)).length).toBe(marksBefore);
-    expect((await db.select().from(families)).map((f) => f.id).sort()).toEqual([other!.id, again.familyId].sort());
+    // the other family of the real world stays; the two demo families were replaced
+    const left = (await db.select().from(families)).map((f) => f.id);
+    expect(left).toContain(other!.id);
+    expect(left).toContain(again.familyId);
+    expect(left).toHaveLength(3);
+    expect(await db.select().from(students)).toHaveLength(2);
   });
 });

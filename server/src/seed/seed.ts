@@ -3,6 +3,7 @@ import { eq, inArray } from 'drizzle-orm';
 import type { Db } from '../db/client';
 import {
   attendance,
+  bellSchedules,
   families,
   familyStudents,
   finalMarks,
@@ -22,21 +23,39 @@ import {
   terms,
   users,
   userStudentAccess,
+  weekTemplates,
 } from '../db/schema';
 import { hashPassword } from '../auth/password';
 import { fromLocal, localTime } from '../sync/time';
 import { normName } from '../sync/upsert';
 import type { Tx } from '../sync/upsert';
-import { generateGrade1, generateGrade7, generateSessions, SEED_TAGS, seedCalendar } from '@marksy/demo-diary';
+import {
+  generateGrade1,
+  generateGrade7,
+  generateSessions,
+  SEED_TAGS,
+  seedCalendar,
+  weekTemplateOf,
+} from '@marksy/demo-diary';
+import type { ProviderManifest } from '@marksy/core';
+import { notifyAdmins } from '../notify/admin';
 import type { SeedCalendar, SeedStudent } from '@marksy/demo-diary';
 
-// `pnpm db:seed [--reset]`: the fictional demo family (docs/build-plan.md M3, "Data for testing"), two children on the
-// fictional provider demo-full, one of them in a class without marks. No diary account is attached, so the planner
-// never touches it. Re-running is safe: an existing demo family is left alone unless --reset replaces it.
+// `pnpm db:seed [--reset]`: the fictional demo family (docs/build-plan.md M3, M3a, "Data for testing"), matching the
+// prototype: Милена in grade 7 on the fictional demo-full diary with her bells, subgroups, teachers and rooms; Марк in
+// grade 1, a class without marks, at another school on the thinner demo-lite diary; and a second fictional family that
+// also follows Марк (parents who live apart, ux-principles D54). No diary account is attached, so the planner never
+// touches them. Re-running is safe: the demo families are left alone unless --reset replaces them.
 
-export const DEMO_PROVIDER = 'demo-full';
+/** Each demo child's fictional diary (the prototype's «Марк в другой школе, другой дневник») */
+export const DEMO_PROVIDERS = { k: 'demo-full', m: 'demo-lite' } as const;
 export const DEMO_PASSWORD = 'marksy-demo';
-export const DEMO_LOGINS = { parent: 'parent@example.com', student: 'student@example.com' } as const;
+export const DEMO_LOGINS = {
+  parent: 'parent@example.com',
+  student: 'student@example.com',
+  /** the parent of the second family, who follows Марк too */
+  otherParent: 'parent2@example.com',
+} as const;
 
 /**
  * The demo admin has a published password, so the seed only runs where nobody outside the home can sign in: PUBLIC_URL
@@ -77,15 +96,22 @@ async function demoFamilyId(db: Db): Promise<string | null> {
 }
 
 /**
- * Removes the demo family with its logins and the children only it follows. Children belong to no family, so deleting
- * the family alone would leave them behind (design.md 7.1: a child goes with the last link).
+ * Removes the demo families with their logins and the children only they follow. Children belong to no family, so
+ * deleting the families alone would leave them behind (design.md 7.1: a child goes with the last link).
  */
-async function removeDemoFamily(tx: Tx, familyId: string): Promise<void> {
+async function removeDemoFamilies(tx: Tx): Promise<void> {
+  const demo = await tx
+    .select({ familyId: memberships.familyId })
+    .from(memberships)
+    .innerJoin(users, eq(users.id, memberships.userId))
+    .where(inArray(users.login, Object.values(DEMO_LOGINS)));
+  const familyIds = [...new Set(demo.map((d) => d.familyId))];
+  if (familyIds.length === 0) return;
   const linked = await tx
     .select({ studentId: familyStudents.studentId })
     .from(familyStudents)
-    .where(eq(familyStudents.familyId, familyId));
-  await tx.delete(families).where(eq(families.id, familyId));
+    .where(inArray(familyStudents.familyId, familyIds));
+  await tx.delete(families).where(inArray(families.id, familyIds));
   await tx.delete(users).where(inArray(users.login, Object.values(DEMO_LOGINS)));
   const ids = linked.map((l) => l.studentId);
   if (ids.length) {
@@ -101,14 +127,14 @@ async function removeDemoFamily(tx: Tx, familyId: string): Promise<void> {
 export async function seedDemo(db: Db, opts: { reset?: boolean; now?: Date } = {}): Promise<SeedResult> {
   const existing = await demoFamilyId(db);
   if (existing && !opts.reset) return { created: false, familyId: existing, counts: {} };
-  const manifest = getProvider(DEMO_PROVIDER)!.manifest;
-  const tz = manifest.timezone;
+  const manifests = { k: getProvider(DEMO_PROVIDERS.k)!.manifest, m: getProvider(DEMO_PROVIDERS.m)!.manifest };
+  const tz = manifests.k.timezone;
   const now = opts.now ?? new Date();
   const today = localTime(now, tz).date;
   // each child's own calendar: the February week is a holiday for grades 1 and 2 only
   const calendars = {
-    k: seedCalendar(today, manifest.calendar.schoolDays, 7),
-    m: seedCalendar(today, manifest.calendar.schoolDays, 1),
+    k: seedCalendar(today, manifests.k.calendar.schoolDays, 7),
+    m: seedCalendar(today, manifests.m.calendar.schoolDays, 1),
   };
   const kids = [generateGrade7(today, calendars.k), generateGrade1(today, calendars.m)];
   const passwordHash = await hashPassword(DEMO_PASSWORD);
@@ -116,7 +142,7 @@ export async function seedDemo(db: Db, opts: { reset?: boolean; now?: Date } = {
   const count = (k: string, n: number) => (counts[k] = (counts[k] ?? 0) + n);
 
   const familyId = await db.transaction(async (tx) => {
-    if (existing) await removeDemoFamily(tx, existing);
+    if (existing) await removeDemoFamilies(tx);
     const [family] = await tx
       .insert(families)
       .values({ name: 'Демо-семья', settings: { guidance: true } })
@@ -136,12 +162,12 @@ export async function seedDemo(db: Db, opts: { reset?: boolean; now?: Date } = {
 
     const studentIds: Record<string, string> = {};
     for (const kid of kids) {
-      const id = await insertStudent(tx, kid, calendars[kid.key], count);
+      const id = await insertStudent(tx, kid, calendars[kid.key], manifests[kid.key], count);
       studentIds[kid.key] = id.studentId;
       await tx
         .insert(familyStudents)
         .values({ familyId: fid, studentId: id.studentId, linkedBy: parent!.id, linkedAt: now });
-      await insertDiary(tx, id, kid, calendars[kid.key], now, tz, count, child!.id);
+      await insertDiary(tx, id, kid, calendars[kid.key], manifests[kid.key], now, tz, count, child!.id);
     }
     await tx.insert(userStudentAccess).values([
       { userId: parent!.id, familyId: fid, studentId: studentIds.k! },
@@ -159,9 +185,33 @@ export async function seedDemo(db: Db, opts: { reset?: boolean; now?: Date } = {
       })),
     );
     count('lesson_tags', SEED_TAGS.length);
-    return fid;
+
+    // a second household that follows Марк too: its own parent and nothing else of the first family
+    const [other] = await tx.insert(families).values({ name: 'Вторая демо-семья', settings: {} }).returning();
+    const [otherParent] = await tx
+      .insert(users)
+      .values({ login: DEMO_LOGINS.otherParent, displayName: 'Папа', passwordHash })
+      .returning();
+    await tx.insert(memberships).values({ userId: otherParent!.id, familyId: other!.id, role: 'admin' });
+    await tx
+      .insert(familyStudents)
+      .values({ familyId: other!.id, studentId: studentIds.m!, linkedBy: otherParent!.id, linkedAt: now });
+    await tx
+      .insert(userStudentAccess)
+      .values({ userId: otherParent!.id, familyId: other!.id, studentId: studentIds.m! });
+    count('families', 2);
+    return { fid, otherId: other!.id, markId: studentIds.m! };
   });
-  return { created: true, familyId, counts };
+  // the first family hears of it as it would from the collector (sources.ts linkFamily): once, without names
+  await notifyAdmins(db, familyId.fid, {
+    eventKey: `follow:${familyId.markId}:${familyId.otherId}`,
+    severity: 'info',
+    title: 'notification.childFollowed.title',
+    body: 'notification.childFollowed.body',
+    params: { child: 'Марк' },
+    link: '/family',
+  });
+  return { created: true, familyId: familyId.fid, counts };
 }
 
 interface StudentIds {
@@ -169,24 +219,30 @@ interface StudentIds {
   yearId: string;
   termIds: Map<number, string>;
   subjectIds: Map<string, string>;
+  providerId: string;
+  caps: ProviderManifest['capabilities'];
 }
 
 async function insertStudent(
   db: Tx,
   kid: SeedStudent,
   cal: SeedCalendar,
+  manifest: ProviderManifest,
   count: (k: string, n: number) => void,
 ): Promise<StudentIds> {
+  const providerId = manifest.id;
+  const caps = manifest.capabilities;
   const [s] = await db
     .insert(students)
     .values({
-      providerId: DEMO_PROVIDER,
+      providerId,
       externalId: `demo-${kid.key}`,
       fullName: `${kid.familyName} ${kid.givenName}`,
       givenName: kid.givenName,
       familyName: kid.familyName,
       displayName: kid.givenName,
-      schoolId: 'demo-school',
+      schoolId: `demo-school-${kid.key}`,
+      schoolLabel: kid.key === 'm' ? 'Гимназия № 2' : 'СШ № 34',
       classLabel: kid.classLabel,
       grade: kid.grade,
       gradingScaleId: kid.scale,
@@ -198,7 +254,7 @@ async function insertStudent(
     .insert(schoolYears)
     .values({
       studentId,
-      providerId: DEMO_PROVIDER,
+      providerId,
       externalId: cal.year.label,
       label: cal.year.label,
       startDate: cal.year.start,
@@ -217,12 +273,15 @@ async function insertStudent(
         label: String(t.index),
         startDate: t.start,
         endDate: t.end,
+        note: t.note ?? null,
       })),
     )
     .returning();
   await db
     .insert(holidays)
-    .values(cal.holidays.map((h) => ({ schoolYearId: yearId, startDate: h.from, endDate: h.to })));
+    .values(
+      cal.holidays.map((h) => ({ schoolYearId: yearId, startDate: h.from, endDate: h.to, note: h.note ?? null })),
+    );
   await db.insert(studentYears).values({
     studentId,
     schoolYearId: yearId,
@@ -233,23 +292,62 @@ async function insertStudent(
   const subjectRows = await db
     .insert(subjects)
     .values(
-      kid.subjects.map(({ name }, i) => ({
+      kid.subjects.map((sub, i) => ({
         studentId,
         schoolYearId: yearId,
-        providerId: DEMO_PROVIDER,
+        providerId,
         externalId: `${kid.key}-s${i}`,
-        name,
-        nameNorm: normName(name),
+        name: sub.name,
+        nameNorm: normName(sub.name),
+        // what the child's diary shows, as far as its capabilities go (providers.md 10)
+        teacherName: caps.teacherNames ? sub.teacher : null,
+        groupLabel: caps.teachingGroups ? sub.group : null,
+        level: sub.level ? 'advanced' : 'regular',
+        levelLabel: sub.level ?? 'Базовый',
+        lessonsPerWeek: sub.slots.length,
       })),
     )
     .returning();
   count('students', 1);
   count('subjects', subjectRows.length);
+  const subjectIds = new Map(subjectRows.map((x) => [x.name, x.id]));
+  if (caps.bellSchedule) {
+    await db.insert(bellSchedules).values({
+      studentId,
+      schoolYearId: yearId,
+      externalId: `bells-${kid.key}`,
+      label: kid.bells.label,
+      days: kid.bells.days,
+      periods: kid.bells.periods,
+      fetchedAt: new Date(),
+    });
+    count('bell_schedules', 1);
+  }
+  if (caps.weekTemplate) {
+    const entries = weekTemplateOf(kid).map((e) => ({
+      cycle_week: 1,
+      weekday: e.weekday,
+      slot: e.slot,
+      ...(kid.bells.periods.find((p) => p.slot === e.slot) && {
+        start: kid.bells.periods.find((p) => p.slot === e.slot)!.start,
+        end: kid.bells.periods.find((p) => p.slot === e.slot)!.end,
+      }),
+      subject_id: subjectIds.get(e.subject)!,
+      ...(caps.teachingGroups && e.group && { group_label: e.group }),
+      ...(caps.rooms && e.room && { room: e.room }),
+      ...(caps.teacherNames && e.teacher && { teacher_name: e.teacher }),
+      template_ref: e.templateRef,
+    }));
+    await db.insert(weekTemplates).values({ studentId, termId: null, cycleWeeks: 1, entries, fetchedAt: new Date() });
+    count('week_templates', 1);
+  }
   return {
     studentId,
     yearId,
     termIds: new Map(termRows.map((t) => [t.index, t.id])),
-    subjectIds: new Map(subjectRows.map((x) => [x.name, x.id])),
+    subjectIds,
+    providerId,
+    caps,
   };
 }
 
@@ -258,6 +356,7 @@ async function insertDiary(
   ids: StudentIds,
   kid: SeedStudent,
   cal: SeedCalendar,
+  _manifest: ProviderManifest,
   now: Date,
   tz: string,
   count: (k: string, n: number) => void,
@@ -277,14 +376,19 @@ async function insertDiary(
       .values(
         chunk.map((l) => ({
           studentId,
-          providerId: DEMO_PROVIDER,
+          providerId: ids.providerId,
           externalId: l.key,
           date: l.date,
           slot: l.slot,
           startTime: l.startTime,
           subjectId: ids.subjectIds.get(l.subject)!,
           subjectName: l.subject,
-          lessonType: l.lessonType,
+          endTime: l.endTime,
+          room: ids.caps.rooms ? l.room : null,
+          groupLabel: ids.caps.teachingGroups ? l.groupLabel : null,
+          teacherName: ids.caps.teacherNames ? (kid.subjects.find((x) => x.name === l.subject)?.teacher ?? null) : null,
+          templateRef: l.templateRef,
+          lessonType: ids.caps.lessonTypes ? l.lessonType : null,
           topic: l.topic,
           homework: l.homework,
           firstSeenAt: seenAt(l.date, -5 * 60),
@@ -302,7 +406,7 @@ async function insertDiary(
       .values(
         kid.marks.map((m) => ({
           studentId,
-          providerId: DEMO_PROVIDER,
+          providerId: ids.providerId,
           externalId: m.key,
           lessonId: lessonIds.get(m.lessonKey)!,
           date: m.date,
@@ -333,7 +437,7 @@ async function insertDiary(
         const l = lessonByKey.get(key)!;
         return {
           studentId,
-          providerId: DEMO_PROVIDER,
+          providerId: ids.providerId,
           externalId: `att:${key}`,
           date: l.date,
           lessonId: lessonIds.get(key)!,
