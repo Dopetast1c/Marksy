@@ -27,6 +27,7 @@ import {
 } from '../db/schema';
 import { hashPassword } from '../auth/password';
 import { fromLocal, localTime } from '../sync/time';
+import { followKey } from '../sync/sources';
 import { normName } from '../sync/upsert';
 import type { Tx } from '../sync/upsert';
 import {
@@ -96,8 +97,8 @@ async function demoFamilyId(db: Db): Promise<string | null> {
 }
 
 /**
- * Removes the demo families with their logins and the children only they follow. Children belong to no family, so
- * deleting the families alone would leave them behind (design.md 7.1: a child goes with the last link).
+ * Removes the demo families with their logins; the children only they follow go with them (design.md 7.1: a child goes
+ * with the last link, a trigger of migration 0004).
  */
 async function removeDemoFamilies(tx: Tx): Promise<void> {
   const demo = await tx
@@ -107,21 +108,8 @@ async function removeDemoFamilies(tx: Tx): Promise<void> {
     .where(inArray(users.login, Object.values(DEMO_LOGINS)));
   const familyIds = [...new Set(demo.map((d) => d.familyId))];
   if (familyIds.length === 0) return;
-  const linked = await tx
-    .select({ studentId: familyStudents.studentId })
-    .from(familyStudents)
-    .where(inArray(familyStudents.familyId, familyIds));
   await tx.delete(families).where(inArray(families.id, familyIds));
   await tx.delete(users).where(inArray(users.login, Object.values(DEMO_LOGINS)));
-  const ids = linked.map((l) => l.studentId);
-  if (ids.length) {
-    const stillFollowed = await tx
-      .select({ studentId: familyStudents.studentId })
-      .from(familyStudents)
-      .where(inArray(familyStudents.studentId, ids));
-    const orphans = ids.filter((id) => !stillFollowed.some((x) => x.studentId === id));
-    if (orphans.length) await tx.delete(students).where(inArray(students.id, orphans));
-  }
 }
 
 export async function seedDemo(db: Db, opts: { reset?: boolean; now?: Date } = {}): Promise<SeedResult> {
@@ -204,7 +192,7 @@ export async function seedDemo(db: Db, opts: { reset?: boolean; now?: Date } = {
   });
   // the first family hears of it as it would from the collector (sources.ts linkFamily): once, without names
   await notifyAdmins(db, familyId.fid, {
-    eventKey: `follow:${familyId.markId}:${familyId.otherId}`,
+    eventKey: followKey(familyId.markId, familyId.otherId),
     severity: 'info',
     title: 'notification.childFollowed.title',
     body: 'notification.childFollowed.body',

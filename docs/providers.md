@@ -208,7 +208,10 @@ export interface ProviderContext {
 export interface AccountInfo { externalUserId: string; displayName: string | null; role: 'parent' | 'student'; students: StudentRef[] }
 export interface StudentRef {
   externalId: string;                   // the child's own id in the system, the same whichever login lists the child (two parents' logins must
-                                        // give the same id, design.md 7.2); never an id of the login-child relation
+                                        // give the same id, design.md 7.2); never an id of the login-child relation.
+                                        // Unique across the whole provider: children are matched across families by
+                                        // (provider_id, externalId) alone, so a system that numbers pupils per school
+                                        // or per tenant prefixes the id with it ("<tenant>:<pupil>")
   fullName: string;                     // as the system shows it
   givenName?: string; familyName?: string; middleName?: string;   // when the system has separate fields
   displayName?: string;                 // short form for headers and notifications ("Кира", "Yuki"); the core derives it from givenName or the first token of fullName per manifest.nameOrder when absent

@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { and, eq, ne, notInArray } from 'drizzle-orm';
 import type { Db } from '../db/client';
 import { diaryAccounts, familyStudents, studentSources, students } from '../db/schema';
@@ -7,6 +8,13 @@ import { notifyAdmins } from '../notify/admin';
 // diary: a family follows a child while one of its own accounts lists the child; a child is read through one account
 // only, the active source, and another source takes over when that account needs action or is paused. The connect
 // flow (M4) and the collector both go through here.
+
+/**
+ * The inbox key of «another family follows your child»: one per child and following family, without that family's id
+ * (the notified family never learns who follows)
+ */
+export const followKey = (studentId: string, familyId: string) =>
+  `follow:${studentId}:${createHash('sha256').update(`${studentId}:${familyId}`).digest('hex').slice(0, 16)}`;
 
 /**
  * The family follows the child (again). A new link to a child another family already follows is «Следить из своей
@@ -50,7 +58,7 @@ export async function linkFamily(
     for (const other of others) {
       await notifyAdmins(db, other.familyId, {
         // one notice per child and following family, whatever happens to the link later
-        eventKey: `follow:${studentId}:${familyId}`,
+        eventKey: followKey(studentId, familyId),
         severity: 'info',
         title: 'notification.childFollowed.title',
         body: 'notification.childFollowed.body',

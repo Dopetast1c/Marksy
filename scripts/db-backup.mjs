@@ -6,7 +6,8 @@
 
 import { spawn, spawnSync } from 'node:child_process';
 import { createReadStream, createWriteStream, mkdirSync, readdirSync, rmSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { pipeline } from 'node:stream/promises';
 import { createGunzip, createGzip } from 'node:zlib';
 
@@ -15,7 +16,22 @@ const USER = 'marksy';
 const SOURCE = 'marksy';
 const CHECK = 'marksy_restore_check';
 const KEEP = 5;
-const dir = join(process.cwd(), 'data', 'backups');
+export const BACKUPS = join(dirname(fileURLToPath(import.meta.url)), '..', 'data', 'backups');
+const dir = BACKUPS;
+
+/**
+ * The first error line of psql or pg_dump, without what may quote a row: DETAIL and CONTEXT lines are left out, quoted
+ * text and key values are masked (a failed COPY or a key violation repeats the row's values).
+ */
+export function errorLine(stderr) {
+  const line = (stderr || '').split(/\r?\n/).find((l) => /error/i.test(l)) ?? '';
+  return line
+    .replace(/"[^"]*"/g, '"…"')
+    .replace(/'[^']*'/g, "'…'")
+    .replace(/=\([^)]*\)/g, '=(…)')
+    .trim()
+    .slice(0, 200);
+}
 
 export function psql(db, sql) {
   const r = spawnSync(
@@ -25,8 +41,7 @@ export function psql(db, sql) {
       encoding: 'utf8',
     },
   );
-  if (r.status !== 0)
-    throw new Error(`psql on ${db} failed (exit ${r.status}): ${(r.stderr || '').trim().slice(0, 300)}`);
+  if (r.status !== 0) throw new Error(`psql on ${db} failed (exit ${r.status}): ${errorLine(r.stderr)}`);
   return r.stdout.trim();
 }
 
@@ -46,8 +61,7 @@ function run(args, { input, output } = {}) {
       } catch (e) {
         return reject(e);
       }
-      if (code !== 0)
-        reject(new Error(`docker ${args.slice(0, 3).join(' ')} exited ${code}: ${err.trim().slice(0, 300)}`));
+      if (code !== 0) reject(new Error(`docker ${args.slice(0, 3).join(' ')} exited ${code}: ${errorLine(err)}`));
       else resolve(code);
     });
   });
@@ -83,9 +97,12 @@ export function counts(db) {
 }
 
 export async function restoreInto(db, file) {
-  await run(['exec', '-i', CONTAINER, 'psql', '-U', USER, '-d', db, '-v', 'ON_ERROR_STOP=1', '-q'], {
-    input: createReadStream(file).pipe(createGunzip()),
-  });
+  await run(
+    ['exec', '-i', CONTAINER, 'psql', '-U', USER, '-d', db, '-v', 'ON_ERROR_STOP=1', '-q', '--single-transaction'],
+    {
+      input: createReadStream(file).pipe(createGunzip()),
+    },
+  );
 }
 
 async function main() {
@@ -108,7 +125,7 @@ async function main() {
     child.on('error', reject);
     child.on('close', (code) =>
       writing.then(
-        () => (code === 0 ? resolve() : reject(new Error(`pg_dump exited ${code}: ${err.trim().slice(0, 300)}`))),
+        () => (code === 0 ? resolve() : reject(new Error(`pg_dump exited ${code}: ${errorLine(err)}`))),
         reject,
       ),
     );

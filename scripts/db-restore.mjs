@@ -3,10 +3,13 @@
 // table before and after, never row contents.
 
 import { existsSync } from 'node:fs';
-import { counts, restoreInto } from './db-backup.mjs';
+import { basename, dirname, resolve } from 'node:path';
+import { BACKUPS, counts, restoreInto } from './db-backup.mjs';
 
 const file = process.argv[2];
-if (!file || !existsSync(file) || !process.argv.includes('--yes')) {
+// only a dump that db:backup made, in its folder; the restore runs in one transaction, so a failure changes nothing
+const ours = !!file && resolve(dirname(file)) === resolve(BACKUPS) && /^marksy-[\w-]+\.sql\.gz$/.test(basename(file));
+if (!file || !ours || !existsSync(file) || !process.argv.includes('--yes')) {
   console.error('usage: pnpm db:restore data/backups/marksy-<time>.sql.gz --yes');
   console.error('This replaces the local marksy database with the dump. Stop pnpm dev first.');
   process.exit(2);

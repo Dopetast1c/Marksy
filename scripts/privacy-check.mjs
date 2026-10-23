@@ -45,7 +45,7 @@ function listFiles() {
 const FORBIDDEN_FILES = [
   { re: /(^|\/)\.env$|(^|\/)\.env\.(?!example$)[^/]+$/, why: 'environment file with secrets' },
   { re: /\.har$/i, why: 'HAR export (contains tokens and personal data)' },
-  { re: /\.(dump|sqlite3?|db)$/i, why: 'database dump' },
+  { re: /\.(dump|sqlite3?|db|sql\.gz)$/i, why: 'database dump' },
   { re: /^data\//, why: 'local data folder' },
 ];
 

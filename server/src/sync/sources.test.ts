@@ -18,7 +18,7 @@ import {
 import { runCollector } from './collector';
 import { readSyncConfig } from './config';
 import { runSync } from './run';
-import { rebalanceAccount } from './sources';
+import { followKey, rebalanceAccount } from './sources';
 
 // Two households following one child (ux-principles D54): family A connected first; family B's login shows the same
 // pupils of the fictional demo diary, first only p-2, later p-1 as well.
@@ -87,7 +87,7 @@ describe('a child followed by two families', () => {
 
     const notes = await inbox(a.admin.id);
     expect(notes.map((n) => n.eventKey).sort()).toEqual(
-      [`follow:${await studentId('p-1')}:${b.family.id}`, `follow:${await studentId('p-2')}:${b.family.id}`].sort(),
+      [followKey(await studentId('p-1'), b.family.id), followKey(await studentId('p-2'), b.family.id)].sort(),
     );
     expect(notes.every((n) => n.title === 'notification.childFollowed.title')).toBe(true);
     // the notice names the child of family A, never anyone of family B

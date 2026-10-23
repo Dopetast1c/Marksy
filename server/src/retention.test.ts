@@ -251,4 +251,17 @@ describe('retention janitor', () => {
     expect((await db.select().from(marks)).map((m) => m.externalId)).toEqual(['new']);
     expect(await db.select().from(homeworkItems)).toEqual([]);
   });
+
+  it('a child goes with the last family that follows them, with every row of theirs; another family keeps them', async () => {
+    const w = await world();
+    const [second] = await db.insert(families).values({ name: 'Вторая семья' }).returning();
+    await db.insert(familyStudents).values({ familyId: second!.id, studentId: w.student.id });
+    await db.delete(families).where(eq(families.id, w.family.id));
+    expect(await db.select().from(students)).toHaveLength(1);
+    expect((await db.select().from(schoolYears)).length).toBeGreaterThan(0);
+    await db.delete(families).where(eq(families.id, second!.id));
+    expect(await db.select().from(students)).toHaveLength(0);
+    expect(await db.select().from(schoolYears)).toHaveLength(0);
+    expect(await db.select().from(terms)).toHaveLength(0);
+  });
 });
