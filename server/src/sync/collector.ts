@@ -268,6 +268,7 @@ export async function runCollector(opts: CollectorOptions): Promise<CollectorRes
             : [];
         const attendance =
           caps.attendance === 'separate' ? await provider.getAttendance!(session, ref, u.range, ctx) : [];
+        const behaviour = caps.behaviour === 'separate' ? await provider.getBehaviour!(session, ref, u.range, ctx) : [];
         const s = await upsertRange(
           db,
           {
@@ -277,7 +278,7 @@ export async function runCollector(opts: CollectorOptions): Promise<CollectorRes
             subjectIds: u.subjectIds,
             now: now(),
           },
-          { range: u.range, lessons, marks, attendance },
+          { range: u.range, lessons, marks, attendance, behaviour },
         );
         for (const k of Object.keys(stats) as (keyof UpsertStats)[]) stats[k] += s[k];
       } catch (err) {

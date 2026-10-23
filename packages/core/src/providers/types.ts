@@ -73,7 +73,7 @@ export interface DiaryProvider {
   getFinalMarks?(session: Session, student: StudentRef, ctx: ProviderContext): Promise<FinalMark[]>;
   /** capabilities.homeworkAssignments */
   getHomework?(session: Session, student: StudentRef, range: DateRange, ctx: ProviderContext): Promise<HomeworkItem[]>;
-  /** capabilities.behaviour */
+  /** capabilities.behaviour = 'separate' (with 'derived' the remarks come on Lesson.behaviour) */
   getBehaviour?(
     session: Session,
     student: StudentRef,

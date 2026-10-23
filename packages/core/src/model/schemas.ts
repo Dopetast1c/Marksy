@@ -174,6 +174,20 @@ export type Attendance = z.infer<typeof attendance>;
 export const lessonType = z.enum(['regular', 'test', 'lab', 'practical', 'excursion', 'other']);
 export type LessonType = z.infer<typeof lessonType>;
 
+export const behaviourEvent = z.object({
+  externalId: nonEmpty,
+  date: isoDate,
+  points: z.number().optional(),
+  polarity: z.enum(['positive', 'negative', 'neutral']),
+  category: z.string().optional(),
+  comment: z.string().optional(),
+  subjectExternalId: z.string().optional(),
+  authorExternalId: z.string().optional(),
+  /** The lesson it was written on, when the system ties it to one (a teacher's comment without a mark) */
+  lessonExternalId: z.string().optional(),
+});
+export type BehaviourEvent = z.infer<typeof behaviourEvent>;
+
 export const lesson = z.object({
   /** Stable id of this occurrence; built from date + slot + subject when the system has none. */
   externalId: nonEmpty,
@@ -203,6 +217,8 @@ export const lesson = z.object({
   marks: z.array(mark),
   /** Attendance that comes with the lesson (capabilities.attendance = 'derived', e.g. an "absent" mark cell) */
   attendance: z.array(attendance).optional(),
+  /** Teacher remarks that come with the lesson (capabilities.behaviour = 'derived'), e.g. a comment without a mark */
+  behaviour: z.array(behaviourEvent).optional(),
   cancelled: z.boolean().optional(),
 });
 export type Lesson = z.infer<typeof lesson>;
@@ -267,18 +283,6 @@ export const homeworkItem = z.object({
   markExternalId: z.string().optional(),
 });
 export type HomeworkItem = z.infer<typeof homeworkItem>;
-
-export const behaviourEvent = z.object({
-  externalId: nonEmpty,
-  date: isoDate,
-  points: z.number().optional(),
-  polarity: z.enum(['positive', 'negative', 'neutral']),
-  category: z.string().optional(),
-  comment: z.string().optional(),
-  subjectExternalId: z.string().optional(),
-  authorExternalId: z.string().optional(),
-});
-export type BehaviourEvent = z.infer<typeof behaviourEvent>;
 
 export const finalMarkRole = z.enum([
   'final',

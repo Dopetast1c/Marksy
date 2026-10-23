@@ -129,7 +129,7 @@ export async function readAll(
     if (caps.attendance === 'separate') entry.attendance = await provider.getAttendance!(session, student, range, ctx);
     if (caps.finalMarks) entry.finalMarks = await provider.getFinalMarks!(session, student, ctx);
     if (caps.homeworkAssignments) entry.homework = await provider.getHomework!(session, student, range, ctx);
-    if (caps.behaviour) entry.behaviour = await provider.getBehaviour!(session, student, range, ctx);
+    if (caps.behaviour === 'separate') entry.behaviour = await provider.getBehaviour!(session, student, range, ctx);
     // school details come once a day after the run's lessons; subjects may then carry teacher, group and level
     if (caps.bellSchedule) entry.bellSchedules = await provider.getBellSchedule!(session, student, ctx);
     if (caps.weekTemplate) {
@@ -191,7 +191,7 @@ export function defineConformanceSuite(opts: ConformanceOptions): void {
       need(caps.attendance === 'separate', 'getAttendance');
       need(caps.finalMarks, 'getFinalMarks');
       need(caps.homeworkAssignments, 'getHomework');
-      need(caps.behaviour, 'getBehaviour');
+      need(caps.behaviour === 'separate', 'getBehaviour');
       need(caps.bellSchedule, 'getBellSchedule');
       need(caps.weekTemplate, 'getWeekTemplate');
     });
@@ -212,6 +212,12 @@ export function defineConformanceSuite(opts: ConformanceOptions): void {
         expect(schemas.calendar.parse(s.calendar)).toEqual(s.calendar);
         for (const x of s.subjects) expect(schemas.subject.parse(x)).toEqual(x);
         for (const x of s.lessons ?? []) expect(schemas.lesson.parse(x)).toEqual(x);
+        // remarks with the lesson only when the capabilities say they come that way
+        if (caps.behaviour !== 'derived')
+          expect(
+            (s.lessons ?? []).flatMap((l) => l.behaviour ?? []),
+            'Lesson.behaviour needs behaviour: derived',
+          ).toEqual([]);
         for (const x of s.marks ?? []) expect(schemas.mark.parse(x)).toEqual(x);
         for (const x of s.attendance ?? []) expect(schemas.attendance.parse(x)).toEqual(x);
         for (const x of s.finalMarks ?? []) expect(schemas.finalMark.parse(x)).toEqual(x);

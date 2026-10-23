@@ -48,7 +48,7 @@ export const sampleManifest: ProviderManifest = {
     weekTemplate: false,
     pastYears: false,
     homeworkAssignments: false,
-    behaviour: false,
+    behaviour: 'none',
     cohortStats: false,
     criteria: false,
     targets: false,

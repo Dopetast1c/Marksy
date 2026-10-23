@@ -630,7 +630,8 @@ study_session_events id, session_id, kind (start|pause|resume|stop), at   (180 d
 lesson_overrides    student_id, lesson_id, cancelled (bool), set_by (user_id), set_at, PK(student_id, lesson_id)
                     (5.5: "Урока не будет"; dropped when the diary records a mark or absence for the lesson)
 behaviour_events    id, student_id, provider_id, external_id, date, points, polarity, category,
-                    comment, subject_id (nullable), first_seen_at, removed_at
+                    comment, subject_id (nullable), lesson_id (nullable), author_external_id,
+                    first_seen_at, removed_at   (teacher remarks too: a comment without a mark, D56)
 mark_history        id, mark_id, seen_at, raw_mark, kind, work_type, comment   (previous versions)
 mark_events         id, student_id, mark_id, kind (new|changed|removed|restored),
                     diff (jsonb), created_at, notified_at
@@ -1094,7 +1095,7 @@ Each of these was a hidden assumption in the first design and is now an explicit
 
 - The first non-Belarusian provider will test the canonical model. Candidates with a public or semi-public API and many families: Russia (dnevnik.ru, МЭШ), Ukraine (nz.ua), Poland (Librus, Vulcan), Germany (regional portals), Kazakhstan (Kundelik). Each has its own grading scale and auth; `docs/providers.md` is written so that the second provider is a pull request, not a redesign.
 
-- A teacher's comment without a mark (api-spec 7.2, kind null): seen in real data, not kept today. Show it as a пометка under the lesson (5.5), keep it on the lesson without showing it, or leave it out? A product decision for the owner; it would need a canonical field (`Lesson.teacherComment?`) and a capability.
+- How a teacher's remark without a mark (D56) shows: the word in copy (комментарий учителя, замечание), its place among the пометки of 5.5 and in the feed, and whether a new one notifies by default. Decide with the lesson and notification screens (M5, M7).
 - Student e-schools login endpoint and whether a student token can read the same diary routes (section 7.5).
 - Whether e-schools gives the same pupil id to two parents' logins (the shared-child match of 7.2 depends on it). Check when a second parent connects; until then a mismatch only means two copies, as before.
 - A child who changes school and system mid-year: two identities of one person. Not merged automatically; a later "это тот же ребёнок" action in Семья could link them like `subject_links` do for subjects.

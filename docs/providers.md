@@ -94,7 +94,7 @@ docs/                   product docs (this file, design.md, api-spec.md, tokens.
     "weekTemplate": true,                 // the student's regular week for a term (getWeekTemplate)
     "pastYears": false,                   // can the API return previous school years?
     "homeworkAssignments": false,         // homework as separate items with set/due dates and submission status (UK)
-    "behaviour": false,                   // behaviour / achievement points or notes (UK ClassCharts-style)
+    "behaviour": "none",                  // teacher remarks, behaviour / achievement points: separate (getBehaviour), derived (on the lesson: Lesson.behaviour, e.g. a comment without a mark), none
     "cohortStats": false,                 // class average, rank, percentile, standard deviation per assessment (CN, JP, KR)
     "criteria": false,                    // multi-criteria assessment per subject (JP 観点別, UK attitude-to-learning)
     "targets": false,                     // target / predicted / current grades per subject (UK)
@@ -167,7 +167,7 @@ export interface DiaryProvider {
   /** Homework as separate items with due dates (capabilities.homeworkAssignments). */
   getHomework?(session: Session, student: StudentRef, range: DateRange, ctx: ProviderContext): Promise<HomeworkItem[]>;
 
-  /** Behaviour and achievement events (capabilities.behaviour). */
+  /** Behaviour and achievement events (capabilities.behaviour = 'separate'; with 'derived' they come on Lesson.behaviour). */
   getBehaviour?(session: Session, student: StudentRef, range: DateRange, ctx: ProviderContext): Promise<BehaviourEvent[]>;
 
   /** Timetable without marks, for days in the future. Optional; falls back to getLessons. */
@@ -321,7 +321,9 @@ export interface Mark {
 export interface HomeworkItem { externalId: string; subjectExternalId: string; subjectName: string; title: string; description?: string; setDate: ISODate; dueDate: ISODate; status?: 'set' | 'submitted' | 'late' | 'missing' | 'marked'; markExternalId?: string }
 
 // Behaviour and achievement events (merits, house points, demerits, detentions, praise notes).
-export interface BehaviourEvent { externalId: string; date: ISODate; points?: number; polarity: 'positive' | 'negative' | 'neutral'; category?: string; comment?: string; subjectExternalId?: string; authorExternalId?: string }
+// A teacher's remark tied to a lesson (by-eschools: a comment without a mark, «нет домашнего задания») is one too, with
+// lessonExternalId and category 'lesson_comment'; it comes on Lesson.behaviour and is never a mark.
+export interface BehaviourEvent { externalId: string; date: ISODate; points?: number; polarity: 'positive' | 'negative' | 'neutral'; category?: string; comment?: string; subjectExternalId?: string; authorExternalId?: string; lessonExternalId?: string }
 
 // Attendance is not a mark. by-eschools derives it from lesson_mark.kind === 'ABSENT'; other systems have a separate register.
 export interface Attendance {
@@ -590,6 +592,7 @@ There is no national diary in the UK. Schools run a management system (SIMS, Arb
 | Effort or attitude-to-learning scores (1 to 4) beside attainment | `Mark.dimension = 'effort'`, separate scale `gb-effort-1-4`, capability `criteria`; never mixed into attainment averages |
 | Homework set in a separate system with set and due dates and submission status | `HomeworkItem`, capability `homeworkAssignments`; tags and the schedule use real due dates |
 | Behaviour and achievement points (merits, house points, demerits, detentions) | `BehaviourEvent`, capability `behaviour`; an optional Поведение card on Overview and a feed item type |
+| Teacher's remark on a lesson without a mark (by-eschools: a comment with no mark) | `BehaviourEvent` with `lessonExternalId` on `Lesson.behaviour`, `behaviour: 'derived'`; shown with the lesson, never as a mark (ux-principles D56) |
 | Attendance as a percentage with lates and authorised / unauthorised absences | `Attendance` with `status` and `reason`; percentage derived |
 | Three terms with half-terms | `Term.kind = 'other'` with labels, or six terms; reports per term |
 

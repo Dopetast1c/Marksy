@@ -67,7 +67,7 @@
     "weekTemplate": true,
     "pastYears": false,
     "homeworkAssignments": false,
-    "behaviour": false,
+    "behaviour": "derived",
     "cohortStats": false,
     "criteria": false,
     "targets": false,

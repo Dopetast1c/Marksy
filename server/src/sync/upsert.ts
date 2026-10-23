@@ -1,7 +1,7 @@
-import type { Attendance, DateRange, Lesson, Mark } from '@marksy/core';
+import type { Attendance, BehaviourEvent, DateRange, Lesson, Mark } from '@marksy/core';
 import { and, eq, gte, inArray, lte, or } from 'drizzle-orm';
 import type { Db } from '../db/client';
-import { attendance, lessons, markEvents, markHistory, marks, subjects } from '../db/schema';
+import { attendance, behaviourEvents, lessons, markEvents, markHistory, marks, subjects } from '../db/schema';
 import type { MarkDiff } from '../db/schema';
 
 // The upsert rules of docs/design.md 8, applied to one fetched range of one student, whatever the run kind. A range is
@@ -33,6 +33,8 @@ export interface FetchedRange {
   marks: Mark[];
   /** capabilities.attendance = 'separate' */
   attendance: Attendance[];
+  /** capabilities.behaviour = 'separate'; with 'derived' they come on the lessons */
+  behaviour?: BehaviourEvent[];
 }
 
 export const normName = (name: string) => name.toLowerCase().replace(/\s+/g, ' ').trim();
@@ -314,7 +316,52 @@ async function upsertAttendance(tx: Tx, scope: UpsertScope, fetched: FetchedRang
   if (gone.length) await tx.update(attendance).set({ removedAt: now }).where(inArray(attendance.id, gone));
 }
 
-/** Store one fetched range of one student: lessons, then marks and absences pointing at them. */
+/**
+ * Teacher remarks and behaviour events of the range, like attendance: upserted by id, soft-removed when the range no
+ * longer has them, back when they return. A comment that changes is kept as it is now.
+ */
+async function upsertBehaviour(tx: Tx, scope: UpsertScope, fetched: FetchedRange, lessonIds: Map<string, string>) {
+  const { studentId, providerId, now } = scope;
+  const all = [...fetched.lessons.flatMap((l) => l.behaviour ?? []), ...(fetched.behaviour ?? [])];
+  const existing = await tx
+    .select({ id: behaviourEvents.id, externalId: behaviourEvents.externalId, removedAt: behaviourEvents.removedAt })
+    .from(behaviourEvents)
+    .where(
+      and(
+        eq(behaviourEvents.studentId, studentId),
+        eq(behaviourEvents.providerId, providerId),
+        gte(behaviourEvents.date, fetched.range.from),
+        lte(behaviourEvents.date, fetched.range.to),
+      ),
+    );
+  const seen = new Set<string>();
+  for (const b of all) {
+    if (seen.has(b.externalId)) continue;
+    seen.add(b.externalId);
+    const values = {
+      date: b.date,
+      points: b.points ?? null,
+      polarity: b.polarity,
+      category: b.category ?? null,
+      comment: b.comment ?? null,
+      subjectId: b.subjectExternalId ? (scope.subjectIds.get(b.subjectExternalId) ?? null) : null,
+      lessonId: (b.lessonExternalId && lessonIds.get(b.lessonExternalId)) || null,
+      authorExternalId: b.authorExternalId ?? null,
+      removedAt: null,
+    };
+    await tx
+      .insert(behaviourEvents)
+      .values({ ...values, studentId, providerId, externalId: b.externalId, firstSeenAt: now })
+      .onConflictDoUpdate({
+        target: [behaviourEvents.studentId, behaviourEvents.providerId, behaviourEvents.externalId],
+        set: values,
+      });
+  }
+  const gone = existing.filter((b) => !seen.has(b.externalId) && !b.removedAt).map((b) => b.id);
+  if (gone.length) await tx.update(behaviourEvents).set({ removedAt: now }).where(inArray(behaviourEvents.id, gone));
+}
+
+/** Store one fetched range of one student: lessons, then marks, absences and remarks pointing at them. */
 export async function upsertRange(db: Db, scope: UpsertScope, fetched: FetchedRange): Promise<UpsertStats> {
   const stats: UpsertStats = { lessons: 0, new: 0, changed: 0, removed: 0, restored: 0 };
   // subjects added inside a transaction that rolls back must not stay in the cache
@@ -324,6 +371,7 @@ export async function upsertRange(db: Db, scope: UpsertScope, fetched: FetchedRa
     const lessonIds = await upsertLessons(tx, txScope, fetched, stats);
     await upsertMarks(tx, txScope, fetched, lessonIds, stats);
     await upsertAttendance(tx, txScope, fetched, lessonIds);
+    await upsertBehaviour(tx, txScope, fetched, lessonIds);
   });
   for (const [k, v] of subjectIds) scope.subjectIds.set(k, v);
   return stats;

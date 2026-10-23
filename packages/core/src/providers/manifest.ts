@@ -36,7 +36,8 @@ export const capabilities = z.object({
   weekTemplate: z.boolean(),
   pastYears: z.boolean(),
   homeworkAssignments: z.boolean(),
-  behaviour: z.boolean(),
+  /** Teacher remarks and behaviour points: their own endpoint (getBehaviour), with the lesson (Lesson.behaviour), or none */
+  behaviour: z.enum(['separate', 'derived', 'none']),
   cohortStats: z.boolean(),
   criteria: z.boolean(),
   targets: z.boolean(),

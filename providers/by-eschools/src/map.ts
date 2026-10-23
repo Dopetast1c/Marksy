@@ -1,6 +1,7 @@
 import type {
   AccountInfo,
   Attendance,
+  BehaviourEvent,
   Calendar,
   DriftCheck,
   FinalMark,
@@ -183,6 +184,7 @@ export function mapSubjects(raw: unknown, check: DriftCheck): Subject[] {
 interface MappedCell {
   mark?: Mark;
   attendance?: Attendance;
+  remark?: BehaviourEvent;
 }
 
 /**
@@ -243,10 +245,13 @@ export function mapLessonMark(m: LessonMark, s: Slot, date: string, check: Drift
 
 export function mapLesson(s: Slot, date: string, check: DriftCheck): Lesson {
   check.known(s.type, LESSON_TYPES, 'slots[].type');
-  // a lesson_mark with neither a kind nor a mark is a teacher's comment without a mark: no mark (nothing in the model
-  // holds it yet, api-spec 7.4), and the lesson stays
   const m = s.lesson_mark;
-  const cell = m && (m.kind || nonEmpty(m.mark)) ? mapLessonMark(m, s, date, check) : {};
+  const cell: MappedCell =
+    m && (m.kind || nonEmpty(m.mark))
+      ? mapLessonMark(m, s, date, check)
+      : m && nonEmpty(m.comment)
+        ? { remark: remarkOf(m, s, date) }
+        : {};
   return {
     externalId: lessonIdOf(s, date),
     date,
@@ -263,6 +268,24 @@ export function mapLesson(s: Slot, date: string, check: DriftCheck): Lesson {
     ...(is(LESSON_TYPES, s.type) && { lessonType: LESSON_TYPE[s.type] }),
     marks: cell.mark ? [cell.mark] : [],
     ...(cell.attendance && { attendance: [cell.attendance] }),
+    ...(cell.remark && { behaviour: [cell.remark] }),
+  };
+}
+
+/**
+ * A lesson_mark with neither a kind nor a mark, only a comment: the teacher's remark on the lesson ("нет домашнего задания";
+ * api-spec 7.2). No mark is made; the diary says nothing of its tone, so it is neutral.
+ */
+function remarkOf(m: LessonMark, s: Slot, date: string): BehaviourEvent {
+  return {
+    externalId: m.uuid,
+    date,
+    polarity: 'neutral',
+    category: 'lesson_comment',
+    comment: m.comment!.trim(),
+    subjectExternalId: s.subject_id,
+    lessonExternalId: lessonIdOf(s, date),
+    ...(nonEmpty(m.author) && { authorExternalId: m.author! }),
   };
 }
 

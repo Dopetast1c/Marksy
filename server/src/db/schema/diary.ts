@@ -173,10 +173,17 @@ export const behaviourEvents = pgTable(
     category: text('category'),
     comment: text('comment'),
     subjectId: uuid('subject_id').references(() => subjects.id, { onDelete: 'cascade' }),
+    /** The lesson it was written on (a teacher's comment without a mark) */
+    lessonId: uuid('lesson_id').references(() => lessons.id, { onDelete: 'set null' }),
+    /** The teacher's id in the diary, never resolved to a name here */
+    authorExternalId: text('author_external_id'),
     firstSeenAt: ts('first_seen_at').notNull().defaultNow(),
     removedAt: ts('removed_at'),
   },
-  (t) => [unique('behaviour_events_student_external_key').on(t.studentId, t.providerId, t.externalId)],
+  (t) => [
+    unique('behaviour_events_student_external_key').on(t.studentId, t.providerId, t.externalId),
+    index('behaviour_events_student_date_idx').on(t.studentId, t.date),
+  ],
 );
 
 /** Previous versions of a mark; kept for the lifetime of the mark (docs/design.md 10.4) */

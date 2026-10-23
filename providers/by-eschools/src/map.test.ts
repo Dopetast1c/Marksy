@@ -317,15 +317,34 @@ describe('lessons and marks', () => {
     expect(drift.events.map((e) => [e.kind, e.path])).toContainEqual(['missing_field', 'days[].slots[].subject_id']);
   });
 
-  it("a teacher's comment without a mark (kind null, no mark) keeps the lesson and makes no mark", () => {
+  it("a teacher's comment without a mark (kind null, no mark) is a remark on the lesson, never a mark", () => {
     const { drift, check } = setup();
     const lessons = mapLessonsWeek(
-      week([slot({ lesson_mark: mark({ kind: null, mark: '', type: null, comment: 'Комментарий' }) })]),
+      week([
+        slot({
+          lesson_mark: mark({ uuid: 'm-c', kind: null, mark: '', type: null, comment: ' Нет домашнего задания ' }),
+        }),
+        slot({ lesson_uuid: 'l-2', number: 3, lesson_mark: mark({ uuid: 'm-e', kind: null, mark: '', comment: '' }) }),
+      ]),
       TZ,
       check,
     );
-    expect(lessons).toHaveLength(1);
-    expect(lessons[0]!.marks).toEqual([]);
+    expect(lessons).toHaveLength(2);
+    expect(lessons.flatMap((l) => l.marks)).toEqual([]);
+    expect(lessons[0]!.behaviour).toEqual([
+      {
+        externalId: 'm-c',
+        date: '2026-10-12',
+        polarity: 'neutral',
+        category: 'lesson_comment',
+        comment: 'Нет домашнего задания',
+        subjectExternalId: 's-alg',
+        lessonExternalId: 'l-1',
+        authorExternalId: 't-1',
+      },
+    ]);
+    // nothing at all: no remark either
+    expect(lessons[1]!.behaviour).toBeUndefined();
     expect(drift.events).toEqual([]);
   });
 });
