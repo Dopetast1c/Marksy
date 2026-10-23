@@ -3,11 +3,13 @@
 // Fails on: secrets and tokens, files that must never be committed, real-looking personal data, and the diary
 // provider leaking outside providers/by-eschools. Heuristic on purpose: a false positive is cheap, a leak is not.
 // To allow a deliberate match, put `privacy-ok` in a comment on the same line and say why.
+// --staged checks only the files staged for commit, as staged (the pre-commit guard, scripts/commit-guard.mjs).
 import { execSync } from 'node:child_process';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 
 const root = process.cwd();
+const staged = process.argv.includes('--staged');
 const SKIP_DIRS = new Set([
   'node_modules',
   '.git',
@@ -21,6 +23,10 @@ const SKIP_DIRS = new Set([
 ]);
 
 function listFiles() {
+  if (staged) {
+    const out = execSync('git diff --cached --name-only -z --diff-filter=ACMR', { cwd: root });
+    return out.toString().split('\0').filter(Boolean);
+  }
   try {
     const out = execSync('git ls-files --cached --others --exclude-standard', {
       cwd: root,
@@ -88,7 +94,9 @@ for (const file of listFiles()) {
   if (!TEXT_EXT.test(file) || file === 'pnpm-lock.yaml') continue;
   let text;
   try {
-    text = readFileSync(join(root, file), 'utf8');
+    text = staged
+      ? execSync(`git show ${JSON.stringify(':' + file)}`, { cwd: root, maxBuffer: 256 * 1024 * 1024 }).toString('utf8')
+      : readFileSync(join(root, file), 'utf8');
   } catch {
     continue;
   }

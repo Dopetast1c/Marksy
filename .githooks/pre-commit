@@ -1,0 +1,3 @@
+#!/bin/sh
+# The pre-commit guard (scripts/commit-guard.mjs, CLAUDE.md "Real diary runs"); `pnpm install` points git here.
+exec node scripts/commit-guard.mjs
