@@ -11,7 +11,8 @@
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
-    "probe": "tsx --env-file-if-exists=../../.env scripts/probe.ts"
+    "probe": "tsx --env-file-if-exists=../../.env scripts/probe.ts",
+    "probe:offline": "tsx scripts/probe-offline.ts"
   },
   "dependencies": {
     "@marksy/core": "workspace:*",

@@ -97,7 +97,7 @@ pnpm install            install the workspace (Node 22, pnpm via corepack)
 pnpm db:up              PostgreSQL 16 in Docker, waits until healthy (databases marksy and marksy_test)
 pnpm dev                API on 127.0.0.1:3000 (tsx watch) and PWA on :5173 (Vite, /api proxied)
 pnpm dev:lan            the same, with the PWA open to the home network for testing on a phone (README)
-pnpm check              formatting, typecheck, lint, tests, privacy check: must be green before every commit
+pnpm check              formatting, typecheck, lint, tests (packages and scripts/), privacy check: must be green before every commit
 pnpm format             Prettier over the workspace
 pnpm --filter @marksy/server test    one package
 pnpm test:provider <id> the shared conformance suite for one provider (demo-minimal, demo-full, demo-lite, by-eschools)
@@ -109,6 +109,9 @@ pnpm db:studio          Drizzle Studio on DATABASE_URL
 pnpm db:backup          pg_dump of marksy into data/backups/ (last five kept), verified by a restore into marksy_restore_check
 pnpm db:restore <f> --yes  puts a dump back into marksy (the owner's; stop pnpm dev first)
 pnpm sync:plan          the planner's dry run on marksy: each child's window today, what waits, whether a run would start; never logs in
+pnpm probe [--weeks N]  one real read of the diary (login guard first), raw responses to data/probe/ (last three runs), fixtures
+pnpm probe --offline [run]  the same on the saved raw responses, without a login
+pnpm sync:once          one real collector run of the account in .env (login guard first)
 ```
 
 Server tests use `marksy_test` (wiped and migrated at the start of every run); never point a test or a script you run at `marksy` except `db:migrate`, `db:backup`, `db:seed`, `sync:plan` and, under "Real diary runs" below, `probe` and `sync:once`.

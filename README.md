@@ -132,7 +132,7 @@ The workspace runs today: the database schema, the collector with its planner, a
 git clone https://github.com/Dopetast1c/Marksy.git
 cd Marksy
 pnpm setup:env                  # creates .env and generates its secrets
-pnpm install
+pnpm install                    # also points git at .githooks/ (the pre-commit guard)
 pnpm db:up                      # PostgreSQL 16 in Docker (dev and test databases)
 pnpm db:migrate                 # creates the schema
 pnpm db:seed                    # a fictional demo family with demo logins (--reset replaces it)
@@ -143,7 +143,7 @@ pnpm dev                        # API on :3000, app on :5173, API docs at /api/d
 
 The demo family belongs to a fictional diary and has two children, one of them in a class without marks, so every screen can be explored without a diary account; its logins (`parent@example.com` and `student@example.com`, password printed by `pnpm db:seed`) work once sign-in arrives. Because that password is published, the seed refuses to run when `PUBLIC_URL` is a public address (`--allow-public` overrides it). `pnpm db:studio` opens the database in Drizzle Studio. `pnpm db:backup` writes a dump of the local database to `data/backups/` (the last five are kept) and checks it by restoring it into a temporary database; `pnpm db:restore <file> --yes` puts one back. With a diary account, open the app, choose "Connect a diary", pick your diary system and sign in: Marksy checks the credentials once, creates your family and starts the first sync. Invite the rest of the family from More, then Family.
 
-Until the connect screen exists, a developer with a diary account can fill the local database from the command line: put the diary login into `DIARY_LOGIN` and `DIARY_PASSWORD` in `.env` and run `pnpm sync:once`. It only talks to diary systems offered to families, creates a minimal family on first use and runs one sync under the same rules as every other run (one sign-in per hour, the request cap, the offline check). It prints counts and statuses only, and exits with 0 also when the rules hold the run back. While `SYNC_ENABLED` is `true`, `pnpm dev` keeps that account in sync on its own, only during each child's school day. `pnpm sync:plan` shows what the planner would do now (each child's window today, what is waiting, whether a run would start) without logging in anywhere.
+Until the connect screen exists, a developer with a diary account can fill the local database from the command line: put the diary login into `DIARY_LOGIN` and `DIARY_PASSWORD` in `.env` and run `pnpm sync:once`. It only talks to diary systems offered to families, creates a minimal family on first use and runs one sync under the same rules as every other run (one sign-in per hour, the request cap, the offline check); `pnpm probe` reads every endpoint once and refreshes the provider's sanitised fixtures, and `pnpm probe --offline` repeats that on its saved responses without signing in. Both real commands share a sign-in guard. The pre-commit guard refuses a commit that stages local data, secrets, database dumps or raw responses, or any name or id from the latest real responses. It prints counts and statuses only, and exits with 0 also when the rules hold the run back. While `SYNC_ENABLED` is `true`, `pnpm dev` keeps that account in sync on its own, only during each child's school day. `pnpm sync:plan` shows what the planner would do now (each child's window today, what is waiting, whether a run would start) without logging in anywhere.
 
 ### On a phone in the home network
 
@@ -171,6 +171,7 @@ All configuration is in `.env` (created by `pnpm setup:env` from `.env.example`)
 | `RETENTION_*` | How long operational data is kept (sync log, raw responses, event feeds, coverage) |
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Web Push keys |
 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET` | Telegram bot (optional) |
+| `MARKSY_RUNNER` | Leave empty. Set to `claude` for Claude Code by `.claude/settings.json`: its real sign-ins are limited to three a day in school hours |
 | `DIARY_LOGIN`, `DIARY_PASSWORD`, `MARKSY_DEV_EMAIL`, `MARKSY_DEV_PASSWORD` | Development only: your own diary login for `pnpm probe`, `pnpm sync:once` and `pnpm dev:connect`, and the Marksy login `dev:connect` creates. The app itself keeps diary credentials in the database, encrypted |
 | `TZ` | Time zone of the school (IANA name) |
 
