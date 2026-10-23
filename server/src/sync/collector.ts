@@ -24,7 +24,8 @@ import type {
 } from '@marksy/core';
 import { and, eq, sql } from 'drizzle-orm';
 import type { Db } from '../db/client';
-import { apiDriftEvents, finalMarksRaw, rawResponses, syncCoverage } from '../db/schema';
+import { apiDriftEvents, bellSchedules, finalMarksRaw, rawResponses, syncCoverage, weekTemplates } from '../db/schema';
+import { applySchoolDetails, storeBells, storeWeekTemplate } from './details';
 import type { SyncErrorClass, SyncRunStats } from '../db/schema';
 import { localTime } from './time';
 import { storeCalendar, storeFinals, storeStudents, storeSubjects, studentRef } from './store-school';
@@ -38,8 +39,8 @@ import type { UpsertStats } from './upsert';
 // finished. The collector never decides whether a run may start; server/src/sync/run.ts does (design 10.4).
 
 /** Why a week is fetched; the order of these sets is the order of fetching (design 10.4) */
-export type PlanSet = 'standing' | 'gap' | 'rescan' | 'backfill' | 'manual';
-export const SET_ORDER: readonly PlanSet[] = ['standing', 'manual', 'gap', 'rescan', 'backfill'];
+export type PlanSet = 'standing' | 'gap' | 'rescan' | 'post_term' | 'backfill' | 'manual';
+export const SET_ORDER: readonly PlanSet[] = ['standing', 'manual', 'gap', 'rescan', 'post_term', 'backfill'];
 
 export interface WeekRequest {
   weekStart: ISODate;
@@ -64,6 +65,8 @@ export interface CollectorOptions {
   plan(input: PlanInput): Promise<WeekRequest[]> | WeekRequest[];
   /** Whether finals are fetched for this student in this run; default: once per local day */
   finalsDue?(input: PlanInput): Promise<boolean> | boolean;
+  /** Whether bells and the regular week are fetched for this student in this run; default: once per local day */
+  detailsDue?(input: PlanInput): Promise<boolean> | boolean;
   transport?: Transport;
   sleep?: (ms: number) => Promise<void>;
   random?: () => number;
@@ -210,6 +213,10 @@ export async function runCollector(opts: CollectorOptions): Promise<CollectorRes
 
     const units: Unit[] = [];
     const finals: { student: StudentRow; stored: StoredCalendar; subjectIds: Map<string, string> }[] = [];
+    const details: typeof finals = [];
+    const years = new Map<string, { from: ISODate; to: ISODate }>();
+    // bells and the regular week come once a day after the lessons; without them a provider's subjects are complete
+    const dailyDetails = caps.bellSchedule || caps.weekTemplate;
     for (const student of students) {
       scope.studentId = student.id;
       const ref = studentRef(student);
@@ -220,13 +227,18 @@ export async function runCollector(opts: CollectorOptions): Promise<CollectorRes
         student,
         stored.schoolYearId,
         await provider.getSubjects(session, ref, ctx),
+        { details: !dailyDetails },
       );
+      years.set(student.id, { from: calendar.schoolYear.start, to: calendar.schoolYear.end });
       const input: PlanInput = { student, calendar, stored, today };
       units.push(
         ...unitsFor(input, await opts.plan(input), subjectIds, manifest.limits.fetchUnit, manifest.calendar.weekStart),
       );
       if (caps.finalMarks && (await (opts.finalsDue ?? finalsOncePerDay(db, manifest.timezone, now))(input))) {
         finals.push({ student, stored, subjectIds });
+      }
+      if (dailyDetails && (await (opts.detailsDue ?? detailsOncePerDay(db, manifest.timezone, now))(input))) {
+        details.push({ student, stored, subjectIds });
       }
     }
     await flushRaw();
@@ -297,7 +309,44 @@ export async function runCollector(opts: CollectorOptions): Promise<CollectorRes
       await storeFinals(db, f.student, f.stored, f.subjectIds, list, now());
       await flushRaw();
     }
+    // school details of the day, after the lessons (a provider may need them to tell the child's subgroups): bells, the
+    // regular week, then the subjects again with teacher, subgroup and level (docs/providers.md 4)
+    for (const d of details) {
+      if (ctx.http.requestCount + 1 > maxRequests) break;
+      scope.studentId = d.student.id;
+      scope.weekStart = null;
+      const ref = studentRef(d.student);
+      try {
+        if (caps.bellSchedule) {
+          await storeBells(
+            db,
+            d.student,
+            d.stored.schoolYearId,
+            await provider.getBellSchedule!(session, ref, ctx),
+            now(),
+          );
+        }
+        if (caps.weekTemplate) {
+          const template = await provider.getWeekTemplate!(session, ref, ctx);
+          await storeWeekTemplate(db, d.student, d.stored, d.subjectIds, template, now());
+        }
+        await storeSubjects(db, d.student, d.stored.schoolYearId, await provider.getSubjects(session, ref, ctx), {
+          details: true,
+        });
+      } catch (err) {
+        if (err instanceof ProviderSchemaError) warnings.push('schema details');
+        else if (err instanceof ProviderPolicyError && ctx.http.requestCount >= maxRequests) break;
+        else throw err;
+      } finally {
+        await flushRaw();
+      }
+    }
     for (const u of rest) if (!(await fetchUnit(u))) break;
+    // what the regular week and the bells add to the lessons: room, subgroup, teacher, end time
+    for (const student of students) {
+      const year = years.get(student.id);
+      if (year) await applySchoolDetails(db, student.id, year);
+    }
   } catch (err) {
     failure = err;
     opts.log?.warn('sync run failed', { reason: describeError(err) });
@@ -372,6 +421,23 @@ function unitsFor(
     out.push({ ...base, range, weeks, set: r.set });
   }
   return out;
+}
+
+function detailsOncePerDay(db: Db, timeZone: string, now: () => Date) {
+  return async ({ student }: PlanInput) => {
+    const [bells] = await db
+      .select({ at: bellSchedules.fetchedAt })
+      .from(bellSchedules)
+      .where(eq(bellSchedules.studentId, student.id))
+      .limit(1);
+    const [week] = await db
+      .select({ at: weekTemplates.fetchedAt })
+      .from(weekTemplates)
+      .where(eq(weekTemplates.studentId, student.id))
+      .limit(1);
+    const at = bells?.at ?? week?.at;
+    return !at || localTime(at, timeZone).date !== localTime(now(), timeZone).date;
+  };
 }
 
 function finalsOncePerDay(db: Db, timeZone: string, now: () => Date) {

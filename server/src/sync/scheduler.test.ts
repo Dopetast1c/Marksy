@@ -31,7 +31,9 @@ describe('sync config', () => {
     expect(effectiveLimits(manifest, strict)).toMatchObject({
       minLoginIntervalMinutes: 180,
       maxRequestsPerRun: 20,
-      window: [600, 840],
+      // an outer bound on every child's day, and the manifest's stand-in narrowed by it
+      envWindow: [600, 1080],
+      standIn: [600, 840],
     });
   });
 });

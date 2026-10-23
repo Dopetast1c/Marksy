@@ -47,7 +47,6 @@ export type Capabilities = z.infer<typeof capabilities>;
 /** "08:00-14:00" */
 const timeWindow = z.string().regex(/^\d{2}:\d{2}-\d{2}:\d{2}$/);
 /** "fri 20:00-23:00" */
-const weeklyWindow = z.string().regex(/^(mon|tue|wed|thu|fri|sat|sun) \d{2}:\d{2}-\d{2}:\d{2}$/);
 /**
  * "GET /education/diary/**": method, space, path pattern where * is one segment and ** any rest. Read methods only;
  * PUT, PATCH and DELETE can never be listed, and POST only as the login request (refined below).
@@ -117,7 +116,6 @@ export const providerManifest = z
       requestDelayMs: z.tuple([z.number().int().nonnegative(), z.number().int().nonnegative()]),
       maxRequestsPerRun: z.number().int().positive(),
       syncWindow: timeWindow,
-      weeklyRescan: weeklyWindow,
       fetchUnit: z.enum(['week', 'day', 'term']),
       authFailureIsFinal: z.boolean(),
     }),

@@ -203,21 +203,30 @@ export async function storeSubjects(
   student: StudentRow,
   schoolYearId: string,
   list: Subject[],
+  opts: { details?: boolean } = {},
 ): Promise<Map<string, string>> {
   const ids = new Map<string, string>();
   for (const s of list) {
-    const values = {
-      name: s.name,
-      nameNorm: normName(s.name),
+    const name = { name: s.name, nameNorm: normName(s.name) };
+    // the run's early read only names subjects; the daily read after the school details replaces every detail, so a
+    // teacher or subgroup that is gone is cleared, and an early read never wipes the day's details
+    const details = {
+      shortName: s.shortName ?? null,
+      teacherExternalId: s.teacherExternalId ?? null,
       teacherName: s.teacherName ?? null,
+      groupLabel: s.groupLabel ?? null,
       level: s.level ?? null,
+      levelLabel: s.levelLabel ?? null,
+      lessonsPerWeek: s.lessonsPerWeek ?? null,
       credits: s.credits ?? null,
       gradingScheme: s.gradingScheme ?? null,
     };
+    const values = opts.details ? { ...name, ...details } : name;
     const [row] = await db
       .insert(subjects)
       .values({
-        ...values,
+        ...name,
+        ...details,
         studentId: student.id,
         schoolYearId,
         providerId: student.providerId,

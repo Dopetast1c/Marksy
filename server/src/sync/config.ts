@@ -8,8 +8,8 @@ import type { EffectiveLimits } from './plan';
 export interface SyncConfig {
   enabled: boolean;
   tickMinutes: number;
+  /** An outer bound on every child's school-day window */
   window?: string;
-  weekly?: string;
   jitterMinutes: number;
   minLoginIntervalMinutes?: number;
   catchupAfterMs: number;
@@ -51,7 +51,6 @@ export function readSyncConfig(env: Env = process.env): SyncConfig {
     enabled: env.SYNC_ENABLED?.trim().toLowerCase() !== 'false',
     tickMinutes: Math.max(1, num(env, 'SYNC_TICK_MIN', 5)),
     window: pattern(env, 'SYNC_WINDOW', /^\d{2}:\d{2}-\d{2}:\d{2}$/),
-    weekly: pattern(env, 'SYNC_WEEKLY', /^(mon|tue|wed|thu|fri|sat|sun) \d{2}:\d{2}-\d{2}:\d{2}$/),
     jitterMinutes: num(env, 'SYNC_JITTER_MIN', 20),
     ...(interval && { minLoginIntervalMinutes: parseDuration(interval) / 60_000 }),
     catchupAfterMs: parseDuration(env.SYNC_CATCHUP_AFTER?.trim() || '24h'),
@@ -67,10 +66,9 @@ export function readSyncConfig(env: Env = process.env): SyncConfig {
 export function effectiveLimits(manifest: ProviderManifest, config: SyncConfig): EffectiveLimits {
   const l = manifest.limits;
   return {
-    // M3a: the window becomes each child's school day (design.md 10.2); until then the manifest's, narrowed by the env
-    window: narrowWindow(l.syncWindow, config.window),
-    // the weekly window moves the re-scan, it does not add requests: the environment may choose another evening
-    weekly: config.weekly ?? l.weeklyRescan,
+    // each child's school day is the window (window.ts); SYNC_WINDOW bounds it, and bounds the manifest's stand-in
+    envWindow: config.window ? narrowWindow(config.window) : null,
+    standIn: narrowWindow(l.syncWindow, config.window),
     minLoginIntervalMinutes: Math.max(l.minLoginIntervalMinutes, config.minLoginIntervalMinutes ?? 0),
     maxRequestsPerRun: Math.min(l.maxRequestsPerRun, config.maxRequestsPerRun ?? Infinity),
     jitterMinutes: config.jitterMinutes,

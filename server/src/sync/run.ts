@@ -15,9 +15,9 @@ import { checkOnline } from './connectivity';
 import type { OnlineCheck } from './connectivity';
 import { applyOutcome } from './failures';
 import type { Alert } from './failures';
-import { decideStart, hasBacklog, inWeeklyWindow, isManual, isSchoolDay, selectWeeks, termBookkeeping } from './plan';
+import { decideStart, isManual, selectWeeks, termBookkeeping } from './plan';
 import type { GateDecision, Trigger } from './plan';
-import { planCalendarOf, planState, storedPlanCalendar, weekContext } from './state';
+import { accountToday, planCalendarOf, planState, storedPlanCalendar, weekContext } from './state';
 import { readableStudents } from './store-school';
 import { localTime } from './time';
 
@@ -105,22 +105,16 @@ async function runLocked(opts: RunSyncOptions): Promise<RunSyncResult> {
   const limits = effectiveLimits(manifest, config);
   const started = now();
   const local = localTime(started, manifest.timezone);
-  const weekly = inWeeklyWindow(limits.weekly, local);
-  const ctx = weekContext(manifest, settings, started, account.lastSuccessAt, weekly);
+  const ctx = weekContext(manifest, settings, started, account.lastSuccessAt);
 
-  // what the stored state says is waiting, before anyone logs in
+  // what the stored state says, before anyone logs in: each child's school day today and what is waiting
   const pupils = await readableStudents(db, account.id);
-  let backlog = false;
-  let schoolDay = pupils.length === 0 && manifest.calendar.schoolDays.includes(local.weekday);
-  for (const s of pupils) {
-    const cal = await storedPlanCalendar(db, s.id, ctx.today);
-    if (!cal) {
-      backlog = true;
-      continue;
-    }
-    if (isSchoolDay(ctx.today, cal, ctx)) schoolDay = true;
-    if (hasBacklog(selectWeeks(await planState(db, s.id, cal), ctx))) backlog = true;
-  }
+  const today = await accountToday(
+    db,
+    pupils.map((p) => p.id),
+    ctx,
+    limits,
+  );
   const [lastOffline] = await db
     .select({ startedAt: syncRuns.startedAt })
     .from(syncRuns)
@@ -135,8 +129,11 @@ async function runLocked(opts: RunSyncOptions): Promise<RunSyncResult> {
     trigger: opts.trigger,
     account,
     limits,
-    schoolDay,
-    backlog,
+    windows: today.windows,
+    weekday: manifest.calendar.schoolDays.includes(local.weekday),
+    // an account that reads no child yet (just connected) has everything waiting
+    backlog: today.backlog || pupils.length === 0,
+    postTerm: today.postTerm,
     lastOfflineAt: lastOffline?.startedAt ?? null,
     seed: account.id,
   });

@@ -60,7 +60,6 @@ export const sampleManifest: ProviderManifest = {
     requestDelayMs: [1500, 3000],
     maxRequestsPerRun: 40,
     syncWindow: '08:00-14:00',
-    weeklyRescan: 'fri 20:00-23:00',
     fetchUnit: 'week',
     authFailureIsFinal: true,
   },
