@@ -51,7 +51,8 @@ export function loadRun(dir: string): SavedRun {
     ? (JSON.parse(readFileSync(runFile, 'utf8')) as { startedAt: string; weeks: number })
     : undefined;
   const folder = dir.split(/[\\/]/).at(-1)!;
-  const weeksSeen = Math.max(1, ...[...files.keys()].map((n) => Number(/^lessons-1-w(\d+)$/.exec(n)?.[1] ?? 0)));
+  // the most recent weeks were read, one file each: as many as the first student has
+  const weeksSeen = Math.max(1, [...files.keys()].filter((n) => /^lessons-1-w\d+$/.test(n)).length);
   return {
     dir,
     startedAt: meta ? new Date(meta.startedAt) : timeOfRun(folder),

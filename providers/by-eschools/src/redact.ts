@@ -18,19 +18,19 @@ const NEVER_STORED = new Set<string>([
 /** The school's room list (6.10.4): only what the mapper reads of a room, never its free-text name or type */
 const PREMISE_KEPT = new Set(['uuid', 'audience_number']);
 
-function walk(endpoint: string, value: unknown, inChild: boolean): unknown {
-  if (Array.isArray(value)) return value.map((v) => walk(endpoint, v, inChild));
+function walk(endpoint: string, value: unknown, inChild: boolean, key: string | null = null): unknown {
+  if (Array.isArray(value)) return value.map((v) => walk(endpoint, v, inChild, key));
   if (!value || typeof value !== 'object') return value;
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(value)) {
     // a child's profile_id is the id in every diary URL; the top-level one is the parent's, never stored
     if (NEVER_STORED.has(k) && !(inChild && k === 'profile_id')) continue;
-    // the teaching plan's and room list's summaries and authors (6.10.3, 6.10.4) may name a person
-    if (dropsSchoolText(endpoint, k)) continue;
+    // the teaching plan's and room list's free text (6.10.3, 6.10.4) may name a person
+    if (dropsSchoolText(endpoint, k, key)) continue;
     out[k] =
       k === 'students_for_parent' && Array.isArray(v)
         ? v.map((c) => walk(endpoint, c, true))
-        : walk(endpoint, v, false);
+        : walk(endpoint, v, false, k);
   }
   return out;
 }

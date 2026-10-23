@@ -155,7 +155,7 @@ export function sensitiveValues(
       for (const [k, x] of Object.entries(v)) {
         // the school lists' free text is dropped whole and is often a subject's or a room's name, which other places
         // keep: it is no source of leaks (contact details, also dropped, stay checked everywhere)
-        if (dropsSchoolText(endpoint, k)) continue;
+        if (dropsSchoolText(endpoint, k, place.key)) continue;
         for (const id of k.match(UUID_ANYWHERE) ?? []) if (!id.startsWith(FAKE_UUID_PREFIX)) add(id, from);
         if (/^\d{3,}$/.test(k)) out.numbers.set(k, from);
         else if (!SCHEMA_KEY.test(k.replace(UUID_ANYWHERE, 'id'))) add(k, from);

@@ -33,14 +33,17 @@ afterEach(() => tmp && rmSync(tmp, { recursive: true, force: true }));
 describe('pnpm probe --offline', () => {
   it('replays a saved run by name: every request is answered, nothing reaches the network', async () => {
     tmp = mkdtempSync(join(tmpdir(), 'marksy-probe-'));
-    // the eighth week of the fixtures' school year, read with the five before it
+    // the fixtures hold the most recent weeks of a probe run: "today" is in the newest of them
     const weeks = JSON.parse(readFileSync(join(fixtures, 'week_activities.json'), 'utf8')) as { start_ts: number }[];
-    const clock = new Date(weeks[7]!.start_ts + 2 * 86_400_000);
+    const read = readdirSync(fixtures)
+      .map((f) => Number(/^lessons-1-w(\d+)\.json$/.exec(f)?.[1] ?? 0))
+      .filter((n) => n > 0);
+    const clock = new Date(weeks[Math.max(...read) - 1]!.start_ts + 2 * 86_400_000);
     const folder = clock.toISOString().replace(/[:.]/g, '-');
     savedRunOf(tmp, folder);
     const run = loadRun(findRun(join(tmp, 'data', 'probe'))!);
     expect(run.startedAt).toEqual(clock);
-    expect(run.weeks).toBe(8);
+    expect(run.weeks).toBe(read.length);
     const replay = replayTransport(run);
     const out: string[] = [];
     const fixturesOut = join(tmp, 'fixtures');
@@ -50,7 +53,7 @@ describe('pnpm probe --offline', () => {
       credentials: { login: 'offline', password: 'offline' },
       clock: () => run.startedAt,
       sleep: async () => undefined,
-      weeks: 6,
+      weeks: run.weeks,
       root: tmp,
       fixturesDir: fixturesOut,
       saveRaw: false,
@@ -108,7 +111,7 @@ describe('pnpm probe --offline', () => {
 });
 
 describe('the deny-list of the pre-commit guard', () => {
-  it('holds family names, patronymics, full names and ids; not given names', () => {
+  it('holds family names, full names and ids; not given names or patronymics on their own', () => {
     const list = denyValues([
       { name: 'me', raw: unsanitisedMe },
       {
@@ -122,7 +125,8 @@ describe('the deny-list of the pre-commit guard', () => {
     ]);
     expect(list.phrases).toContain('петровская анна сергеевна');
     expect(list.phrases).toContain('ковальчук ольга');
-    expect(list.words).toEqual(expect.arrayContaining(['петровская', 'сергеевна', 'ковальчук', 'ивановна']));
+    expect(list.words).toEqual(expect.arrayContaining(['петровская', 'ковальчук']));
+    for (const common of ['сергеевна', 'ивановна']) expect(list.words).not.toContain(common);
     expect(list.words).not.toContain('анна');
     expect(list.words).not.toContain('ольга');
     for (const kid of unsanitisedMe.students_for_parent) {

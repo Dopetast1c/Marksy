@@ -1,10 +1,10 @@
 import { createMemoryDrift, driftChecker } from '@marksy/core';
 import { describe, expect, it } from 'vitest';
-import bells from '../fixtures/bells-1.json';
-import planning2 from '../fixtures/planning-2.json';
-import premises from '../fixtures/premises-1.json';
-import rows2 from '../fixtures/student_subjects-2.json';
-import timetable2 from '../fixtures/timetable-2.json';
+import bells from './testdata/school-bells-1.json';
+import planning2 from './testdata/school-planning-2.json';
+import premises from './testdata/school-premises-1.json';
+import rows2 from './testdata/school-student_subjects-2.json';
+import timetable2 from './testdata/school-timetable-2.json';
 import { redactRaw } from './redact';
 import { createSanitizer, keepsString, PREMISE_TYPE_NAME } from './sanitize';
 import { findLeaks, sensitiveValues } from './probe';
@@ -19,7 +19,7 @@ import {
 } from './school';
 import type { LessonRefs } from './school';
 
-// The fixtures' fictional school: English, Informatics and Labour are split into two subgroups; the student is in one.
+// A fictional school (src/testdata, sanitised like a fixture but kept apart from the probe's fixture set): English, Informatics and Labour are split into two subgroups; the student is in one.
 
 const schedules = bells.map((b) => bellScheduleRaw.parse(b));
 const timetable = classTimetable.parse(timetable2[0]);
@@ -231,7 +231,12 @@ describe('the school lists in fixtures', () => {
       school_subject: {
         uuid: 'ss-1',
         summary: 'Математика',
-        as_json: { short_name: 'Матем.', summary: 'Математика', author: 'author-1' },
+        as_json: {
+          short_name: 'Матем.',
+          summary: 'Математика',
+          author: 'author-1',
+          subject: { uuid: 'cat-1', as_json: { value: 'Математика' } },
+        },
       },
       templates: [{ uuid: 'tpl-1', teacher: { id: 'teacher-1', name: 'Мария', surname: 'Иванова' } }],
     },
@@ -242,19 +247,24 @@ describe('the school lists in fixtures', () => {
       audience_number: 'Спортзал',
       summary: 'Спортзал',
       author: 'author-1',
-      premise_type: { uuid: 'type-1', as_json: { name: 'Спортзал', summary: 'Спортзал' } },
+      premise_type: { uuid: 'type-1', as_json: { name: 'Спортзал', short_name: 'спорт. зал', summary: 'Спортзал' } },
     },
+    { uuid: 'room-2', audience_number: '101С', audience_name: 'кабинет Ивановой М.П.', hull: null },
   ];
   const subjectsRaw = [{ uuid: 'subject-1', name: 'Математика' }];
 
-  it('drops every summary and author of the plan and the room list; a premise type gets one typical name', () => {
+  it('drops the free text of the plan and the room list; a premise type gets one typical name, a room a fake number', () => {
     const p = JSON.stringify(s.sanitize('planning-1', planningRaw));
-    expect(p).not.toMatch(/summary|author|Иванова|Мария/);
+    expect(p).not.toMatch(/summary|author|Иванова|Мария|"subject"/);
     expect(p).toContain('Матем.');
     const r = s.sanitize('premises-1', premisesRaw) as typeof premisesRaw;
     expect(JSON.stringify(r)).not.toMatch(/summary|author/);
-    expect(r[0]!.premise_type.as_json.name).toBe(PREMISE_TYPE_NAME);
+    expect(r[0]!.premise_type!.as_json).toEqual({ name: PREMISE_TYPE_NAME, short_name: 'каб.' });
     expect(r[0]!.audience_number).toBe('Спортзал');
+    // a numbered room keeps its form only; a room's own name never stays
+    expect(r[1]!.audience_number).toMatch(/^\d{3}А$/);
+    expect(r[1]!.audience_number).not.toBe('101А');
+    expect(JSON.stringify(r)).not.toContain('audience_name');
     expect(s.sanitize('premises-1', r)).toEqual(r);
   });
 

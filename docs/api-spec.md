@@ -344,9 +344,9 @@ The class's timetables, with rooms and bell times. No student in the path: it is
       "time_of_bells": { "uuid": "uuid", "summary": null, "number": 1, "start_time": "08:00:00", "end_time": "08:45:00" },
       "slots": [{                     // one per subgroup taught at that time (1 or 2 observed)
         "uuid": "uuid",
-        "summary": "string",          // subject title, with the group in brackets when split
+        "summary": "string",          // subject title, a part in brackets («Обучение грамоте (письмо)»); not read, dropped
         "number": 1,
-        "room_id": "uuid",            // -> 6.10.4 uuid; 35 of 38 slots found there, the rest unknown
+        "room_id": "uuid",            // -> 6.10.4 uuid, or null when the school set no room (second probe: grade 1 class 21 of 21 null, grade 7 class 3 of 30 null, every other one in the list)
         "lesson_template_id": "uuid"  // -> 6.10.3 templates[].uuid and lessons slot lesson_template_id
       }]
     }]
@@ -369,7 +369,7 @@ The class's teaching plan (the `planning` area, outside `/education/diary`). One
   "school_subject": {
     "uuid": "uuid", "summary": "string", "kind": "01_EDUCATIONAL_SCHOOL_SUBJECT", "status": "…", "ic_code": "…", "version": 0,
     "as_json": { "short_name": "Рус. яз.", "uuid": "uuid", "author": "uuid", "school": "uuid", "subject": "…", "summary": "string",
-                 "dt_create": 0, "dt_update": 0, "dt_delete": null }   // only short_name is read
+                 "dt_create": 0, "dt_update": 0, "dt_delete": null }   // only short_name is read; subject (the catalogue entry, { as_json: { value: "Математика" } }) is dropped
   },
   "templates": [{                     // lesson templates: one per teaching group; null when the subject has none this period
     "uuid": "uuid",                   // = lesson_template_id in lessons and the timetable [VERIFIED: 30 of 30]
@@ -400,7 +400,7 @@ The school's rooms. The site passes `q={"expr":{"units":[{"field":"dt_delete","o
 }]
 ```
 
-About 60 rooms for one school. Only `uuid` and `audience_number` are read, and only those two are stored (`redactRaw()`); in fixtures `summary` and `author` are dropped and `premise_type.as_json.name` becomes one typical value («Кабинет»), since the same few type names would otherwise match room numbers kept elsewhere.
+About 60 rooms for one school. Only `uuid` and `audience_number` are read, and only those two are stored (`redactRaw()`). In fixtures `summary`, `author` and the room's own `audience_name` (it may be named after a person) are dropped, `premise_type.as_json.name` and `short_name` become one typical value («Кабинет», «каб.»), and a numbered room keeps only its form (`101С` becomes three other digits and `А`): the whole room list with its buildings' letters, next to the bells, could point to the school. A room named in words only («спортзал») stays.
 
 #### 6.10.5 How the pieces connect
 
@@ -575,7 +575,7 @@ Still open:
 - [ ] Whether a re-fetched week can return a different `lesson_uuid` for the same slot (timetable edits), which affects removal detection.
 - [ ] `substitution` on a lesson: null in every lesson seen; its shape when a substitute teacher takes the lesson.
 - [ ] Whether 6.7a, 6.10.2 and 6.10.3 answer the same way for the grade 1 child, and whether 6.10.2 returns the next term's timetable once it is planned.
-- [ ] Rooms for the 3 of 38 timetable slots whose `room_id` is not in 6.10.4 (deleted rooms or a missing filter).
+- [x] Rooms missing from the regular week: `room_id` is null in those slots (the school set no room), never a room absent from 6.10.4 (second probe, 2026-10).
 
 Save sanitised fixtures (names and ids replaced) of every endpoint into `fixtures/` on the first run and write parser tests against them.
 

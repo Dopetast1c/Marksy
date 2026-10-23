@@ -38,21 +38,33 @@ export interface Place {
   depth: number;
 }
 
-/** The school's lists (6.10.3, 6.10.4): nothing reads their free text, and a summary or an author may name a person */
-const SCHOOL_LISTS = /^(planning|premises)(-|$)/;
+/**
+ * The class's and school's lists (6.10.2 to 6.10.4): nothing reads their free text, and a summary or an author may
+ * name a person; a timetable slot's summary repeats the subject's name
+ */
+const SCHOOL_LISTS = /^(planning|premises|timetables?)(-|$)/;
 const SCHOOL_LIST_TEXT = new Set(['summary', 'author']);
-/** A premise type is the same few words in every school ("Кабинет", "Спортзал"); one typical value stands for all */
+/** A premise type is the same few words in every school ("Учебный кабинет", "уч.каб."); one typical value stands for all */
 export const PREMISE_TYPE_NAME = 'Кабинет';
+export const PREMISE_TYPE_SHORT = 'каб.';
 
-/** The school lists' free text, dropped with everything under it (also by redactRaw) */
-export function dropsSchoolText(endpoint: string, key: string): boolean {
-  return SCHOOL_LISTS.test(endpoint) && SCHOOL_LIST_TEXT.has(key);
+/**
+ * The school lists' free text, dropped with everything under it (also by redactRaw): every summary and author; a
+ * room's own name (it may be named after a person); the plan's catalogue entry of a subject (6.10.3
+ * school_subject.as_json.subject), which repeats the subject's name and is never read
+ */
+export function dropsSchoolText(endpoint: string, key: string, container: string | null = null): boolean {
+  if (!SCHOOL_LISTS.test(endpoint)) return false;
+  if (SCHOOL_LIST_TEXT.has(key)) return true;
+  if (endpoint.startsWith('premises')) return key === 'audience_name';
+  return key === 'subject' && container === 'as_json';
 }
 
 /** A value sanitize() replaces with the same value for everyone: its real text never reaches a fixture */
 export function fixedValue({ endpoint, key, container, outer }: Place): string | undefined {
-  if (/^premises(-|$)/.test(endpoint) && key === 'name' && container === 'as_json' && outer === 'premise_type')
-    return PREMISE_TYPE_NAME;
+  if (!/^premises(-|$)/.test(endpoint) || container !== 'as_json' || outer !== 'premise_type') return undefined;
+  if (key === 'name') return PREMISE_TYPE_NAME;
+  if (key === 'short_name') return PREMISE_TYPE_SHORT;
   return undefined;
 }
 
@@ -157,6 +169,7 @@ export const PLACEHOLDERS: ReadonlySet<string> = new Set([
   'fixture-token',
   'Родитель',
   PREMISE_TYPE_NAME,
+  PREMISE_TYPE_SHORT,
   ...Object.values(PLACEHOLDER),
 ]);
 
@@ -185,6 +198,12 @@ export function createSanitizer(key: Buffer = randomBytes(32)): Sanitizer {
     return real.replace(/\d{1,2}/g, digit);
   };
 
+  /** Every digit replaced one for one from the same kind of seed, so the length and the form stay: "101С" -> "374А" */
+  const fakeDigits = (real: string, seed: string) => {
+    let i = 0;
+    return real.replace(/\d/g, () => String(createHash('sha256').update(`${seed}:${i++}`).digest()[0]! % 10));
+  };
+
   function walk(value: unknown, place: Place, ctx: { inStudents: boolean; index: number; seed: string }): unknown {
     const { key } = place;
     if (Array.isArray(value)) {
@@ -197,7 +216,7 @@ export function createSanitizer(key: Buffer = randomBytes(32)): Sanitizer {
       const own = (value as { uuid?: unknown }).uuid;
       const seed = typeof own === 'string' && own ? fakeId(own) : ctx.seed;
       for (const [k, v] of Object.entries(value)) {
-        if (DROP.has(k) || dropsSchoolText(place.endpoint, k)) continue;
+        if (DROP.has(k) || dropsSchoolText(place.endpoint, k, key)) continue;
         // maps keyed by ids (final/whole: marks[subject][period]); any key that is not a schema word is data
         const outKey = UUID.test(k) || /^\d{3,}$/.test(k) || !SCHEMA_KEY.test(fakeInside(k)) ? fakeId(k) : k;
         out[outKey] = walk(
@@ -227,6 +246,10 @@ export function createSanitizer(key: Buffer = randomBytes(32)): Sanitizer {
     if (key in PLACEHOLDER) return value.trim() ? PLACEHOLDER[key] : value;
     // a numeric mark keeps its form ("8", "7/9"), never its value
     if (key === 'mark' && /^\d{1,2}(\/\d{1,2})?$/.test(value)) return fakeMark(value, ctx.seed);
+    // a room number keeps its form, never its value: a school's whole room list (6.10.4), with its buildings' letters,
+    // and the bells could point to the school. A room named in words only ("спортзал") is the same everywhere
+    if (key === 'audience_number' && /\d/.test(value) && keepsString(place, value))
+      return fakeDigits(value.replace(/\p{L}+/gu, 'А'), ctx.seed);
     if (key === 'label' && /^\p{L}{1,3}$/u.test(value)) return 'А';
     if (key === 'class_number' && /^\d{1,2}\p{L}{0,3}$/u.test(value)) return `${value.match(/^\d+/)![0]}А`;
     if (keepsString(place, value)) return fakeInside(value);
