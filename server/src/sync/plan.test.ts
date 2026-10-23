@@ -180,6 +180,15 @@ describe('decideStart', () => {
     });
   });
 
+  it("counts a probe's login (last_login_at only) like an attempt", () => {
+    const probe = { lastAttemptAt: at('2025-10-15 07:00'), lastLoginAt: at('2025-10-15 09:00') };
+    expect(gate('2025-10-15 09:30', { trigger: 'user:u1' }, probe)).toMatchObject({
+      start: false,
+      reason: 'interval',
+      retryAt: at('2025-10-15 10:00'),
+    });
+  });
+
   it('treats a clock that went backwards as an elapsed interval', () => {
     expect(gate('2025-10-15 12:00', {}, { lastAttemptAt: at('2025-10-16 12:00') }).start).toBe(true);
   });

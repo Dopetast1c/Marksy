@@ -176,6 +176,8 @@ export const isManual = (t: Trigger) => t === 'cli' || t === 'cli-claude' || t.s
 export interface AccountState {
   pausedUntil: Date | null;
   lastAttemptAt: Date | null;
+  /** A real login outside the planner (pnpm probe) stamps only this; it counts for the interval too */
+  lastLoginAt?: Date | null;
   lastSuccessAt: Date | null;
   requiresAction: string | null;
 }
@@ -255,10 +257,13 @@ export function decideStart(input: GateInput): GateDecision {
   const manual = isManual(input.trigger);
   if (account.requiresAction) return { start: false, reason: 'requires_action', record: null };
 
-  // an attempt counts even if it failed: the diary saw a login. A clock that went backwards counts as elapsed.
-  const nextLogin =
-    account.lastAttemptAt && new Date(account.lastAttemptAt.getTime() + limits.minLoginIntervalMinutes * 60_000);
-  if (nextLogin && now >= account.lastAttemptAt! && now < nextLogin) {
+  // an attempt counts even if it failed: the diary saw a login, and so does a probe's login (last_login_at). A clock
+  // that went backwards counts as elapsed.
+  const lastLogin = [account.lastAttemptAt, account.lastLoginAt]
+    .filter((d): d is Date => !!d && d <= now)
+    .sort((a, b) => b.getTime() - a.getTime())[0];
+  const nextLogin = lastLogin && new Date(lastLogin.getTime() + limits.minLoginIntervalMinutes * 60_000);
+  if (nextLogin && now < nextLogin) {
     return { start: false, reason: 'interval', record: manual ? 'skipped_interval' : null, retryAt: nextLogin };
   }
   // a person pressing the button is the best sign the diary is back: one attempt, even during a pause
