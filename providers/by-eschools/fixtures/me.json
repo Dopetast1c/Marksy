@@ -1,5 +1,5 @@
 {
-  "user_id": "00000000-0000-4000-8000-733fa5fb8062",
+  "user_id": "00000000-0000-4000-8000-d933464d7bad",
   "school_id": null,
   "school_name": null,
   "our_school_id": null,
@@ -12,14 +12,14 @@
   "position": null,
   "students_for_parent": [
     {
-      "profile_id": "00000000-0000-4000-8000-901d636b67b1",
+      "profile_id": "00000000-0000-4000-8000-8b6439ffe45e",
       "full_name": "Ученик A",
-      "school_id": "00000000-0000-4000-8000-8f669216f01b"
+      "school_id": "00000000-0000-4000-8000-6d5821aed109"
     },
     {
-      "profile_id": "00000000-0000-4000-8000-9bda8ce7d404",
+      "profile_id": "00000000-0000-4000-8000-aa2e29c7fd02",
       "full_name": "Ученик B",
-      "school_id": "00000000-0000-4000-8000-8f669216f01b"
+      "school_id": "00000000-0000-4000-8000-6d5821aed109"
     }
   ],
   "first_name": null,

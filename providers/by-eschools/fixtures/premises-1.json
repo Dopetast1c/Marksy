@@ -1,1514 +1,1514 @@
 [
   {
-    "uuid": "00000000-0000-4000-8000-571dbad5baa1",
+    "uuid": "00000000-0000-4000-8000-aa290ef6e2c7",
     "dt_create": 0,
     "dt_update": 0,
-    "audience_number": "804А",
+    "audience_number": "911А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-a90fe4051f36",
+      "uuid": "00000000-0000-4000-8000-fe50991d174e",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-a90fe4051f36",
+        "uuid": "00000000-0000-4000-8000-fe50991d174e",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   },
   {
-    "uuid": "00000000-0000-4000-8000-4d68fc1178bc",
+    "uuid": "00000000-0000-4000-8000-9fe0ddd62721",
     "dt_create": 0,
     "dt_update": 0,
-    "audience_number": "763А",
+    "audience_number": "254А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+      "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+        "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   },
   {
-    "uuid": "00000000-0000-4000-8000-76e172658231",
+    "uuid": "00000000-0000-4000-8000-f29258c96511",
     "dt_create": 0,
     "dt_update": 0,
-    "audience_number": "965А",
+    "audience_number": "982А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-a90fe4051f36",
+      "uuid": "00000000-0000-4000-8000-fe50991d174e",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-a90fe4051f36",
+        "uuid": "00000000-0000-4000-8000-fe50991d174e",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   },
   {
-    "uuid": "00000000-0000-4000-8000-d941dddae315",
+    "uuid": "00000000-0000-4000-8000-844583b97124",
+    "dt_create": 0,
+    "dt_update": 0,
+    "audience_number": "148А",
+    "dt_delete": null,
+    "hull": null,
+    "premise_type": {
+      "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
+      "status": "REFRESHED",
+      "ic_code": null,
+      "kind": "[text]",
+      "version": 0,
+      "as_json": {
+        "name": "Кабинет",
+        "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
+        "dt_create": 0,
+        "dt_delete": null,
+        "dt_update": 0,
+        "short_name": "каб."
+      }
+    },
+    "school": "00000000-0000-4000-8000-6d5821aed109"
+  },
+  {
+    "uuid": "00000000-0000-4000-8000-81335636c030",
+    "dt_create": 0,
+    "dt_update": 0,
+    "audience_number": "714А",
+    "dt_delete": null,
+    "hull": null,
+    "premise_type": {
+      "uuid": "00000000-0000-4000-8000-fe50991d174e",
+      "status": "REFRESHED",
+      "ic_code": null,
+      "kind": "[text]",
+      "version": 0,
+      "as_json": {
+        "name": "Кабинет",
+        "uuid": "00000000-0000-4000-8000-fe50991d174e",
+        "dt_create": 0,
+        "dt_delete": null,
+        "dt_update": 0,
+        "short_name": "каб."
+      }
+    },
+    "school": "00000000-0000-4000-8000-6d5821aed109"
+  },
+  {
+    "uuid": "00000000-0000-4000-8000-270ff22a3d55",
+    "dt_create": 0,
+    "dt_update": 0,
+    "audience_number": "010А",
+    "dt_delete": null,
+    "hull": null,
+    "premise_type": {
+      "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
+      "status": "REFRESHED",
+      "ic_code": null,
+      "kind": "[text]",
+      "version": 0,
+      "as_json": {
+        "name": "Кабинет",
+        "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
+        "dt_create": 0,
+        "dt_delete": null,
+        "dt_update": 0,
+        "short_name": "каб."
+      }
+    },
+    "school": "00000000-0000-4000-8000-6d5821aed109"
+  },
+  {
+    "uuid": "00000000-0000-4000-8000-5f2415c9a9e5",
+    "dt_create": 0,
+    "dt_update": 0,
+    "audience_number": "304А",
+    "dt_delete": null,
+    "hull": null,
+    "premise_type": {
+      "uuid": "00000000-0000-4000-8000-9bf5eb037db0",
+      "status": "REFRESHED",
+      "ic_code": null,
+      "kind": "[text]",
+      "version": 0,
+      "as_json": {
+        "name": "Кабинет",
+        "uuid": "00000000-0000-4000-8000-9bf5eb037db0",
+        "dt_create": 0,
+        "dt_delete": null,
+        "dt_update": 0,
+        "short_name": "каб."
+      }
+    },
+    "school": "00000000-0000-4000-8000-6d5821aed109"
+  },
+  {
+    "uuid": "00000000-0000-4000-8000-d40143bda885",
     "dt_create": 0,
     "dt_update": 0,
     "audience_number": "115А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+      "uuid": "00000000-0000-4000-8000-9bf5eb037db0",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+        "uuid": "00000000-0000-4000-8000-9bf5eb037db0",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   },
   {
-    "uuid": "00000000-0000-4000-8000-df67d9080d13",
+    "uuid": "00000000-0000-4000-8000-60de23222fca",
     "dt_create": 0,
     "dt_update": 0,
-    "audience_number": "391А",
+    "audience_number": "763А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-a90fe4051f36",
+      "uuid": "00000000-0000-4000-8000-9bf5eb037db0",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-a90fe4051f36",
+        "uuid": "00000000-0000-4000-8000-9bf5eb037db0",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   },
   {
-    "uuid": "00000000-0000-4000-8000-02f84de3912a",
+    "uuid": "00000000-0000-4000-8000-18c0dc58b53e",
     "dt_create": 0,
     "dt_update": 0,
-    "audience_number": "839А",
+    "audience_number": "847А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+      "uuid": "00000000-0000-4000-8000-fe50991d174e",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+        "uuid": "00000000-0000-4000-8000-fe50991d174e",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   },
   {
-    "uuid": "00000000-0000-4000-8000-2adc5f67c265",
+    "uuid": "00000000-0000-4000-8000-87574c02babd",
     "dt_create": 0,
     "dt_update": 0,
-    "audience_number": "610А",
+    "audience_number": "165А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-95d0fc6f6277",
+      "uuid": "00000000-0000-4000-8000-bf96d4b738d2",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-95d0fc6f6277",
+        "uuid": "00000000-0000-4000-8000-bf96d4b738d2",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   },
   {
-    "uuid": "00000000-0000-4000-8000-6a6a4fc9e454",
+    "uuid": "00000000-0000-4000-8000-8b59da7139e5",
     "dt_create": 0,
     "dt_update": 0,
-    "audience_number": "785А",
+    "audience_number": "263А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-95d0fc6f6277",
+      "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-95d0fc6f6277",
+        "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   },
   {
-    "uuid": "00000000-0000-4000-8000-a99fa64943f6",
+    "uuid": "00000000-0000-4000-8000-b12afa9a7676",
     "dt_create": 0,
     "dt_update": 0,
-    "audience_number": "245А",
+    "audience_number": "696А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-95d0fc6f6277",
+      "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-95d0fc6f6277",
+        "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   },
   {
-    "uuid": "00000000-0000-4000-8000-633ed6360c09",
+    "uuid": "00000000-0000-4000-8000-8f1cf1b19b2d",
     "dt_create": 0,
     "dt_update": 0,
-    "audience_number": "126А",
+    "audience_number": "234А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-a90fe4051f36",
+      "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-a90fe4051f36",
+        "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   },
   {
-    "uuid": "00000000-0000-4000-8000-9cbd07c9cc8a",
+    "uuid": "00000000-0000-4000-8000-ee53119095e2",
     "dt_create": 0,
     "dt_update": 0,
-    "audience_number": "131А",
+    "audience_number": "615А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-187b9b128b92",
+      "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-187b9b128b92",
+        "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   },
   {
-    "uuid": "00000000-0000-4000-8000-4091392607be",
+    "uuid": "00000000-0000-4000-8000-15086d8ce3e7",
     "dt_create": 0,
     "dt_update": 0,
-    "audience_number": "711А",
+    "audience_number": "515А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+      "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+        "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   },
   {
-    "uuid": "00000000-0000-4000-8000-81045d1b45a6",
+    "uuid": "00000000-0000-4000-8000-1545403803bf",
     "dt_create": 0,
     "dt_update": 0,
-    "audience_number": "347А",
+    "audience_number": "542А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+      "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+        "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   },
   {
-    "uuid": "00000000-0000-4000-8000-02e346aa0820",
+    "uuid": "00000000-0000-4000-8000-0d0984f0546d",
     "dt_create": 0,
     "dt_update": 0,
-    "audience_number": "550А",
+    "audience_number": "905А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+      "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+        "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   },
   {
-    "uuid": "00000000-0000-4000-8000-eb0b4903f808",
+    "uuid": "00000000-0000-4000-8000-d2e6e8e24746",
     "dt_create": 0,
     "dt_update": 0,
-    "audience_number": "468А",
+    "audience_number": "405А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+      "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+        "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   },
   {
-    "uuid": "00000000-0000-4000-8000-4759b99e9932",
+    "uuid": "00000000-0000-4000-8000-eee30f059728",
     "dt_create": 0,
     "dt_update": 0,
-    "audience_number": "101А",
+    "audience_number": "759А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+      "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+        "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   },
   {
-    "uuid": "00000000-0000-4000-8000-65096bf2a3af",
+    "uuid": "00000000-0000-4000-8000-2f317e0cadc8",
     "dt_create": 0,
     "dt_update": 0,
-    "audience_number": "120А",
+    "audience_number": "557А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+      "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+        "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   },
   {
-    "uuid": "00000000-0000-4000-8000-18a36f78a874",
+    "uuid": "00000000-0000-4000-8000-288863b9bac2",
     "dt_create": 0,
     "dt_update": 0,
-    "audience_number": "112А",
+    "audience_number": "536А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+      "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+        "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   },
   {
-    "uuid": "00000000-0000-4000-8000-8868f119fcf0",
+    "uuid": "00000000-0000-4000-8000-f4c99400c54f",
     "dt_create": 0,
     "dt_update": 0,
-    "audience_number": "748А",
+    "audience_number": "200А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+      "uuid": "00000000-0000-4000-8000-cd08b1d85c93",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+        "uuid": "00000000-0000-4000-8000-cd08b1d85c93",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   },
   {
-    "uuid": "00000000-0000-4000-8000-77375f8f290a",
+    "uuid": "00000000-0000-4000-8000-f505ae28b730",
     "dt_create": 0,
     "dt_update": 0,
-    "audience_number": "258А",
+    "audience_number": "790А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+      "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+        "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   },
   {
-    "uuid": "00000000-0000-4000-8000-9f6be4610ee3",
+    "uuid": "00000000-0000-4000-8000-0a1e52f91943",
     "dt_create": 0,
     "dt_update": 0,
-    "audience_number": "649А",
+    "audience_number": "149А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+      "uuid": "00000000-0000-4000-8000-f950ef6bfe80",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+        "uuid": "00000000-0000-4000-8000-f950ef6bfe80",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   },
   {
-    "uuid": "00000000-0000-4000-8000-47e2f677e168",
+    "uuid": "00000000-0000-4000-8000-a3157a3f28de",
     "dt_create": 0,
     "dt_update": 0,
-    "audience_number": "940А",
+    "audience_number": "593А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+      "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+        "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   },
   {
-    "uuid": "00000000-0000-4000-8000-84a81a928ab0",
+    "uuid": "00000000-0000-4000-8000-7e721781de43",
     "dt_create": 0,
     "dt_update": 0,
-    "audience_number": "357А",
+    "audience_number": "034А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-6b4fec83f572",
+      "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-6b4fec83f572",
+        "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   },
   {
-    "uuid": "00000000-0000-4000-8000-97408ec8041c",
+    "uuid": "00000000-0000-4000-8000-b9f382ee8709",
     "dt_create": 0,
     "dt_update": 0,
-    "audience_number": "117А",
+    "audience_number": "180А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+      "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+        "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   },
   {
-    "uuid": "00000000-0000-4000-8000-9ef0c75ce0d8",
+    "uuid": "00000000-0000-4000-8000-2e311ce10bdf",
     "dt_create": 0,
     "dt_update": 0,
-    "audience_number": "341А",
+    "audience_number": "277А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-4bd570cb500d",
+      "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-4bd570cb500d",
+        "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   },
   {
-    "uuid": "00000000-0000-4000-8000-66d42d5576b2",
+    "uuid": "00000000-0000-4000-8000-845e12e4277c",
     "dt_create": 0,
     "dt_update": 0,
-    "audience_number": "499А",
+    "audience_number": "584А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+      "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+        "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   },
   {
-    "uuid": "00000000-0000-4000-8000-392f6bdde635",
+    "uuid": "00000000-0000-4000-8000-c3778a4472be",
     "dt_create": 0,
     "dt_update": 0,
-    "audience_number": "588А",
+    "audience_number": "432А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+      "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+        "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   },
   {
-    "uuid": "00000000-0000-4000-8000-4e0cabb4e590",
+    "uuid": "00000000-0000-4000-8000-35b2388b610d",
     "dt_create": 0,
     "dt_update": 0,
-    "audience_number": "636А",
+    "audience_number": "786А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+      "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+        "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   },
   {
-    "uuid": "00000000-0000-4000-8000-ca0c1449ff56",
+    "uuid": "00000000-0000-4000-8000-55478379f7ae",
     "dt_create": 0,
     "dt_update": 0,
-    "audience_number": "256А",
+    "audience_number": "539А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+      "uuid": "00000000-0000-4000-8000-cd08b1d85c93",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+        "uuid": "00000000-0000-4000-8000-cd08b1d85c93",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   },
   {
-    "uuid": "00000000-0000-4000-8000-cade7d0fbd41",
+    "uuid": "00000000-0000-4000-8000-1f21ccff2566",
     "dt_create": 0,
     "dt_update": 0,
-    "audience_number": "356А",
+    "audience_number": "389А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+      "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+        "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   },
   {
-    "uuid": "00000000-0000-4000-8000-cbac0d259bfc",
+    "uuid": "00000000-0000-4000-8000-a7b3a3972f3e",
     "dt_create": 0,
     "dt_update": 0,
-    "audience_number": "053А",
+    "audience_number": "763А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+      "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+        "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   },
   {
-    "uuid": "00000000-0000-4000-8000-c3a8d981bf52",
+    "uuid": "00000000-0000-4000-8000-70db8efde9f5",
     "dt_create": 0,
     "dt_update": 0,
-    "audience_number": "069А",
+    "audience_number": "432А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+      "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+        "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   },
   {
-    "uuid": "00000000-0000-4000-8000-b940df946374",
+    "uuid": "00000000-0000-4000-8000-94442cc0b031",
     "dt_create": 0,
     "dt_update": 0,
-    "audience_number": "042А",
+    "audience_number": "505А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-6b4fec83f572",
+      "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-6b4fec83f572",
+        "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   },
   {
-    "uuid": "00000000-0000-4000-8000-1102c2fa975c",
+    "uuid": "00000000-0000-4000-8000-8af4d10b1253",
     "dt_create": 0,
     "dt_update": 0,
-    "audience_number": "248А",
+    "audience_number": "199А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+      "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+        "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   },
   {
-    "uuid": "00000000-0000-4000-8000-5656a9da693e",
+    "uuid": "00000000-0000-4000-8000-558b7bec05c5",
     "dt_create": 0,
     "dt_update": 0,
-    "audience_number": "058А",
+    "audience_number": "173А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+      "uuid": "00000000-0000-4000-8000-405fba6f79a0",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+        "uuid": "00000000-0000-4000-8000-405fba6f79a0",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   },
   {
-    "uuid": "00000000-0000-4000-8000-b06f9d57b578",
+    "uuid": "00000000-0000-4000-8000-ea0805cbf737",
     "dt_create": 0,
     "dt_update": 0,
-    "audience_number": "138А",
+    "audience_number": "018А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+      "uuid": "00000000-0000-4000-8000-cd08b1d85c93",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+        "uuid": "00000000-0000-4000-8000-cd08b1d85c93",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   },
   {
-    "uuid": "00000000-0000-4000-8000-bbe83bc9ffac",
+    "uuid": "00000000-0000-4000-8000-97a17e2cebcd",
     "dt_create": 0,
     "dt_update": 0,
-    "audience_number": "872А",
+    "audience_number": "121А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+      "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+        "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   },
   {
-    "uuid": "00000000-0000-4000-8000-3869adec698f",
+    "uuid": "00000000-0000-4000-8000-eddae5ad4eca",
     "dt_create": 0,
     "dt_update": 0,
-    "audience_number": "324А",
+    "audience_number": "832А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+      "uuid": "00000000-0000-4000-8000-405fba6f79a0",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+        "uuid": "00000000-0000-4000-8000-405fba6f79a0",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   },
   {
-    "uuid": "00000000-0000-4000-8000-317a45fb4b65",
+    "uuid": "00000000-0000-4000-8000-b72af476e348",
     "dt_create": 0,
     "dt_update": 0,
-    "audience_number": "380А",
+    "audience_number": "824А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-93669280654e",
+      "uuid": "00000000-0000-4000-8000-405fba6f79a0",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-93669280654e",
+        "uuid": "00000000-0000-4000-8000-405fba6f79a0",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   },
   {
-    "uuid": "00000000-0000-4000-8000-ad7c2a5e6414",
+    "uuid": "00000000-0000-4000-8000-77f83fa43d8f",
     "dt_create": 0,
     "dt_update": 0,
-    "audience_number": "007А",
+    "audience_number": "581А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-6b4fec83f572",
+      "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-6b4fec83f572",
+        "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   },
   {
-    "uuid": "00000000-0000-4000-8000-b124fc6c662c",
+    "uuid": "00000000-0000-4000-8000-bdc10d5f4101",
     "dt_create": 0,
     "dt_update": 0,
-    "audience_number": "001А",
+    "audience_number": "608А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+      "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+        "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   },
   {
-    "uuid": "00000000-0000-4000-8000-a7feb00c5a37",
+    "uuid": "00000000-0000-4000-8000-a9c25a4243eb",
     "dt_create": 0,
     "dt_update": 0,
-    "audience_number": "902А",
+    "audience_number": "136А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-93669280654e",
+      "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-93669280654e",
+        "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   },
   {
-    "uuid": "00000000-0000-4000-8000-cf5c53169b5a",
+    "uuid": "00000000-0000-4000-8000-1a040d754f9e",
     "dt_create": 0,
     "dt_update": 0,
-    "audience_number": "193А",
+    "audience_number": "884А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-93669280654e",
+      "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-93669280654e",
+        "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   },
   {
-    "uuid": "00000000-0000-4000-8000-a5f5cabe550e",
+    "uuid": "00000000-0000-4000-8000-b70f398d2758",
     "dt_create": 0,
     "dt_update": 0,
-    "audience_number": "370А",
+    "audience_number": "908А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+      "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+        "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   },
   {
-    "uuid": "00000000-0000-4000-8000-03e2ac0a3b35",
-    "dt_create": 0,
-    "dt_update": 0,
-    "audience_number": "511А",
-    "dt_delete": null,
-    "hull": null,
-    "premise_type": {
-      "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
-      "status": "REFRESHED",
-      "ic_code": null,
-      "kind": "[text]",
-      "version": 0,
-      "as_json": {
-        "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
-        "dt_create": 0,
-        "dt_delete": null,
-        "dt_update": 0,
-        "short_name": "каб."
-      }
-    },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
-  },
-  {
-    "uuid": "00000000-0000-4000-8000-ce86d2e89c85",
-    "dt_create": 0,
-    "dt_update": 0,
-    "audience_number": "674А",
-    "dt_delete": null,
-    "hull": null,
-    "premise_type": {
-      "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
-      "status": "REFRESHED",
-      "ic_code": null,
-      "kind": "[text]",
-      "version": 0,
-      "as_json": {
-        "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
-        "dt_create": 0,
-        "dt_delete": null,
-        "dt_update": 0,
-        "short_name": "каб."
-      }
-    },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
-  },
-  {
-    "uuid": "00000000-0000-4000-8000-5c206d0a00be",
-    "dt_create": 0,
-    "dt_update": 0,
-    "audience_number": "730А",
-    "dt_delete": null,
-    "hull": null,
-    "premise_type": {
-      "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
-      "status": "REFRESHED",
-      "ic_code": null,
-      "kind": "[text]",
-      "version": 0,
-      "as_json": {
-        "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
-        "dt_create": 0,
-        "dt_delete": null,
-        "dt_update": 0,
-        "short_name": "каб."
-      }
-    },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
-  },
-  {
-    "uuid": "00000000-0000-4000-8000-90c3a0961f03",
-    "dt_create": 0,
-    "dt_update": 0,
-    "audience_number": "730А",
-    "dt_delete": null,
-    "hull": null,
-    "premise_type": {
-      "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
-      "status": "REFRESHED",
-      "ic_code": null,
-      "kind": "[text]",
-      "version": 0,
-      "as_json": {
-        "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
-        "dt_create": 0,
-        "dt_delete": null,
-        "dt_update": 0,
-        "short_name": "каб."
-      }
-    },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
-  },
-  {
-    "uuid": "00000000-0000-4000-8000-7048a19038b5",
-    "dt_create": 0,
-    "dt_update": 0,
-    "audience_number": "442А",
-    "dt_delete": null,
-    "hull": null,
-    "premise_type": {
-      "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
-      "status": "REFRESHED",
-      "ic_code": null,
-      "kind": "[text]",
-      "version": 0,
-      "as_json": {
-        "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
-        "dt_create": 0,
-        "dt_delete": null,
-        "dt_update": 0,
-        "short_name": "каб."
-      }
-    },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
-  },
-  {
-    "uuid": "00000000-0000-4000-8000-ac6b87439dcb",
-    "dt_create": 0,
-    "dt_update": 0,
-    "audience_number": "155А",
-    "dt_delete": null,
-    "hull": null,
-    "premise_type": {
-      "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
-      "status": "REFRESHED",
-      "ic_code": null,
-      "kind": "[text]",
-      "version": 0,
-      "as_json": {
-        "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
-        "dt_create": 0,
-        "dt_delete": null,
-        "dt_update": 0,
-        "short_name": "каб."
-      }
-    },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
-  },
-  {
-    "uuid": "00000000-0000-4000-8000-7c13d8cdcc02",
-    "dt_create": 0,
-    "dt_update": 0,
-    "audience_number": "394А",
-    "dt_delete": null,
-    "hull": null,
-    "premise_type": {
-      "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
-      "status": "REFRESHED",
-      "ic_code": null,
-      "kind": "[text]",
-      "version": 0,
-      "as_json": {
-        "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
-        "dt_create": 0,
-        "dt_delete": null,
-        "dt_update": 0,
-        "short_name": "каб."
-      }
-    },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
-  },
-  {
-    "uuid": "00000000-0000-4000-8000-46b6ae8b90ee",
-    "dt_create": 0,
-    "dt_update": 0,
-    "audience_number": "739А",
-    "dt_delete": null,
-    "hull": null,
-    "premise_type": {
-      "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
-      "status": "REFRESHED",
-      "ic_code": null,
-      "kind": "[text]",
-      "version": 0,
-      "as_json": {
-        "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
-        "dt_create": 0,
-        "dt_delete": null,
-        "dt_update": 0,
-        "short_name": "каб."
-      }
-    },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
-  },
-  {
-    "uuid": "00000000-0000-4000-8000-8e7cf2600e91",
-    "dt_create": 0,
-    "dt_update": 0,
-    "audience_number": "171А",
-    "dt_delete": null,
-    "hull": null,
-    "premise_type": {
-      "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
-      "status": "REFRESHED",
-      "ic_code": null,
-      "kind": "[text]",
-      "version": 0,
-      "as_json": {
-        "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
-        "dt_create": 0,
-        "dt_delete": null,
-        "dt_update": 0,
-        "short_name": "каб."
-      }
-    },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
-  },
-  {
-    "uuid": "00000000-0000-4000-8000-ba3060baca91",
-    "dt_create": 0,
-    "dt_update": 0,
-    "audience_number": "425А",
-    "dt_delete": null,
-    "hull": null,
-    "premise_type": {
-      "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
-      "status": "REFRESHED",
-      "ic_code": null,
-      "kind": "[text]",
-      "version": 0,
-      "as_json": {
-        "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
-        "dt_create": 0,
-        "dt_delete": null,
-        "dt_update": 0,
-        "short_name": "каб."
-      }
-    },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
-  },
-  {
-    "uuid": "00000000-0000-4000-8000-6c1b1009952d",
-    "dt_create": 0,
-    "dt_update": 0,
-    "audience_number": "155А",
-    "dt_delete": null,
-    "hull": null,
-    "premise_type": {
-      "uuid": "00000000-0000-4000-8000-3e83633f60bc",
-      "status": "REFRESHED",
-      "ic_code": null,
-      "kind": "[text]",
-      "version": 0,
-      "as_json": {
-        "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-3e83633f60bc",
-        "dt_create": 0,
-        "dt_delete": null,
-        "dt_update": 0,
-        "short_name": "каб."
-      }
-    },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
-  },
-  {
-    "uuid": "00000000-0000-4000-8000-5c9ebf76fc8a",
-    "dt_create": 0,
-    "dt_update": 0,
-    "audience_number": "435А",
-    "dt_delete": null,
-    "hull": null,
-    "premise_type": {
-      "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
-      "status": "REFRESHED",
-      "ic_code": null,
-      "kind": "[text]",
-      "version": 0,
-      "as_json": {
-        "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
-        "dt_create": 0,
-        "dt_delete": null,
-        "dt_update": 0,
-        "short_name": "каб."
-      }
-    },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
-  },
-  {
-    "uuid": "00000000-0000-4000-8000-2f99fc5d8b37",
-    "dt_create": 0,
-    "dt_update": 0,
-    "audience_number": "809А",
-    "dt_delete": null,
-    "hull": null,
-    "premise_type": {
-      "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
-      "status": "REFRESHED",
-      "ic_code": null,
-      "kind": "[text]",
-      "version": 0,
-      "as_json": {
-        "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
-        "dt_create": 0,
-        "dt_delete": null,
-        "dt_update": 0,
-        "short_name": "каб."
-      }
-    },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
-  },
-  {
-    "uuid": "00000000-0000-4000-8000-00ad920659d7",
+    "uuid": "00000000-0000-4000-8000-16475889631d",
     "dt_create": 0,
     "dt_update": 0,
     "audience_number": "776А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+      "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+        "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   },
   {
-    "uuid": "00000000-0000-4000-8000-c18096aea77e",
+    "uuid": "00000000-0000-4000-8000-e748963679c6",
     "dt_create": 0,
     "dt_update": 0,
-    "audience_number": "924А",
+    "audience_number": "271А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-3e83633f60bc",
+      "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-3e83633f60bc",
+        "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   },
   {
-    "uuid": "00000000-0000-4000-8000-3f47a25da349",
+    "uuid": "00000000-0000-4000-8000-b11e4601995d",
     "dt_create": 0,
     "dt_update": 0,
-    "audience_number": "660А",
+    "audience_number": "775А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-6763368f0304",
+      "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-6763368f0304",
+        "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   },
   {
-    "uuid": "00000000-0000-4000-8000-bbd39219bef1",
+    "uuid": "00000000-0000-4000-8000-8da04d3e9871",
     "dt_create": 0,
     "dt_update": 0,
-    "audience_number": "418А",
+    "audience_number": "262А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-6763368f0304",
+      "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-6763368f0304",
+        "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   },
   {
-    "uuid": "00000000-0000-4000-8000-c367d7d0e346",
+    "uuid": "00000000-0000-4000-8000-6cb12f334afd",
     "dt_create": 0,
     "dt_update": 0,
-    "audience_number": "374А",
+    "audience_number": "035А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+      "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-317a9cee7dfa",
+        "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   },
   {
-    "uuid": "00000000-0000-4000-8000-7f1ef82b8ffb",
+    "uuid": "00000000-0000-4000-8000-071f51f0883d",
     "dt_create": 0,
     "dt_update": 0,
-    "audience_number": "534А",
+    "audience_number": "015А",
     "dt_delete": null,
     "hull": null,
     "premise_type": {
-      "uuid": "00000000-0000-4000-8000-3e83633f60bc",
+      "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
         "name": "Кабинет",
-        "uuid": "00000000-0000-4000-8000-3e83633f60bc",
+        "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
         "short_name": "каб."
       }
     },
-    "school": "00000000-0000-4000-8000-8f669216f01b"
+    "school": "00000000-0000-4000-8000-6d5821aed109"
+  },
+  {
+    "uuid": "00000000-0000-4000-8000-db6aef8fe34c",
+    "dt_create": 0,
+    "dt_update": 0,
+    "audience_number": "047А",
+    "dt_delete": null,
+    "hull": null,
+    "premise_type": {
+      "uuid": "00000000-0000-4000-8000-6184f6596e09",
+      "status": "REFRESHED",
+      "ic_code": null,
+      "kind": "[text]",
+      "version": 0,
+      "as_json": {
+        "name": "Кабинет",
+        "uuid": "00000000-0000-4000-8000-6184f6596e09",
+        "dt_create": 0,
+        "dt_delete": null,
+        "dt_update": 0,
+        "short_name": "каб."
+      }
+    },
+    "school": "00000000-0000-4000-8000-6d5821aed109"
+  },
+  {
+    "uuid": "00000000-0000-4000-8000-683c0910e3c1",
+    "dt_create": 0,
+    "dt_update": 0,
+    "audience_number": "494А",
+    "dt_delete": null,
+    "hull": null,
+    "premise_type": {
+      "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
+      "status": "REFRESHED",
+      "ic_code": null,
+      "kind": "[text]",
+      "version": 0,
+      "as_json": {
+        "name": "Кабинет",
+        "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
+        "dt_create": 0,
+        "dt_delete": null,
+        "dt_update": 0,
+        "short_name": "каб."
+      }
+    },
+    "school": "00000000-0000-4000-8000-6d5821aed109"
+  },
+  {
+    "uuid": "00000000-0000-4000-8000-c7dce6126859",
+    "dt_create": 0,
+    "dt_update": 0,
+    "audience_number": "942А",
+    "dt_delete": null,
+    "hull": null,
+    "premise_type": {
+      "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
+      "status": "REFRESHED",
+      "ic_code": null,
+      "kind": "[text]",
+      "version": 0,
+      "as_json": {
+        "name": "Кабинет",
+        "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
+        "dt_create": 0,
+        "dt_delete": null,
+        "dt_update": 0,
+        "short_name": "каб."
+      }
+    },
+    "school": "00000000-0000-4000-8000-6d5821aed109"
+  },
+  {
+    "uuid": "00000000-0000-4000-8000-774b51efe68f",
+    "dt_create": 0,
+    "dt_update": 0,
+    "audience_number": "280А",
+    "dt_delete": null,
+    "hull": null,
+    "premise_type": {
+      "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
+      "status": "REFRESHED",
+      "ic_code": null,
+      "kind": "[text]",
+      "version": 0,
+      "as_json": {
+        "name": "Кабинет",
+        "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
+        "dt_create": 0,
+        "dt_delete": null,
+        "dt_update": 0,
+        "short_name": "каб."
+      }
+    },
+    "school": "00000000-0000-4000-8000-6d5821aed109"
+  },
+  {
+    "uuid": "00000000-0000-4000-8000-48ce42b3ee2c",
+    "dt_create": 0,
+    "dt_update": 0,
+    "audience_number": "090А",
+    "dt_delete": null,
+    "hull": null,
+    "premise_type": {
+      "uuid": "00000000-0000-4000-8000-6184f6596e09",
+      "status": "REFRESHED",
+      "ic_code": null,
+      "kind": "[text]",
+      "version": 0,
+      "as_json": {
+        "name": "Кабинет",
+        "uuid": "00000000-0000-4000-8000-6184f6596e09",
+        "dt_create": 0,
+        "dt_delete": null,
+        "dt_update": 0,
+        "short_name": "каб."
+      }
+    },
+    "school": "00000000-0000-4000-8000-6d5821aed109"
+  },
+  {
+    "uuid": "00000000-0000-4000-8000-23931ba1bc5c",
+    "dt_create": 0,
+    "dt_update": 0,
+    "audience_number": "513А",
+    "dt_delete": null,
+    "hull": null,
+    "premise_type": {
+      "uuid": "00000000-0000-4000-8000-4b7949e988ac",
+      "status": "REFRESHED",
+      "ic_code": null,
+      "kind": "[text]",
+      "version": 0,
+      "as_json": {
+        "name": "Кабинет",
+        "uuid": "00000000-0000-4000-8000-4b7949e988ac",
+        "dt_create": 0,
+        "dt_delete": null,
+        "dt_update": 0,
+        "short_name": "каб."
+      }
+    },
+    "school": "00000000-0000-4000-8000-6d5821aed109"
+  },
+  {
+    "uuid": "00000000-0000-4000-8000-c6e9eecb1fda",
+    "dt_create": 0,
+    "dt_update": 0,
+    "audience_number": "855А",
+    "dt_delete": null,
+    "hull": null,
+    "premise_type": {
+      "uuid": "00000000-0000-4000-8000-4b7949e988ac",
+      "status": "REFRESHED",
+      "ic_code": null,
+      "kind": "[text]",
+      "version": 0,
+      "as_json": {
+        "name": "Кабинет",
+        "uuid": "00000000-0000-4000-8000-4b7949e988ac",
+        "dt_create": 0,
+        "dt_delete": null,
+        "dt_update": 0,
+        "short_name": "каб."
+      }
+    },
+    "school": "00000000-0000-4000-8000-6d5821aed109"
+  },
+  {
+    "uuid": "00000000-0000-4000-8000-b3ce036d129f",
+    "dt_create": 0,
+    "dt_update": 0,
+    "audience_number": "333А",
+    "dt_delete": null,
+    "hull": null,
+    "premise_type": {
+      "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
+      "status": "REFRESHED",
+      "ic_code": null,
+      "kind": "[text]",
+      "version": 0,
+      "as_json": {
+        "name": "Кабинет",
+        "uuid": "00000000-0000-4000-8000-9cb505a2c6cd",
+        "dt_create": 0,
+        "dt_delete": null,
+        "dt_update": 0,
+        "short_name": "каб."
+      }
+    },
+    "school": "00000000-0000-4000-8000-6d5821aed109"
+  },
+  {
+    "uuid": "00000000-0000-4000-8000-fa1fbba24ef8",
+    "dt_create": 0,
+    "dt_update": 0,
+    "audience_number": "564А",
+    "dt_delete": null,
+    "hull": null,
+    "premise_type": {
+      "uuid": "00000000-0000-4000-8000-6184f6596e09",
+      "status": "REFRESHED",
+      "ic_code": null,
+      "kind": "[text]",
+      "version": 0,
+      "as_json": {
+        "name": "Кабинет",
+        "uuid": "00000000-0000-4000-8000-6184f6596e09",
+        "dt_create": 0,
+        "dt_delete": null,
+        "dt_update": 0,
+        "short_name": "каб."
+      }
+    },
+    "school": "00000000-0000-4000-8000-6d5821aed109"
   }
 ]
