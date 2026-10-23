@@ -1,8 +1,9 @@
 import { manifestScale } from '@marksy/core';
 import type { AccountInfo, Calendar, FinalMark, ProviderManifest, StudentRef, Subject } from '@marksy/core';
-import { and, eq, notInArray } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import type { Db } from '../db/client';
 import {
+  familyStudents,
   finalMarks,
   finalMarksRaw,
   holidays,
@@ -10,6 +11,7 @@ import {
   schoolYears,
   studentIdentities,
   students,
+  studentSources,
   studentYears,
   subjects,
   terms,
@@ -27,16 +29,33 @@ interface AccountRef {
   providerId: string;
 }
 
-/** The student rows of this account, created or updated from the provider's account info. */
-export async function storeStudents(db: Db, account: AccountRef, info: AccountInfo): Promise<StudentRow[]> {
-  const out: StudentRow[] = [];
+export interface StoredStudents {
+  /** Every child the account lists */
+  listed: StudentRow[];
+  /** The children this account is the active source of: the ones its run reads (one read per child, design.md 10.2) */
+  readable: StudentRow[];
+}
+
+/**
+ * The children an account lists: one row per child and system, whichever login lists them (design.md 7.1, 7.2). The
+ * account becomes a source of each; it becomes the active one when the child has none yet. The account's family follows
+ * each child it lists.
+ */
+export async function storeStudents(
+  db: Db,
+  account: AccountRef,
+  info: AccountInfo,
+  now = new Date(),
+): Promise<StoredStudents> {
+  const listed: StudentRow[] = [];
   for (const s of info.students) {
     const values = {
-      diaryAccountId: account.id,
       fullName: s.fullName,
       givenName: s.givenName ?? null,
       familyName: s.familyName ?? null,
       schoolId: s.schoolId ?? null,
+      schoolLabel: s.schoolName ?? null,
+      timezone: s.timezone ?? null,
       classExternalId: s.classExternalId ?? null,
       classLabel: s.className ?? null,
       grade: s.grade ?? null,
@@ -45,27 +64,49 @@ export async function storeStudents(db: Db, account: AccountRef, info: AccountIn
     };
     const [row] = await db
       .insert(students)
-      .values({ ...values, familyId: account.familyId, providerId: account.providerId, externalId: s.externalId })
-      .onConflictDoUpdate({ target: [students.familyId, students.providerId, students.externalId], set: values })
+      .values({ ...values, providerId: account.providerId, externalId: s.externalId })
+      .onConflictDoUpdate({ target: [students.providerId, students.externalId], set: values })
       .returning();
+    const studentId = row!.id;
     await db
       .insert(studentIdentities)
-      .values({
-        providerId: account.providerId,
-        externalId: s.externalId,
-        studentId: row!.id,
-        familyId: account.familyId,
-      })
+      .values({ providerId: account.providerId, externalId: s.externalId, studentId })
       .onConflictDoNothing();
-    out.push(row!);
+    const [active] = await db
+      .select({ accountId: studentSources.diaryAccountId })
+      .from(studentSources)
+      .where(and(eq(studentSources.studentId, studentId), eq(studentSources.active, true)));
+    await db
+      .insert(studentSources)
+      .values({ studentId, diaryAccountId: account.id, externalId: s.externalId, lastSeenAt: now, active: !active })
+      .onConflictDoUpdate({
+        target: [studentSources.studentId, studentSources.diaryAccountId],
+        set: { externalId: s.externalId, lastSeenAt: now },
+      });
+    await db
+      .insert(familyStudents)
+      .values({ familyId: account.familyId, studentId, status: 'active', linkedAt: now })
+      .onConflictDoNothing();
+    listed.push(row!);
   }
-  // a child the account no longer sees stays in the family with its history, inactive
-  const seen = out.map((s) => s.id);
-  await db
-    .update(students)
-    .set({ isActive: false })
-    .where(and(eq(students.diaryAccountId, account.id), seen.length ? notInArray(students.id, seen) : undefined));
-  return out;
+  const mine = await db
+    .select({ studentId: studentSources.studentId })
+    .from(studentSources)
+    .where(and(eq(studentSources.diaryAccountId, account.id), eq(studentSources.active, true)));
+  const readable = new Set(mine.map((m) => m.studentId));
+  return { listed, readable: listed.filter((s) => readable.has(s.id)) };
+}
+
+/** The children an account is the active source of, as stored (the planner's view before any login) */
+export async function readableStudents(db: Db, accountId: string): Promise<StudentRow[]> {
+  const rows = await db
+    .select({ student: students })
+    .from(studentSources)
+    .innerJoin(students, eq(students.id, studentSources.studentId))
+    .where(
+      and(eq(studentSources.diaryAccountId, accountId), eq(studentSources.active, true), eq(students.isActive, true)),
+    );
+  return rows.map((r) => r.student);
 }
 
 /** The provider's view of a stored student, for the provider's methods. */
@@ -212,7 +253,6 @@ export async function storeFinals(
       .insert(finalMarksRaw)
       .values({
         studentId: student.id,
-        familyId: student.familyId,
         schoolYearId: calendar.schoolYearId,
         rawJson: list,
         fetchedAt: now,
@@ -233,7 +273,6 @@ export async function storeFinals(
     // a final for a term this calendar does not know would land on the year row: skipped until the calendar has it
     const known = list.filter((f) => f.termExternalId === null || calendar.termIds.has(f.termExternalId));
     const rows = known.map((f) => ({
-      familyId: student.familyId,
       studentId: student.id,
       schoolYearId: calendar.schoolYearId,
       subjectId: (f.subjectExternalId && subjectIds.get(f.subjectExternalId)) || null,

@@ -125,9 +125,12 @@ export async function applyRetention(db: Db, limits: RetentionLimits, now = new 
   );
 
   // a family that set families.settings.retention_years keeps diary data that long (docs/design.md 14.1): every table
-  // with a day of its own, and finals by the end of their school year
-  const familyLimit = sql`(${now}::date - make_interval(years => (f.settings->>'retention_years')::int))`;
-  const limited = sql`f.id = x.family_id and (f.settings->>'retention_years') is not null`;
+  // with a day of its own, and finals by the end of their school year. A child followed by several families keeps the
+  // shortest limit any of them set (10.4)
+  const shortest = sql`(select fs.student_id, min((f.settings->>'retention_years')::int) as years
+      from family_students fs join families f on f.id = fs.family_id
+      where (f.settings->>'retention_years') is not null group by fs.student_id) r`;
+  const cutoff = sql`(${now}::date - make_interval(years => r.years))`;
   const dated = {
     marks: sql`x.date`,
     attendance: sql`x.date`,
@@ -138,14 +141,14 @@ export async function applyRetention(db: Db, limits: RetentionLimits, now = new 
   for (const [table, day] of Object.entries(dated)) {
     await run(
       `${table}_family_limit`,
-      sql`delete from ${sql.identifier(table)} x using families f where ${limited} and ${day} < ${familyLimit}`,
+      sql`delete from ${sql.identifier(table)} x using ${shortest} where r.student_id = x.student_id and ${day} < ${cutoff}`,
     );
   }
   for (const table of ['final_marks', 'final_marks_raw']) {
     await run(
       `${table}_family_limit`,
-      sql`delete from ${sql.identifier(table)} x using families f, school_years y
-          where ${limited} and y.id = x.school_year_id and y.end_date < ${familyLimit}`,
+      sql`delete from ${sql.identifier(table)} x using ${shortest}, school_years y
+          where r.student_id = x.student_id and y.id = x.school_year_id and y.end_date < ${cutoff}`,
     );
   }
   return report;

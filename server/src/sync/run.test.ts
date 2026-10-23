@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { resetDb, testDb } from '../../test/db';
 import { createAccount, TEST_CREDENTIALS_KEY } from '../../test/factories';
-import { diaryAccounts, notifications, syncCoverage, syncRuns, users } from '../db/schema';
+import { diaryAccounts, memberships, notifications, syncCoverage, syncRuns, users } from '../db/schema';
 import { readSyncConfig } from './config';
 import type { SyncConfig } from './config';
 import { runSync } from './run';
@@ -17,13 +17,11 @@ const unavailable = async () => ({ status: 503, headers: {}, text: '' });
 
 async function setup() {
   const { family, account } = await createAccount(db, 'demo-full');
-  await db.insert(users).values({
-    familyId: family.id,
-    role: 'admin',
-    login: 'admin@example.com',
-    displayName: 'Admin',
-    passwordHash: 'x',
-  });
+  const [admin] = await db
+    .insert(users)
+    .values({ login: 'admin@example.com', displayName: 'Admin', passwordHash: 'x' })
+    .returning();
+  await db.insert(memberships).values({ userId: admin!.id, familyId: family.id, role: 'admin' });
   return account;
 }
 

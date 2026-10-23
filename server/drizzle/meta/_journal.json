@@ -15,6 +15,20 @@
       "when": 1792709863978,
       "tag": "0001_term_notes",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792732981490,
+      "tag": "0002_children_and_school_details",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792733027396,
+      "tag": "0003_drop_family_columns",
+      "breakpoints": true
     }
   ]
 }

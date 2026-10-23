@@ -4,6 +4,7 @@ import type { Db } from '../db/client';
 import {
   attendance,
   families,
+  familyStudents,
   finalMarks,
   holidays,
   lessonPrep,
@@ -11,6 +12,7 @@ import {
   lessons,
   lessonTags,
   markEvents,
+  memberships,
   marks,
   schoolYears,
   students,
@@ -66,8 +68,34 @@ export interface SeedResult {
 }
 
 async function demoFamilyId(db: Db): Promise<string | null> {
-  const [row] = await db.select({ familyId: users.familyId }).from(users).where(eq(users.login, DEMO_LOGINS.parent));
+  const [row] = await db
+    .select({ familyId: memberships.familyId })
+    .from(memberships)
+    .innerJoin(users, eq(users.id, memberships.userId))
+    .where(eq(users.login, DEMO_LOGINS.parent));
   return row?.familyId ?? null;
+}
+
+/**
+ * Removes the demo family with its logins and the children only it follows. Children belong to no family, so deleting
+ * the family alone would leave them behind (design.md 7.1: a child goes with the last link).
+ */
+async function removeDemoFamily(tx: Tx, familyId: string): Promise<void> {
+  const linked = await tx
+    .select({ studentId: familyStudents.studentId })
+    .from(familyStudents)
+    .where(eq(familyStudents.familyId, familyId));
+  await tx.delete(families).where(eq(families.id, familyId));
+  await tx.delete(users).where(inArray(users.login, Object.values(DEMO_LOGINS)));
+  const ids = linked.map((l) => l.studentId);
+  if (ids.length) {
+    const stillFollowed = await tx
+      .select({ studentId: familyStudents.studentId })
+      .from(familyStudents)
+      .where(inArray(familyStudents.studentId, ids));
+    const orphans = ids.filter((id) => !stillFollowed.some((x) => x.studentId === id));
+    if (orphans.length) await tx.delete(students).where(inArray(students.id, orphans));
+  }
 }
 
 export async function seedDemo(db: Db, opts: { reset?: boolean; now?: Date } = {}): Promise<SeedResult> {
@@ -88,8 +116,7 @@ export async function seedDemo(db: Db, opts: { reset?: boolean; now?: Date } = {
   const count = (k: string, n: number) => (counts[k] = (counts[k] ?? 0) + n);
 
   const familyId = await db.transaction(async (tx) => {
-    // deleting the family cascades to everything it owns
-    if (existing) await tx.delete(families).where(eq(families.id, existing));
+    if (existing) await removeDemoFamily(tx, existing);
     const [family] = await tx
       .insert(families)
       .values({ name: 'Демо-семья', settings: { guidance: true } })
@@ -98,21 +125,28 @@ export async function seedDemo(db: Db, opts: { reset?: boolean; now?: Date } = {
     const [parent, child] = await tx
       .insert(users)
       .values([
-        { familyId: fid, role: 'admin', login: DEMO_LOGINS.parent, displayName: 'Мама', passwordHash },
-        { familyId: fid, role: 'student', login: DEMO_LOGINS.student, displayName: 'Милена', passwordHash },
+        { login: DEMO_LOGINS.parent, displayName: 'Мама', passwordHash },
+        { login: DEMO_LOGINS.student, displayName: 'Милена', passwordHash },
       ])
       .returning();
+    await tx.insert(memberships).values([
+      { userId: parent!.id, familyId: fid, role: 'admin' },
+      { userId: child!.id, familyId: fid, role: 'student' },
+    ]);
 
     const studentIds: Record<string, string> = {};
     for (const kid of kids) {
-      const id = await insertStudent(tx, fid, kid, calendars[kid.key], count);
+      const id = await insertStudent(tx, kid, calendars[kid.key], count);
       studentIds[kid.key] = id.studentId;
-      await insertDiary(tx, fid, id, kid, calendars[kid.key], now, tz, count, child!.id);
+      await tx
+        .insert(familyStudents)
+        .values({ familyId: fid, studentId: id.studentId, linkedBy: parent!.id, linkedAt: now });
+      await insertDiary(tx, id, kid, calendars[kid.key], now, tz, count, child!.id);
     }
     await tx.insert(userStudentAccess).values([
-      { userId: parent!.id, studentId: studentIds.k! },
-      { userId: parent!.id, studentId: studentIds.m! },
-      { userId: child!.id, studentId: studentIds.k! },
+      { userId: parent!.id, familyId: fid, studentId: studentIds.k! },
+      { userId: parent!.id, familyId: fid, studentId: studentIds.m! },
+      { userId: child!.id, familyId: fid, studentId: studentIds.k! },
     ]);
     await tx.insert(lessonTags).values(
       SEED_TAGS.map((t) => ({
@@ -139,7 +173,6 @@ interface StudentIds {
 
 async function insertStudent(
   db: Tx,
-  familyId: string,
   kid: SeedStudent,
   cal: SeedCalendar,
   count: (k: string, n: number) => void,
@@ -147,7 +180,6 @@ async function insertStudent(
   const [s] = await db
     .insert(students)
     .values({
-      familyId,
       providerId: DEMO_PROVIDER,
       externalId: `demo-${kid.key}`,
       fullName: `${kid.familyName} ${kid.givenName}`,
@@ -223,7 +255,6 @@ async function insertStudent(
 
 async function insertDiary(
   db: Tx,
-  familyId: string,
   ids: StudentIds,
   kid: SeedStudent,
   cal: SeedCalendar,
@@ -245,7 +276,6 @@ async function insertDiary(
       .insert(lessons)
       .values(
         chunk.map((l) => ({
-          familyId,
           studentId,
           providerId: DEMO_PROVIDER,
           externalId: l.key,
@@ -271,7 +301,6 @@ async function insertDiary(
       .insert(marks)
       .values(
         kid.marks.map((m) => ({
-          familyId,
           studentId,
           providerId: DEMO_PROVIDER,
           externalId: m.key,
@@ -293,9 +322,7 @@ async function insertDiary(
     if (recent.length) {
       await db
         .insert(markEvents)
-        .values(
-          recent.map((r) => ({ familyId, studentId, markId: r.id, kind: 'new' as const, createdAt: r.firstSeenAt })),
-        );
+        .values(recent.map((r) => ({ studentId, markId: r.id, kind: 'new' as const, createdAt: r.firstSeenAt })));
     }
     count('marks', rows.length);
   }
@@ -305,7 +332,6 @@ async function insertDiary(
       kid.absences.map((key) => {
         const l = lessonByKey.get(key)!;
         return {
-          familyId,
           studentId,
           providerId: DEMO_PROVIDER,
           externalId: `att:${key}`,
@@ -324,7 +350,6 @@ async function insertDiary(
   if (kid.finals.length) {
     await db.insert(finalMarks).values(
       kid.finals.map((f) => ({
-        familyId,
         studentId,
         schoolYearId: ids.yearId,
         subjectId: ids.subjectIds.get(f.subject)!,
@@ -346,7 +371,6 @@ async function insertDiary(
       sessions.map((s) => {
         const startedAt = fromLocal(s.date, s.start, tz);
         return {
-          familyId,
           studentId,
           subjectId: ids.subjectIds.get(s.subject)!,
           lessonId: s.lessonKey ? lessonIds.get(s.lessonKey)! : null,
@@ -378,12 +402,14 @@ async function insertDiary(
   }
 }
 
-/** For tests and --reset: the demo family's students */
+/** For tests: the children the demo family follows */
 export async function demoStudents(db: Db) {
   const familyId = await demoFamilyId(db);
   if (!familyId) return [];
-  return db
-    .select()
-    .from(students)
-    .where(inArray(students.familyId, [familyId]));
+  const rows = await db
+    .select({ student: students })
+    .from(familyStudents)
+    .innerJoin(students, eq(students.id, familyStudents.studentId))
+    .where(eq(familyStudents.familyId, familyId));
+  return rows.map((r) => r.student);
 }

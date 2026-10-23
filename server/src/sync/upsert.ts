@@ -10,7 +10,6 @@ import type { MarkDiff } from '../db/schema';
 export type Tx = Parameters<Parameters<Db['transaction']>[0]>[0];
 
 export interface UpsertScope {
-  familyId: string;
   studentId: string;
   providerId: string;
   schoolYearId: string;
@@ -122,7 +121,7 @@ async function upsertLessons(tx: Tx, scope: UpsertScope, fetched: FetchedRange, 
     } else {
       const [created] = await tx
         .insert(lessons)
-        .values({ ...values, familyId: scope.familyId, studentId, providerId, firstSeenAt: now })
+        .values({ ...values, studentId, providerId, firstSeenAt: now })
         .returning({ id: lessons.id });
       matched.add(created!.id);
       lessonIds.set(l.externalId, created!.id);
@@ -166,7 +165,7 @@ async function upsertMarks(
   lessonIds: Map<string, string>,
   stats: UpsertStats,
 ) {
-  const { familyId, studentId, providerId, now } = scope;
+  const { studentId, providerId, now } = scope;
   const all = [...fetched.lessons.flatMap((l) => l.marks), ...fetched.marks];
   const ids = all.map((m) => m.externalId);
   const existing = await tx
@@ -217,9 +216,9 @@ async function upsertMarks(
     if (!old) {
       const [created] = await tx
         .insert(marks)
-        .values({ ...values, familyId, studentId, providerId, externalId: m.externalId, firstSeenAt: now })
+        .values({ ...values, studentId, providerId, externalId: m.externalId, firstSeenAt: now })
         .returning({ id: marks.id });
-      events.push({ familyId, studentId, markId: created!.id, kind: 'new', createdAt: now });
+      events.push({ studentId, markId: created!.id, kind: 'new', createdAt: now });
       stats.new++;
       continue;
     }
@@ -234,11 +233,11 @@ async function upsertMarks(
         workType: old.workType,
         comment: old.comment,
       });
-      events.push({ familyId, studentId, markId: old.id, kind: 'changed', diff, createdAt: now });
+      events.push({ studentId, markId: old.id, kind: 'changed', diff, createdAt: now });
       stats.changed++;
     }
     if (old.removedAt) {
-      events.push({ familyId, studentId, markId: old.id, kind: 'restored', createdAt: now });
+      events.push({ studentId, markId: old.id, kind: 'restored', createdAt: now });
       stats.restored++;
     }
     await tx
@@ -260,14 +259,14 @@ async function upsertMarks(
           gone.map((m) => m.id),
         ),
       );
-    for (const m of gone) events.push({ familyId, studentId, markId: m.id, kind: 'removed', createdAt: now });
+    for (const m of gone) events.push({ studentId, markId: m.id, kind: 'removed', createdAt: now });
     stats.removed += gone.length;
   }
   if (events.length) await tx.insert(markEvents).values(events);
 }
 
 async function upsertAttendance(tx: Tx, scope: UpsertScope, fetched: FetchedRange, lessonIds: Map<string, string>) {
-  const { familyId, studentId, providerId, now } = scope;
+  const { studentId, providerId, now } = scope;
   const all = [
     ...fetched.lessons.flatMap((l) => (l.attendance ?? []).map((a) => ({ a, source: 'derived' as const }))),
     ...fetched.attendance.map((a) => ({ a, source: 'separate' as const })),
@@ -301,7 +300,7 @@ async function upsertAttendance(tx: Tx, scope: UpsertScope, fetched: FetchedRang
     };
     await tx
       .insert(attendance)
-      .values({ ...values, familyId, studentId, providerId, externalId: a.externalId, firstSeenAt: now })
+      .values({ ...values, studentId, providerId, externalId: a.externalId, firstSeenAt: now })
       .onConflictDoUpdate({
         target: [attendance.studentId, attendance.providerId, attendance.externalId],
         set: values,

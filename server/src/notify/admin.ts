@@ -1,6 +1,6 @@
 import { and, eq } from 'drizzle-orm';
 import type { Db } from '../db/client';
-import { notifications, users } from '../db/schema';
+import { memberships, notifications } from '../db/schema';
 
 // Notes for the family's admins from the collector (docs/design.md 10.3, 10.4): a pause, a login the diary refused,
 // a new kind of drift. They land in the inbox (notifications) as i18n keys with parameters, rendered in each reader's
@@ -19,9 +19,9 @@ export interface AdminNotice {
 
 export async function notifyAdmins(db: Db, familyId: string, notice: AdminNotice): Promise<number> {
   const admins = await db
-    .select({ id: users.id })
-    .from(users)
-    .where(and(eq(users.familyId, familyId), eq(users.role, 'admin')));
+    .select({ id: memberships.userId })
+    .from(memberships)
+    .where(and(eq(memberships.familyId, familyId), eq(memberships.role, 'admin')));
   let sent = 0;
   for (const admin of admins) {
     const [dup] = await db

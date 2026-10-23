@@ -14,16 +14,13 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 import { createdAt, day, id, ts } from './columns';
-import { families, students, users } from './family';
+import { students, users } from './family';
 import { schoolYears, subjects, terms } from './school';
 
-// What the diary says: lessons, marks, attendance, homework, finals (docs/design.md 8). Rows are upserted by the
+// What the diary says: lessons, marks, attendance, homework, finals (docs/design.md 8). They belong to the child, not
+// to a family: no family_id; a family reaches them through an active family_students link. Rows are upserted by the
 // collector (server/src/sync/upsert.ts); nothing here is ever deleted by a sync, only soft-removed (removed_at).
 
-const familyRef = () =>
-  uuid('family_id')
-    .notNull()
-    .references(() => families.id, { onDelete: 'cascade' });
 const studentRef = () =>
   uuid('student_id')
     .notNull()
@@ -33,7 +30,6 @@ export const lessons = pgTable(
   'lessons',
   {
     id: id(),
-    familyId: familyRef(),
     studentId: studentRef(),
     providerId: text('provider_id').notNull(),
     externalId: text('external_id').notNull(),
@@ -47,6 +43,11 @@ export const lessons = pgTable(
     subjectName: text('subject_name').notNull(),
     teacherExternalId: text('teacher_external_id'),
     teacherName: text('teacher_name'),
+    /** From the diary or, on the server, the student's week template (providers.md 4) */
+    room: text('room'),
+    groupLabel: text('group_label'),
+    /** Opaque key of the timetable entry (Lesson.templateRef) */
+    templateRef: text('template_ref'),
     lessonType: text('lesson_type'),
     topic: text('topic'),
     homework: text('homework'),
@@ -60,7 +61,6 @@ export const lessons = pgTable(
   (t) => [
     unique('lessons_student_external_key').on(t.studentId, t.providerId, t.externalId),
     index('lessons_student_date_idx').on(t.studentId, t.date),
-    index('lessons_family_idx').on(t.familyId),
   ],
 );
 
@@ -68,7 +68,6 @@ export const marks = pgTable(
   'marks',
   {
     id: id(),
-    familyId: familyRef(),
     studentId: studentRef(),
     providerId: text('provider_id').notNull(),
     externalId: text('external_id').notNull(),
@@ -104,7 +103,6 @@ export const marks = pgTable(
     unique('marks_student_external_key').on(t.studentId, t.providerId, t.externalId),
     index('marks_student_date_idx').on(t.studentId, t.date),
     index('marks_lesson_idx').on(t.lessonId),
-    index('marks_family_idx').on(t.familyId),
   ],
 );
 
@@ -113,7 +111,6 @@ export const attendance = pgTable(
   'attendance',
   {
     id: id(),
-    familyId: familyRef(),
     studentId: studentRef(),
     providerId: text('provider_id').notNull(),
     externalId: text('external_id').notNull(),
@@ -139,7 +136,6 @@ export const homeworkItems = pgTable(
   'homework_items',
   {
     id: id(),
-    familyId: familyRef(),
     studentId: studentRef(),
     providerId: text('provider_id'),
     /** null for items the family added (source manual) */
@@ -168,7 +164,6 @@ export const behaviourEvents = pgTable(
   'behaviour_events',
   {
     id: id(),
-    familyId: familyRef(),
     studentId: studentRef(),
     providerId: text('provider_id').notNull(),
     externalId: text('external_id').notNull(),
@@ -212,7 +207,6 @@ export const markEvents = pgTable(
   'mark_events',
   {
     id: id(),
-    familyId: familyRef(),
     studentId: studentRef(),
     markId: uuid('mark_id')
       .notNull()
@@ -232,7 +226,6 @@ export const finalMarksRaw = pgTable(
   'final_marks_raw',
   {
     studentId: studentRef(),
-    familyId: familyRef(),
     schoolYearId: uuid('school_year_id')
       .notNull()
       .references(() => schoolYears.id, { onDelete: 'cascade' }),
@@ -246,7 +239,6 @@ export const finalMarks = pgTable(
   'final_marks',
   {
     id: id(),
-    familyId: familyRef(),
     studentId: studentRef(),
     schoolYearId: uuid('school_year_id')
       .notNull()

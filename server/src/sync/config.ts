@@ -1,10 +1,9 @@
 import type { ProviderManifest } from '@marksy/core';
-import type { FamilySettings } from '../db/schema';
 import { narrowWindow } from './plan';
 import type { EffectiveLimits } from './plan';
 
 // The collector's settings from the environment (.env.example, "Collector"). The provider manifest sets the limits;
-// the environment and the family settings can only make them stricter (docs/design.md 10.2).
+// the environment can only make them stricter (docs/design.md 10.2).
 
 export interface SyncConfig {
   enabled: boolean;
@@ -64,15 +63,12 @@ export function readSyncConfig(env: Env = process.env): SyncConfig {
   };
 }
 
-/** The limits one account runs under: the manifest's, narrowed by the environment and the family. */
-export function effectiveLimits(
-  manifest: ProviderManifest,
-  config: SyncConfig,
-  family: FamilySettings,
-): EffectiveLimits {
+/** The limits one account runs under: the manifest's, narrowed by the environment. */
+export function effectiveLimits(manifest: ProviderManifest, config: SyncConfig): EffectiveLimits {
   const l = manifest.limits;
   return {
-    window: narrowWindow(l.syncWindow, config.window, family.sync_window),
+    // M3a: the window becomes each child's school day (design.md 10.2); until then the manifest's, narrowed by the env
+    window: narrowWindow(l.syncWindow, config.window),
     // the weekly window moves the re-scan, it does not add requests: the environment may choose another evening
     weekly: config.weekly ?? l.weeklyRescan,
     minLoginIntervalMinutes: Math.max(l.minLoginIntervalMinutes, config.minLoginIntervalMinutes ?? 0),

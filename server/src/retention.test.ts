@@ -5,6 +5,7 @@ import { createAccount } from '../test/factories';
 import {
   apiDriftEvents,
   families,
+  familyStudents,
   homeworkItems,
   invites,
   lessons,
@@ -14,6 +15,7 @@ import {
   rawResponses,
   schoolYears,
   students,
+  studentSources,
   subjects,
   syncCoverage,
   syncDaily,
@@ -31,14 +33,12 @@ async function world() {
   const { family, account } = await createAccount(db, 'demo-full');
   const [student] = await db
     .insert(students)
-    .values({
-      familyId: family.id,
-      diaryAccountId: account.id,
-      providerId: 'demo-full',
-      externalId: 'p-1',
-      fullName: 'Ученик А',
-    })
+    .values({ providerId: 'demo-full', externalId: 'p-1', fullName: 'Ученик А' })
     .returning();
+  await db.insert(familyStudents).values({ familyId: family.id, studentId: student!.id });
+  await db
+    .insert(studentSources)
+    .values({ studentId: student!.id, diaryAccountId: account.id, externalId: 'p-1', active: true });
   const year = async (label: string, start: string, end: string) =>
     (
       await db
@@ -162,7 +162,6 @@ describe('retention janitor', () => {
     const [lesson] = await db
       .insert(lessons)
       .values({
-        familyId: w.family.id,
         studentId: w.student.id,
         providerId: 'demo-full',
         externalId: 'L-1',
@@ -174,7 +173,6 @@ describe('retention janitor', () => {
     const [mark] = await db
       .insert(marks)
       .values({
-        familyId: w.family.id,
         studentId: w.student.id,
         providerId: 'demo-full',
         externalId: 'M-1',
@@ -187,12 +185,12 @@ describe('retention janitor', () => {
       })
       .returning();
     await db.insert(markEvents).values([
-      { familyId: w.family.id, studentId: w.student.id, markId: mark!.id, kind: 'new', createdAt: ago(200) },
-      { familyId: w.family.id, studentId: w.student.id, markId: mark!.id, kind: 'changed', createdAt: ago(10) },
+      { studentId: w.student.id, markId: mark!.id, kind: 'new', createdAt: ago(200) },
+      { studentId: w.student.id, markId: mark!.id, kind: 'changed', createdAt: ago(10) },
     ]);
     const [admin] = await db
       .insert(users)
-      .values({ familyId: w.family.id, role: 'admin', login: 'a@example.com', displayName: 'A', passwordHash: 'x' })
+      .values({ login: 'a@example.com', displayName: 'A', passwordHash: 'x' })
       .returning();
     await db
       .insert(notifications)
@@ -232,7 +230,6 @@ describe('retention janitor', () => {
       })
       .returning();
     const mark = (externalId: string, date: string) => ({
-      familyId: w.family.id,
       studentId: w.student.id,
       providerId: 'demo-full',
       externalId,
@@ -244,7 +241,6 @@ describe('retention janitor', () => {
     });
     await db.insert(marks).values([mark('old', '2024-10-01'), mark('new', '2025-10-01')]);
     await db.insert(homeworkItems).values({
-      familyId: w.family.id,
       studentId: w.student.id,
       title: 'Old',
       source: 'manual',

@@ -19,12 +19,16 @@ describe('sync config', () => {
     expect(() => readSyncConfig({ SYNC_WINDOW: '9-12' })).toThrow(/SYNC_WINDOW/);
   });
 
-  it('the environment and the family only make the manifest stricter', () => {
+  it('the environment only makes the manifest stricter', () => {
     const manifest = getProvider('demo-full')!.manifest;
     const loose = readSyncConfig({ SYNC_MIN_LOGIN_INTERVAL: '10m', SYNC_MAX_REQUESTS_PER_RUN: '500' });
-    expect(effectiveLimits(manifest, loose, {})).toMatchObject({ minLoginIntervalMinutes: 60, maxRequestsPerRun: 40 });
-    const strict = readSyncConfig({ SYNC_MIN_LOGIN_INTERVAL: '3h', SYNC_MAX_REQUESTS_PER_RUN: '20' });
-    expect(effectiveLimits(manifest, strict, { sync_window: '10:00-18:00' })).toMatchObject({
+    expect(effectiveLimits(manifest, loose)).toMatchObject({ minLoginIntervalMinutes: 60, maxRequestsPerRun: 40 });
+    const strict = readSyncConfig({
+      SYNC_MIN_LOGIN_INTERVAL: '3h',
+      SYNC_MAX_REQUESTS_PER_RUN: '20',
+      SYNC_WINDOW: '10:00-18:00',
+    });
+    expect(effectiveLimits(manifest, strict)).toMatchObject({
       minLoginIntervalMinutes: 180,
       maxRequestsPerRun: 20,
       window: [600, 840],

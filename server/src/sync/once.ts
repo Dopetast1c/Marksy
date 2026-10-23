@@ -1,6 +1,6 @@
 import type { DiaryProvider } from '@marksy/core';
 import { and, eq, sql } from 'drizzle-orm';
-import { apiDriftEvents, diaryAccounts, families, students } from '../db/schema';
+import { apiDriftEvents, diaryAccounts, families, studentSources } from '../db/schema';
 import { decryptCredentials, encryptCredentials } from '../crypto/credentials';
 import { runSync } from './run';
 import type { RunSyncOptions, RunSyncResult } from './run';
@@ -82,8 +82,8 @@ export async function syncOnce(opts: SyncOnceOptions): Promise<SyncOnceReport> {
   });
   const [count] = await db
     .select({ n: sql<number>`count(*)::int` })
-    .from(students)
-    .where(eq(students.diaryAccountId, account!.id));
+    .from(studentSources)
+    .where(eq(studentSources.diaryAccountId, account!.id));
   const drift =
     'runId' in result && result.runId
       ? await db

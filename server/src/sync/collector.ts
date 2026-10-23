@@ -80,6 +80,7 @@ export interface CollectorResult {
   error: string | null;
   requests: number;
   stats: SyncRunStats;
+  /** The children this run read (the account is their active source) */
   students: StudentRow[];
   verified: { studentId: string; weekStart: ISODate }[];
   /** Drift seen for the first time ever (the admin is told about these once) */
@@ -203,7 +204,8 @@ export async function runCollector(opts: CollectorOptions): Promise<CollectorRes
   try {
     const session = await run.login(opts.credentials);
     const info = await provider.getAccount(session, ctx);
-    students = await storeStudents(db, account, info);
+    // every listed child is stored and linked; only those this account is the active source of are read
+    students = (await storeStudents(db, account, info, now())).readable;
     const today = localTime(now(), manifest.timezone).date;
 
     const units: Unit[] = [];
@@ -251,7 +253,6 @@ export async function runCollector(opts: CollectorOptions): Promise<CollectorRes
         const s = await upsertRange(
           db,
           {
-            familyId: account.familyId,
             studentId: u.student.id,
             providerId: account.providerId,
             schoolYearId: u.stored.schoolYearId,

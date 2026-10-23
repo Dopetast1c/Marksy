@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { resetDb, testDb } from '../../test/db';
 import { verifyPassword } from '../auth/password';
-import { families, lessons, lessonTags, marks, attendance, studySessions, users } from '../db/schema';
+import { families, lessons, lessonTags, marks, memberships, attendance, studySessions, users } from '../db/schema';
 import { generateGrade7, seedCalendar } from '@marksy/demo-diary';
 import { DEMO_LOGINS, DEMO_PASSWORD, demoStudents, seedAllowed, seedDemo } from './seed';
 
@@ -67,7 +67,7 @@ describe('pnpm db:seed', () => {
     expect((await db.select().from(studySessions)).length).toBeGreaterThan(10);
     expect((await db.select().from(lessonTags)).map((t) => t.name)).toContain('Контрольная');
     const parent = (await db.select().from(users).where(eq(users.login, DEMO_LOGINS.parent)))[0]!;
-    expect(parent.role).toBe('admin');
+    expect((await db.select().from(memberships).where(eq(memberships.userId, parent.id)))[0]!.role).toBe('admin');
     expect(await verifyPassword(parent.passwordHash, DEMO_PASSWORD)).toBe(true);
   });
 

@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { resetDb, testDb } from '../../test/db';
-import { families, finalMarks, schoolYears, students } from './schema';
+import { families, familyStudents, finalMarks, memberships, schoolYears, students, users } from './schema';
 
 describe('schema', () => {
   const db = testDb();
@@ -20,20 +20,34 @@ describe('schema', () => {
     }
   });
 
-  it('cascades a family delete to everything under it', async () => {
-    const [f] = await db.insert(families).values({ name: 'Example' }).returning();
-    await db
-      .insert(students)
-      .values({ familyId: f!.id, providerId: 'demo-minimal', externalId: 'c-1', fullName: 'Student A' });
-    await db.delete(families).where(sql`true`);
-    expect(await db.select().from(students)).toEqual([]);
-  });
-
-  it('keeps one year final per subject (period null is a value, not a hole in the key)', async () => {
+  it("a family delete takes its links and memberships; the child is not the family's", async () => {
     const [f] = await db.insert(families).values({ name: 'Example' }).returning();
     const [s] = await db
       .insert(students)
-      .values({ familyId: f!.id, providerId: 'demo-minimal', externalId: 'c-1', fullName: 'Student A' })
+      .values({ providerId: 'demo-minimal', externalId: 'c-1', fullName: 'Student A' })
+      .returning();
+    const [u] = await db
+      .insert(users)
+      .values({ login: 'p@example.com', displayName: 'P', passwordHash: 'x' })
+      .returning();
+    await db.insert(memberships).values({ userId: u!.id, familyId: f!.id, role: 'admin' });
+    await db.insert(familyStudents).values({ familyId: f!.id, studentId: s!.id });
+    await db.delete(families).where(sql`true`);
+    expect(await db.select().from(familyStudents)).toEqual([]);
+    expect(await db.select().from(memberships)).toEqual([]);
+    expect(await db.select().from(students)).toHaveLength(1);
+  });
+
+  it('one child per id in a system: a second identical child is refused', async () => {
+    const child = { providerId: 'demo-full', externalId: 'p-1', fullName: 'Пример Ученик' };
+    await db.insert(students).values(child);
+    await expect(db.insert(students).values(child)).rejects.toThrow();
+  });
+
+  it('keeps one year final per subject (period null is a value, not a hole in the key)', async () => {
+    const [s] = await db
+      .insert(students)
+      .values({ providerId: 'demo-minimal', externalId: 'c-1', fullName: 'Student A' })
       .returning();
     const [y] = await db
       .insert(schoolYears)
@@ -47,7 +61,6 @@ describe('schema', () => {
       })
       .returning();
     const row = {
-      familyId: f!.id,
       studentId: s!.id,
       schoolYearId: y!.id,
       subjectName: 'Math',

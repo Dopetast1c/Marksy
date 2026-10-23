@@ -269,14 +269,16 @@ export function defineConformanceSuite(opts: ConformanceOptions): void {
         // the student is in one place at a time: two entries in one slot would be another group's lesson
         const slots = entries.map((e) => `${e.cycleWeek}/${e.weekday}/${e.slot}`);
         expect(new Set(slots).size, `${id}: one entry per slot of the week`).toBe(slots.length);
-        // one teacher per subject: the student's own, never the other subgroup's as well
+        // at most one teacher per subject: the student's own, never the other subgroup's as well
         const bySubject = new Map<string, Set<string>>();
         for (const x of [...s.subjects.map((v) => ({ ...v, subjectExternalId: v.externalId })), ...entries]) {
           if (!x.teacherName) continue;
           const set = bySubject.get(x.subjectExternalId) ?? new Set<string>();
           bySubject.set(x.subjectExternalId, set.add(x.teacherName));
         }
-        for (const [subject, names] of bySubject) expect(names.size, `${id}: teachers of ${subject}`).toBe(1);
+        // at most one: a split subject with no lesson seen, or a system without teacher names, has none
+        for (const [subject, names] of bySubject)
+          expect(names.size, `${id}: teachers of ${subject}`).toBeLessThanOrEqual(1);
         for (const b of s.bellSchedules ?? []) {
           const numbers = b.periods.map((p) => p.slot);
           expect(new Set(numbers).size, `${id}: slots of ${b.externalId}`).toBe(numbers.length);

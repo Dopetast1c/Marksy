@@ -2,7 +2,7 @@ import type { DiaryProvider, ISODate, Logger, Transport } from '@marksy/core';
 import { getProvider } from '@marksy/registry';
 import { and, desc, eq } from 'drizzle-orm';
 import type { Db } from '../db/client';
-import { diaryAccounts, families, students, syncRuns, termRescans } from '../db/schema';
+import { diaryAccounts, families, syncRuns, termRescans } from '../db/schema';
 import type { SyncErrorClass, SyncRunScope, SyncRunStats, SyncRunStatus } from '../db/schema';
 import { decryptCredentials, masterKey } from '../crypto/credentials';
 import { notifyAdmins } from '../notify/admin';
@@ -18,6 +18,7 @@ import type { Alert } from './failures';
 import { decideStart, hasBacklog, inWeeklyWindow, isManual, isSchoolDay, selectWeeks, termBookkeeping } from './plan';
 import type { GateDecision, Trigger } from './plan';
 import { planCalendarOf, planState, storedPlanCalendar, weekContext } from './state';
+import { readableStudents } from './store-school';
 import { localTime } from './time';
 
 // One attempt to sync one diary account (docs/design.md 10.4), whatever triggered it: the scheduler's tick, the
@@ -101,17 +102,14 @@ async function runLocked(opts: RunSyncOptions): Promise<RunSyncResult> {
   const [family] = await db.select().from(families).where(eq(families.id, account.familyId));
   const settings = family?.settings ?? {};
   const manifest = provider.manifest;
-  const limits = effectiveLimits(manifest, config, settings);
+  const limits = effectiveLimits(manifest, config);
   const started = now();
   const local = localTime(started, manifest.timezone);
   const weekly = inWeeklyWindow(limits.weekly, local);
   const ctx = weekContext(manifest, settings, started, account.lastSuccessAt, weekly);
 
   // what the stored state says is waiting, before anyone logs in
-  const pupils = await db
-    .select()
-    .from(students)
-    .where(and(eq(students.diaryAccountId, account.id), eq(students.isActive, true)));
+  const pupils = await readableStudents(db, account.id);
   let backlog = false;
   let schoolDay = pupils.length === 0 && manifest.calendar.schoolDays.includes(local.weekday);
   for (const s of pupils) {
