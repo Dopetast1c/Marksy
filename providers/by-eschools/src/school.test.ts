@@ -292,6 +292,41 @@ describe('the school lists in fixtures', () => {
     ]);
   });
 
+  it('bells become one fictional scheme by lesson number, subgroups lose who is in them; idempotent', () => {
+    const bellsRaw = [
+      {
+        uuid: 'b-1',
+        levels: [7, 4],
+        days_of_week: [
+          {
+            days: [1, 2],
+            time_of_bells: [
+              { number: 0, start_time: '12:50:00', end_time: '13:35:00' },
+              { number: 1, start_time: '14:00:00', end_time: '14:45:00' },
+            ],
+          },
+        ],
+      },
+    ];
+    const b = s.sanitize('bells-1', bellsRaw) as typeof bellsRaw;
+    expect(b[0]!.days_of_week[0]!.time_of_bells).toEqual([
+      { number: 0, start_time: '07:05:00', end_time: '07:50:00' },
+      { number: 1, start_time: '08:00:00', end_time: '08:45:00' },
+    ]);
+    expect(b[0]!.levels).toEqual([7, 4]);
+    expect(s.sanitize('bells-1', b)).toEqual(b);
+    // a lesson's start follows its number the same way
+    const lessonsRaw = [{ date: 0, slots: [{ number: 3, start_time: '10:55', subject_id: 's' }] }];
+    expect((s.sanitize('lessons-1-w1', lessonsRaw) as typeof lessonsRaw)[0]!.slots[0]!.start_time).toBe('09:50');
+    const rows = s.sanitize('student_subjects-1', [
+      { group_name: '1-я подгруппа (девочки)' },
+      { group_name: '2-я подгруппа' },
+    ]);
+    expect(rows).toEqual([{ group_name: '1-я подгруппа' }, { group_name: '2-я подгруппа' }]);
+    const plan = s.sanitize('planning-1', [{ templates: [{ study_group: { name: '2-я подгруппа (мальчики)' } }] }]);
+    expect(JSON.stringify(plan)).not.toContain('мальчики');
+  });
+
   it('a short name is kept only as a subject short name in the plan', () => {
     const place = {
       endpoint: 'planning-1',
