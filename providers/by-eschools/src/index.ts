@@ -12,7 +12,14 @@ import { dayRange, overlaps, toISODate } from './dates';
 import { currentClass, mapAccount, mapCalendar, mapFinals, mapLessonsWeek, mapSubjects } from './map';
 import { redactRaw } from './redact';
 import { sanitize } from './sanitize';
-import { enrichSubjects, mapBellSchedules, mapWeekTemplate, studentTemplates } from './school';
+import {
+  enrichSubjects,
+  mapBellSchedules,
+  mapWeekTemplate,
+  pickTimetable,
+  roomFacts,
+  studentTemplates,
+} from './school';
 import type { LessonRefs } from './school';
 import {
   bellScheduleRaw,
@@ -61,7 +68,7 @@ interface SessionCache {
   refs: Map<string, { templates: Set<string>; teachers: Map<string, Set<string>> }>;
   bells: Map<string, BellScheduleRaw[]>;
   premises: Map<string, Premise[]>;
-  timetables: Map<string, ClassTimetable | undefined>;
+  timetables: Map<string, ClassTimetable[]>;
   planning: Map<string, PlanningSubject[]>;
   rows: Map<string, StudentSubjectRow[]>;
   /** students whose school details were read in this session: their subjects come back enriched */
@@ -177,7 +184,8 @@ function remember(session: Session, student: StudentRef, lessons: readonly Lesso
   if (!refs) cache.refs.set(student.externalId, (refs = { templates: new Set(), teachers: new Map() }));
   for (const l of lessons) {
     if (l.templateRef) refs.templates.add(l.templateRef);
-    if (l.teacherExternalId) {
+    // a lesson's template says its group; its teacher only when it has none (a substitute may teach the other group)
+    if (l.teacherExternalId && !l.templateRef) {
       const set = refs.teachers.get(l.subjectExternalId) ?? new Set<string>();
       refs.teachers.set(l.subjectExternalId, set.add(l.teacherExternalId));
     }
@@ -201,7 +209,7 @@ const PREMISES_QUERY = JSON.stringify({
   sorting: { audience_number: 'ASC' },
 });
 
-/** The class timetable of the current term (6.10.2); one item is what the API has been seen to return */
+/** The class's timetable for today (6.10.2): a class may have a quarter's and a half year's, see pickTimetable */
 async function timetableOf(session: Session, student: StudentRef, ctx: ProviderContext) {
   const cache = cacheOf(session);
   const classId = await classIdOf(session, student, ctx);
@@ -213,10 +221,11 @@ async function timetableOf(session: Session, student: StudentRef, ctx: ProviderC
       'timetables',
       `${DIARY}/schools/${seg(student.schoolId!)}/classes/${seg(classId)}/timetables/whole`,
     );
-    const items = check.items(classTimetable, raw, 'timetables');
-    cache.timetables.set(classId, items[0]);
+    cache.timetables.set(classId, check.items(classTimetable, raw, 'timetables'));
   }
-  return cache.timetables.get(classId);
+  const { terms } = await byEschools.getCalendar(session, student, ctx);
+  const today = toISODate(ctx.now().getTime(), manifest.timezone);
+  return pickTimetable(cache.timetables.get(classId)!, terms, today, driftChecker(ctx.drift, 'timetables'));
 }
 
 async function schoolDetails(session: Session, student: StudentRef, ctx: ProviderContext) {
@@ -287,6 +296,13 @@ export async function recentWeekRanges(session: Session, ctx: ProviderContext, t
     .filter((r) => r.from <= today)
     .sort((a, b) => a.from.localeCompare(b.from))
     .slice(-count);
+}
+
+/** For the probe: counts of the rooms in the student's own slots (after getWeekTemplate, from the session's cache) */
+export async function roomFactsOf(session: Session, student: StudentRef, ctx: ProviderContext) {
+  const details = await schoolDetails(session, student, ctx);
+  const mine = studentTemplates(details.planning, await refsOf(session, student, ctx));
+  return roomFacts(await timetableOf(session, student, ctx), mine, details.premises);
 }
 
 export const byEschools: DiaryProvider = {
@@ -385,7 +401,6 @@ export const byEschools: DiaryProvider = {
       mine,
       terms,
       new Map(subjects.map((x) => [x.externalId, x.name])),
-      driftChecker(ctx.drift, 'timetables'),
     );
   },
 

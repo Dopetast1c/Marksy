@@ -97,7 +97,7 @@ export interface DiaryProvider {
   /**
    * Drop the personal fields the mapper never uses from a response before the collector stores it (raw_responses,
    * 14 days). Unlike sanitize() it keeps ids and texts, so the body can be parsed again. Optional: a provider whose
-   * responses carry nothing beyond what it maps may leave it out.
+   * responses carry nothing beyond what it maps may leave it out. `endpoint` is the name the provider gave the request.
    */
-  redactRaw?(raw: unknown): unknown;
+  redactRaw?(endpoint: string, raw: unknown): unknown;
 }

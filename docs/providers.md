@@ -184,9 +184,10 @@ export interface DiaryProvider {
 
   /**
    * Optional: drop the personal fields the mapper never uses before the collector stores a response (raw_responses,
-   * 14 days). Unlike sanitize() it keeps ids and texts, so the body can be parsed again after a drift fix.
+   * 14 days). Unlike sanitize() it keeps ids and the texts the mapper reads, so the body can be parsed again after a
+   * drift fix. `endpoint` is the name the provider gave the request (a list of the whole school may keep less).
    */
-  redactRaw?(raw: unknown): unknown;
+  redactRaw?(endpoint: string, raw: unknown): unknown;
 }
 
 export interface ProviderContext {

@@ -7,7 +7,6 @@
     "additional_characteristic": null,
     "special_students": null,
     "school_subject": {
-      "summary": "[text]",
       "kind": "SUBJECT",
       "as_json": {}
     },
@@ -38,7 +37,6 @@
     "additional_characteristic": null,
     "special_students": null,
     "school_subject": {
-      "summary": "[text]",
       "kind": "SUBJECT",
       "as_json": {}
     },
@@ -69,7 +67,6 @@
     "additional_characteristic": null,
     "special_students": null,
     "school_subject": {
-      "summary": "[text]",
       "kind": "SUBJECT",
       "as_json": {}
     },
@@ -100,7 +97,6 @@
     "additional_characteristic": null,
     "special_students": null,
     "school_subject": {
-      "summary": "[text]",
       "kind": "SUBJECT",
       "as_json": {}
     },
@@ -110,8 +106,7 @@
         "study_hours": 1,
         "study_group": {
           "uuid": "00000000-0000-4000-8000-6e60190bd58b",
-          "name": "1-я подгруппа (девочки)",
-          "summary": null
+          "name": "1-я подгруппа (девочки)"
         },
         "teacher": {
           "id": "00000000-0000-4000-8000-3aab0b4ee3b0",
@@ -130,8 +125,7 @@
         "study_hours": 1,
         "study_group": {
           "uuid": "00000000-0000-4000-8000-9343bb6277d9",
-          "name": "2-я подгруппа (мальчики)",
-          "summary": null
+          "name": "2-я подгруппа (мальчики)"
         },
         "teacher": {
           "id": "00000000-0000-4000-8000-965cd4abd43d",
@@ -155,7 +149,6 @@
     "additional_characteristic": null,
     "special_students": null,
     "school_subject": {
-      "summary": "[text]",
       "kind": "SUBJECT",
       "as_json": {}
     },
@@ -186,7 +179,6 @@
     "additional_characteristic": null,
     "special_students": null,
     "school_subject": {
-      "summary": "[text]",
       "kind": "SUBJECT",
       "as_json": {
         "short_name": "Матем."
@@ -219,7 +211,6 @@
     "additional_characteristic": null,
     "special_students": null,
     "school_subject": {
-      "summary": "[text]",
       "kind": "SUBJECT",
       "as_json": {}
     },
@@ -250,7 +241,6 @@
     "additional_characteristic": null,
     "special_students": null,
     "school_subject": {
-      "summary": "[text]",
       "kind": "SUBJECT",
       "as_json": {}
     },
@@ -281,7 +271,6 @@
     "additional_characteristic": null,
     "special_students": null,
     "school_subject": {
-      "summary": "[text]",
       "kind": "SUBJECT",
       "as_json": {}
     },
@@ -312,7 +301,6 @@
     "additional_characteristic": null,
     "special_students": null,
     "school_subject": {
-      "summary": "[text]",
       "kind": "SUBJECT",
       "as_json": {}
     },
@@ -343,7 +331,6 @@
     "additional_characteristic": null,
     "special_students": null,
     "school_subject": {
-      "summary": "[text]",
       "kind": "SUBJECT",
       "as_json": {}
     },

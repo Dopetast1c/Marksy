@@ -184,7 +184,7 @@ export async function runCollector(opts: CollectorOptions): Promise<CollectorRes
       params: r.query,
       status: r.status,
       // the provider drops what it never maps (names, codes) before anything is stored
-      body: provider.redactRaw ? provider.redactRaw(rawBody(r.text)) : rawBody(r.text),
+      body: provider.redactRaw ? provider.redactRaw(r.endpoint, rawBody(r.text)) : rawBody(r.text),
       studentId: scope.studentId,
       weekStart: scope.weekStart,
       fetchedAt: now(),

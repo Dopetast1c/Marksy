@@ -7,7 +7,6 @@
     "additional_characteristic": null,
     "special_students": null,
     "school_subject": {
-      "summary": "[text]",
       "kind": "SUBJECT",
       "as_json": {}
     },
@@ -38,7 +37,6 @@
     "additional_characteristic": null,
     "special_students": null,
     "school_subject": {
-      "summary": "[text]",
       "kind": "SUBJECT",
       "as_json": {
         "short_name": "Рус. яз."
@@ -71,7 +69,6 @@
     "additional_characteristic": null,
     "special_students": null,
     "school_subject": {
-      "summary": "[text]",
       "kind": "SUBJECT",
       "as_json": {
         "short_name": "Матем."
@@ -104,7 +101,6 @@
     "additional_characteristic": null,
     "special_students": null,
     "school_subject": {
-      "summary": "[text]",
       "kind": "SUBJECT",
       "as_json": {}
     },
@@ -135,7 +131,6 @@
     "additional_characteristic": null,
     "special_students": null,
     "school_subject": {
-      "summary": "[text]",
       "kind": "SUBJECT",
       "as_json": {}
     },
@@ -166,7 +161,6 @@
     "additional_characteristic": null,
     "special_students": null,
     "school_subject": {
-      "summary": "[text]",
       "kind": "SUBJECT",
       "as_json": {}
     },
@@ -197,7 +191,6 @@
     "additional_characteristic": null,
     "special_students": null,
     "school_subject": {
-      "summary": "[text]",
       "kind": "SUBJECT",
       "as_json": {}
     },
@@ -228,7 +221,6 @@
     "additional_characteristic": null,
     "special_students": null,
     "school_subject": {
-      "summary": "[text]",
       "kind": "SUBJECT",
       "as_json": {}
     },
@@ -259,7 +251,6 @@
     "additional_characteristic": null,
     "special_students": null,
     "school_subject": {
-      "summary": "[text]",
       "kind": "SUBJECT",
       "as_json": {}
     },
@@ -290,7 +281,6 @@
     "additional_characteristic": null,
     "special_students": null,
     "school_subject": {
-      "summary": "[text]",
       "kind": "SUBJECT",
       "as_json": {}
     },
@@ -321,7 +311,6 @@
     "additional_characteristic": null,
     "special_students": null,
     "school_subject": {
-      "summary": "[text]",
       "kind": "SUBJECT",
       "as_json": {}
     },
@@ -352,7 +341,6 @@
     "additional_characteristic": null,
     "special_students": null,
     "school_subject": {
-      "summary": "[text]",
       "kind": "SUBJECT",
       "as_json": {
         "short_name": "Англ. яз."
@@ -364,8 +352,7 @@
         "study_hours": 3,
         "study_group": {
           "uuid": "00000000-0000-4000-8000-882642c02b18",
-          "name": "2-я подгруппа",
-          "summary": null
+          "name": "2-я подгруппа"
         },
         "teacher": {
           "id": "00000000-0000-4000-8000-dbfd10f90f2e",
@@ -384,8 +371,7 @@
         "study_hours": 3,
         "study_group": {
           "uuid": "00000000-0000-4000-8000-3553445d53d0",
-          "name": "1-я подгруппа",
-          "summary": null
+          "name": "1-я подгруппа"
         },
         "teacher": {
           "id": "00000000-0000-4000-8000-6f20eed3e331",
@@ -409,7 +395,6 @@
     "additional_characteristic": null,
     "special_students": null,
     "school_subject": {
-      "summary": "[text]",
       "kind": "SUBJECT",
       "as_json": {}
     },
@@ -419,8 +404,7 @@
         "study_hours": 1,
         "study_group": {
           "uuid": "00000000-0000-4000-8000-26c1e2f2fa09",
-          "name": "1-я подгруппа",
-          "summary": null
+          "name": "1-я подгруппа"
         },
         "teacher": {
           "id": "00000000-0000-4000-8000-5034414dc6e9",
@@ -439,8 +423,7 @@
         "study_hours": 1,
         "study_group": {
           "uuid": "00000000-0000-4000-8000-16c5ef4796d1",
-          "name": "2-я подгруппа",
-          "summary": null
+          "name": "2-я подгруппа"
         },
         "teacher": {
           "id": "00000000-0000-4000-8000-95f3a3fbf379",
@@ -464,7 +447,6 @@
     "additional_characteristic": null,
     "special_students": null,
     "school_subject": {
-      "summary": "[text]",
       "kind": "SUBJECT",
       "as_json": {}
     },
@@ -495,7 +477,6 @@
     "additional_characteristic": null,
     "special_students": null,
     "school_subject": {
-      "summary": "[text]",
       "kind": "SUBJECT",
       "as_json": {}
     },
@@ -505,8 +486,7 @@
         "study_hours": 2,
         "study_group": {
           "uuid": "00000000-0000-4000-8000-085c11944972",
-          "name": "1-я подгруппа (девочки)",
-          "summary": null
+          "name": "1-я подгруппа (девочки)"
         },
         "teacher": {
           "id": "00000000-0000-4000-8000-5821b5c36595",
@@ -525,8 +505,7 @@
         "study_hours": 2,
         "study_group": {
           "uuid": "00000000-0000-4000-8000-c7c26e53f1b4",
-          "name": "2-я подгруппа (мальчики)",
-          "summary": null
+          "name": "2-я подгруппа (мальчики)"
         },
         "teacher": {
           "id": "00000000-0000-4000-8000-f70fc1a74579",
@@ -550,7 +529,6 @@
     "additional_characteristic": null,
     "special_students": null,
     "school_subject": {
-      "summary": "[text]",
       "kind": "SUBJECT",
       "as_json": {}
     },

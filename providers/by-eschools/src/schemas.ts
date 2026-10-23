@@ -72,6 +72,9 @@ export const timeActivity = z.looseObject({
 export type TimeActivity = z.infer<typeof timeActivity>;
 export const TIME_ACTIVITY_TYPES = ['QUARTER', 'HOLIDAYS'] as const;
 export const QUARTER_TITLES = ['FIRST_QUARTER', 'SECOND_QUARTER', 'THIRD_QUARTER', 'FOURTH_QUARTER'] as const;
+/** A half year as a timetable's period (6.10.2): FIRST_HALF_YEAR seen in real responses, SECOND_HALF_YEAR assumed */
+export const HALF_YEAR_TITLES = ['FIRST_HALF_YEAR', 'SECOND_HALF_YEAR'] as const;
+export const TIMETABLE_PERIODS = [...QUARTER_TITLES, ...HALF_YEAR_TITLES] as const;
 
 export const weekActivity = z.looseObject({
   uuid: id,
@@ -220,7 +223,7 @@ export const bellScheduleRaw = z.looseObject({
 });
 export type BellScheduleRaw = z.infer<typeof bellScheduleRaw>;
 
-/** 6.10.2: the class timetable for the term, both subgroups included */
+/** 6.10.2: a class timetable for a quarter or a half year, both subgroups included */
 export const classTimetable = z.looseObject({
   uuid: seen,
   summary: seen,
@@ -253,28 +256,62 @@ export type ClassTimetable = z.infer<typeof classTimetable>;
 /** 6.10.3: the class's teaching plan; a template per teaching group, with its teacher (personal data) */
 export const planningSubject = z.looseObject({
   uuid: id,
+  summary: seen,
+  author: personal,
+  dt_create: seen,
+  dt_update: seen,
   partition_type: z.string().nullable().optional(),
   type: seen,
   pass_exam: seen,
   additional_characteristic: seen,
   special_students: seen,
   school_subject: z
-    .looseObject({ summary: seen, kind: seen, as_json: z.looseObject({ short_name: text }).nullable().optional() })
-    .nullable()
-    .optional(),
-  templates: z.array(
-    z.looseObject({
-      uuid: id,
-      study_hours: z.number().nullable().optional(),
-      study_group: z.looseObject({ uuid: seen, name: text, summary: seen }).nullable().optional(),
-      teacher: z
-        .looseObject({ id: z.string().nullable().optional(), name: personal, surname: personal, patronymic: personal })
+    .looseObject({
+      uuid: seen,
+      summary: seen,
+      kind: seen,
+      status: seen,
+      ic_code: seen,
+      version: seen,
+      as_json: z
+        .looseObject({
+          short_name: text,
+          uuid: seen,
+          summary: seen,
+          author: personal,
+          school: personal,
+          subject: seen,
+          dt_create: seen,
+          dt_update: seen,
+          dt_delete: seen,
+        })
         .nullable()
         .optional(),
-      level_of_study: z.looseObject({ uuid: seen, value: text }).nullable().optional(),
-      description: seen,
-    }),
-  ),
+    })
+    .nullable()
+    .optional(),
+  // null: no template this period, so no lessons of the subject; not an error
+  templates: z
+    .array(
+      z.looseObject({
+        uuid: id,
+        study_hours: z.number().nullable().optional(),
+        study_group: z.looseObject({ uuid: seen, name: text, summary: seen }).nullable().optional(),
+        teacher: z
+          .looseObject({
+            id: z.string().nullable().optional(),
+            name: personal,
+            surname: personal,
+            patronymic: personal,
+          })
+          .nullable()
+          .optional(),
+        level_of_study: z.looseObject({ uuid: seen, value: text }).nullable().optional(),
+        description: seen,
+      }),
+    )
+    .nullable()
+    .optional(),
 });
 export type PlanningSubject = z.infer<typeof planningSubject>;
 
@@ -285,7 +322,11 @@ export const premise = z.looseObject({
   audience_name: seen,
   hull: seen,
   premise_type: seen,
-  dt_delete: seen,
+  summary: seen,
+  author: personal,
   school: seen,
+  dt_create: seen,
+  dt_update: seen,
+  dt_delete: seen,
 });
 export type Premise = z.infer<typeof premise>;

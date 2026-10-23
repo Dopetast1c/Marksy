@@ -33,11 +33,31 @@ export interface Place {
   endpoint: string;
   key: string | null;
   container: string | null;
+  /** The key of the container's container (premise_type above as_json) */
+  outer?: string | null;
   depth: number;
 }
 
+/** The school's lists (6.10.3, 6.10.4): nothing reads their free text, and a summary or an author may name a person */
+const SCHOOL_LISTS = /^(planning|premises)(-|$)/;
+const SCHOOL_LIST_TEXT = new Set(['summary', 'author']);
+/** A premise type is the same few words in every school ("Кабинет", "Спортзал"); one typical value stands for all */
+export const PREMISE_TYPE_NAME = 'Кабинет';
+
+/** The school lists' free text, dropped with everything under it (also by redactRaw) */
+export function dropsSchoolText(endpoint: string, key: string): boolean {
+  return SCHOOL_LISTS.test(endpoint) && SCHOOL_LIST_TEXT.has(key);
+}
+
+/** A value sanitize() replaces with the same value for everyone: its real text never reaches a fixture */
+export function fixedValue({ endpoint, key, container, outer }: Place): string | undefined {
+  if (/^premises(-|$)/.test(endpoint) && key === 'name' && container === 'as_json' && outer === 'premise_type')
+    return PREMISE_TYPE_NAME;
+  return undefined;
+}
+
 /** Does sanitize() keep this string as it is? The probe's leak check treats every other string as sensitive. */
-export function keepsString({ endpoint, key, container, depth }: Place, value: string): boolean {
+export function keepsString({ endpoint, key, container, outer, depth }: Place, value: string): boolean {
   switch (key) {
     case 'group_name':
       return GROUP_NAME.test(value);
@@ -49,7 +69,8 @@ export function keepsString({ endpoint, key, container, depth }: Place, value: s
     case 'audience_number':
       return ROOM.test(value) && !PERSON_LIKE.test(value);
     case 'short_name':
-      return value.length <= 20 && !PERSON_LIKE.test(value);
+      // a subject's short name in the plan (school_subject.as_json, 6.10.3); a short name anywhere else may be a person
+      return container === 'as_json' && outer === 'school_subject' && value.length <= 20 && !PERSON_LIKE.test(value);
     case 'end_time':
       return CLOCK.test(value);
     case 'partition_type':
@@ -135,6 +156,7 @@ export const PLACEHOLDERS: ReadonlySet<string> = new Set([
   TEXT,
   'fixture-token',
   'Родитель',
+  PREMISE_TYPE_NAME,
   ...Object.values(PLACEHOLDER),
 ]);
 
@@ -175,12 +197,12 @@ export function createSanitizer(key: Buffer = randomBytes(32)): Sanitizer {
       const own = (value as { uuid?: unknown }).uuid;
       const seed = typeof own === 'string' && own ? fakeId(own) : ctx.seed;
       for (const [k, v] of Object.entries(value)) {
-        if (DROP.has(k)) continue;
+        if (DROP.has(k) || dropsSchoolText(place.endpoint, k)) continue;
         // maps keyed by ids (final/whole: marks[subject][period]); any key that is not a schema word is data
         const outKey = UUID.test(k) || /^\d{3,}$/.test(k) || !SCHEMA_KEY.test(fakeInside(k)) ? fakeId(k) : k;
         out[outKey] = walk(
           v,
-          { ...place, key: k, container: key, depth: place.depth + 1 },
+          { ...place, key: k, container: key, outer: place.container, depth: place.depth + 1 },
           { ...ctx, seed: `${seed}/${outKey}` },
         );
       }
@@ -190,6 +212,8 @@ export function createSanitizer(key: Buffer = randomBytes(32)): Sanitizer {
     if (typeof value !== 'string') return value;
     if (key === null) return TEXT;
     if (value === '' || value.startsWith(FAKE_UUID_PREFIX)) return value;
+    const fixed = fixedValue(place);
+    if (fixed !== undefined) return fixed;
     if (TOKENS.has(key)) return 'fixture-token';
     if (
       UUID.test(value) ||

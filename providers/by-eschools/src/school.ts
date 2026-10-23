@@ -1,16 +1,18 @@
 import type { BellSchedule, DriftCheck, Subject, Term, WeekTemplate } from '@marksy/core';
 import { timeOf } from './map';
-import { PARTITION_TYPES, QUARTER_TITLES } from './schemas';
+import { HALF_YEAR_TITLES, PARTITION_TYPES, QUARTER_TITLES, TIMETABLE_PERIODS } from './schemas';
 import type { BellScheduleRaw, ClassTimetable, PlanningSubject, Premise, StudentSubjectRow } from './schemas';
 
 // School details of one student (docs/api-spec.md 6.7a, 6.10 and 7.5): the class's bells, timetable, teaching plan and
 // the school's rooms come in whole; only what belongs to the student leaves here. The student's teaching groups follow
-// from their own lessons (lesson_template_id, teacher_id): a split subject with no lesson seen has no group and no
-// teacher. Teachers of other groups and the school's room list are never returned.
+// from their own lessons (lesson_template_id; teacher_id only for a lesson without one, since a substitute teacher
+// may be the other group's): a split subject with no lesson seen, or with lessons that point to two groups, has no
+// group and no teacher. Teachers of other groups and the school's room list are never returned.
 
 /**
  * What the student's own lessons say about their groups: the templates they came from, and per subject the teachers
- * who gave them (a teacher of the student's group in one subject may teach the other group in another)
+ * who gave the lessons that name no template (a teacher of the student's group in one subject may teach the other
+ * group in another)
  */
 export interface LessonRefs {
   templates: ReadonlySet<string>;
@@ -29,17 +31,66 @@ const LEVELS: Record<string, Subject['level']> = {
 const weekday = (d: number) => d % 7;
 const clean = (s: string | null | undefined) => (s && s.trim() ? s.trim() : undefined);
 
-/** The templates the student is in: every whole-class template, and every group template their lessons came from */
+/**
+ * The templates the student is in: a subject's templates when the class learns it whole (CLASS, or a single template),
+ * otherwise the group templates their lessons came from, and only when those are of one group. Fails closed: a
+ * missing or new partition type, a template without its group, or evidence for two groups gives nothing.
+ */
 export function studentTemplates(planning: readonly PlanningSubject[], refs: LessonRefs): Set<string> {
   const out = new Set<string>();
   for (const subject of planning) {
-    for (const t of subject.templates) {
-      const wholeClass = !t.study_group;
-      const seen = refs.templates.has(t.uuid) || taughtBy(refs, subject.uuid, t.teacher?.id);
-      if (wholeClass || seen) out.add(t.uuid);
+    const templates = subject.templates ?? [];
+    if (subject.partition_type === 'CLASS' || templates.length === 1) {
+      for (const t of templates) out.add(t.uuid);
+      continue;
     }
+    const seen = templates.filter((t) => refs.templates.has(t.uuid) || taughtBy(refs, subject.uuid, t.teacher?.id));
+    const groups = new Set(seen.map((t) => t.study_group?.uuid ?? null));
+    if (groups.size === 1 && !groups.has(null)) for (const t of seen) out.add(t.uuid);
   }
   return out;
+}
+
+const DAY = 86_400_000;
+type Quarter = Pick<Term, 'kind' | 'index' | 'start' | 'end'>;
+
+/** The days a timetable's period spans, from the school year's quarters; a half year is two quarters */
+function periodRange(period: string | null | undefined, terms: readonly Quarter[]) {
+  const q = (QUARTER_TITLES as readonly string[]).indexOf(period ?? '');
+  const h = (HALF_YEAR_TITLES as readonly string[]).indexOf(period ?? '');
+  const indexes = q >= 0 ? [q + 1] : h >= 0 ? [2 * h + 1, 2 * h + 2] : [];
+  const quarters = terms.filter((t) => t.kind === 'quarter' && indexes.includes(t.index));
+  if (indexes.length === 0 || quarters.length !== indexes.length) return undefined;
+  const start = quarters.map((t) => t.start).sort()[0]!;
+  const end = quarters
+    .map((t) => t.end)
+    .sort()
+    .at(-1)!;
+  return { start, end, days: (Date.parse(end) - Date.parse(start)) / DAY };
+}
+
+/**
+ * The class's regular week today (6.10.2): of the timetables the class has (a quarter's, a half year's), the one whose
+ * period covers today, the narrower when both do; between periods the next one to start, after the last the latest.
+ */
+export function pickTimetable(
+  items: readonly ClassTimetable[],
+  terms: readonly Quarter[],
+  today: string,
+  check: DriftCheck,
+): ClassTimetable | undefined {
+  for (const t of items) if (t.period) check.known(t.period, TIMETABLE_PERIODS, 'timetables[].period');
+  if (items.length <= 1) return items[0];
+  const ranged = items
+    .map((t) => ({ t, r: periodRange(t.period, terms) }))
+    .filter((x): x is { t: ClassTimetable; r: NonNullable<typeof x.r> } => !!x.r);
+  const covering = ranged.filter((x) => x.r.start <= today && today <= x.r.end);
+  const next = ranged.filter((x) => x.r.start > today);
+  const pick =
+    covering.sort((a, b) => a.r.days - b.r.days)[0] ??
+    next.sort((a, b) => a.r.start.localeCompare(b.r.start) || a.r.days - b.r.days)[0] ??
+    ranged.sort((a, b) => b.r.end.localeCompare(a.r.end) || a.r.days - b.r.days)[0];
+  return pick?.t ?? items[0];
 }
 
 /** The class's bell schedule (named by its timetable), one canonical schedule per group of weekdays */
@@ -80,15 +131,14 @@ export function mapWeekTemplate(
   mine: ReadonlySet<string>,
   terms: readonly Pick<Term, 'externalId' | 'index'>[],
   subjectNames: ReadonlyMap<string, string>,
-  check: DriftCheck,
 ): WeekTemplate {
   const byTemplate = new Map(
-    planning.flatMap((subject) => subject.templates.map((t) => [t.uuid, { subject, template: t }] as const)),
+    planning.flatMap((subject) => (subject.templates ?? []).map((t) => [t.uuid, { subject, template: t }] as const)),
   );
   const rooms = new Map(premises.map((p) => [p.uuid, clean(p.audience_number)]));
-  const termIndex = timetable.period ? (QUARTER_TITLES as readonly string[]).indexOf(timetable.period) : -1;
-  if (timetable.period) check.known(timetable.period, QUARTER_TITLES, 'timetables[].period');
-  const term = terms.find((t) => t.index === termIndex + 1);
+  // a quarter's timetable belongs to that term; a half year's to none (it spans two)
+  const termIndex = (QUARTER_TITLES as readonly string[]).indexOf(timetable.period ?? '');
+  const term = termIndex >= 0 ? terms.find((t) => t.index === termIndex + 1) : undefined;
   const entries: WeekTemplate['entries'] = [];
   for (const day of timetable.days_of_week) {
     for (const ts of day.timetable_slots) {
@@ -122,7 +172,10 @@ export function mapWeekTemplate(
   return { ...(term && { termExternalId: term.externalId }), cycleWeeks: 1, entries };
 }
 
-/** The 6.7a row of the student on a subject: the whole-class row, or the group row their lessons point to */
+/**
+ * The 6.7a row of the student on a subject: the whole-class row, or the group row of their own templates. Fails closed:
+ * rows of two teachers, or several rows with a partition type it does not know, give none.
+ */
 function rowOf(
   subjectId: string,
   rows: readonly StudentSubjectRow[],
@@ -133,12 +186,25 @@ function rowOf(
 ): StudentSubjectRow | undefined {
   const candidates = rows.filter((r) => r.id === subjectId);
   for (const r of candidates) check.known(r.partition_type, PARTITION_TYPES, 'subjects[].partition_type');
-  const whole = candidates.find((r) => r.partition_type !== 'GROUP');
-  if (whole) return whole;
+  const one = (list: readonly StudentSubjectRow[]) =>
+    new Set(list.map((r) => r.teacher_id ?? null)).size === 1 ? list[0] : undefined;
+  const whole = candidates.filter((r) => r.partition_type === 'CLASS');
+  if (whole.length > 0) return one(whole);
+  if (candidates.length === 1 && candidates[0]!.partition_type !== 'GROUP') return candidates[0];
   const myTeachers = new Set(
-    (planning.get(subjectId)?.templates ?? []).filter((t) => mine.has(t.uuid)).map((t) => t.teacher?.id),
+    (planning.get(subjectId)?.templates ?? [])
+      .filter((t) => mine.has(t.uuid))
+      .map((t) => t.teacher?.id)
+      .filter((id): id is string => !!id),
   );
-  return candidates.find((r) => taughtBy(refs, subjectId, r.teacher_id) || myTeachers.has(r.teacher_id));
+  return one(
+    candidates.filter(
+      (r) =>
+        r.partition_type === 'GROUP' &&
+        !!r.teacher_id &&
+        (myTeachers.has(r.teacher_id) || taughtBy(refs, subjectId, r.teacher_id)),
+    ),
+  );
 }
 
 /** Subjects with the student's teacher, group, level, short name and lessons per week */
@@ -170,4 +236,26 @@ export function enrichSubjects(
       ...(template?.study_hours && { lessonsPerWeek: template.study_hours }),
     };
   });
+}
+
+/** Rooms of the student's own slots, as counts for the probe: no room in the slot, a room the school list lacks */
+export function roomFacts(
+  timetable: ClassTimetable | undefined,
+  mine: ReadonlySet<string>,
+  premises: readonly Premise[],
+) {
+  const numbers = new Map(premises.map((p) => [p.uuid, clean(p.audience_number)]));
+  const facts = { slots: 0, withoutRoom: 0, roomNotListed: 0, roomWithoutNumber: 0, premises: premises.length };
+  for (const day of timetable?.days_of_week ?? []) {
+    for (const ts of day.timetable_slots) {
+      for (const slot of ts.slots) {
+        if (!slot.lesson_template_id || !mine.has(slot.lesson_template_id)) continue;
+        facts.slots++;
+        if (!slot.room_id) facts.withoutRoom++;
+        else if (!numbers.has(slot.room_id)) facts.roomNotListed++;
+        else if (!numbers.get(slot.room_id)) facts.roomWithoutNumber++;
+      }
+    }
+  }
+  return facts;
 }

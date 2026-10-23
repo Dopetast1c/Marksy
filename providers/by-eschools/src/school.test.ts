@@ -6,9 +6,17 @@ import premises from '../fixtures/premises-1.json';
 import rows2 from '../fixtures/student_subjects-2.json';
 import timetable2 from '../fixtures/timetable-2.json';
 import { redactRaw } from './redact';
-import { keepsString } from './sanitize';
+import { createSanitizer, keepsString, PREMISE_TYPE_NAME } from './sanitize';
+import { findLeaks, sensitiveValues } from './probe';
 import { bellScheduleRaw, classTimetable, planningSubject, premise, studentSubjectRow } from './schemas';
-import { enrichSubjects, mapBellSchedules, mapWeekTemplate, studentTemplates } from './school';
+import {
+  enrichSubjects,
+  mapBellSchedules,
+  mapWeekTemplate,
+  pickTimetable,
+  roomFacts,
+  studentTemplates,
+} from './school';
 import type { LessonRefs } from './school';
 
 // The fixtures' fictional school: English, Informatics and Labour are split into two subgroups; the student is in one.
@@ -23,7 +31,7 @@ const check = () => driftChecker(createMemoryDrift(), 'test');
 /** The student's lessons: every template the timetable shows except the other subgroups' */
 function lessonRefs(): LessonRefs {
   const own = planning.flatMap((p) =>
-    p.templates
+    (p.templates ?? [])
       .filter((t) => !t.uuid.endsWith('other'))
       .slice(0, 1)
       .map((t) => [p.uuid, t] as const),
@@ -31,24 +39,15 @@ function lessonRefs(): LessonRefs {
   const teachers = new Map(own.map(([subject, t]) => [subject, new Set([t.teacher!.id!])]));
   return { templates: new Set(own.map(([, t]) => t.uuid)), teachers };
 }
-const otherTemplates = planning.flatMap((p) => p.templates.slice(1)).map((t) => t.uuid);
-const otherTeachers = planning.flatMap((p) => p.templates.slice(1)).map((t) => t.teacher!.id!);
+const otherTemplates = planning.flatMap((p) => (p.templates ?? []).slice(1)).map((t) => t.uuid);
+const otherTeachers = planning.flatMap((p) => (p.templates ?? []).slice(1)).map((t) => t.teacher!.id!);
 
 describe('school details of one student', () => {
   it("the regular week holds the student's own subgroup only, never the other one or its teacher", () => {
     const refs = lessonRefs();
     const mine = studentTemplates(planning, refs);
     for (const t of otherTemplates) expect(mine.has(t)).toBe(false);
-    const week = mapWeekTemplate(
-      timetable,
-      planning,
-      rows,
-      rooms,
-      mine,
-      [{ externalId: 'q1', index: 1 }],
-      new Map(),
-      check(),
-    );
+    const week = mapWeekTemplate(timetable, planning, rows, rooms, mine, [{ externalId: 'q1', index: 1 }], new Map());
     expect(week.termExternalId).toBe('q1');
     expect(week.entries.length).toBeGreaterThan(20);
     for (const e of week.entries) {
@@ -69,7 +68,7 @@ describe('school details of one student', () => {
     const first = moved.days_of_week[0]!.timetable_slots[0]!;
     first.slots = first.slots.map((s) => ({ ...s, room_id: 'not-in-the-list' }));
     const mine = studentTemplates(planning, lessonRefs());
-    const week = mapWeekTemplate(moved, planning, rows, rooms, mine, [], new Map(), check());
+    const week = mapWeekTemplate(moved, planning, rows, rooms, mine, [], new Map());
     const entry = week.entries.find(
       (e) => e.weekday === moved.days_of_week[0]!.day_of_week % 7 && e.slot === first.time_of_bells!.number,
     )!;
@@ -115,11 +114,175 @@ describe('school details of one student', () => {
   });
 
   it('teachers of every group are dropped before a body is stored, and never kept in fixtures', () => {
-    expect(JSON.stringify(redactRaw(rows2))).not.toContain('"teacher"');
-    expect(JSON.stringify(redactRaw(planning2))).not.toContain('"teacher"');
+    expect(JSON.stringify(redactRaw('student_subjects', rows2))).not.toContain('"teacher"');
+    expect(JSON.stringify(redactRaw('planning', planning2))).not.toContain('"teacher"');
     const place = { endpoint: 'student_subjects-1', key: 'teacher', container: null, depth: 1 };
     expect(keepsString(place, 'Иванова Мария Петровна')).toBe(false);
     expect(keepsString({ ...place, key: 'group_name' }, '2-я подгруппа (мальчики)')).toBe(true);
     expect(keepsString({ ...place, key: 'name', container: 'study_group' }, 'Иванова Мария Петровна')).toBe(false);
+  });
+});
+
+describe('school details fail closed', () => {
+  const subjects = planning.map((p) => ({ externalId: p.uuid, name: p.uuid }));
+
+  it("a substitute from the other subgroup pulls in neither its template nor its teacher: two groups' evidence gives nothing", () => {
+    const refs = lessonRefs();
+    const split = planning.find((p) => p.partition_type === 'GROUP')!;
+    const other = split.templates![1]!;
+    // a lesson without a template ref, given by the other subgroup's teacher
+    const teachers = new Map(refs.teachers);
+    teachers.set(split.uuid, new Set([...(teachers.get(split.uuid) ?? []), other.teacher!.id!]));
+    const mixed: LessonRefs = { templates: refs.templates, teachers };
+    const mine = studentTemplates(planning, mixed);
+    for (const t of split.templates!) expect(mine.has(t.uuid)).toBe(false);
+    const rich = enrichSubjects(subjects, rows, planning, mine, mixed, check());
+    const subject = rich.find((s) => s.externalId === split.uuid)!;
+    for (const k of ['teacherExternalId', 'teacherName', 'groupLabel', 'lessonsPerWeek'] as const)
+      expect(subject[k], k).toBeUndefined();
+    const week = mapWeekTemplate(timetable, planning, rows, rooms, mine, [], new Map());
+    expect(week.entries.some((e) => e.subjectExternalId === split.uuid)).toBe(false);
+  });
+
+  it('a split subject that lost its partition type or its groups gives no group, no teacher and no other lessons', () => {
+    const blurred = planning.map((p) =>
+      p.partition_type === 'GROUP'
+        ? { ...p, partition_type: null, templates: p.templates!.map((t) => ({ ...t, study_group: null })) }
+        : p,
+    );
+    const refs = lessonRefs();
+    const mine = studentTemplates(blurred, refs);
+    for (const t of otherTemplates) expect(mine.has(t)).toBe(false);
+    const rich = enrichSubjects(
+      subjects,
+      rows.map((r) => ({ ...r, partition_type: null })),
+      blurred,
+      mine,
+      refs,
+      check(),
+    );
+    for (const s of rich) expect(otherTeachers).not.toContain(s.teacherExternalId);
+    expect(rich.filter((s) => s.groupLabel)).toEqual([]);
+    // whole-class subjects keep their one teacher
+    expect(rich.filter((s) => s.teacherName).length).toBeGreaterThan(5);
+  });
+
+  it('a subject without templates this period is no error', () => {
+    const empty = planningSubject.parse({ ...planning2[0], templates: null });
+    expect(studentTemplates([empty], lessonRefs()).size).toBe(0);
+  });
+});
+
+describe('which timetable is the regular week', () => {
+  const quarters = [
+    { kind: 'quarter' as const, index: 1, start: '2026-09-01', end: '2026-10-25' },
+    { kind: 'quarter' as const, index: 2, start: '2026-11-03', end: '2026-12-24' },
+    { kind: 'quarter' as const, index: 3, start: '2027-01-12', end: '2027-03-22' },
+    { kind: 'quarter' as const, index: 4, start: '2027-04-01', end: '2027-05-31' },
+  ];
+  const q1 = { ...timetable, uuid: 'q1', period: 'FIRST_QUARTER' };
+  const h1 = { ...timetable, uuid: 'h1', period: 'FIRST_HALF_YEAR' };
+  const h2 = { ...timetable, uuid: 'h2', period: 'SECOND_HALF_YEAR' };
+
+  it('the one whose period covers today, the narrower when a quarter and a half year both do', () => {
+    const drift = createMemoryDrift();
+    const c = driftChecker(drift, 'timetables');
+    const pick = (today: string) => pickTimetable([h1, q1, h2], quarters, today, c)?.uuid;
+    expect(pick('2026-10-01')).toBe('q1');
+    expect(pick('2026-10-28')).toBe('h1'); // autumn break: inside the half year only
+    expect(pick('2026-12-01')).toBe('h1');
+    expect(pick('2026-12-30')).toBe('h2'); // winter break: the next to start
+    expect(pick('2027-02-01')).toBe('h2');
+    expect(pick('2027-07-01')).toBe('h2'); // summer: the latest
+    expect(drift.events).toEqual([]);
+    pickTimetable([{ ...timetable, period: 'WHOLE_YEAR' }], quarters, '2026-10-01', c);
+    expect(drift.events.map((e) => [e.kind, e.path])).toEqual([['new_enum_value', 'timetables[].period']]);
+  });
+
+  it("a half year's week belongs to no single term", () => {
+    const mine = studentTemplates(planning, lessonRefs());
+    const terms = quarters.map((q) => ({ externalId: `q${q.index}`, index: q.index }));
+    expect(mapWeekTemplate(h1, planning, rows, rooms, mine, terms, new Map()).termExternalId).toBeUndefined();
+    expect(mapWeekTemplate(q1, planning, rows, rooms, mine, terms, new Map()).termExternalId).toBe('q1');
+  });
+
+  it("room counts for the probe: the student's slots without a room, with a room the school's list lacks", () => {
+    const mine = studentTemplates(planning, lessonRefs());
+    const base = roomFacts(timetable, mine, rooms);
+    expect(base).toMatchObject({ withoutRoom: 0, roomNotListed: 0, roomWithoutNumber: 0, premises: rooms.length });
+    expect(base.slots).toBeGreaterThan(20);
+    const moved = structuredClone(timetable);
+    const own = moved.days_of_week
+      .flatMap((d) => d.timetable_slots.flatMap((ts) => ts.slots))
+      .filter((s) => s.lesson_template_id && mine.has(s.lesson_template_id));
+    own[0]!.room_id = null;
+    own[1]!.room_id = 'not-in-the-list';
+    expect(roomFacts(moved, mine, rooms)).toMatchObject({ slots: base.slots, withoutRoom: 1, roomNotListed: 1 });
+  });
+});
+
+describe('the school lists in fixtures', () => {
+  const s = createSanitizer(Buffer.alloc(32, 7));
+  const planningRaw = [
+    {
+      uuid: 'subject-1',
+      summary: 'Иванова Мария Петровна',
+      author: 'author-1',
+      school_subject: {
+        uuid: 'ss-1',
+        summary: 'Математика',
+        as_json: { short_name: 'Матем.', summary: 'Математика', author: 'author-1' },
+      },
+      templates: [{ uuid: 'tpl-1', teacher: { id: 'teacher-1', name: 'Мария', surname: 'Иванова' } }],
+    },
+  ];
+  const premisesRaw = [
+    {
+      uuid: 'room-1',
+      audience_number: 'Спортзал',
+      summary: 'Спортзал',
+      author: 'author-1',
+      premise_type: { uuid: 'type-1', as_json: { name: 'Спортзал', summary: 'Спортзал' } },
+    },
+  ];
+  const subjectsRaw = [{ uuid: 'subject-1', name: 'Математика' }];
+
+  it('drops every summary and author of the plan and the room list; a premise type gets one typical name', () => {
+    const p = JSON.stringify(s.sanitize('planning-1', planningRaw));
+    expect(p).not.toMatch(/summary|author|Иванова|Мария/);
+    expect(p).toContain('Матем.');
+    const r = s.sanitize('premises-1', premisesRaw) as typeof premisesRaw;
+    expect(JSON.stringify(r)).not.toMatch(/summary|author/);
+    expect(r[0]!.premise_type.as_json.name).toBe(PREMISE_TYPE_NAME);
+    expect(r[0]!.audience_number).toBe('Спортзал');
+    expect(s.sanitize('premises-1', r)).toEqual(r);
+  });
+
+  it("the probe's leak check skips that dropped text, even when it is a name another place keeps; a teacher still counts", () => {
+    const sensitive = sensitiveValues('planning-1', planningRaw);
+    sensitiveValues('premises-1', premisesRaw, [], sensitive);
+    sensitiveValues('subjects-1', subjectsRaw, [], sensitive);
+    const out = [
+      s.sanitize('planning-1', planningRaw),
+      s.sanitize('premises-1', premisesRaw),
+      s.sanitize('subjects-1', subjectsRaw),
+    ];
+    expect(findLeaks(out, sensitive)).toEqual([]);
+    expect(findLeaks([...out, { short_name: 'Иванова' }], sensitive)).toEqual([
+      'planning-1: [].templates[].teacher.surname',
+    ]);
+  });
+
+  it('a short name is kept only as a subject short name in the plan', () => {
+    const place = {
+      endpoint: 'planning-1',
+      key: 'short_name',
+      container: 'as_json',
+      outer: 'school_subject',
+      depth: 3,
+    };
+    expect(keepsString(place, 'Матем.')).toBe(true);
+    expect(keepsString({ ...place, outer: 'teacher' }, 'Матем.')).toBe(false);
+    expect(keepsString({ ...place, container: 'teacher', outer: null }, 'Иванова')).toBe(false);
   });
 });

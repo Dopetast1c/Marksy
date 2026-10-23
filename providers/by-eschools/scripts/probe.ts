@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { createRunContext, fetchTransport, ProviderError } from '@marksy/core';
 import type { Transport } from '@marksy/core';
 import { dayRange, toISODate } from '../src/dates';
-import { byEschools, manifest, recentWeekRanges } from '../src/index';
+import { byEschools, manifest, recentWeekRanges, roomFactsOf } from '../src/index';
 import {
   endpointName,
   findLeaks,
@@ -97,7 +97,9 @@ async function main(): Promise<number> {
     const bellSchedules = await byEschools.getBellSchedule!(session, student, ctx);
     const weekTemplate = await byEschools.getWeekTemplate!(session, student, ctx);
     const detailed = await byEschools.getSubjects(session, student, ctx);
-    perStudent.push({ student, calendar, subjects, lessons, finals, bellSchedules, weekTemplate, detailed });
+    // no request: the timetable, plan and rooms are in the session's cache
+    const rooms = await roomFactsOf(session, student, ctx);
+    perStudent.push({ student, calendar, subjects, lessons, finals, bellSchedules, weekTemplate, detailed, rooms });
   }
 
   // name every response; raw ones stay on this machine, the login response without its tokens
@@ -211,6 +213,7 @@ async function main(): Promise<number> {
         periods: s.bellSchedules.reduce((n, b) => n + b.periods.length, 0),
         weekEntries: s.weekTemplate?.entries.length ?? 0,
         entriesWithRoom: s.weekTemplate?.entries.filter((e) => e.room).length ?? 0,
+        rooms: s.rooms,
         subjectsWithTeacher: s.detailed.filter((x) => x.teacherName).length,
         subjectsWithGroup: s.detailed.filter((x) => x.groupLabel).length,
         subjectsAdvanced: s.detailed.filter((x) => x.level === 'advanced').length,
