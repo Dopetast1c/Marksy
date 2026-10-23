@@ -31,7 +31,8 @@
     "i18n:check": "pnpm --filter @marksy/i18n i18n:check",
     "test:provider": "node scripts/test-provider.mjs",
     "probe": "node scripts/probe.mjs",
-    "sync:once": "pnpm --filter @marksy/server sync:once"
+    "sync:once": "pnpm --filter @marksy/server sync:once",
+    "sync:plan": "pnpm --filter @marksy/server sync:plan"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
