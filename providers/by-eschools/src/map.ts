@@ -1,6 +1,7 @@
 import type {
   AccountInfo,
   Attendance,
+  BehaviourEvent,
   Calendar,
   DriftCheck,
   FinalMark,
@@ -13,6 +14,7 @@ import type {
   Term,
   WorkType,
 } from '@marksy/core';
+import { ProviderSchemaError } from '@marksy/core';
 import { dayRange, toISODate } from './dates';
 import {
   educationalSubject,
@@ -23,6 +25,7 @@ import {
   slot as slotSchema,
   TIME_ACTIVITY_TYPES,
   WORK_TYPES,
+  lessonsDay,
 } from './schemas';
 import type {
   FinalWholeResponse,
@@ -182,6 +185,7 @@ export function mapSubjects(raw: unknown, check: DriftCheck): Subject[] {
 interface MappedCell {
   mark?: Mark;
   attendance?: Attendance;
+  remark?: BehaviourEvent;
 }
 
 /**
@@ -203,7 +207,7 @@ export function timeOf(value: string | null | undefined): string | undefined {
 /** A lesson_mark: a mark, or for ABSENT an attendance record (absences are never marks). */
 export function mapLessonMark(m: LessonMark, s: Slot, date: string, check: DriftCheck): MappedCell {
   check.known(m.kind, MARK_KINDS, 'lesson_mark.kind');
-  const raw = nonEmpty(m.mark) ?? KIND_LABEL[m.kind] ?? m.kind;
+  const raw = nonEmpty(m.mark) ?? (m.kind ? (KIND_LABEL[m.kind] ?? m.kind) : '');
   if (m.kind === 'ABSENT') {
     return {
       attendance: {
@@ -242,7 +246,13 @@ export function mapLessonMark(m: LessonMark, s: Slot, date: string, check: Drift
 
 export function mapLesson(s: Slot, date: string, check: DriftCheck): Lesson {
   check.known(s.type, LESSON_TYPES, 'slots[].type');
-  const cell = s.lesson_mark ? mapLessonMark(s.lesson_mark, s, date, check) : {};
+  const m = s.lesson_mark;
+  const cell: MappedCell =
+    m && (m.kind || nonEmpty(m.mark))
+      ? mapLessonMark(m, s, date, check)
+      : m && nonEmpty(m.comment)
+        ? { remark: remarkOf(m, s, date) }
+        : {};
   return {
     externalId: lessonIdOf(s, date),
     date,
@@ -251,21 +261,55 @@ export function mapLesson(s: Slot, date: string, check: DriftCheck): Lesson {
     subjectExternalId: s.subject_id,
     subjectName: s.subject_title,
     ...(nonEmpty(s.teacher_id) && { teacherExternalId: s.teacher_id! }),
+    // the server matches the lesson to the student's regular week with it: room, subgroup, teacher (providers.md 4)
+    ...(nonEmpty(s.lesson_template_id) && { templateRef: s.lesson_template_id! }),
     ...(nonEmpty(s.topic) && { topic: s.topic!.trim() }),
     ...(nonEmpty(s.homework) && { homework: s.homework!.trim() }),
     ...(s.has_attachments_or_links != null && { hasAttachments: s.has_attachments_or_links }),
     ...(is(LESSON_TYPES, s.type) && { lessonType: LESSON_TYPE[s.type] }),
     marks: cell.mark ? [cell.mark] : [],
     ...(cell.attendance && { attendance: [cell.attendance] }),
+    ...(cell.remark && { behaviour: [cell.remark] }),
   };
 }
 
-/** One week's response (six days) -> lessons. A broken slot is reported and skipped, the rest of the week stays. */
+/**
+ * A lesson_mark with neither a kind nor a mark, only a comment: the teacher's remark on the lesson ("нет домашнего задания";
+ * api-spec 7.2). No mark is made; the diary says nothing of its tone, so it is neutral.
+ */
+function remarkOf(m: LessonMark, s: Slot, date: string): BehaviourEvent {
+  return {
+    externalId: m.uuid,
+    date,
+    polarity: 'neutral',
+    category: 'lesson_comment',
+    comment: m.comment!.trim(),
+    subjectExternalId: s.subject_id,
+    lessonExternalId: lessonIdOf(s, date),
+    ...(nonEmpty(m.author) && { authorExternalId: m.author! }),
+  };
+}
+
+/**
+ * One week's response (six days) -> lessons. A slot that cannot be parsed is reported, and the week cannot be used:
+ * skipping it would make the collector take its lesson and marks for removed (the week stays unverified instead).
+ */
 export function mapLessonsWeek(days: readonly LessonsDay[], timeZone: string, check: DriftCheck): Lesson[] {
   return days.flatMap((day) => {
     const date = toISODate(day.date, timeZone);
-    return check.items(slotSchema, day.slots, 'days[].slots').map((s) => mapLesson(s, date, check));
+    const slots = check.items(slotSchema, day.slots, 'days[].slots');
+    if (slots.length !== day.slots.length)
+      throw new ProviderSchemaError('lessons: a lesson in this week cannot be read');
+    return slots.map((s) => mapLesson(s, date, check));
   });
+}
+
+/** A whole lessons response (6.8): a day that cannot be read makes the week unusable, like a slot (see above) */
+export function mapLessonsResponse(raw: unknown, timeZone: string, check: DriftCheck): Lesson[] {
+  const days = check.items(lessonsDay, raw, 'days');
+  if (!Array.isArray(raw) || days.length !== raw.length)
+    throw new ProviderSchemaError('lessons: a day in this week cannot be read');
+  return mapLessonsWeek(days, timeZone, check);
 }
 
 /** Words of a final-marks period key that mean the whole year (provisional: the populated shape is unverified). */

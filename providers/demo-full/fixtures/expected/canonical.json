@@ -66,7 +66,8 @@
             "index": 4,
             "label": "4",
             "start": "2026-03-30",
-            "end": "2026-05-31"
+            "end": "2026-05-31",
+            "note": "Для 9 и 11 классов: с 30.03.2026 по 25.05.2026."
           }
         ],
         "holidays": [
@@ -87,23 +88,54 @@
       "subjects": [
         {
           "externalId": "alg",
-          "name": "Алгебра"
+          "name": "Алгебра",
+          "shortName": "Алг.",
+          "teacherExternalId": "T-1",
+          "teacherName": "Ковалёва Ирина Петровна",
+          "level": "regular",
+          "levelLabel": "Базовый",
+          "lessonsPerWeek": 2
         },
         {
           "externalId": "rus",
-          "name": "Русский язык"
+          "name": "Русский язык",
+          "shortName": "Рус. яз.",
+          "teacherExternalId": "T-2",
+          "teacherName": "Савченко Ольга Николаевна",
+          "level": "regular",
+          "levelLabel": "Базовый",
+          "lessonsPerWeek": 2
         },
         {
           "externalId": "phy",
-          "name": "Физика"
+          "name": "Физика",
+          "shortName": "Физ.",
+          "teacherExternalId": "T-3",
+          "teacherName": "Лосев Андрей Викторович",
+          "level": "regular",
+          "levelLabel": "Базовый",
+          "lessonsPerWeek": 1
         },
         {
           "externalId": "eng",
-          "name": "Английский язык"
+          "name": "Английский язык",
+          "shortName": "Англ.",
+          "teacherExternalId": "T-4",
+          "teacherName": "Климович Елена Сергеевна",
+          "groupLabel": "2-я подгруппа",
+          "level": "advanced",
+          "levelLabel": "Углублённый",
+          "lessonsPerWeek": 1
         },
         {
           "externalId": "pe",
-          "name": "Физическая культура"
+          "name": "Физическая культура",
+          "shortName": "Физ-ра",
+          "teacherExternalId": "T-5",
+          "teacherName": "Ермаков Виталий Иванович",
+          "level": "regular",
+          "levelLabel": "Базовый",
+          "lessonsPerWeek": 1
         }
       ],
       "lessons": [
@@ -116,6 +148,7 @@
           "subjectName": "Алгебра",
           "topic": "Линейные уравнения",
           "homework": "№ 120, 121",
+          "templateRef": "TPL-ALG",
           "marks": [
             {
               "externalId": "M-1",
@@ -125,7 +158,9 @@
               "lessonExternalId": "L-101",
               "raw": "8",
               "kind": "numeric",
-              "values": [8],
+              "values": [
+                8
+              ],
               "workType": "classwork",
               "workTypeRaw": "CLASS"
             }
@@ -140,6 +175,7 @@
           "subjectName": "Русский язык",
           "topic": "Причастие как часть речи",
           "homework": "упр. 140",
+          "templateRef": "TPL-RUS",
           "marks": []
         },
         {
@@ -152,6 +188,7 @@
           "topic": "Измерение физических величин",
           "homework": "§ 1, упр. 1",
           "lessonType": "lab",
+          "templateRef": "TPL-PHY",
           "marks": [
             {
               "externalId": "M-2",
@@ -161,7 +198,9 @@
               "lessonExternalId": "slot:2025-09-09:1:phy",
               "raw": "6",
               "kind": "numeric",
-              "values": [6],
+              "values": [
+                6
+              ],
               "workType": "lab",
               "workTypeRaw": "LAB",
               "comment": "Оформить вывод"
@@ -177,6 +216,7 @@
           "subjectName": "Английский язык",
           "topic": "Travelling",
           "homework": "WB p. 24 ex. 3",
+          "templateRef": "TPL-ENG-2",
           "marks": [
             {
               "externalId": "M-3",
@@ -186,7 +226,10 @@
               "lessonExternalId": "L-104",
               "raw": "7/9",
               "kind": "numeric",
-              "values": [7, 9]
+              "values": [
+                7,
+                9
+              ]
             }
           ]
         },
@@ -199,6 +242,7 @@
           "subjectName": "Алгебра",
           "topic": "К/р №1 «Линейные уравнения»",
           "lessonType": "test",
+          "templateRef": "TPL-ALG",
           "marks": [
             {
               "externalId": "M-4",
@@ -208,7 +252,9 @@
               "lessonExternalId": "L-105",
               "raw": "5",
               "kind": "numeric",
-              "values": [5],
+              "values": [
+                5
+              ],
               "workType": "test",
               "workTypeRaw": "TEST",
               "comment": "Повторить правило"
@@ -224,6 +270,7 @@
           "subjectName": "Русский язык",
           "topic": "Причастный оборот",
           "homework": "упр. 152",
+          "templateRef": "TPL-RUS",
           "marks": [],
           "attendance": [
             {
@@ -244,6 +291,7 @@
           "subjectExternalId": "pe",
           "subjectName": "Физическая культура",
           "topic": "Бег 60 м",
+          "templateRef": "TPL-PE",
           "marks": [
             {
               "externalId": "M-6",
@@ -266,6 +314,7 @@
           "subjectName": "Алгебра",
           "topic": "Системы уравнений",
           "homework": "№ 160",
+          "templateRef": "TPL-ALG",
           "marks": [
             {
               "externalId": "M-11",
@@ -275,7 +324,9 @@
               "lessonExternalId": "L-111",
               "raw": "9",
               "kind": "numeric",
-              "values": [9],
+              "values": [
+                9
+              ],
               "workType": "homework",
               "workTypeRaw": "HOME"
             },
@@ -287,7 +338,9 @@
               "lessonExternalId": "L-111",
               "raw": "8",
               "kind": "numeric",
-              "values": [8],
+              "values": [
+                8
+              ],
               "workType": "classwork",
               "workTypeRaw": "CLASS"
             }
@@ -302,6 +355,7 @@
           "subjectName": "Физика",
           "topic": "Механическое движение",
           "homework": "§ 2",
+          "templateRef": "TPL-PHY",
           "marks": [
             {
               "externalId": "M-13",
@@ -311,7 +365,9 @@
               "lessonExternalId": "L-112",
               "raw": "4",
               "kind": "numeric",
-              "values": [4],
+              "values": [
+                4
+              ],
               "workType": "quiz",
               "workTypeRaw": "QUIZ",
               "comment": "Пересдача во вторник"
@@ -327,6 +383,7 @@
           "subjectName": "Английский язык",
           "topic": "Reported speech",
           "homework": "SB p. 45 ex. 2",
+          "templateRef": "TPL-ENG-2",
           "marks": []
         },
         {
@@ -338,6 +395,7 @@
           "subjectName": "Русский язык",
           "topic": "Действительные причастия",
           "homework": "упр. 160",
+          "templateRef": "TPL-RUS",
           "marks": [
             {
               "externalId": "M-14",
@@ -347,7 +405,9 @@
               "lessonExternalId": "L-114",
               "raw": "7",
               "kind": "numeric",
-              "values": [7],
+              "values": [
+                7
+              ],
               "workType": "dictation",
               "workTypeRaw": "DICTATION"
             }
@@ -373,7 +433,137 @@
           "kind": "pass",
           "role": "final"
         }
-      ]
+      ],
+      "bellSchedules": [
+        {
+          "externalId": "B-1",
+          "label": "1 смена",
+          "days": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "periods": [
+            {
+              "slot": 1,
+              "start": "08:00",
+              "end": "08:45"
+            },
+            {
+              "slot": 2,
+              "start": "08:55",
+              "end": "09:40"
+            },
+            {
+              "slot": 3,
+              "start": "09:55",
+              "end": "10:40"
+            },
+            {
+              "slot": 4,
+              "start": "10:55",
+              "end": "11:40"
+            },
+            {
+              "slot": 5,
+              "start": "11:55",
+              "end": "12:40"
+            },
+            {
+              "slot": 6,
+              "start": "12:50",
+              "end": "13:35"
+            }
+          ]
+        }
+      ],
+      "weekTemplate": {
+        "termExternalId": "q1",
+        "cycleWeeks": 1,
+        "entries": [
+          {
+            "cycleWeek": 1,
+            "weekday": 1,
+            "slot": 1,
+            "subjectExternalId": "alg",
+            "subjectName": "Алгебра",
+            "room": "305",
+            "teacherExternalId": "T-1",
+            "teacherName": "Ковалёва Ирина Петровна",
+            "templateRef": "TPL-ALG"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 1,
+            "slot": 2,
+            "subjectExternalId": "rus",
+            "subjectName": "Русский язык",
+            "room": "204",
+            "teacherExternalId": "T-2",
+            "teacherName": "Савченко Ольга Николаевна",
+            "templateRef": "TPL-RUS"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 2,
+            "slot": 1,
+            "subjectExternalId": "phy",
+            "subjectName": "Физика",
+            "room": "301",
+            "teacherExternalId": "T-3",
+            "teacherName": "Лосев Андрей Викторович",
+            "templateRef": "TPL-PHY"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 2,
+            "slot": 2,
+            "subjectExternalId": "eng",
+            "subjectName": "Английский язык",
+            "groupLabel": "2-я подгруппа",
+            "room": "412",
+            "teacherExternalId": "T-4",
+            "teacherName": "Климович Елена Сергеевна",
+            "templateRef": "TPL-ENG-2"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 3,
+            "slot": 1,
+            "subjectExternalId": "alg",
+            "subjectName": "Алгебра",
+            "room": "305",
+            "teacherExternalId": "T-1",
+            "teacherName": "Ковалёва Ирина Петровна",
+            "templateRef": "TPL-ALG"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 3,
+            "slot": 2,
+            "subjectExternalId": "rus",
+            "subjectName": "Русский язык",
+            "room": "204",
+            "teacherExternalId": "T-2",
+            "teacherName": "Савченко Ольга Николаевна",
+            "templateRef": "TPL-RUS"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 5,
+            "slot": 1,
+            "subjectExternalId": "pe",
+            "subjectName": "Физическая культура",
+            "room": "спортзал",
+            "teacherExternalId": "T-5",
+            "teacherName": "Ермаков Виталий Иванович",
+            "templateRef": "TPL-PE"
+          }
+        ]
+      }
     },
     "p-2": {
       "calendar": {
@@ -414,7 +604,8 @@
             "index": 4,
             "label": "4",
             "start": "2026-03-30",
-            "end": "2026-05-31"
+            "end": "2026-05-31",
+            "note": "Для 9 и 11 классов: с 30.03.2026 по 25.05.2026."
           }
         ],
         "holidays": [
@@ -427,6 +618,10 @@
             "to": "2026-01-11"
           },
           {
+            "from": "2026-02-16",
+            "to": "2026-02-22"
+          },
+          {
             "from": "2026-03-22",
             "to": "2026-03-29"
           }
@@ -436,11 +631,17 @@
       "subjects": [
         {
           "externalId": "lit1",
-          "name": "Обучение грамоте"
+          "name": "Обучение грамоте",
+          "teacherExternalId": "T-6",
+          "teacherName": "Миронова Анна Сергеевна",
+          "lessonsPerWeek": 5
         },
         {
           "externalId": "math1",
-          "name": "Математика"
+          "name": "Математика",
+          "teacherExternalId": "T-6",
+          "teacherName": "Миронова Анна Сергеевна",
+          "lessonsPerWeek": 4
         }
       ],
       "lessons": [
@@ -453,6 +654,7 @@
           "subjectName": "Обучение грамоте",
           "topic": "Буква М",
           "homework": "Прописи с. 12",
+          "templateRef": "TPL-LIT1",
           "marks": []
         },
         {
@@ -463,10 +665,151 @@
           "subjectExternalId": "math1",
           "subjectName": "Математика",
           "topic": "Число 5",
+          "templateRef": "TPL-MATH1",
           "marks": []
         }
       ],
-      "finalMarks": []
+      "finalMarks": [],
+      "bellSchedules": [
+        {
+          "externalId": "B-2",
+          "label": "1-е классы",
+          "days": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "periods": [
+            {
+              "slot": 1,
+              "start": "08:30",
+              "end": "09:05"
+            },
+            {
+              "slot": 2,
+              "start": "09:20",
+              "end": "09:55"
+            },
+            {
+              "slot": 3,
+              "start": "10:15",
+              "end": "10:50"
+            },
+            {
+              "slot": 4,
+              "start": "11:10",
+              "end": "11:45"
+            }
+          ]
+        }
+      ],
+      "weekTemplate": {
+        "termExternalId": "q1",
+        "cycleWeeks": 1,
+        "entries": [
+          {
+            "cycleWeek": 1,
+            "weekday": 1,
+            "slot": 1,
+            "subjectExternalId": "lit1",
+            "subjectName": "Обучение грамоте",
+            "room": "105",
+            "teacherExternalId": "T-6",
+            "teacherName": "Миронова Анна Сергеевна",
+            "templateRef": "TPL-LIT1"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 2,
+            "slot": 1,
+            "subjectExternalId": "lit1",
+            "subjectName": "Обучение грамоте",
+            "room": "105",
+            "teacherExternalId": "T-6",
+            "teacherName": "Миронова Анна Сергеевна",
+            "templateRef": "TPL-LIT1"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 3,
+            "slot": 1,
+            "subjectExternalId": "lit1",
+            "subjectName": "Обучение грамоте",
+            "room": "105",
+            "teacherExternalId": "T-6",
+            "teacherName": "Миронова Анна Сергеевна",
+            "templateRef": "TPL-LIT1"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 4,
+            "slot": 1,
+            "subjectExternalId": "lit1",
+            "subjectName": "Обучение грамоте",
+            "room": "105",
+            "teacherExternalId": "T-6",
+            "teacherName": "Миронова Анна Сергеевна",
+            "templateRef": "TPL-LIT1"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 5,
+            "slot": 1,
+            "subjectExternalId": "lit1",
+            "subjectName": "Обучение грамоте",
+            "room": "105",
+            "teacherExternalId": "T-6",
+            "teacherName": "Миронова Анна Сергеевна",
+            "templateRef": "TPL-LIT1"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 1,
+            "slot": 2,
+            "subjectExternalId": "math1",
+            "subjectName": "Математика",
+            "room": "105",
+            "teacherExternalId": "T-6",
+            "teacherName": "Миронова Анна Сергеевна",
+            "templateRef": "TPL-MATH1"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 2,
+            "slot": 2,
+            "subjectExternalId": "math1",
+            "subjectName": "Математика",
+            "room": "105",
+            "teacherExternalId": "T-6",
+            "teacherName": "Миронова Анна Сергеевна",
+            "templateRef": "TPL-MATH1"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 3,
+            "slot": 2,
+            "subjectExternalId": "math1",
+            "subjectName": "Математика",
+            "room": "105",
+            "teacherExternalId": "T-6",
+            "teacherName": "Миронова Анна Сергеевна",
+            "templateRef": "TPL-MATH1"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 4,
+            "slot": 2,
+            "subjectExternalId": "math1",
+            "subjectName": "Математика",
+            "room": "105",
+            "teacherExternalId": "T-6",
+            "teacherName": "Миронова Анна Сергеевна",
+            "templateRef": "TPL-MATH1"
+          }
+        ]
+      }
     }
   }
 }

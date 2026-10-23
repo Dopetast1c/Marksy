@@ -3,11 +3,13 @@
 // Fails on: secrets and tokens, files that must never be committed, real-looking personal data, and the diary
 // provider leaking outside providers/by-eschools. Heuristic on purpose: a false positive is cheap, a leak is not.
 // To allow a deliberate match, put `privacy-ok` in a comment on the same line and say why.
-import { execSync } from 'node:child_process';
+// --staged checks only the files staged for commit, as staged (the pre-commit guard, scripts/commit-guard.mjs).
+import { execFileSync, execSync } from 'node:child_process';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 
 const root = process.cwd();
+const staged = process.argv.includes('--staged');
 const SKIP_DIRS = new Set([
   'node_modules',
   '.git',
@@ -21,6 +23,10 @@ const SKIP_DIRS = new Set([
 ]);
 
 function listFiles() {
+  if (staged) {
+    const out = execFileSync('git', ['diff', '--cached', '--name-only', '-z', '--diff-filter=ACMR'], { cwd: root });
+    return out.toString().split('\0').filter(Boolean);
+  }
   try {
     const out = execSync('git ls-files --cached --others --exclude-standard', {
       cwd: root,
@@ -45,7 +51,7 @@ function listFiles() {
 const FORBIDDEN_FILES = [
   { re: /(^|\/)\.env$|(^|\/)\.env\.(?!example$)[^/]+$/, why: 'environment file with secrets' },
   { re: /\.har$/i, why: 'HAR export (contains tokens and personal data)' },
-  { re: /\.(dump|sqlite3?|db)$/i, why: 'database dump' },
+  { re: /\.(dump|sqlite3?|db|sql\.gz)$/i, why: 'database dump' },
   { re: /^data\//, why: 'local data folder' },
 ];
 
@@ -88,8 +94,13 @@ for (const file of listFiles()) {
   if (!TEXT_EXT.test(file) || file === 'pnpm-lock.yaml') continue;
   let text;
   try {
-    text = readFileSync(join(root, file), 'utf8');
+    // staged: git itself, no shell, so no file name is ever expanded
+    text = staged
+      ? execFileSync('git', ['show', `:${file}`], { cwd: root, maxBuffer: 256 * 1024 * 1024 }).toString('utf8')
+      : readFileSync(join(root, file), 'utf8');
   } catch {
+    // a staged file that cannot be read is not passed unchecked
+    if (staged) problems.push(`${file}: could not read the staged content`);
     continue;
   }
   text.split('\n').forEach((line, i) => {

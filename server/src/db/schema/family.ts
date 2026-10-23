@@ -14,20 +14,25 @@ import {
 } from 'drizzle-orm/pg-core';
 import { createdAt, id, ts } from './columns';
 
-// Families, people and diary accounts (docs/design.md 7, 8). The family is the tenant: every family-owned row carries
-// family_id and every query is scoped by it.
+// Families, people, children and diary accounts (docs/design.md 7.1, 8). The family is the tenant: family-owned rows
+// carry family_id. A child is not owned by a family: the child's diary and own work hang off students and are reached
+// only through an active family_students link (server/src/access.ts).
 
 export const bytea = customType<{ data: Buffer; driverData: Buffer }>({ dataType: () => 'bytea' });
 
 export interface FamilySettings {
   parents_can_invite?: boolean;
-  sync_window?: string;
   guidance?: boolean;
   retention_years?: number | null;
-  low_mark?: number;
-  drop_step?: number;
   /** Extra days without school (ISO dates), on top of the provider's holidays */
   no_school_dates?: string[];
+}
+
+/** The family's number rules for one child, on that child's scale (design.md 6.4, family_students.settings) */
+export interface ChildSettings {
+  low_mark?: number;
+  drop_step?: number;
+  call_after?: number;
 }
 
 export const families = pgTable('families', {
@@ -44,10 +49,6 @@ export const users = pgTable(
   'users',
   {
     id: id(),
-    familyId: uuid('family_id')
-      .notNull()
-      .references(() => families.id, { onDelete: 'cascade' }),
-    role: text('role', { enum: ['admin', 'parent', 'student'] }).notNull(),
     login: text('login').notNull(),
     displayName: text('display_name').notNull(),
     locale: text('locale').notNull().default('ru'),
@@ -57,10 +58,28 @@ export const users = pgTable(
     settings: jsonb('settings').$type<Record<string, unknown>>().notNull().default({}),
     avatar: jsonb('avatar').$type<Record<string, unknown>>(),
     passwordHash: text('password_hash').notNull(),
+    /** IANA zone for notification times; two families of one child may live apart */
+    timezone: text('timezone'),
     createdAt: createdAt(),
     lastLoginAt: ts('last_login_at'),
   },
-  (t) => [uniqueIndex('users_login_key').on(sql`lower(${t.login})`), index('users_family_idx').on(t.familyId)],
+  (t) => [uniqueIndex('users_login_key').on(sql`lower(${t.login})`)],
+);
+
+/** A person's role in one family; one login, possibly several families (design.md 7.1) */
+export const memberships = pgTable(
+  'memberships',
+  {
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    familyId: uuid('family_id')
+      .notNull()
+      .references(() => families.id, { onDelete: 'cascade' }),
+    role: text('role', { enum: ['admin', 'parent', 'student'] }).notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.familyId] }), index('memberships_family_idx').on(t.familyId)],
 );
 
 export const userFiles = pgTable('user_files', {
@@ -131,10 +150,6 @@ export const students = pgTable(
   'students',
   {
     id: id(),
-    familyId: uuid('family_id')
-      .notNull()
-      .references(() => families.id, { onDelete: 'cascade' }),
-    diaryAccountId: uuid('diary_account_id').references(() => diaryAccounts.id, { onDelete: 'cascade' }),
     providerId: text('provider_id').notNull(),
     externalId: text('external_id').notNull(),
     fullName: text('full_name').notNull(),
@@ -149,14 +164,15 @@ export const students = pgTable(
     gradeLabel: text('grade_label'),
     /** The current school year's scale; null = a year without marks (ux-principles D49) */
     gradingScaleId: text('grading_scale_id'),
+    /** The school's IANA zone (lesson dates, the sync window); null = the manifest's */
+    timezone: text('timezone'),
+    /** The school's name when the provider gives one (StudentRef.schoolName) */
+    schoolLabel: text('school_label'),
     isActive: boolean('is_active').notNull().default(true),
     avatar: jsonb('avatar').$type<Record<string, unknown>>(),
     createdAt: createdAt(),
   },
-  (t) => [
-    unique('students_family_provider_external_key').on(t.familyId, t.providerId, t.externalId),
-    index('students_account_idx').on(t.diaryAccountId),
-  ],
+  (t) => [unique('students_provider_external_key').on(t.providerId, t.externalId)],
 );
 
 /** Cross-family lookup at connect: the same child seen through another family's account (docs/design.md 7.2) */
@@ -168,11 +184,12 @@ export const studentIdentities = pgTable(
     studentId: uuid('student_id')
       .notNull()
       .references(() => students.id, { onDelete: 'cascade' }),
-    familyId: uuid('family_id')
-      .notNull()
-      .references(() => families.id, { onDelete: 'cascade' }),
   },
-  (t) => [primaryKey({ columns: [t.providerId, t.externalId, t.studentId] })],
+  (t) => [
+    primaryKey({ columns: [t.providerId, t.externalId, t.studentId] }),
+    // one child per id in a system: the second parent's login finds the same child (design.md 7.2)
+    unique('student_identities_provider_external_key').on(t.providerId, t.externalId),
+  ],
 );
 
 export const joinRequests = pgTable('join_requests', {
@@ -202,15 +219,64 @@ export const invites = pgTable('invites', {
   usedAt: ts('used_at'),
 });
 
+/** The children a family follows (design.md 7.1); active only while one of its own diary accounts shows the child */
+export const familyStudents = pgTable(
+  'family_students',
+  {
+    familyId: uuid('family_id')
+      .notNull()
+      .references(() => families.id, { onDelete: 'cascade' }),
+    studentId: uuid('student_id')
+      .notNull()
+      .references(() => students.id, { onDelete: 'cascade' }),
+    status: text('status', { enum: ['active', 'suspended'] })
+      .notNull()
+      .default('active'),
+    settings: jsonb('settings').$type<ChildSettings>().notNull().default({}),
+    linkedAt: ts('linked_at').notNull().defaultNow(),
+    linkedBy: uuid('linked_by').references(() => users.id, { onDelete: 'set null' }),
+  },
+  (t) => [primaryKey({ columns: [t.familyId, t.studentId] }), index('family_students_student_idx').on(t.studentId)],
+);
+
+/** Every diary account that shows a child; the collector reads the child through the active one only (design.md 10.2) */
+export const studentSources = pgTable(
+  'student_sources',
+  {
+    studentId: uuid('student_id')
+      .notNull()
+      .references(() => students.id, { onDelete: 'cascade' }),
+    diaryAccountId: uuid('diary_account_id')
+      .notNull()
+      .references(() => diaryAccounts.id, { onDelete: 'cascade' }),
+    /** The child's id as this account's system knows it */
+    externalId: text('external_id').notNull(),
+    /** The last getAccount() of this account that listed the child */
+    lastSeenAt: ts('last_seen_at'),
+    active: boolean('active').notNull().default(false),
+  },
+  (t) => [
+    primaryKey({ columns: [t.studentId, t.diaryAccountId] }),
+    index('student_sources_account_idx').on(t.diaryAccountId),
+    uniqueIndex('student_sources_one_active')
+      .on(t.studentId)
+      .where(sql`${t.active}`),
+  ],
+);
+
 export const userStudentAccess = pgTable(
   'user_student_access',
   {
     userId: uuid('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
+    familyId: uuid('family_id')
+      .notNull()
+      .references(() => families.id, { onDelete: 'cascade' }),
     studentId: uuid('student_id')
       .notNull()
       .references(() => students.id, { onDelete: 'cascade' }),
   },
-  (t) => [primaryKey({ columns: [t.userId, t.studentId] })],
+  // which of a family's children a member sees, inside that family
+  (t) => [primaryKey({ columns: [t.userId, t.familyId, t.studentId] })],
 );

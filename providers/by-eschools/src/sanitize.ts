@@ -19,6 +19,12 @@ const ENUM = /^[A-Z][A-Z0-9_]{0,39}$/;
 /** Looks like a person: initials ("И.О.") or three capitalised words ("Иванова Мария Петровна"). */
 const PERSON_LIKE = /\p{Lu}\.\s?\p{Lu}\.|(\p{Lu}\p{Ll}+[\s-]+){2}\p{Lu}\p{Ll}+/u;
 const MARK_LABELS = /^(н|зач\.|незач\.|освоб\.|осв\.|не осв\.|н\/а)$/;
+/** A teaching group as the diary names it: "1-я подгруппа", "2-я подгруппа (мальчики)" (api-spec 6.7a) */
+const GROUP_NAME = /^\d-я подгруппа( \((девочки|мальчики)\))?$/;
+const LEVEL_OF_STUDY = /^(Базовый|Углубленный|Углублённый)$/;
+/** A room number as the timetable shows it: "201", "спортзал", "Лаб. 2"; never something with a person's shape */
+const ROOM = /^[\p{L}\d][\p{L}\d .-]{0,15}$/u;
+const CLOCK = /^\d{1,2}:\d{2}(:\d{2})?$/;
 /** A school year label: "2026-2027" in real responses (second probe), "2026/2027" in the bundle */
 const YEAR_LABEL = /^\d{4}\s?[/-]\s?\d{4}$/;
 
@@ -27,16 +33,67 @@ export interface Place {
   endpoint: string;
   key: string | null;
   container: string | null;
+  /** The key of the container's container (premise_type above as_json) */
+  outer?: string | null;
   depth: number;
 }
 
+/**
+ * The class's and school's lists (6.10.2 to 6.10.4): nothing reads their free text, and a summary or an author may
+ * name a person; a timetable slot's summary repeats the subject's name
+ */
+const SCHOOL_LISTS = /^(planning|premises|timetables?)(-|$)/;
+const SCHOOL_LIST_TEXT = new Set(['summary', 'author']);
+/** A premise type is the same few words in every school ("Учебный кабинет", "уч.каб."); one typical value stands for all */
+export const PREMISE_TYPE_NAME = 'Кабинет';
+export const PREMISE_TYPE_SHORT = 'каб.';
+
+/**
+ * The school lists' free text, dropped with everything under it (also by redactRaw): every summary and author; a
+ * room's own name (it may be named after a person); the plan's catalogue entry of a subject (6.10.3
+ * school_subject.as_json.subject), which repeats the subject's name and is never read
+ */
+export function dropsSchoolText(endpoint: string, key: string, container: string | null = null): boolean {
+  if (!SCHOOL_LISTS.test(endpoint)) return false;
+  if (SCHOOL_LIST_TEXT.has(key)) return true;
+  if (endpoint.startsWith('premises')) return key === 'audience_name';
+  return key === 'subject' && container === 'as_json';
+}
+
+/** A value sanitize() replaces with the same value for everyone: its real text never reaches a fixture */
+export function fixedValue({ endpoint, key, container, outer }: Place): string | undefined {
+  if (!/^premises(-|$)/.test(endpoint) || container !== 'as_json' || outer !== 'premise_type') return undefined;
+  if (key === 'name') return PREMISE_TYPE_NAME;
+  if (key === 'short_name') return PREMISE_TYPE_SHORT;
+  return undefined;
+}
+
 /** Does sanitize() keep this string as it is? The probe's leak check treats every other string as sensitive. */
-export function keepsString({ endpoint, key, depth }: Place, value: string): boolean {
+export function keepsString({ endpoint, key, container, outer, depth }: Place, value: string): boolean {
   switch (key) {
+    case 'group_name':
+      return GROUP_NAME.test(value);
+    case 'level_of_study':
+      return LEVEL_OF_STUDY.test(value);
+    case 'value':
+      // level_of_study.value in the teaching plan (6.10.3)
+      return container === 'level_of_study' && LEVEL_OF_STUDY.test(value);
+    case 'audience_number':
+      return ROOM.test(value) && !PERSON_LIKE.test(value);
+    case 'short_name':
+      // a subject's short name in the plan (school_subject.as_json, 6.10.3); a short name anywhere else may be a person
+      return container === 'as_json' && outer === 'school_subject' && value.length <= 20 && !PERSON_LIKE.test(value);
+    case 'end_time':
+      return CLOCK.test(value);
+    case 'partition_type':
+    case 'period':
+      return ENUM.test(value);
     case 'subject_title':
       return value.length <= 80 && !PERSON_LIKE.test(value);
     case 'name':
       // a subject's name: only directly on the items of the subjects list, never nested deeper
+      // a teaching group's name in the plan (6.10.3); a teacher's name is never kept
+      if (container === 'study_group') return GROUP_NAME.test(value);
       return (
         /^(subjects|educational_subjects)/.test(endpoint) &&
         depth === 1 &&
@@ -45,7 +102,7 @@ export function keepsString({ endpoint, key, depth }: Place, value: string): boo
       );
     case 'start_time':
       // "08:30" in the bundle; seconds allowed, the first probe's values were not plain HH:MM
-      return /^\d{1,2}:\d{2}(:\d{2})?$/.test(value);
+      return CLOCK.test(value);
     case 'kind':
     case 'type':
     case 'title':
@@ -82,11 +139,17 @@ const SAFE_NUMBERS = new Set([
   'dt_disbanded',
   'day_of_week',
   'level',
+  // school details (6.10): shifts, grades a bell schedule applies to, weekdays, lessons per week
+  'shift',
+  'levels',
+  'days',
+  'class_level',
+  'study_hours',
 ]);
 
 /** Does sanitize() keep this number? A lesson's position only on a lesson slot, never as a school number. */
 export function keepsNumber({ key, container }: Place): boolean {
-  if (key === 'number') return container === 'slots';
+  if (key === 'number') return container === 'slots' || container === 'time_of_bells';
   return key !== null && SAFE_NUMBERS.has(key);
 }
 
@@ -105,6 +168,8 @@ export const PLACEHOLDERS: ReadonlySet<string> = new Set([
   TEXT,
   'fixture-token',
   'Родитель',
+  PREMISE_TYPE_NAME,
+  PREMISE_TYPE_SHORT,
   ...Object.values(PLACEHOLDER),
 ]);
 
@@ -133,6 +198,12 @@ export function createSanitizer(key: Buffer = randomBytes(32)): Sanitizer {
     return real.replace(/\d{1,2}/g, digit);
   };
 
+  /** Every digit replaced one for one from the same kind of seed, so the length and the form stay: "101С" -> "374А" */
+  const fakeDigits = (real: string, seed: string) => {
+    let i = 0;
+    return real.replace(/\d/g, () => String(createHash('sha256').update(`${seed}:${i++}`).digest()[0]! % 10));
+  };
+
   function walk(value: unknown, place: Place, ctx: { inStudents: boolean; index: number; seed: string }): unknown {
     const { key } = place;
     if (Array.isArray(value)) {
@@ -145,12 +216,12 @@ export function createSanitizer(key: Buffer = randomBytes(32)): Sanitizer {
       const own = (value as { uuid?: unknown }).uuid;
       const seed = typeof own === 'string' && own ? fakeId(own) : ctx.seed;
       for (const [k, v] of Object.entries(value)) {
-        if (DROP.has(k)) continue;
+        if (DROP.has(k) || dropsSchoolText(place.endpoint, k, key)) continue;
         // maps keyed by ids (final/whole: marks[subject][period]); any key that is not a schema word is data
         const outKey = UUID.test(k) || /^\d{3,}$/.test(k) || !SCHEMA_KEY.test(fakeInside(k)) ? fakeId(k) : k;
         out[outKey] = walk(
           v,
-          { ...place, key: k, container: key, depth: place.depth + 1 },
+          { ...place, key: k, container: key, outer: place.container, depth: place.depth + 1 },
           { ...ctx, seed: `${seed}/${outKey}` },
         );
       }
@@ -160,6 +231,8 @@ export function createSanitizer(key: Buffer = randomBytes(32)): Sanitizer {
     if (typeof value !== 'string') return value;
     if (key === null) return TEXT;
     if (value === '' || value.startsWith(FAKE_UUID_PREFIX)) return value;
+    const fixed = fixedValue(place);
+    if (fixed !== undefined) return fixed;
     if (TOKENS.has(key)) return 'fixture-token';
     if (
       UUID.test(value) ||
@@ -173,6 +246,10 @@ export function createSanitizer(key: Buffer = randomBytes(32)): Sanitizer {
     if (key in PLACEHOLDER) return value.trim() ? PLACEHOLDER[key] : value;
     // a numeric mark keeps its form ("8", "7/9"), never its value
     if (key === 'mark' && /^\d{1,2}(\/\d{1,2})?$/.test(value)) return fakeMark(value, ctx.seed);
+    // a room number keeps its form, never its value: a school's whole room list (6.10.4), with its buildings' letters,
+    // and the bells could point to the school. A room named in words only ("спортзал") is the same everywhere
+    if (key === 'audience_number' && /\d/.test(value) && keepsString(place, value))
+      return fakeDigits(value.replace(/\p{L}+/gu, 'А'), ctx.seed);
     if (key === 'label' && /^\p{L}{1,3}$/u.test(value)) return 'А';
     if (key === 'class_number' && /^\d{1,2}\p{L}{0,3}$/u.test(value)) return `${value.match(/^\d+/)![0]}А`;
     if (keepsString(place, value)) return fakeInside(value);

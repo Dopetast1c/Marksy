@@ -2,7 +2,7 @@ import type { DiaryProvider, ISODate, Logger, Transport } from '@marksy/core';
 import { getProvider } from '@marksy/registry';
 import { and, desc, eq } from 'drizzle-orm';
 import type { Db } from '../db/client';
-import { diaryAccounts, families, students, syncRuns, termRescans } from '../db/schema';
+import { diaryAccounts, families, syncRuns, termRescans } from '../db/schema';
 import type { SyncErrorClass, SyncRunScope, SyncRunStats, SyncRunStatus } from '../db/schema';
 import { decryptCredentials, masterKey } from '../crypto/credentials';
 import { notifyAdmins } from '../notify/admin';
@@ -15,9 +15,11 @@ import { checkOnline } from './connectivity';
 import type { OnlineCheck } from './connectivity';
 import { applyOutcome } from './failures';
 import type { Alert } from './failures';
-import { decideStart, hasBacklog, inWeeklyWindow, isManual, isSchoolDay, selectWeeks, termBookkeeping } from './plan';
+import { decideStart, isManual, selectWeeks, termBookkeeping } from './plan';
 import type { GateDecision, Trigger } from './plan';
-import { planCalendarOf, planState, storedPlanCalendar, weekContext } from './state';
+import { accountToday, planCalendarOf, planState, storedPlanCalendar, weekContext } from './state';
+import { readableStudents, sourcedStudents } from './store-school';
+import { rebalanceAccount } from './sources';
 import { localTime } from './time';
 
 // One attempt to sync one diary account (docs/design.md 10.4), whatever triggered it: the scheduler's tick, the
@@ -101,28 +103,18 @@ async function runLocked(opts: RunSyncOptions): Promise<RunSyncResult> {
   const [family] = await db.select().from(families).where(eq(families.id, account.familyId));
   const settings = family?.settings ?? {};
   const manifest = provider.manifest;
-  const limits = effectiveLimits(manifest, config, settings);
+  const limits = effectiveLimits(manifest, config);
   const started = now();
   const local = localTime(started, manifest.timezone);
-  const weekly = inWeeklyWindow(limits.weekly, local);
-  const ctx = weekContext(manifest, settings, started, account.lastSuccessAt, weekly);
+  const ctx = weekContext(manifest, settings, started, account.lastSuccessAt);
 
-  // what the stored state says is waiting, before anyone logs in
-  const pupils = await db
-    .select()
-    .from(students)
-    .where(and(eq(students.diaryAccountId, account.id), eq(students.isActive, true)));
-  let backlog = false;
-  let schoolDay = pupils.length === 0 && manifest.calendar.schoolDays.includes(local.weekday);
-  for (const s of pupils) {
-    const cal = await storedPlanCalendar(db, s.id, ctx.today);
-    if (!cal) {
-      backlog = true;
-      continue;
-    }
-    if (isSchoolDay(ctx.today, cal, ctx)) schoolDay = true;
-    if (hasBacklog(selectWeeks(await planState(db, s.id, cal), ctx))) backlog = true;
-  }
+  // what the stored state says, before anyone logs in: each child's school day today and what is waiting
+  const pupils = await readableStudents(db, account.id);
+  // an account that is the active source of none of the children it shows only checks, once a school day, that it
+  // still shows them (design.md 10.4, "Source checks")
+  const sourced = pupils.length ? [] : await sourcedStudents(db, account.id);
+  const sourceCheck = sourced.length > 0;
+  const today = await accountToday(db, sourceCheck ? sourced : pupils.map((p) => p.id), ctx, limits);
   const [lastOffline] = await db
     .select({ startedAt: syncRuns.startedAt })
     .from(syncRuns)
@@ -130,6 +122,12 @@ async function runLocked(opts: RunSyncOptions): Promise<RunSyncResult> {
     .orderBy(desc(syncRuns.startedAt))
     .limit(1);
 
+  // a source check happens once a school day: decided before the gate, whose jitter must not hide it
+  const checkedToday =
+    sourceCheck && !!account.lastSuccessAt && localTime(account.lastSuccessAt, manifest.timezone).date === local.date;
+  if (checkedToday && !isManual(opts.trigger)) {
+    return { outcome: 'skipped', decision: { start: false, reason: 'checked_today', record: null } };
+  }
   const decision = decideStart({
     now: started,
     local,
@@ -137,8 +135,11 @@ async function runLocked(opts: RunSyncOptions): Promise<RunSyncResult> {
     trigger: opts.trigger,
     account,
     limits,
-    schoolDay,
-    backlog,
+    windows: today.windows,
+    weekday: manifest.calendar.schoolDays.includes(local.weekday),
+    // an account that reads no child yet (just connected) has everything waiting; a source check has nothing
+    backlog: sourceCheck ? false : today.backlog || pupils.length === 0,
+    postTerm: sourceCheck ? false : today.postTerm,
     lastOfflineAt: lastOffline?.startedAt ?? null,
     seed: account.id,
   });
@@ -149,6 +150,7 @@ async function runLocked(opts: RunSyncOptions): Promise<RunSyncResult> {
     trigger: opts.trigger,
     startedAt: started,
   };
+  const kind = sourceCheck && decision.start ? 'source_check' : decision.start ? decision.kind : 'manual';
   if (!decision.start) {
     if (!decision.record) return { outcome: 'skipped', decision };
     const [row] = await db
@@ -164,7 +166,7 @@ async function runLocked(opts: RunSyncOptions): Promise<RunSyncResult> {
       .insert(syncRuns)
       .values({
         ...base,
-        kind: decision.kind,
+        kind,
         status: 'skipped_offline',
         errorClass: 'offline',
         finishedAt: now(),
@@ -177,7 +179,7 @@ async function runLocked(opts: RunSyncOptions): Promise<RunSyncResult> {
 
   const [run] = await db
     .insert(syncRuns)
-    .values({ ...base, kind: decision.kind, status: 'running' })
+    .values({ ...base, kind, status: 'running' })
     .returning({ id: syncRuns.id });
   const runId = run!.id;
   await db
@@ -201,6 +203,7 @@ async function runLocked(opts: RunSyncOptions): Promise<RunSyncResult> {
   }
 
   const collected = await runCollector({
+    accountOnly: sourceCheck,
     db,
     provider,
     account,
@@ -239,6 +242,8 @@ async function runLocked(opts: RunSyncOptions): Promise<RunSyncResult> {
 
   const { patch, alert } = applyOutcome(account, { ...collected, manual: isManual(opts.trigger) }, finished, config);
   await db.update(diaryAccounts).set(patch).where(eq(diaryAccounts.id, account.id));
+  // a paused account or one that needs action hands its children to another source that can read
+  await rebalanceAccount(db, account.id, finished);
   if (alert) {
     await notifyAdmins(db, account.familyId, {
       ...NOTICES[alert],

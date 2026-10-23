@@ -1,7 +1,67 @@
 [
-  { "code": "alg", "title": "Алгебра" },
-  { "code": "rus", "title": "Русский язык" },
-  { "code": "phy", "title": "Физика" },
-  { "code": "eng", "title": "Английский язык" },
-  { "code": "pe", "title": "Физическая культура" }
+  {
+    "code": "alg",
+    "title": "Алгебра",
+    "short": "Алг.",
+    "teacher": {
+      "id": "T-1",
+      "name": "Ковалёва Ирина Петровна"
+    },
+    "group": null,
+    "level": "BASIC",
+    "level_text": "Базовый",
+    "per_week": 2
+  },
+  {
+    "code": "rus",
+    "title": "Русский язык",
+    "short": "Рус. яз.",
+    "teacher": {
+      "id": "T-2",
+      "name": "Савченко Ольга Николаевна"
+    },
+    "group": null,
+    "level": "BASIC",
+    "level_text": "Базовый",
+    "per_week": 2
+  },
+  {
+    "code": "phy",
+    "title": "Физика",
+    "short": "Физ.",
+    "teacher": {
+      "id": "T-3",
+      "name": "Лосев Андрей Викторович"
+    },
+    "group": null,
+    "level": "BASIC",
+    "level_text": "Базовый",
+    "per_week": 1
+  },
+  {
+    "code": "eng",
+    "title": "Английский язык",
+    "short": "Англ.",
+    "teacher": {
+      "id": "T-4",
+      "name": "Климович Елена Сергеевна"
+    },
+    "group": "2-я подгруппа",
+    "level": "ADVANCED",
+    "level_text": "Углублённый",
+    "per_week": 1
+  },
+  {
+    "code": "pe",
+    "title": "Физическая культура",
+    "short": "Физ-ра",
+    "teacher": {
+      "id": "T-5",
+      "name": "Ермаков Виталий Иванович"
+    },
+    "group": null,
+    "level": "BASIC",
+    "level_text": "Базовый",
+    "per_week": 1
+  }
 ]

@@ -1,6 +1,8 @@
-// pnpm probe [--provider <id>] [--weeks <1-8>]: runs a provider's own probe script (docs/providers.md 8). It logs in to the real
-// diary with the logins in .env, so only the owner runs it, from their own terminal. Without --provider it picks the
-// only provider that has a probe.
+// pnpm probe [--provider <id>] [--weeks <1-8>]: runs a provider's own probe script (docs/providers.md 8). It logs in to
+// the real diary with the logins in .env, after the login guard allowed it (the provider's probe asks it itself,
+// server/src/cli/login-guard.ts: one login an hour per account; for Claude Code three runs a day, 07:00 to 20:00).
+// pnpm probe --offline [run] re-runs the provider's probe on saved raw responses in data/probe/ without a login.
+// Without --provider it picks the only provider that has a probe.
 import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 
@@ -26,12 +28,17 @@ if (!/^[a-z0-9_-]+$/.test(id) || !withProbe.includes(id)) {
 }
 // the rest goes to the provider's probe; it ends up in a shell command too, so only known options are passed on
 const rest = flag >= 0 ? args.filter((_, i) => i !== flag && i !== flag + 1) : args;
-const known = rest.length === 0 || (rest.length === 2 && rest[0] === '--weeks' && /^\d{1,2}$/.test(rest[1]));
+const offline = rest[0] === '--offline';
+const known = offline
+  ? rest.length === 1 || (rest.length === 2 && /^\d{4}-\d{2}-\d{2}T[\d-]+Z$/.test(rest[1]))
+  : rest.length === 0 || (rest.length === 2 && rest[0] === '--weeks' && /^\d{1,2}$/.test(rest[1]));
 if (!known) {
-  console.error('options: --provider <id>, --weeks <1-8>');
+  console.error('options: --provider <id>, --weeks <1-8>, or --offline [the run folder in data/probe/]');
   process.exit(2);
 }
-const command = ['--dir', `providers/${id}`, 'probe', ...rest];
+const command = offline
+  ? ['--dir', `providers/${id}`, 'probe:offline', ...rest.slice(1)]
+  : ['--dir', `providers/${id}`, 'probe', ...rest];
 // MARKSY_PROBE_DRY_RUN=1 prints what would run and stops: the launcher can be tested without ever logging in
 if (process.env.MARKSY_PROBE_DRY_RUN === '1') {
   console.log(`dry run: pnpm ${command.join(' ')}`);

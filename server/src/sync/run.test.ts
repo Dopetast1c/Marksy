@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { resetDb, testDb } from '../../test/db';
 import { createAccount, TEST_CREDENTIALS_KEY } from '../../test/factories';
-import { diaryAccounts, notifications, syncCoverage, syncRuns, users } from '../db/schema';
+import { diaryAccounts, memberships, notifications, syncCoverage, syncRuns, users } from '../db/schema';
 import { readSyncConfig } from './config';
 import type { SyncConfig } from './config';
 import { runSync } from './run';
@@ -17,13 +17,11 @@ const unavailable = async () => ({ status: 503, headers: {}, text: '' });
 
 async function setup() {
   const { family, account } = await createAccount(db, 'demo-full');
-  await db.insert(users).values({
-    familyId: family.id,
-    role: 'admin',
-    login: 'admin@example.com',
-    displayName: 'Admin',
-    passwordHash: 'x',
-  });
+  const [admin] = await db
+    .insert(users)
+    .values({ login: 'admin@example.com', displayName: 'Admin', passwordHash: 'x' })
+    .returning();
+  await db.insert(memberships).values({ userId: admin!.id, familyId: family.id, role: 'admin' });
   return account;
 }
 
@@ -88,9 +86,10 @@ describe('runSync', () => {
 
   it('pauses after three failures, tells the admin once, doubles the pause after it', async () => {
     const a = await setup();
-    await sync(a.id, '2025-09-17 08:30'); // a first success, so later runs are ordinary
+    // Tuesday 16 Sep: p-1 has lessons 1 and 2, so with the bells of the first run the day's window is 07:30-11:40
+    await sync(a.id, '2025-09-16 08:30'); // a first success, so later runs are ordinary
     const fail = { transport: unavailable };
-    for (const t of ['2025-09-17 09:55', '2025-09-17 11:20', '2025-09-17 12:45']) {
+    for (const t of ['2025-09-16 09:55', '2025-09-16 11:20', '2025-09-18 08:40']) {
       expect(await sync(a.id, t, fail)).toMatchObject({
         outcome: 'ran',
         status: 'failed',
@@ -100,23 +99,23 @@ describe('runSync', () => {
     expect(await account(a.id)).toMatchObject({
       consecutiveFailures: 3,
       pauseHours: 24,
-      pausedUntil: at('2025-09-18 12:45'),
+      pausedUntil: at('2025-09-19 08:40'),
     });
     const notes = await db.select().from(notifications);
     expect(notes).toEqual([
       expect.objectContaining({
         title: 'notification.syncPaused.title',
-        params: { until: at('2025-09-18 12:45').toISOString() },
+        params: { until: at('2025-09-19 08:40').toISOString() },
       }),
     ]);
 
-    expect(await sync(a.id, '2025-09-18 10:00', fail)).toMatchObject({ decision: { reason: 'paused' } });
+    expect(await sync(a.id, '2025-09-19 08:00', fail)).toMatchObject({ decision: { reason: 'paused' } });
     // the first run after the pause fails again: 48 hours, and no second notice
-    await sync(a.id, '2025-09-18 12:50', fail);
-    expect(await account(a.id)).toMatchObject({ pauseHours: 48, pausedUntil: at('2025-09-20 12:50') });
+    await sync(a.id, '2025-09-19 08:50', fail);
+    expect(await account(a.id)).toMatchObject({ pauseHours: 48, pausedUntil: at('2025-09-21 08:50') });
     expect(await db.select().from(notifications)).toHaveLength(1);
     // one success resets everything
-    await sync(a.id, '2025-09-20 13:00');
+    await sync(a.id, '2025-09-21 09:00');
     expect(await account(a.id)).toMatchObject({ consecutiveFailures: 0, pausedUntil: null, pauseHours: null });
   });
 
@@ -135,8 +134,9 @@ describe('runSync', () => {
 
   it('catches up a long backlog over several runs, freshest weeks first', async () => {
     const a = await setup();
-    const cap = { config: { maxRequestsPerRun: 12 } };
-    // login, profile, year and subjects per pupil = 6; 4 standing weeks; 2 finals
+    const cap = { config: { maxRequestsPerRun: 14 } };
+    // login, profile, year and subjects per pupil = 6; 4 standing weeks; 2 finals; the school details of the day take
+    // 3 requests per pupil (bells, regular week, subjects) and fit into what is left over the first two runs
     await sync(a.id, '2025-10-15 15:00', cap);
     const weeks = async () => (await db.select().from(syncCoverage)).map((c) => c.weekStart);
     expect(new Set(await weeks())).toEqual(new Set(['2025-10-13', '2025-10-06']));
@@ -146,9 +146,8 @@ describe('runSync', () => {
     const after2 = new Set(await weeks());
     expect(after2.has('2025-09-29')).toBe(true);
     expect(after2.has('2025-09-01')).toBe(false);
-    // every run takes the standing weeks again, so 6 requests leave room for 2 older weeks per run
-    for (const t of ['2025-10-15 17:02', '2025-10-15 18:03', '2025-10-15 19:04', '2025-10-15 20:05'])
-      await sync(a.id, t, cap);
+    // every run takes the standing weeks again, so 14 requests leave room for 4 older weeks per run
+    for (const t of ['2025-10-15 17:02', '2025-10-15 18:03', '2025-10-15 19:04']) await sync(a.id, t, cap);
     expect(new Set(await weeks()).size).toBe(7);
     // nothing left: the next evening tick does nothing
     expect(await sync(a.id, '2025-10-15 21:06', cap)).toMatchObject({ decision: { reason: 'outside_window' } });

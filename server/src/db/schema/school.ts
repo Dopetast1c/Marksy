@@ -72,8 +72,14 @@ export const subjects = pgTable(
     name: text('name').notNull(),
     /** Lowercased, whitespace-collapsed name: matching across years and tag subject filters */
     nameNorm: text('name_norm').notNull(),
+    shortName: text('short_name'),
+    /** The student's own teacher (of their group on a split subject) */
+    teacherExternalId: text('teacher_external_id'),
     teacherName: text('teacher_name'),
+    groupLabel: text('group_label'),
     level: text('level'),
+    levelLabel: text('level_label'),
+    lessonsPerWeek: real('lessons_per_week'),
     credits: real('credits'),
     gradingScheme: jsonb('grading_scheme').$type<Record<string, unknown>>(),
   },
@@ -149,6 +155,66 @@ export const studentYears = pgTable(
     gradingScaleId: text('grading_scale_id'),
   },
   (t) => [primaryKey({ columns: [t.studentId, t.schoolYearId] }), index('student_years_year_idx').on(t.schoolYearId)],
+);
+
+export interface BellPeriod {
+  slot: number;
+  start: string;
+  end: string;
+}
+
+/** The bells of the student's class (providers.md BellSchedule), replaced on every fetch */
+export const bellSchedules = pgTable(
+  'bell_schedules',
+  {
+    id: id(),
+    studentId: uuid('student_id')
+      .notNull()
+      .references(() => students.id, { onDelete: 'cascade' }),
+    schoolYearId: uuid('school_year_id')
+      .notNull()
+      .references(() => schoolYears.id, { onDelete: 'cascade' }),
+    externalId: text('external_id').notNull(),
+    label: text('label'),
+    /** 0 = Sunday, as manifest.calendar */
+    days: integer('days').array().notNull(),
+    periods: jsonb('periods').$type<BellPeriod[]>().notNull(),
+    validFrom: day('valid_from'),
+    validTo: day('valid_to'),
+    fetchedAt: ts('fetched_at').notNull(),
+  },
+  (t) => [index('bell_schedules_student_idx').on(t.studentId)],
+);
+
+export interface WeekTemplateEntry {
+  cycle_week: number;
+  weekday: number;
+  slot: number;
+  start?: string;
+  end?: string;
+  subject_id: string;
+  group_label?: string;
+  room?: string;
+  teacher_external_id?: string;
+  teacher_name?: string;
+  template_ref?: string;
+}
+
+/** The student's own regular week for a term; never another group's lessons. Replaced on every fetch */
+export const weekTemplates = pgTable(
+  'week_templates',
+  {
+    id: id(),
+    studentId: uuid('student_id')
+      .notNull()
+      .references(() => students.id, { onDelete: 'cascade' }),
+    /** null = the whole year */
+    termId: uuid('term_id').references(() => terms.id, { onDelete: 'cascade' }),
+    cycleWeeks: integer('cycle_weeks').notNull().default(1),
+    entries: jsonb('entries').$type<WeekTemplateEntry[]>().notNull(),
+    fetchedAt: ts('fetched_at').notNull(),
+  },
+  (t) => [index('week_templates_student_idx').on(t.studentId)],
 );
 
 /** student_years.grading_scale_id when the manifest's scale is inline rather than a built-in id */

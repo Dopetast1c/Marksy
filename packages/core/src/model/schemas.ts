@@ -21,11 +21,15 @@ export const studentRef = z.object({
   middleName: z.string().optional(),
   displayName: z.string().optional(),
   schoolId: z.string().optional(),
+  /** The school's name when the system gives one; the picker falls back to the diary's name (design.md 4) */
+  schoolName: z.string().optional(),
   /** The class or year group in the system, when its URLs or data need it */
   classExternalId: z.string().optional(),
   className: z.string().optional(),
   grade: z.number().int().optional(),
   gradeLabel: z.string().optional(),
+  /** The school's IANA zone when it differs from the manifest's (a national system over several zones) */
+  timezone: z.string().optional(),
 });
 export type StudentRef = z.infer<typeof studentRef>;
 
@@ -73,8 +77,19 @@ export type Calendar = z.infer<typeof calendar>;
 export const subject = z.object({
   externalId: nonEmpty,
   name: nonEmpty,
+  /** The system's abbreviation, for narrow grids */
+  shortName: z.string().optional(),
+  /** The student's own teacher: of the student's group on a split subject (capabilities.teacherNames) */
+  teacherExternalId: z.string().optional(),
   teacherName: z.string().optional(),
-  level: z.enum(['regular', 'honors', 'ap', 'ib', 'other']).optional(),
+  /** The student's subgroup, set or section as the system names it; absent when the class is not split */
+  groupLabel: z.string().optional(),
+  /** regular is never shown; advanced is the post-Soviet "углублённый"; honors, ap, ib are US course levels */
+  level: z.enum(['regular', 'advanced', 'honors', 'ap', 'ib', 'other']).optional(),
+  /** The system's own wording of the level, shown when it is not regular */
+  levelLabel: z.string().optional(),
+  /** From the teaching plan; absent when the system plans per fortnight or not at all */
+  lessonsPerWeek: z.number().positive().optional(),
   credits: z.number().optional(),
   gradingScheme: z
     .object({
@@ -159,6 +174,20 @@ export type Attendance = z.infer<typeof attendance>;
 export const lessonType = z.enum(['regular', 'test', 'lab', 'practical', 'excursion', 'other']);
 export type LessonType = z.infer<typeof lessonType>;
 
+export const behaviourEvent = z.object({
+  externalId: nonEmpty,
+  date: isoDate,
+  points: z.number().optional(),
+  polarity: z.enum(['positive', 'negative', 'neutral']),
+  category: z.string().optional(),
+  comment: z.string().optional(),
+  subjectExternalId: z.string().optional(),
+  authorExternalId: z.string().optional(),
+  /** The lesson it was written on, when the system ties it to one (a teacher's comment without a mark) */
+  lessonExternalId: z.string().optional(),
+});
+export type BehaviourEvent = z.infer<typeof behaviourEvent>;
+
 export const lesson = z.object({
   /** Stable id of this occurrence; built from date + slot + subject when the system has none. */
   externalId: nonEmpty,
@@ -176,12 +205,71 @@ export const lesson = z.object({
   hasAttachments: z.boolean().optional(),
   lessonType: lessonType.optional(),
   substituteTeacherName: z.string().optional(),
+  /** As the timetable shows it ("201", "Лаб. 2"); from the lesson or, on the server, from the week template */
+  room: z.string().optional(),
+  /** The student's subgroup when the subject is split */
+  groupLabel: z.string().optional(),
+  /**
+   * An opaque key of the timetable entry this lesson comes from (a lesson template id, for example). The server matches
+   * a lesson to the student's week template with it (docs/providers.md 4); absent when the system has none.
+   */
+  templateRef: z.string().optional(),
   marks: z.array(mark),
   /** Attendance that comes with the lesson (capabilities.attendance = 'derived', e.g. an "absent" mark cell) */
   attendance: z.array(attendance).optional(),
+  /** Teacher remarks that come with the lesson (capabilities.behaviour = 'derived'), e.g. a comment without a mark */
+  behaviour: z.array(behaviourEvent).optional(),
   cancelled: z.boolean().optional(),
 });
 export type Lesson = z.infer<typeof lesson>;
+
+/** "HH:MM" */
+const clock = z.string().regex(/^\d{2}:\d{2}$/, 'expected HH:MM');
+const weekdayNumber = z.number().int().min(0).max(6);
+
+/** The bell schedule of the student's class (capabilities.bellSchedule). Breaks are the gaps between periods. */
+export const bellSchedule = z.object({
+  externalId: nonEmpty,
+  /** The system's title, e.g. a shift or "Year 1" */
+  label: z.string().optional(),
+  /** Weekdays it applies to, 0 = Sunday as in manifest.calendar */
+  days: z.array(weekdayNumber).min(1),
+  /** Slot numbers as lessons use them (they may start at 0) */
+  periods: z.array(z.object({ slot: z.number().int().min(0), start: clock, end: clock })).min(1),
+  validFrom: isoDate.optional(),
+  validTo: isoDate.optional(),
+});
+export type BellSchedule = z.infer<typeof bellSchedule>;
+
+/**
+ * The student's own regular week for a term (capabilities.weekTemplate): what the timetable plans, not what happened.
+ * Only the student's lessons: never another subgroup's (docs/providers.md 4, "Teachers are third parties").
+ */
+export const weekTemplate = z.object({
+  /** Absent = the whole year */
+  termExternalId: z.string().optional(),
+  /** 1, or 2 for Week A / Week B timetables */
+  cycleWeeks: z.number().int().min(1),
+  entries: z.array(
+    z.object({
+      cycleWeek: z.number().int().min(1),
+      weekday: weekdayNumber,
+      slot: z.number().int().min(0),
+      start: clock.optional(),
+      end: clock.optional(),
+      subjectExternalId: nonEmpty,
+      subjectName: nonEmpty,
+      groupLabel: z.string().optional(),
+      room: z.string().optional(),
+      teacherExternalId: z.string().optional(),
+      teacherName: z.string().optional(),
+      /** The same opaque key lessons carry in Lesson.templateRef */
+      templateRef: z.string().optional(),
+    }),
+  ),
+});
+export type WeekTemplate = z.infer<typeof weekTemplate>;
+export type WeekTemplateEntry = WeekTemplate['entries'][number];
 
 export const homeworkItem = z.object({
   externalId: nonEmpty,
@@ -195,18 +283,6 @@ export const homeworkItem = z.object({
   markExternalId: z.string().optional(),
 });
 export type HomeworkItem = z.infer<typeof homeworkItem>;
-
-export const behaviourEvent = z.object({
-  externalId: nonEmpty,
-  date: isoDate,
-  points: z.number().optional(),
-  polarity: z.enum(['positive', 'negative', 'neutral']),
-  category: z.string().optional(),
-  comment: z.string().optional(),
-  subjectExternalId: z.string().optional(),
-  authorExternalId: z.string().optional(),
-});
-export type BehaviourEvent = z.infer<typeof behaviourEvent>;
 
 export const finalMarkRole = z.enum([
   'final',

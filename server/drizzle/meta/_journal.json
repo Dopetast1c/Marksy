@@ -15,6 +15,41 @@
       "when": 1792709863978,
       "tag": "0001_term_notes",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792732981490,
+      "tag": "0002_children_and_school_details",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792733027396,
+      "tag": "0003_drop_family_columns",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792738733619,
+      "tag": "0004_drop_unfollowed_children",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792739334452,
+      "tag": "0005_cli_logins",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792749055598,
+      "tag": "0006_lesson_remarks",
+      "breakpoints": true
     }
   ]
 }

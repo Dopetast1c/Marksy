@@ -3,7 +3,8 @@ import type { Db } from './db/client';
 
 // Retention of operational data (docs/design.md 10.4, "Retention"). Marks and mark_history are kept for the student's
 // lifetime in the family; everything else here grows with time and is trimmed once a day. Every limit has a RETENTION_*
-// override in .env.example. Deleting a family, an account or a student cascades at once and does not wait for this.
+// override in .env.example. Deleting a family, an account or a student cascades at once and does not wait for this; a
+// child goes with the last family that follows them (the trigger of migration 0004).
 
 export interface RetentionLimits {
   /** sync_runs; older runs are compacted into sync_daily */
@@ -105,6 +106,8 @@ export async function applyRetention(db: Db, limits: RetentionLimits, now = new 
   );
   await run('lesson_tag_hits', sql`delete from lesson_tag_hits where due_date < ${days(limits.tagHitsDays)}::date`);
   await run('sessions', sql`delete from sessions where expires_at < ${now}`);
+  // the login guard looks back a day at most; kept as long as the sync runs for diagnosis
+  await run('cli_logins', sql`delete from cli_logins where at < ${days(limits.syncRunsDays)}`);
   // single-use secrets: an expired code is useless and should not linger
   await run('invites', sql`delete from invites where expires_at < ${now}`);
   await run('telegram_link_codes', sql`delete from telegram_link_codes where expires_at < ${now}`);
@@ -125,9 +128,12 @@ export async function applyRetention(db: Db, limits: RetentionLimits, now = new 
   );
 
   // a family that set families.settings.retention_years keeps diary data that long (docs/design.md 14.1): every table
-  // with a day of its own, and finals by the end of their school year
-  const familyLimit = sql`(${now}::date - make_interval(years => (f.settings->>'retention_years')::int))`;
-  const limited = sql`f.id = x.family_id and (f.settings->>'retention_years') is not null`;
+  // with a day of its own, and finals by the end of their school year. A child followed by several families keeps the
+  // shortest limit any of them set (10.4)
+  const shortest = sql`(select fs.student_id, min((f.settings->>'retention_years')::int) as years
+      from family_students fs join families f on f.id = fs.family_id
+      where (f.settings->>'retention_years') is not null group by fs.student_id) r`;
+  const cutoff = sql`(${now}::date - make_interval(years => r.years))`;
   const dated = {
     marks: sql`x.date`,
     attendance: sql`x.date`,
@@ -138,14 +144,14 @@ export async function applyRetention(db: Db, limits: RetentionLimits, now = new 
   for (const [table, day] of Object.entries(dated)) {
     await run(
       `${table}_family_limit`,
-      sql`delete from ${sql.identifier(table)} x using families f where ${limited} and ${day} < ${familyLimit}`,
+      sql`delete from ${sql.identifier(table)} x using ${shortest} where r.student_id = x.student_id and ${day} < ${cutoff}`,
     );
   }
   for (const table of ['final_marks', 'final_marks_raw']) {
     await run(
       `${table}_family_limit`,
-      sql`delete from ${sql.identifier(table)} x using families f, school_years y
-          where ${limited} and y.id = x.school_year_id and y.end_date < ${familyLimit}`,
+      sql`delete from ${sql.identifier(table)} x using ${shortest}, school_years y
+          where r.student_id = x.student_id and y.id = x.school_year_id and y.end_date < ${cutoff}`,
     );
   }
   return report;

@@ -1,7 +1,7 @@
-import { createMemoryDrift, driftChecker } from '@marksy/core';
+import { createMemoryDrift, driftChecker, ProviderSchemaError } from '@marksy/core';
 import { describe, expect, it } from 'vitest';
 import { toISODate } from './dates';
-import { currentClass, mapCalendar, mapFinals, mapLessonsWeek, mapStudent } from './map';
+import { currentClass, mapCalendar, mapFinals, mapLessonsResponse, mapLessonsWeek, mapStudent } from './map';
 import timeActivities from '../fixtures/time_activities.json';
 import { lessonsDay, timeActivity } from './schemas';
 import type { LessonMark, SchoolYearResponse, TimeActivity } from './schemas';
@@ -189,6 +189,7 @@ describe('lessons and marks', () => {
       subjectExternalId: 's-alg',
       subjectName: 'Алгебра',
       teacherExternalId: 't-1',
+      templateRef: 'tpl',
       topic: 'Системы уравнений',
       homework: 'стр. 45 № 3',
       hasAttachments: true,
@@ -293,10 +294,7 @@ describe('lessons and marks', () => {
   it('unknown fields, kinds and types are drift, never a crash', () => {
     const { drift, check } = setup();
     const lessons = mapLessonsWeek(
-      week([
-        slot({ brand_new: 1, type: 'SEMINAR', lesson_mark: mark({ kind: 'TRIPLE', type: 'POSTER', mark: '9' }) }),
-        { lesson_uuid: 'broken' },
-      ]),
+      week([slot({ brand_new: 1, type: 'SEMINAR', lesson_mark: mark({ kind: 'TRIPLE', type: 'POSTER', mark: '9' }) })]),
       TZ,
       check,
     );
@@ -306,12 +304,57 @@ describe('lessons and marks', () => {
     expect(drift.events.map((e) => [e.kind, e.path])).toEqual(
       expect.arrayContaining([
         ['unknown_field', 'days[].slots[].brand_new'],
-        ['missing_field', 'days[].slots[].subject_id'],
         ['new_enum_value', 'slots[].type'],
         ['new_enum_value', 'lesson_mark.kind'],
         ['new_enum_value', 'lesson_mark.type'],
       ]),
     );
+  });
+
+  it('a day or a response that cannot be read makes the week unusable too; an empty week is fine', () => {
+    const { check } = setup();
+    const day = { day_of_week: 1, date: minsk('2026-10-12'), slots: [slot()] };
+    expect(mapLessonsResponse([day], TZ, check)).toHaveLength(1);
+    expect(() => mapLessonsResponse([day, { day_of_week: 2, slots: null }], TZ, check)).toThrow(ProviderSchemaError);
+    expect(() => mapLessonsResponse({ error: 'x' }, TZ, check)).toThrow(ProviderSchemaError);
+    expect(mapLessonsResponse([], TZ, check)).toEqual([]);
+  });
+
+  it('a slot that cannot be read makes the week unusable: reported, never a lesson silently left out', () => {
+    const { drift, check } = setup();
+    expect(() => mapLessonsWeek(week([slot(), { lesson_uuid: 'broken' }]), TZ, check)).toThrow(ProviderSchemaError);
+    expect(drift.events.map((e) => [e.kind, e.path])).toContainEqual(['missing_field', 'days[].slots[].subject_id']);
+  });
+
+  it("a teacher's comment without a mark (kind null, no mark) is a remark on the lesson, never a mark", () => {
+    const { drift, check } = setup();
+    const lessons = mapLessonsWeek(
+      week([
+        slot({
+          lesson_mark: mark({ uuid: 'm-c', kind: null, mark: '', type: null, comment: ' Нет домашнего задания ' }),
+        }),
+        slot({ lesson_uuid: 'l-2', number: 3, lesson_mark: mark({ uuid: 'm-e', kind: null, mark: '', comment: '' }) }),
+      ]),
+      TZ,
+      check,
+    );
+    expect(lessons).toHaveLength(2);
+    expect(lessons.flatMap((l) => l.marks)).toEqual([]);
+    expect(lessons[0]!.behaviour).toEqual([
+      {
+        externalId: 'm-c',
+        date: '2026-10-12',
+        polarity: 'neutral',
+        category: 'lesson_comment',
+        comment: 'Нет домашнего задания',
+        subjectExternalId: 's-alg',
+        lessonExternalId: 'l-1',
+        authorExternalId: 't-1',
+      },
+    ]);
+    // nothing at all: no remark either
+    expect(lessons[1]!.behaviour).toBeUndefined();
+    expect(drift.events).toEqual([]);
   });
 });
 

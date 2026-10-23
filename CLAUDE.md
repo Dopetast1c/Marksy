@@ -38,6 +38,8 @@ packages/registry/      the list of providers; the only package that imports pro
 providers/_template/    starting point for a new provider
 providers/demo-minimal/ fictional fixture-only provider with the thinnest capability set
 providers/demo-full/    fictional fixture-only provider with a rich capability set: the seed family and the collector tests
+providers/demo-lite/    the same fictional diary with fewer capabilities (prototype CAPS_OTHER): the demo family's second school
+packages/demo-diary/    the fictional diary API, mapper and school shared by the demo providers and pnpm db:seed
 providers/by-eschools/  Belarus, diary.e-schools.by: manifest, schemas, mapper, sanitize, fixtures
 server/                 Express API + collector + Drizzle schema and migrations
 web/                    PWA frontend
@@ -62,8 +64,8 @@ docker-compose.yml      postgres:16
 
 - The collector is read-only for every provider. The shared HTTP client enforces each manifest's `readOnlyAllowList`; anything else must throw. For `by-eschools` the forbidden endpoints are listed in `docs/api-spec.md` section 6.11 (diary signatures, password changes).
 - Requests to any diary system: strictly serial, delays and backoff from the manifest `limits` (by-eschools: 1.5 to 3 s, backoff on 503/429/network errors), one login per run, never retry a failed login in a loop.
-- Sync cadence: at most one login per `minLoginIntervalMinutes` per account (60 for by-eschools), whatever triggers it (schedule, manual refresh, re-scan). Scheduled runs happen on school days inside the manifest window (by-eschools: 08:00 to 14:00 Europe/Minsk) with a random 0 to 20 minute offset; never fire at an exact minute. Weekly re-scan of the current term detects changed and removed marks; history is never overwritten silently (`mark_history`, `mark_events`).
-- The scheduler is a planner, not a cron table (`docs/design.md` 10.4). Every attempt is a `sync_runs` row with outcome and timestamps; every fetched week is a `sync_coverage` row with `verified_at`. A tick decides what to fetch from that state: standing weeks, then the gap since the last success (newest first), then the weekly re-scan, within `maxRequestsPerRun`. The home server may be off for a week: the first tick after start must catch up without special code paths, and a catch-up may run outside the school-day window. Before logging in, check that this machine is online (DNS + TCP to the provider host, no HTTP); being offline is never counted against the provider. After `SYNC_FAILURES_BEFORE_PAUSE` consecutive provider failures pause the account for `SYNC_PAUSE_HOURS` (doubling, capped) and notify the admin once. Auth failures stop the account until credentials change; never retry a bad login.
+- Sync cadence: at most one login per `minLoginIntervalMinutes` per account (60 for by-eschools), whatever triggers it (schedule, manual refresh, re-scan). Scheduled runs happen only during each child's school day (an hour before the first lesson to two hours after the last, from the child's own timetable and bells; the manifest window, by-eschools 08:00 to 14:00 Europe/Minsk, only when the day's times are unknown) with a random 0 to 20 minute offset; never fire at an exact minute. No reads in the evening, at weekends or in holidays except a catch-up and a finished term's once-more (ux-principles D55). The re-scan of the current term inside school-day runs detects changed and removed marks; history is never overwritten silently (`mark_history`, `mark_events`).
+- The scheduler is a planner, not a cron table (`docs/design.md` 10.4). Every attempt is a `sync_runs` row with outcome and timestamps; every fetched week is a `sync_coverage` row with `verified_at`. A tick decides what to fetch from that state: standing weeks, then the gap since the last success (newest first), then the term's stale weeks, within `maxRequestsPerRun`. A child is read through one login only (the active source); other logins that show the child only confirm it once a school day (`source_check`). The home server may be off for a week: the first tick after start must catch up without special code paths, and a catch-up may run outside the school-day window. Before logging in, check that this machine is online (DNS + TCP to the provider host, no HTTP); being offline is never counted against the provider. After `SYNC_FAILURES_BEFORE_PAUSE` consecutive provider failures pause the account for `SYNC_PAUSE_HOURS` (doubling, capped) and notify the admin once. Auth failures stop the account until credentials change; never retry a bad login.
 - Study time (`docs/design.md` 6.7): estimates from "готово" ticks are rows with `source = inferred`, recomputed and replaced, shown with ≈ everywhere; a batch of ticks within three minutes is never turned into minutes. Copy about study time is neutral: no praise, no blame, no claims that time causes marks.
 - Operational data has a retention limit (`server/src/retention.ts`, `RETENTION_*` in `.env.example`): sync runs 90 days then compacted, raw responses 14 days, mark events and the notifications inbox 180 days. Marks and `mark_history` are kept for the student's lifetime in the family. Never add a table that grows forever without a line in the retention table in `docs/design.md` 10.4.
 - Every provider response is validated with a passthrough schema; unknown fields, missing fields, new enum values and new error shapes are recorded in `api_drift_events` per provider and pushed to the family admin. Parsing never fails on unknown fields.
@@ -95,18 +97,34 @@ pnpm install            install the workspace (Node 22, pnpm via corepack)
 pnpm db:up              PostgreSQL 16 in Docker, waits until healthy (databases marksy and marksy_test)
 pnpm dev                API on 127.0.0.1:3000 (tsx watch) and PWA on :5173 (Vite, /api proxied)
 pnpm dev:lan            the same, with the PWA open to the home network for testing on a phone (README)
-pnpm check              formatting, typecheck, lint, tests, privacy check: must be green before every commit
+pnpm check              formatting, typecheck, lint, tests (packages and scripts/), privacy check: must be green before every commit
 pnpm format             Prettier over the workspace
 pnpm --filter @marksy/server test    one package
-pnpm test:provider <id> the shared conformance suite for one provider (demo-minimal, demo-full, by-eschools)
+pnpm test:provider <id> the shared conformance suite for one provider (demo-minimal, demo-full, demo-lite, by-eschools)
 pnpm i18n:check         every key, plural form and placeholder in every language file
 pnpm privacy            scripts/privacy-check.mjs: secrets, forbidden files, personal data, provider names outside the provider
 pnpm db:migrate         applies server/drizzle to DATABASE_URL (pnpm --filter @marksy/server db:generate writes a new migration)
 pnpm db:seed [--reset]  the fictional demo family on demo-full, with demo logins; --reset replaces only that family
 pnpm db:studio          Drizzle Studio on DATABASE_URL
+pnpm db:backup          pg_dump of marksy into data/backups/ (last five kept), verified by a restore into marksy_restore_check
+pnpm db:restore <f> --yes  puts a dump back into marksy (the owner's; stop pnpm dev first)
+pnpm sync:plan          the planner's dry run on marksy: each child's window today, what waits, whether a run would start; never logs in
+pnpm probe [--weeks N]  one real read of the diary (login guard first), raw responses to data/probe/ (last three runs), fixtures
+pnpm probe --offline [run]  the same on the saved raw responses, without a login
+pnpm sync:once          one real collector run of the account in .env (login guard first)
 ```
 
-Server tests use `marksy_test` (wiped and migrated at the start of every run); never point a test or a script you run at `marksy` except `db:migrate` and `db:seed`. You never read `.env` and never run `pnpm probe`, `pnpm sync:once` or `pnpm dev:connect`: they log in to the real diary with the owner's credentials; the owner runs them.
+Server tests use `marksy_test` (wiped and migrated at the start of every run); never point a test or a script you run at `marksy` except `db:migrate`, `db:backup`, `db:seed`, `sync:plan` and, under "Real diary runs" below, `probe` and `sync:once`.
+
+**Migrations are yours, not the owner's.** Whenever `main` (or the branch you are on) gains migrations that `marksy` does not have yet, after a merge, a pull or your own new migration, run `pnpm db:migrate` yourself and report which migrations were applied; never leave it as a step for the owner. Before a migration that rewrites, moves or deletes existing rows or columns (anything beyond a new table, a new nullable column or an index), run `pnpm db:backup` first and say where the dump is. If a migration fails, stop: do not edit applied migrations, do not restore the backup on your own, tell the owner what failed. After migrating, check with counts only (rows per table, links per child), never row contents. `pnpm db:seed --reset` is fine; `drizzle-kit push`, dropping the database or removing the Docker volume are not. `pnpm sync:plan` is yours too: it never logs in to a diary and prints ids, times and counts only. You never read `.env` and never run `pnpm dev:connect`.
+
+**Real diary runs (`pnpm probe`, `pnpm sync:once`).** They log in to the real diary with the owner's credentials. The owner lets you run them to check your work on real data, within these limits:
+- Offline first. `pnpm probe --offline` re-runs the schemas, `sanitize()`, the drift checks and the fixture writing on the last saved raw responses, without logging in. Fix and re-check offline; use a real run only when you need a response you do not have yet (a new endpoint or parameter, today's data, the final proof of a milestone).
+- Budget, enforced by the scripts and never worked around: one real login per hour per account (shared with the scheduler through `diary_accounts.last_login_at`), at most three runs started by you per day across `probe` and `sync:once`, only between 07:00 and 20:00 in the school's timezone. A refusal says when the next run is allowed; wait or ask the owner, never retry in a loop.
+- Before a real run, say in one line why it is needed; afterwards, report its output.
+- Real data is yours to read, never to commit. You may open the raw responses under `data/probe/` and query the `marksy` database when it helps to understand a shape or a bug; quote personal values (names, ids) in the chat only when needed. You never read `.env`. Real values never go into anything git tracks: code, tests, fixtures (only through `sanitize()`), docs, commit messages. Everything under `data/` stays local; the pre-commit guard below blocks it, and you never bypass it (`--no-verify`, editing `.gitignore` to let `data/` in, `git add -f`).
+- **Pre-commit guard** (`.githooks/pre-commit`, installed by `pnpm install`): refuses a commit that stages any path under `data/`, a `.env*` other than `.env.example`, `*.sql`, `*.sql.gz` or a raw response file; runs `pnpm privacy` on the staged files; and checks them against a local deny-list built from the latest raw responses (the children's and teachers' names, the school and account ids), kept in `data/` and never committed. A hit names the file and line, not the value.
+- Stop and tell the owner on an `auth`, `blocked` or `needs_2fa` result, when a value survives `sanitize()` and the path alone does not tell you how to clean it, and whenever a step would need anything but a read.
 
 ## Local and phone testing
 

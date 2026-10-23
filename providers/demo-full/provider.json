@@ -7,8 +7,15 @@
   "website": "https://diary.demo.example.com",
   "status": "experimental",
   "maintainers": [],
-  "languages": { "default": "ru", "preferred": ["ru", "be", "en"] },
-  "calendar": { "weekStart": 1, "weekend": [6, 0], "schoolDays": [1, 2, 3, 4, 5, 6] },
+  "languages": {
+    "default": "ru",
+    "preferred": ["ru", "be", "en"]
+  },
+  "calendar": {
+    "weekStart": 1,
+    "weekend": [6, 0],
+    "schoolDays": [1, 2, 3, 4, 5, 6]
+  },
   "nameOrder": "family-first",
   "timezone": "Europe/Minsk",
   "roles": ["parent"],
@@ -16,8 +23,22 @@
   "auth": {
     "kind": "password",
     "fields": [
-      { "key": "login", "label": { "en": "Login", "ru": "Логин" }, "type": "text" },
-      { "key": "password", "label": { "en": "Password", "ru": "Пароль" }, "type": "password" }
+      {
+        "key": "login",
+        "label": {
+          "en": "Login",
+          "ru": "Логин"
+        },
+        "type": "text"
+      },
+      {
+        "key": "password",
+        "label": {
+          "en": "Password",
+          "ru": "Пароль"
+        },
+        "type": "password"
+      }
     ],
     "loginRequest": "POST /api/v2/auth"
   },
@@ -37,10 +58,14 @@
     "attendance": "derived",
     "terms": "quarter",
     "finalMarks": true,
-    "teacherNames": false,
+    "teacherNames": true,
+    "rooms": true,
+    "teachingGroups": true,
+    "bellSchedule": true,
+    "weekTemplate": true,
     "pastYears": false,
     "homeworkAssignments": false,
-    "behaviour": false,
+    "behaviour": "none",
     "cohortStats": false,
     "criteria": false,
     "targets": false,
@@ -56,7 +81,6 @@
     "requestDelayMs": [1500, 3000],
     "maxRequestsPerRun": 40,
     "syncWindow": "08:00-14:00",
-    "weeklyRescan": "fri 20:00-23:00",
     "fetchUnit": "week",
     "authFailureIsFinal": true
   },
@@ -67,6 +91,8 @@
     "GET /api/v2/pupils/*/year",
     "GET /api/v2/pupils/*/subjects",
     "GET /api/v2/pupils/*/diary",
-    "GET /api/v2/pupils/*/finals"
+    "GET /api/v2/pupils/*/finals",
+    "GET /api/v2/pupils/*/bells",
+    "GET /api/v2/pupils/*/timetable"
   ]
 }

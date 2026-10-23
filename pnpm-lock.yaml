@@ -55,6 +55,28 @@ importers:
         specifier: ^5.0.5
         version: 5.0.5(@types/node@22.20.5)(vite@8.3.5(@types/node@22.20.5)(esbuild@0.28.2)(tsx@4.23.15)(yaml@2.9.1))
 
+  packages/demo-diary:
+    dependencies:
+      '@marksy/core':
+        specifier: workspace:*
+        version: link:../core
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
+    devDependencies:
+      '@types/node':
+        specifier: ^22.20.5
+        version: 22.20.5
+      tsx:
+        specifier: ^4.23.15
+        version: 4.23.15
+      typescript:
+        specifier: ~6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^5.0.5
+        version: 5.0.5(@types/node@22.20.5)(vite@8.3.5(@types/node@22.20.5)(esbuild@0.28.2)(tsx@4.23.15)(yaml@2.9.1))
+
   packages/i18n:
     devDependencies:
       '@types/node':
@@ -81,6 +103,9 @@ importers:
       '@marksy/provider-demo-full':
         specifier: workspace:*
         version: link:../../providers/demo-full
+      '@marksy/provider-demo-lite':
+        specifier: workspace:*
+        version: link:../../providers/demo-lite
       '@marksy/provider-demo-minimal':
         specifier: workspace:*
         version: link:../../providers/demo-minimal
@@ -141,6 +166,31 @@ importers:
       '@marksy/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@marksy/demo-diary':
+        specifier: workspace:*
+        version: link:../../packages/demo-diary
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
+    devDependencies:
+      '@types/node':
+        specifier: ^22.20.5
+        version: 22.20.5
+      typescript:
+        specifier: ~6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^5.0.5
+        version: 5.0.5(@types/node@22.20.5)(vite@8.3.5(@types/node@22.20.5)(esbuild@0.28.2)(tsx@4.23.15)(yaml@2.9.1))
+
+  providers/demo-lite:
+    dependencies:
+      '@marksy/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@marksy/demo-diary':
+        specifier: workspace:*
+        version: link:../../packages/demo-diary
       zod:
         specifier: ^4.6.7
         version: 4.6.7
@@ -182,6 +232,9 @@ importers:
       '@marksy/core':
         specifier: workspace:*
         version: link:../packages/core
+      '@marksy/demo-diary':
+        specifier: workspace:*
+        version: link:../packages/demo-diary
       '@marksy/registry':
         specifier: workspace:*
         version: link:../packages/registry

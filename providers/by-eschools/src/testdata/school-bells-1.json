@@ -1,0 +1,158 @@
+[
+  {
+    "uuid": "00000000-0000-4000-8000-3cf8a10af576",
+    "summary": null,
+    "title": "[text]",
+    "shift": 1,
+    "levels": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+    "period": "WHOLE_YEAR",
+    "days_of_week": [
+      {
+        "uuid": "00000000-0000-4000-8000-26211ddac83a",
+        "summary": null,
+        "days": [1, 2, 3, 4, 5, 6],
+        "time_of_bells": [
+          {
+            "uuid": "00000000-0000-4000-8000-53cfbf359d6d",
+            "summary": null,
+            "number": 1,
+            "start_time": "08:00:00",
+            "end_time": "08:45:00"
+          },
+          {
+            "uuid": "00000000-0000-4000-8000-d4992541fa9b",
+            "summary": null,
+            "number": 2,
+            "start_time": "08:55:00",
+            "end_time": "09:40:00"
+          },
+          {
+            "uuid": "00000000-0000-4000-8000-27aabe050769",
+            "summary": null,
+            "number": 3,
+            "start_time": "09:55:00",
+            "end_time": "10:40:00"
+          },
+          {
+            "uuid": "00000000-0000-4000-8000-41ce6b7a78ec",
+            "summary": null,
+            "number": 4,
+            "start_time": "10:55:00",
+            "end_time": "11:40:00"
+          },
+          {
+            "uuid": "00000000-0000-4000-8000-aa20bf8f675c",
+            "summary": null,
+            "number": 5,
+            "start_time": "11:55:00",
+            "end_time": "12:40:00"
+          },
+          {
+            "uuid": "00000000-0000-4000-8000-c65fa7533ab2",
+            "summary": null,
+            "number": 6,
+            "start_time": "12:50:00",
+            "end_time": "13:35:00"
+          },
+          {
+            "uuid": "00000000-0000-4000-8000-4a72f723a949",
+            "summary": null,
+            "number": 7,
+            "start_time": "13:45:00",
+            "end_time": "14:30:00"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "uuid": "00000000-0000-4000-8000-67b861785e14",
+    "summary": null,
+    "title": "[text]",
+    "shift": 2,
+    "levels": [5, 6, 7],
+    "period": "WHOLE_YEAR",
+    "days_of_week": [
+      {
+        "uuid": "00000000-0000-4000-8000-5ac10bab9f76",
+        "summary": null,
+        "days": [1, 2, 3, 4, 5, 6],
+        "time_of_bells": [
+          {
+            "uuid": "00000000-0000-4000-8000-b09fac9f6b2e",
+            "summary": null,
+            "number": 0,
+            "start_time": "13:10:00",
+            "end_time": "13:55:00"
+          },
+          {
+            "uuid": "00000000-0000-4000-8000-4e78f970cbe8",
+            "summary": null,
+            "number": 1,
+            "start_time": "14:05:00",
+            "end_time": "14:50:00"
+          },
+          {
+            "uuid": "00000000-0000-4000-8000-dab90fc68526",
+            "summary": null,
+            "number": 2,
+            "start_time": "15:00:00",
+            "end_time": "15:45:00"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "uuid": "00000000-0000-4000-8000-4fcb42ab7e7a",
+    "summary": null,
+    "title": "[text]",
+    "shift": 1,
+    "levels": [1],
+    "period": "WHOLE_YEAR",
+    "days_of_week": [
+      {
+        "uuid": "00000000-0000-4000-8000-4220b6ed81c8",
+        "summary": null,
+        "days": [1, 2, 3, 4, 5],
+        "time_of_bells": [
+          {
+            "uuid": "00000000-0000-4000-8000-1d334f6496b1",
+            "summary": null,
+            "number": 1,
+            "start_time": "08:30:00",
+            "end_time": "09:05:00"
+          },
+          {
+            "uuid": "00000000-0000-4000-8000-16893ae1509b",
+            "summary": null,
+            "number": 2,
+            "start_time": "09:20:00",
+            "end_time": "09:55:00"
+          },
+          {
+            "uuid": "00000000-0000-4000-8000-12e4d8c63eca",
+            "summary": null,
+            "number": 3,
+            "start_time": "10:15:00",
+            "end_time": "10:50:00"
+          },
+          {
+            "uuid": "00000000-0000-4000-8000-453753f191ae",
+            "summary": null,
+            "number": 4,
+            "start_time": "11:10:00",
+            "end_time": "11:45:00"
+          },
+          {
+            "uuid": "00000000-0000-4000-8000-27395da511a8",
+            "summary": null,
+            "number": 5,
+            "start_time": "12:00:00",
+            "end_time": "12:35:00"
+          }
+        ]
+      }
+    ]
+  }
+]

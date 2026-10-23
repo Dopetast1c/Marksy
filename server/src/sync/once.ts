@@ -1,6 +1,6 @@
 import type { DiaryProvider } from '@marksy/core';
 import { and, eq, sql } from 'drizzle-orm';
-import { apiDriftEvents, diaryAccounts, families, students } from '../db/schema';
+import { apiDriftEvents, diaryAccounts, families, studentSources } from '../db/schema';
 import { decryptCredentials, encryptCredentials } from '../crypto/credentials';
 import { runSync } from './run';
 import type { RunSyncOptions, RunSyncResult } from './run';
@@ -12,6 +12,8 @@ import type { RunSyncOptions, RunSyncResult } from './run';
 
 export interface SyncOnceOptions extends Omit<RunSyncOptions, 'accountId' | 'trigger' | 'provider'> {
   provider: DiaryProvider;
+  /** cli-claude when Claude Code runs it (MARKSY_RUNNER=claude) */
+  trigger?: 'cli' | 'cli-claude';
   login: string;
   password: string;
   credentialsKey: Buffer;
@@ -77,13 +79,13 @@ export async function syncOnce(opts: SyncOnceOptions): Promise<SyncOnceReport> {
   const result = await runSync({
     ...opts,
     accountId: account!.id,
-    trigger: 'cli',
+    trigger: opts.trigger ?? 'cli',
     provider: (id) => (id === providerId ? provider : undefined),
   });
   const [count] = await db
     .select({ n: sql<number>`count(*)::int` })
-    .from(students)
-    .where(eq(students.diaryAccountId, account!.id));
+    .from(studentSources)
+    .where(eq(studentSources.diaryAccountId, account!.id));
   const drift =
     'runId' in result && result.runId
       ? await db

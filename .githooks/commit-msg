@@ -1,0 +1,3 @@
+#!/bin/sh
+# The commit message passes the same deny-list check as the staged files (scripts/commit-guard.mjs).
+exec node scripts/commit-guard.mjs --message "$1"

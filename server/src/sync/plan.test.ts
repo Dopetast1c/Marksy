@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { decideStart, jitterMinutes, narrowWindow, selectWeeks } from './plan';
+import { decideStart, hasBacklog, hasPostTerm, jitterMinutes, narrowWindow, selectWeeks } from './plan';
 import type { EffectiveLimits, GateInput, PlanCalendar, StudentPlanState, WeekContext } from './plan';
 import { localTime } from './time';
 
@@ -25,7 +25,6 @@ function ctx(nowLocal: string, over: Partial<WeekContext> = {}): WeekContext {
     today: localTime(now, TZ).date,
     localDate: (d) => localTime(d, TZ).date,
     lastSuccessAt: null,
-    inWeeklyWindow: false,
     ...over,
   };
 }
@@ -102,34 +101,33 @@ describe('selectWeeks', () => {
     expect(r.map((x) => x.weekStart)).not.toContain('2025-09-01');
   });
 
-  it('re-scans stale weeks of the current term in the weekly window, or anywhere once overdue', () => {
+  it('re-scans the stale weeks of the current term in any school-day run, after the standing weeks', () => {
     const cov = verifiedThrough('2025-10-06');
     const base = { lastSuccessAt: at('2025-10-17 09:00') };
-    // Friday 17 Oct: the weeks of September were verified 10+ days ago
-    expect(sets(selectWeeks(state(cov), ctx('2025-10-17 21:00', { ...base, inWeeklyWindow: true })))).toContain(
-      'rescan 2025-09-01',
-    );
-    // outside the window the same weeks wait, unless overdue (> 8 days): 1 Sep was verified 8 Sep, so it is
-    expect(sets(selectWeeks(state(cov), ctx('2025-10-17 12:00', base)))).toContain('rescan 2025-09-01');
+    // the weeks of September were verified 10+ days ago: they are due, at any hour the gate allows a run
+    expect(sets(selectWeeks(state(cov), ctx('2025-10-17 10:00', base)))).toContain('rescan 2025-09-01');
     // freshly re-scanned weeks are not due again
-    const fresh = cov.map(([w]) => [w, '2025-10-16 21:00'] as [string, string]);
-    expect(sets(selectWeeks(state(fresh), ctx('2025-10-17 21:00', { ...base, inWeeklyWindow: true })))).toEqual([
+    const fresh = cov.map(([w]) => [w, '2025-10-16 10:00'] as [string, string]);
+    expect(sets(selectWeeks(state(fresh), ctx('2025-10-17 10:00', base)))).toEqual([
       'standing 2025-10-13',
       'standing 2025-10-06',
     ]);
+    // a stale week is not a backlog: it waits for the next school day instead of opening a catch-up
+    expect(hasBacklog(selectWeeks(state(cov), ctx('2025-10-17 10:00', base)))).toBe(false);
   });
 
   it('fetches a finished term once more two weeks after its end', () => {
     const cov = verifiedThrough('2025-10-20').map(([w]) => [w, '2025-11-05 10:00'] as [string, string]);
     const c = ctx('2025-11-10 10:00', { lastSuccessAt: at('2025-11-10 09:00') });
-    expect(sets(selectWeeks(state(cov), c))).toContain('rescan 2025-10-20');
-    expect(sets(selectWeeks(state(cov, ['q1']), c))).not.toContain('rescan 2025-10-20');
+    expect(sets(selectWeeks(state(cov), c))).toContain('post_term 2025-10-20');
+    expect(hasPostTerm(selectWeeks(state(cov), c))).toBe(true);
+    expect(sets(selectWeeks(state(cov, ['q1']), c))).not.toContain('post_term 2025-10-20');
   });
 });
 
 const LIMITS: EffectiveLimits = {
-  window: narrowWindow('08:00-14:00'),
-  weekly: 'fri 20:00-23:00',
+  envWindow: null,
+  standIn: narrowWindow('08:00-14:00'),
   minLoginIntervalMinutes: 60,
   maxRequestsPerRun: 40,
   jitterMinutes: 20,
@@ -152,8 +150,11 @@ function gate(nowLocal: string, over: Partial<GateInput> = {}, account: Partial<
       ...account,
     },
     limits: LIMITS,
-    schoolDay: true,
+    // the children's school day today, as window.ts computes it
+    windows: [[480, 840]],
+    weekday: true,
     backlog: false,
+    postTerm: false,
     lastOfflineAt: null,
     seed: 'account-1',
     ...over,
@@ -179,6 +180,15 @@ describe('decideStart', () => {
     });
   });
 
+  it("counts a probe's login (last_login_at only) like an attempt", () => {
+    const probe = { lastAttemptAt: at('2025-10-15 07:00'), lastLoginAt: at('2025-10-15 09:00') };
+    expect(gate('2025-10-15 09:30', { trigger: 'user:u1' }, probe)).toMatchObject({
+      start: false,
+      reason: 'interval',
+      retryAt: at('2025-10-15 10:00'),
+    });
+  });
+
   it('treats a clock that went backwards as an elapsed interval', () => {
     expect(gate('2025-10-15 12:00', {}, { lastAttemptAt: at('2025-10-16 12:00') }).start).toBe(true);
   });
@@ -195,7 +205,7 @@ describe('decideStart', () => {
     expect(
       gate(
         '2025-10-19 10:00',
-        { schoolDay: false },
+        { windows: [], weekday: false },
         { lastSuccessAt: at('2025-10-19 06:00'), lastAttemptAt: at('2025-10-19 06:00') },
       ),
     ).toMatchObject({
@@ -211,8 +221,43 @@ describe('decideStart', () => {
     });
   });
 
-  it('runs the weekly re-scan in its window when weeks are due', () => {
-    expect(gate('2025-10-17 21:00', { backlog: true })).toEqual({ start: true, kind: 'weekly_rescan' });
+  it('two children, two windows: a run fits into either; between them only a catch-up', () => {
+    // a first-grader until 13:45, a seventh-grader in the second shift from 12:10
+    const windows: [number, number][] = [
+      [450, 525],
+      [730, 1000],
+    ];
+    expect(gate('2025-10-15 10:00', { windows }, { lastAttemptAt: at('2025-10-15 06:00') })).toMatchObject({
+      reason: 'outside_window',
+    });
+    expect(gate('2025-10-15 15:00', { windows }, { lastAttemptAt: at('2025-10-15 06:00') }).start).toBe(true);
+  });
+
+  it('no reads in the evening, at weekends or in the holidays, re-scan included', () => {
+    // a success at noon today: nothing is overdue, so the evening and the holidays stay quiet
+    const fresh = (day: string) => ({ lastSuccessAt: at(day + ' 12:00'), lastAttemptAt: at(day + ' 12:00') });
+    expect(gate('2025-10-17 21:00', {}, fresh('2025-10-17'))).toMatchObject({ start: false, reason: 'outside_window' });
+    expect(gate('2025-11-03 15:00', { windows: [] }, fresh('2025-11-03'))).toMatchObject({
+      start: false,
+      reason: 'outside_window',
+    });
+  });
+
+  it('a finished term due in the holidays: one run in the manifest window on a weekday', () => {
+    const holidays = { windows: [] as [number, number][], postTerm: true };
+    const recent = { lastSuccessAt: at('2025-11-03 08:00'), lastAttemptAt: at('2025-11-03 08:00') };
+    expect(gate('2025-11-03 13:40', holidays, recent)).toEqual({ start: true, kind: 'rescan' });
+    expect(gate('2025-11-03 18:00', holidays, recent)).toMatchObject({ start: false, reason: 'outside_window' });
+    expect(
+      gate(
+        '2025-11-02 13:40',
+        { ...holidays, weekday: false },
+        { lastSuccessAt: at('2025-11-02 08:00'), lastAttemptAt: at('2025-11-02 08:00') },
+      ),
+    ).toMatchObject({
+      start: false,
+      reason: 'outside_window',
+    });
   });
 
   it('a pause holds scheduled runs, not a person pressing the button', () => {

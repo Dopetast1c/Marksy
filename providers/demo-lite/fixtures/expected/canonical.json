@@ -1,0 +1,742 @@
+{
+  "account": {
+    "externalUserId": "U-1",
+    "displayName": "Родитель",
+    "role": "parent",
+    "students": [
+      {
+        "externalId": "p-1",
+        "fullName": "Пример Ученик А",
+        "givenName": "Ученик А",
+        "familyName": "Пример",
+        "schoolId": "S-1",
+        "schoolName": "Гимназия № 2",
+        "classExternalId": "C-1",
+        "className": "1 «Д»",
+        "grade": 1
+      }
+    ]
+  },
+  "students": {
+    "p-1": {
+      "calendar": {
+        "schoolYear": {
+          "externalId": "2026-2027",
+          "label": "2026/2027",
+          "start": "2026-09-01",
+          "end": "2027-05-31"
+        },
+        "terms": [
+          {
+            "externalId": "q1",
+            "kind": "quarter",
+            "index": 1,
+            "label": "1",
+            "start": "2026-09-01",
+            "end": "2026-10-31"
+          },
+          {
+            "externalId": "q2",
+            "kind": "quarter",
+            "index": 2,
+            "label": "2",
+            "start": "2026-11-09",
+            "end": "2026-12-24"
+          },
+          {
+            "externalId": "q3",
+            "kind": "quarter",
+            "index": 3,
+            "label": "3",
+            "start": "2027-01-11",
+            "end": "2027-03-20"
+          },
+          {
+            "externalId": "q4",
+            "kind": "quarter",
+            "index": 4,
+            "label": "4",
+            "start": "2027-03-29",
+            "end": "2027-05-31",
+            "note": "Для 9 и 11 классов: с 30.03.2027 по 25.05.2027."
+          }
+        ],
+        "holidays": [
+          {
+            "from": "2026-11-01",
+            "to": "2026-11-08"
+          },
+          {
+            "from": "2026-12-25",
+            "to": "2027-01-10"
+          },
+          {
+            "from": "2027-02-15",
+            "to": "2027-02-21"
+          },
+          {
+            "from": "2027-03-21",
+            "to": "2027-03-28"
+          },
+          {
+            "from": "2027-06-01",
+            "to": "2027-08-31",
+            "note": "Для окончивших 9 класс: с 11.06.2027."
+          }
+        ],
+        "gradingScaleId": null
+      },
+      "subjects": [
+        {
+          "externalId": "s1",
+          "name": "Обучение грамоте",
+          "teacherExternalId": "T-3",
+          "teacherName": "Миронова Анна Сергеевна",
+          "level": "regular",
+          "levelLabel": "Базовый",
+          "lessonsPerWeek": 5
+        },
+        {
+          "externalId": "s2",
+          "name": "Математика",
+          "teacherExternalId": "T-3",
+          "teacherName": "Миронова Анна Сергеевна",
+          "level": "regular",
+          "levelLabel": "Базовый",
+          "lessonsPerWeek": 4
+        },
+        {
+          "externalId": "s3",
+          "name": "Чалавек і свет",
+          "teacherExternalId": "T-3",
+          "teacherName": "Миронова Анна Сергеевна",
+          "level": "regular",
+          "levelLabel": "Базовый",
+          "lessonsPerWeek": 1
+        },
+        {
+          "externalId": "s4",
+          "name": "Белорусский язык",
+          "teacherExternalId": "T-3",
+          "teacherName": "Миронова Анна Сергеевна",
+          "level": "regular",
+          "levelLabel": "Базовый",
+          "lessonsPerWeek": 1
+        },
+        {
+          "externalId": "s5",
+          "name": "Изобразительное искусство",
+          "teacherExternalId": "T-3",
+          "teacherName": "Миронова Анна Сергеевна",
+          "level": "regular",
+          "levelLabel": "Базовый",
+          "lessonsPerWeek": 1
+        },
+        {
+          "externalId": "s6",
+          "name": "Музыка",
+          "teacherExternalId": "T-2",
+          "teacherName": "Кравец Лилия Викторовна",
+          "level": "regular",
+          "levelLabel": "Базовый",
+          "lessonsPerWeek": 1
+        },
+        {
+          "externalId": "s7",
+          "name": "Физическая культура",
+          "teacherExternalId": "T-1",
+          "teacherName": "Ермаков Виталий Иванович",
+          "level": "regular",
+          "levelLabel": "Базовый",
+          "lessonsPerWeek": 2
+        },
+        {
+          "externalId": "s8",
+          "name": "Трудовое обучение",
+          "teacherExternalId": "T-3",
+          "teacherName": "Миронова Анна Сергеевна",
+          "level": "regular",
+          "levelLabel": "Базовый",
+          "lessonsPerWeek": 1
+        }
+      ],
+      "lessons": [
+        {
+          "externalId": "L-m0-2026-10-05",
+          "date": "2026-10-05",
+          "slot": 1,
+          "startTime": "08:30",
+          "subjectExternalId": "s1",
+          "subjectName": "Обучение грамоте",
+          "topic": "Предложение",
+          "homework": "Прописи с. 12, строки 1–3",
+          "templateRef": "mt0",
+          "marks": []
+        },
+        {
+          "externalId": "L-m1-2026-10-05",
+          "date": "2026-10-05",
+          "slot": 2,
+          "startTime": "09:20",
+          "subjectExternalId": "s2",
+          "subjectName": "Математика",
+          "topic": "Число 5",
+          "homework": "Тетрадь с. 9, № 2",
+          "templateRef": "mt1",
+          "marks": []
+        },
+        {
+          "externalId": "L-m4-2026-10-05",
+          "date": "2026-10-05",
+          "slot": 3,
+          "startTime": "10:15",
+          "subjectExternalId": "s5",
+          "subjectName": "Изобразительное искусство",
+          "topic": "Осенний лист",
+          "templateRef": "mt4",
+          "marks": []
+        },
+        {
+          "externalId": "L-m0-2026-10-06",
+          "date": "2026-10-06",
+          "slot": 1,
+          "startTime": "08:30",
+          "subjectExternalId": "s1",
+          "subjectName": "Обучение грамоте",
+          "topic": "Буква М",
+          "homework": "Прописи с. 12, строки 1–3",
+          "templateRef": "mt0",
+          "marks": []
+        },
+        {
+          "externalId": "L-m1-2026-10-06",
+          "date": "2026-10-06",
+          "slot": 2,
+          "startTime": "09:20",
+          "subjectExternalId": "s2",
+          "subjectName": "Математика",
+          "topic": "Число 6",
+          "homework": "Тетрадь с. 9, № 2",
+          "templateRef": "mt1",
+          "marks": []
+        },
+        {
+          "externalId": "L-m2-2026-10-06",
+          "date": "2026-10-06",
+          "slot": 3,
+          "startTime": "10:15",
+          "subjectExternalId": "s3",
+          "subjectName": "Чалавек і свет",
+          "topic": "Дрэвы і кусты",
+          "templateRef": "mt2",
+          "marks": []
+        },
+        {
+          "externalId": "L-m6-2026-10-06",
+          "date": "2026-10-06",
+          "slot": 4,
+          "startTime": "11:10",
+          "subjectExternalId": "s7",
+          "subjectName": "Физическая культура",
+          "topic": "Игры на свежем воздухе",
+          "templateRef": "mt6",
+          "marks": []
+        },
+        {
+          "externalId": "L-m0-2026-10-07",
+          "date": "2026-10-07",
+          "slot": 1,
+          "startTime": "08:30",
+          "subjectExternalId": "s1",
+          "subjectName": "Обучение грамоте",
+          "topic": "Буква М",
+          "homework": "Прописи с. 12, строки 1–3",
+          "templateRef": "mt0",
+          "marks": []
+        },
+        {
+          "externalId": "L-m1-2026-10-07",
+          "date": "2026-10-07",
+          "slot": 2,
+          "startTime": "09:20",
+          "subjectExternalId": "s2",
+          "subjectName": "Математика",
+          "topic": "Число 6",
+          "homework": "Тетрадь с. 9, № 2",
+          "templateRef": "mt1",
+          "marks": []
+        },
+        {
+          "externalId": "L-m5-2026-10-07",
+          "date": "2026-10-07",
+          "slot": 3,
+          "startTime": "10:15",
+          "subjectExternalId": "s6",
+          "subjectName": "Музыка",
+          "topic": "Песня «Осень»",
+          "templateRef": "mt5",
+          "marks": []
+        },
+        {
+          "externalId": "L-m0-2026-10-08",
+          "date": "2026-10-08",
+          "slot": 1,
+          "startTime": "08:30",
+          "subjectExternalId": "s1",
+          "subjectName": "Обучение грамоте",
+          "topic": "Буква М",
+          "homework": "Прописи с. 12, строки 1–3",
+          "templateRef": "mt0",
+          "marks": []
+        },
+        {
+          "externalId": "L-m1-2026-10-08",
+          "date": "2026-10-08",
+          "slot": 2,
+          "startTime": "09:20",
+          "subjectExternalId": "s2",
+          "subjectName": "Математика",
+          "topic": "Число 6",
+          "homework": "Тетрадь с. 9, № 2",
+          "templateRef": "mt1",
+          "marks": []
+        },
+        {
+          "externalId": "L-m3-2026-10-08",
+          "date": "2026-10-08",
+          "slot": 3,
+          "startTime": "10:15",
+          "subjectExternalId": "s4",
+          "subjectName": "Белорусский язык",
+          "topic": "Гукі і літары",
+          "homework": "Паўтарыць літары",
+          "templateRef": "mt3",
+          "marks": []
+        },
+        {
+          "externalId": "L-m0-2026-10-09",
+          "date": "2026-10-09",
+          "slot": 1,
+          "startTime": "08:30",
+          "subjectExternalId": "s1",
+          "subjectName": "Обучение грамоте",
+          "topic": "Буква М",
+          "homework": "Прописи с. 12, строки 1–3",
+          "templateRef": "mt0",
+          "marks": []
+        },
+        {
+          "externalId": "L-m6-2026-10-09",
+          "date": "2026-10-09",
+          "slot": 2,
+          "startTime": "09:20",
+          "subjectExternalId": "s7",
+          "subjectName": "Физическая культура",
+          "topic": "Игры на свежем воздухе",
+          "templateRef": "mt6",
+          "marks": []
+        },
+        {
+          "externalId": "L-m7-2026-10-09",
+          "date": "2026-10-09",
+          "slot": 3,
+          "startTime": "10:15",
+          "subjectExternalId": "s8",
+          "subjectName": "Трудовое обучение",
+          "topic": "Аппликация из листьев",
+          "homework": "Принести цветную бумагу и клей",
+          "templateRef": "mt7",
+          "marks": []
+        },
+        {
+          "externalId": "L-m0-2026-10-12",
+          "date": "2026-10-12",
+          "slot": 1,
+          "startTime": "08:30",
+          "subjectExternalId": "s1",
+          "subjectName": "Обучение грамоте",
+          "topic": "Буква М",
+          "homework": "Прописи с. 12, строки 1–3",
+          "templateRef": "mt0",
+          "marks": []
+        },
+        {
+          "externalId": "L-m1-2026-10-12",
+          "date": "2026-10-12",
+          "slot": 2,
+          "startTime": "09:20",
+          "subjectExternalId": "s2",
+          "subjectName": "Математика",
+          "topic": "Число 6",
+          "homework": "Тетрадь с. 9, № 2",
+          "templateRef": "mt1",
+          "marks": []
+        },
+        {
+          "externalId": "L-m4-2026-10-12",
+          "date": "2026-10-12",
+          "slot": 3,
+          "startTime": "10:15",
+          "subjectExternalId": "s5",
+          "subjectName": "Изобразительное искусство",
+          "topic": "Осенний лист",
+          "templateRef": "mt4",
+          "marks": []
+        },
+        {
+          "externalId": "L-m0-2026-10-13",
+          "date": "2026-10-13",
+          "slot": 1,
+          "startTime": "08:30",
+          "subjectExternalId": "s1",
+          "subjectName": "Обучение грамоте",
+          "topic": "Буква Н",
+          "homework": "Прописи с. 12, строки 1–3",
+          "templateRef": "mt0",
+          "marks": []
+        },
+        {
+          "externalId": "L-m1-2026-10-13",
+          "date": "2026-10-13",
+          "slot": 2,
+          "startTime": "09:20",
+          "subjectExternalId": "s2",
+          "subjectName": "Математика",
+          "topic": "Сравнение чисел",
+          "homework": "Тетрадь с. 9, № 2",
+          "templateRef": "mt1",
+          "marks": []
+        },
+        {
+          "externalId": "L-m2-2026-10-13",
+          "date": "2026-10-13",
+          "slot": 3,
+          "startTime": "10:15",
+          "subjectExternalId": "s3",
+          "subjectName": "Чалавек і свет",
+          "topic": "Восень",
+          "templateRef": "mt2",
+          "marks": []
+        },
+        {
+          "externalId": "L-m6-2026-10-13",
+          "date": "2026-10-13",
+          "slot": 4,
+          "startTime": "11:10",
+          "subjectExternalId": "s7",
+          "subjectName": "Физическая культура",
+          "topic": "Игры на свежем воздухе",
+          "templateRef": "mt6",
+          "marks": []
+        },
+        {
+          "externalId": "L-m0-2026-10-14",
+          "date": "2026-10-14",
+          "slot": 1,
+          "startTime": "08:30",
+          "subjectExternalId": "s1",
+          "subjectName": "Обучение грамоте",
+          "topic": "Буква Н",
+          "homework": "Прописи с. 12, строки 1–3",
+          "templateRef": "mt0",
+          "marks": []
+        },
+        {
+          "externalId": "L-m1-2026-10-14",
+          "date": "2026-10-14",
+          "slot": 2,
+          "startTime": "09:20",
+          "subjectExternalId": "s2",
+          "subjectName": "Математика",
+          "topic": "Сравнение чисел",
+          "homework": "Тетрадь с. 9, № 2",
+          "templateRef": "mt1",
+          "marks": []
+        },
+        {
+          "externalId": "L-m5-2026-10-14",
+          "date": "2026-10-14",
+          "slot": 3,
+          "startTime": "10:15",
+          "subjectExternalId": "s6",
+          "subjectName": "Музыка",
+          "topic": "Песня «Осень»",
+          "templateRef": "mt5",
+          "marks": []
+        },
+        {
+          "externalId": "L-m0-2026-10-15",
+          "date": "2026-10-15",
+          "slot": 1,
+          "startTime": "08:30",
+          "subjectExternalId": "s1",
+          "subjectName": "Обучение грамоте",
+          "topic": "Буква Н",
+          "homework": "Прописи с. 12, строки 1–3",
+          "templateRef": "mt0",
+          "marks": []
+        },
+        {
+          "externalId": "L-m1-2026-10-15",
+          "date": "2026-10-15",
+          "slot": 2,
+          "startTime": "09:20",
+          "subjectExternalId": "s2",
+          "subjectName": "Математика",
+          "topic": "Сравнение чисел",
+          "homework": "Тетрадь с. 9, № 2",
+          "templateRef": "mt1",
+          "marks": []
+        },
+        {
+          "externalId": "L-m3-2026-10-15",
+          "date": "2026-10-15",
+          "slot": 3,
+          "startTime": "10:15",
+          "subjectExternalId": "s4",
+          "subjectName": "Белорусский язык",
+          "topic": "Гукі і літары",
+          "homework": "Паўтарыць літары",
+          "templateRef": "mt3",
+          "marks": []
+        },
+        {
+          "externalId": "L-m0-2026-10-16",
+          "date": "2026-10-16",
+          "slot": 1,
+          "startTime": "08:30",
+          "subjectExternalId": "s1",
+          "subjectName": "Обучение грамоте",
+          "topic": "Буква Н",
+          "homework": "Прописи с. 12, строки 1–3",
+          "templateRef": "mt0",
+          "marks": []
+        },
+        {
+          "externalId": "L-m6-2026-10-16",
+          "date": "2026-10-16",
+          "slot": 2,
+          "startTime": "09:20",
+          "subjectExternalId": "s7",
+          "subjectName": "Физическая культура",
+          "topic": "Игры на свежем воздухе",
+          "templateRef": "mt6",
+          "marks": []
+        },
+        {
+          "externalId": "L-m7-2026-10-16",
+          "date": "2026-10-16",
+          "slot": 3,
+          "startTime": "10:15",
+          "subjectExternalId": "s8",
+          "subjectName": "Трудовое обучение",
+          "topic": "Аппликация из листьев",
+          "homework": "Принести цветную бумагу и клей",
+          "templateRef": "mt7",
+          "marks": []
+        }
+      ],
+      "bellSchedules": [
+        {
+          "externalId": "B-1",
+          "label": "1-е классы",
+          "days": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "periods": [
+            {
+              "slot": 1,
+              "start": "08:30",
+              "end": "09:05"
+            },
+            {
+              "slot": 2,
+              "start": "09:20",
+              "end": "09:55"
+            },
+            {
+              "slot": 3,
+              "start": "10:15",
+              "end": "10:50"
+            },
+            {
+              "slot": 4,
+              "start": "11:10",
+              "end": "11:45"
+            }
+          ]
+        }
+      ],
+      "weekTemplate": {
+        "termExternalId": "q1",
+        "cycleWeeks": 1,
+        "entries": [
+          {
+            "cycleWeek": 1,
+            "weekday": 1,
+            "slot": 1,
+            "subjectExternalId": "s1",
+            "subjectName": "Обучение грамоте",
+            "teacherExternalId": "T-3",
+            "teacherName": "Миронова Анна Сергеевна",
+            "templateRef": "mt0"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 2,
+            "slot": 1,
+            "subjectExternalId": "s1",
+            "subjectName": "Обучение грамоте",
+            "teacherExternalId": "T-3",
+            "teacherName": "Миронова Анна Сергеевна",
+            "templateRef": "mt0"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 3,
+            "slot": 1,
+            "subjectExternalId": "s1",
+            "subjectName": "Обучение грамоте",
+            "teacherExternalId": "T-3",
+            "teacherName": "Миронова Анна Сергеевна",
+            "templateRef": "mt0"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 4,
+            "slot": 1,
+            "subjectExternalId": "s1",
+            "subjectName": "Обучение грамоте",
+            "teacherExternalId": "T-3",
+            "teacherName": "Миронова Анна Сергеевна",
+            "templateRef": "mt0"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 5,
+            "slot": 1,
+            "subjectExternalId": "s1",
+            "subjectName": "Обучение грамоте",
+            "teacherExternalId": "T-3",
+            "teacherName": "Миронова Анна Сергеевна",
+            "templateRef": "mt0"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 1,
+            "slot": 2,
+            "subjectExternalId": "s2",
+            "subjectName": "Математика",
+            "teacherExternalId": "T-3",
+            "teacherName": "Миронова Анна Сергеевна",
+            "templateRef": "mt1"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 2,
+            "slot": 2,
+            "subjectExternalId": "s2",
+            "subjectName": "Математика",
+            "teacherExternalId": "T-3",
+            "teacherName": "Миронова Анна Сергеевна",
+            "templateRef": "mt1"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 3,
+            "slot": 2,
+            "subjectExternalId": "s2",
+            "subjectName": "Математика",
+            "teacherExternalId": "T-3",
+            "teacherName": "Миронова Анна Сергеевна",
+            "templateRef": "mt1"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 4,
+            "slot": 2,
+            "subjectExternalId": "s2",
+            "subjectName": "Математика",
+            "teacherExternalId": "T-3",
+            "teacherName": "Миронова Анна Сергеевна",
+            "templateRef": "mt1"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 2,
+            "slot": 3,
+            "subjectExternalId": "s3",
+            "subjectName": "Чалавек і свет",
+            "teacherExternalId": "T-3",
+            "teacherName": "Миронова Анна Сергеевна",
+            "templateRef": "mt2"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 4,
+            "slot": 3,
+            "subjectExternalId": "s4",
+            "subjectName": "Белорусский язык",
+            "teacherExternalId": "T-3",
+            "teacherName": "Миронова Анна Сергеевна",
+            "templateRef": "mt3"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 1,
+            "slot": 3,
+            "subjectExternalId": "s5",
+            "subjectName": "Изобразительное искусство",
+            "teacherExternalId": "T-3",
+            "teacherName": "Миронова Анна Сергеевна",
+            "templateRef": "mt4"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 3,
+            "slot": 3,
+            "subjectExternalId": "s6",
+            "subjectName": "Музыка",
+            "teacherExternalId": "T-2",
+            "teacherName": "Кравец Лилия Викторовна",
+            "templateRef": "mt5"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 2,
+            "slot": 4,
+            "subjectExternalId": "s7",
+            "subjectName": "Физическая культура",
+            "teacherExternalId": "T-1",
+            "teacherName": "Ермаков Виталий Иванович",
+            "templateRef": "mt6"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 5,
+            "slot": 2,
+            "subjectExternalId": "s7",
+            "subjectName": "Физическая культура",
+            "teacherExternalId": "T-1",
+            "teacherName": "Ермаков Виталий Иванович",
+            "templateRef": "mt6"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 5,
+            "slot": 3,
+            "subjectExternalId": "s8",
+            "subjectName": "Трудовое обучение",
+            "teacherExternalId": "T-3",
+            "teacherName": "Миронова Анна Сергеевна",
+            "templateRef": "mt7"
+          }
+        ]
+      }
+    }
+  }
+}

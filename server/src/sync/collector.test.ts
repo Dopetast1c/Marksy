@@ -8,6 +8,7 @@ import { createAccount, DEMO_CREDENTIALS } from '../../test/factories';
 import {
   apiDriftEvents,
   attendance,
+  familyStudents,
   finalMarks,
   lessonPrep,
   lessons,
@@ -16,6 +17,7 @@ import {
   marks,
   rawResponses,
   students,
+  studentSources,
   syncCoverage,
   syncRuns,
 } from '../db/schema';
@@ -81,6 +83,22 @@ const lessonAt = (days: { date: string; lessons: Record<string, unknown>[] }[], 
 
 describe('collector', () => {
   beforeEach(() => resetDb(db));
+
+  it('a child two accounts show exists once, followed by both families, read through one account', async () => {
+    const first = await createAccount(db, 'demo-full');
+    const second = await createAccount(db, 'demo-full');
+    const a = await collect(first.account);
+    const b = await collect(second.account);
+    expect(a.students.map((s) => s.externalId)).toEqual(['p-1', 'p-2']);
+    // the second login shows the same children: linked to its family, but read only through the first account
+    expect(b.students).toEqual([]);
+    expect(await db.select().from(students)).toHaveLength(2);
+    const links = await db.select().from(familyStudents);
+    expect(links.filter((l) => l.familyId === second.family.id)).toHaveLength(2);
+    const sources = await db.select().from(studentSources);
+    expect(sources).toHaveLength(4);
+    expect(sources.filter((s) => s.active).every((s) => s.diaryAccountId === first.account.id)).toBe(true);
+  });
 
   it('stores a first run: students, lessons, marks, absences, finals, coverage', async () => {
     const { account } = await createAccount(db, 'demo-full');

@@ -1,6 +1,6 @@
 import { boolean, index, integer, jsonb, pgTable, primaryKey, text, uuid } from 'drizzle-orm/pg-core';
 import { createdAt, id, ts } from './columns';
-import { families, students, users } from './family';
+import { students, users } from './family';
 import { lessons } from './diary';
 import { subjects } from './school';
 
@@ -47,9 +47,6 @@ export const studySessions = pgTable(
   'study_sessions',
   {
     id: id(),
-    familyId: uuid('family_id')
-      .notNull()
-      .references(() => families.id, { onDelete: 'cascade' }),
     studentId: studentRef(),
     subjectId: uuid('subject_id').references(() => subjects.id, { onDelete: 'set null' }),
     lessonId: uuid('lesson_id').references(() => lessons.id, { onDelete: 'set null' }),

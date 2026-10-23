@@ -12,7 +12,9 @@ describe('storeCalendar', () => {
 
   it('keeps the remarks on terms and holidays as notes', async () => {
     const { account } = await createAccount(db, 'demo-full');
-    const [student] = await storeStudents(db, account, {
+    const {
+      listed: [student],
+    } = await storeStudents(db, account, {
       externalUserId: 'U-1',
       displayName: null,
       role: 'parent',

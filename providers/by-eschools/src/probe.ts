@@ -1,5 +1,13 @@
 import type { DriftEvent, FinalMark, Lesson } from '@marksy/core';
-import { FAKE_UUID_PREFIX, fakeUuid, keepsNumber, keepsString, PLACEHOLDERS } from './sanitize';
+import {
+  dropsSchoolText,
+  FAKE_UUID_PREFIX,
+  fakeUuid,
+  fixedValue,
+  keepsNumber,
+  keepsString,
+  PLACEHOLDERS,
+} from './sanitize';
 import type { Place } from './sanitize';
 
 // The pieces of `pnpm probe` that do not touch the network or the disk, so they can be tested (docs/build-plan.md M2,
@@ -17,15 +25,27 @@ export function weeksArg(argv: readonly string[]): number | null {
   return Number.isInteger(n) && n >= 1 && n <= MAX_WEEKS ? n : null;
 }
 
-/** The fixture name of a request: me, classes-1, lessons-2-w1, final-1 ... (students and weeks numbered in order). */
+/**
+ * The fixture name of a request: me, classes-1, lessons-2-w1, final-1, timetable-1, bells-1 ... (students, weeks,
+ * classes and schools numbered in order).
+ */
 export function endpointName(
   method: string,
   url: URL,
   students: readonly string[],
   weeks: readonly string[],
+  classes: readonly string[] = [],
+  schools: readonly string[] = [],
 ): string | null {
   const p = url.pathname;
   const student = students.findIndex((s) => p.includes(`/students/${s}`)) + 1;
+  const cls = classes.findIndex((c) => p.includes(`/classes/${c}/`)) + 1;
+  const school = schools.findIndex((s) => p.includes(`/schools/${s}/`)) + 1;
+  // school details (6.10): per class or per school, no student in the path
+  if (p.endsWith('/bells/whole')) return school ? `bells-${school}` : null;
+  if (p.endsWith('/premises')) return school ? `premises-${school}` : null;
+  if (p.endsWith('/timetables/whole')) return cls ? `timetable-${cls}` : null;
+  if (p.startsWith('/api/v1/education/planning/')) return cls ? `planning-${cls}` : null;
   if (method === 'POST' && p === '/api/v1/auth/login/parent') return 'login';
   if (p === '/api/v1/admin/auth/me') return 'me';
   if (p === `${D}/school_year`) return 'school_year';
@@ -33,6 +53,7 @@ export function endpointName(
   if (p === `${D}/time_activities/week_activities`) return 'week_activities';
   if (!student) return null;
   if (p.endsWith('/classes')) return `classes-${student}`;
+  if (/\/classes\/[^/]+\/subjects$/.test(p)) return `student_subjects-${student}`;
   if (p.endsWith('/educational_subjects')) return `subjects-${student}`;
   if (p.endsWith('/final/whole')) return `final-${student}`;
   if (p.endsWith('/lessons')) {
@@ -63,7 +84,16 @@ const API_WORDS = new Set([
   'lessons',
   'final',
   'whole',
+  'subjects',
+  'bells',
+  'timetables',
+  'planning',
+  'institution',
+  'premises',
 ]);
+
+/** Query parameters that are the same for everyone (the premises filter): left out of the route, not faked */
+const CONSTANT_PARAMS = new Set(['q']);
 
 /** The route key of a request with every id (any segment that is not an API word, every query value) faked. */
 export function sanitisedRoute(method: string, url: URL): string {
@@ -71,7 +101,10 @@ export function sanitisedRoute(method: string, url: URL): string {
     .split('/')
     .map((s) => (s === '' || API_WORDS.has(s) ? s : fakeUuid(decodeURIComponent(s))))
     .join('/');
-  const query = [...url.searchParams].map(([k, v]) => `${k}=${fakeUuid(v)}`).join('&');
+  const query = [...url.searchParams]
+    .filter(([k]) => !CONSTANT_PARAMS.has(k))
+    .map(([k, v]) => `${k}=${fakeUuid(v)}`)
+    .join('&');
   return `${method} ${path}${query ? `?${query}` : ''}`;
 }
 
@@ -120,10 +153,17 @@ export function sensitiveValues(
     if (Array.isArray(v)) v.forEach((x) => walk(x, place, `${path}[]`));
     else if (v && typeof v === 'object') {
       for (const [k, x] of Object.entries(v)) {
+        // the school lists' free text is dropped whole and is often a subject's or a room's name, which other places
+        // keep: it is no source of leaks (contact details, also dropped, stay checked everywhere)
+        if (dropsSchoolText(endpoint, k, place.key)) continue;
         for (const id of k.match(UUID_ANYWHERE) ?? []) if (!id.startsWith(FAKE_UUID_PREFIX)) add(id, from);
         if (/^\d{3,}$/.test(k)) out.numbers.set(k, from);
         else if (!SCHEMA_KEY.test(k.replace(UUID_ANYWHERE, 'id'))) add(k, from);
-        walk(x, { ...place, key: k, container: place.key, depth: place.depth + 1 }, path ? `${path}.${k}` : k);
+        walk(
+          x,
+          { ...place, key: k, container: place.key, outer: place.container, depth: place.depth + 1 },
+          path ? `${path}.${k}` : k,
+        );
       }
     } else if (typeof v === 'number') {
       if (!keepsNumber(place) && Math.abs(v) >= 100) out.numbers.set(String(v), from);
@@ -131,6 +171,7 @@ export function sensitiveValues(
       const s = v.trim();
       for (const id of s.match(UUID_ANYWHERE) ?? []) if (!id.startsWith(FAKE_UUID_PREFIX)) add(id, from);
       if (s.length < 3 || s.startsWith(FAKE_UUID_PREFIX) || PLACEHOLDERS.has(s) || keepsString(place, v)) return;
+      if (fixedValue(place) !== undefined) return;
       if (/^\d+$/.test(s)) out.numbers.set(s, from);
       else add(s, from);
       if (place.key !== null && NAME_KEY.test(place.key)) for (const w of words(s)) out.words.set(w, from);
@@ -204,6 +245,19 @@ export interface ProbeFacts {
   rawKinds: Record<string, number>;
   rawWorkTypes: Record<string, number>;
   rawLessonTypes: Record<string, number>;
+  /** School details per student (6.7a, 6.10): counts only */
+  details?: {
+    bellSchedules: number;
+    periods: number;
+    weekEntries: number;
+    entriesWithRoom: number;
+    /** The student's own timetable slots: without a room, with a room the school's list lacks or has without a number */
+    rooms?: { slots: number; withoutRoom: number; roomNotListed: number; roomWithoutNumber: number; premises: number };
+    subjectsWithTeacher: number;
+    subjectsWithGroup: number;
+    subjectsAdvanced: number;
+    lessonsWithTemplate: number;
+  }[];
   drift: readonly DriftEvent[];
 }
 
@@ -237,6 +291,16 @@ export function report(f: ProbeFacts): string {
     `  ${box((f.rawKinds.ABSENT ?? 0) > 0)} ABSENT marks seen`,
     `  ${box(Object.keys(f.rawWorkTypes).some((t) => t !== 'null'))} marks with a non-null type seen`,
     `  ${box(null)} token expiry, student login, lesson_uuid stability: not checked by one probe run`,
+    '',
+    'School details (6.7a, 6.10), per student',
+    ...(f.details ?? []).flatMap((d, i) => [
+      `  student ${i + 1}: bell schedules ${d.bellSchedules} (${d.periods} periods), regular week ${d.weekEntries} lessons (${d.entriesWithRoom} with a room), subjects with a teacher ${d.subjectsWithTeacher}, in a subgroup ${d.subjectsWithGroup}, advanced ${d.subjectsAdvanced}, lessons with a template ${d.lessonsWithTemplate}`,
+      ...(d.rooms
+        ? [
+            `    rooms in the student's ${d.rooms.slots} timetable slots: no room_id ${d.rooms.withoutRoom}, room_id not in the school's list ${d.rooms.roomNotListed}, listed without a number ${d.rooms.roomWithoutNumber} (the list has ${d.rooms.premises} rooms)`,
+          ]
+        : []),
+    ]),
     '',
     'Other checks',
     `  week length in days (6 or 7 means end_ts is the last day, 8 means it is the next midnight): ${tally(f.weekLengths)}`,

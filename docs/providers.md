@@ -24,11 +24,14 @@ packages/
   core/                 canonical types, DiaryProvider interface, grading scales, marks math,
                         guidance rules, shared HTTP client, conformance suite (@marksy/core/conformance)
   registry/             the list of providers: the only package that imports providers/*
+  demo-diary/           the fictional diary API, mapper and school behind the demo providers and the seeded demo family
 providers/
   _template/            copy this to start a provider (compiles, fails conformance until filled in)
   demo-minimal/         fixture-only provider with the thinnest capability set; what CI and the UI snapshots run against
-  demo-full/            fixture-only fictional diary with a rich capability set (lessons, quarters, work types, comments,
-                        absences in the mark cell, finals); the seeded demo family and the collector tests use it
+  demo-full/            the fictional diary of packages/demo-diary with a rich capability set (lessons, quarters, work types,
+                        comments, absences in the mark cell, finals, bells, the regular week, rooms, subgroups, teachers)
+  demo-lite/            the same fictional diary as a thinner system (no lesson or work types, attendance, rooms, subgroups or
+                        finals); its fixtures are written from the shared fictional school (pnpm --filter @marksy/demo-diary fixtures)
   by-eschools/          Belarus, diary.e-schools.by (reference implementation)
     provider.json       manifest
     src/index.ts        DiaryProvider implementation
@@ -91,7 +94,7 @@ docs/                   product docs (this file, design.md, api-spec.md, tokens.
     "weekTemplate": true,                 // the student's regular week for a term (getWeekTemplate)
     "pastYears": false,                   // can the API return previous school years?
     "homeworkAssignments": false,         // homework as separate items with set/due dates and submission status (UK)
-    "behaviour": false,                   // behaviour / achievement points or notes (UK ClassCharts-style)
+    "behaviour": "none",                  // teacher remarks, behaviour / achievement points: separate (getBehaviour), derived (on the lesson: Lesson.behaviour, e.g. a comment without a mark), none
     "cohortStats": false,                 // class average, rank, percentile, standard deviation per assessment (CN, JP, KR)
     "criteria": false,                    // multi-criteria assessment per subject (JP 観点別, UK attitude-to-learning)
     "targets": false,                     // target / predicted / current grades per subject (UK)
@@ -108,7 +111,6 @@ docs/                   product docs (this file, design.md, api-spec.md, tokens.
     "requestDelayMs": [1500, 3000],
     "maxRequestsPerRun": 40,              // one run stops here; unverified weeks wait for the next run (design.md 10.4)
     "syncWindow": "08:00-14:00",          // stand-in only: the real window is each child's school day from their timetable (design.md 10.2)
-    "weeklyRescan": "fri 20:00-23:00",
     "fetchUnit": "week",                  // week | day | term: the granularity the API hands data out in, i.e. the unit of sync_coverage
     "authFailureIsFinal": true            // true: a 401 stops syncing until credentials change (repeated bad logins can lock the real account)
   },
@@ -165,7 +167,7 @@ export interface DiaryProvider {
   /** Homework as separate items with due dates (capabilities.homeworkAssignments). */
   getHomework?(session: Session, student: StudentRef, range: DateRange, ctx: ProviderContext): Promise<HomeworkItem[]>;
 
-  /** Behaviour and achievement events (capabilities.behaviour). */
+  /** Behaviour and achievement events (capabilities.behaviour = 'separate'; with 'derived' they come on Lesson.behaviour). */
   getBehaviour?(session: Session, student: StudentRef, range: DateRange, ctx: ProviderContext): Promise<BehaviourEvent[]>;
 
   /** Timetable without marks, for days in the future. Optional; falls back to getLessons. */
@@ -182,9 +184,10 @@ export interface DiaryProvider {
 
   /**
    * Optional: drop the personal fields the mapper never uses before the collector stores a response (raw_responses,
-   * 14 days). Unlike sanitize() it keeps ids and texts, so the body can be parsed again after a drift fix.
+   * 14 days). Unlike sanitize() it keeps ids and the texts the mapper reads, so the body can be parsed again after a
+   * drift fix. `endpoint` is the name the provider gave the request (a list of the whole school may keep less).
    */
-  redactRaw?(raw: unknown): unknown;
+  redactRaw?(endpoint: string, raw: unknown): unknown;
 }
 
 export interface ProviderContext {
@@ -205,7 +208,10 @@ export interface ProviderContext {
 export interface AccountInfo { externalUserId: string; displayName: string | null; role: 'parent' | 'student'; students: StudentRef[] }
 export interface StudentRef {
   externalId: string;                   // the child's own id in the system, the same whichever login lists the child (two parents' logins must
-                                        // give the same id, design.md 7.2); never an id of the login-child relation
+                                        // give the same id, design.md 7.2); never an id of the login-child relation.
+                                        // Unique across the whole provider: children are matched across families by
+                                        // (provider_id, externalId) alone, so a system that numbers pupils per school
+                                        // or per tenant prefixes the id with it ("<tenant>:<pupil>")
   fullName: string;                     // as the system shows it
   givenName?: string; familyName?: string; middleName?: string;   // when the system has separate fields
   displayName?: string;                 // short form for headers and notifications ("Кира", "Yuki"); the core derives it from givenName or the first token of fullName per manifest.nameOrder when absent
@@ -240,8 +246,9 @@ export interface Lesson {
   date: ISODate; slot?: number; startTime?: string; endTime?: string;
   subjectExternalId: string; subjectName: string;
   teacherExternalId?: string; teacherName?: string;
-  room?: string;             // as the timetable shows it ("201", "Лаб. 2", "S12"); from the lesson or the week template
+  room?: string;             // as the timetable shows it ("201", "Лаб. 2", "S12"); from the lesson or, on the server, the week template
   groupLabel?: string;       // the student's subgroup when the subject is split
+  templateRef?: string;      // opaque key of the timetable entry the lesson comes from (e-schools: lesson_template_id); absent when the system has none
   topic?: string; homework?: string; homeworkDueDate?: ISODate; hasAttachments?: boolean;   // homeworkDueDate when the system states it; otherwise the core assumes the next lesson of the subject
   lessonType?: 'regular' | 'test' | 'lab' | 'practical' | 'excursion' | 'other';
   substituteTeacherName?: string;   // Poland zastępstwo, e-schools substitution
@@ -254,7 +261,7 @@ export interface Lesson {
 export interface BellSchedule {
   externalId: string;
   label?: string;                   // the system's title, e.g. a shift or "Year 1"
-  days: number[];                   // ISO weekdays it applies to
+  days: number[];                   // weekdays it applies to, 0 = Sunday as in manifest.calendar
   periods: { slot: number; start: string; end: string }[];   // "HH:MM"; slot numbers as lessons use them (may start at 0)
   validFrom?: ISODate; validTo?: ISODate;                     // when it applies to part of the year only
 }
@@ -265,13 +272,26 @@ export interface WeekTemplate {
   cycleWeeks: number;               // 1, or 2 for Week A / Week B timetables
   entries: {
     cycleWeek: number;              // 1..cycleWeeks
-    weekday: number;                // ISO weekday
+    weekday: number;                // 0 = Sunday as in manifest.calendar
     slot: number; start?: string; end?: string;
     subjectExternalId: string; subjectName: string;
     groupLabel?: string; room?: string;
     teacherExternalId?: string; teacherName?: string;
+    templateRef?: string;           // the same opaque key lessons carry
   }[];
 }
+```
+
+**Room, subgroup, teacher and end time of a lesson.** A provider returns lessons as the diary has them and the student's week template once a day; it does not join the two. The server fills a lesson's `room`, `groupLabel` and `teacherName` from the stored template, in this order, and stops at the first match:
+
+1. weekday, slot and `templateRef` → room, subgroup and teacher;
+2. only `templateRef` (the lesson was moved to another slot) → subgroup and teacher, no room;
+3. weekday, slot and subject (a provider without `templateRef`) → room and subgroup;
+4. nothing: an empty room is better than another lesson's room.
+
+The end time always comes from the bell schedule by slot number, never from the template. Values the lesson already carries from the diary are kept.
+
+```ts
 
 export interface Mark {
   externalId: string;        // if the system has none, build one from lesson id + index
@@ -301,7 +321,9 @@ export interface Mark {
 export interface HomeworkItem { externalId: string; subjectExternalId: string; subjectName: string; title: string; description?: string; setDate: ISODate; dueDate: ISODate; status?: 'set' | 'submitted' | 'late' | 'missing' | 'marked'; markExternalId?: string }
 
 // Behaviour and achievement events (merits, house points, demerits, detentions, praise notes).
-export interface BehaviourEvent { externalId: string; date: ISODate; points?: number; polarity: 'positive' | 'negative' | 'neutral'; category?: string; comment?: string; subjectExternalId?: string; authorExternalId?: string }
+// A teacher's remark tied to a lesson (by-eschools: a comment without a mark, «нет домашнего задания») is one too, with
+// lessonExternalId and category 'lesson_comment'; it comes on Lesson.behaviour and is never a mark.
+export interface BehaviourEvent { externalId: string; date: ISODate; points?: number; polarity: 'positive' | 'negative' | 'neutral'; category?: string; comment?: string; subjectExternalId?: string; authorExternalId?: string; lessonExternalId?: string }
 
 // Attendance is not a mark. by-eschools derives it from lesson_mark.kind === 'ABSENT'; other systems have a separate register.
 export interface Attendance {
@@ -488,7 +510,7 @@ A snapshot test in `packages/core` locks this table for `by-10`: if a change to 
 The scheduler is generic and reads the provider's `limits`:
 
 - hourly runs only during each child's school day (an hour before the first lesson to two hours after the last, from the child's timetable and bells; `syncWindow` only when the day's times are unknown), with a random offset; scope: the current and the previous week, then whatever was missed since the last success, plus final marks once a day (`design.md` 10.4);
-- in the `weeklyRescan` slot, every week of the current term that was not fetched for six days, for change detection;
+- inside those school-day runs, every week of the current term that was not fetched for six days, for change detection (no evening slot: a provider has nothing to configure for it);
 - the collector asks for one `fetchUnit` at a time (a week, or the whole term for `term` providers) and counts each as verified only when it was stored completely; the run stops at `maxRequestsPerRun` and the rest waits for the next run;
 - never more than one `login()` per `minLoginIntervalMinutes` per account, shared by scheduled, manual and re-scan runs;
 - a child listed by several accounts (two parents' logins, possibly in two families) is read through one of them only; the others call `getAccount()` once a school day to confirm they still show the child;
@@ -570,6 +592,7 @@ There is no national diary in the UK. Schools run a management system (SIMS, Arb
 | Effort or attitude-to-learning scores (1 to 4) beside attainment | `Mark.dimension = 'effort'`, separate scale `gb-effort-1-4`, capability `criteria`; never mixed into attainment averages |
 | Homework set in a separate system with set and due dates and submission status | `HomeworkItem`, capability `homeworkAssignments`; tags and the schedule use real due dates |
 | Behaviour and achievement points (merits, house points, demerits, detentions) | `BehaviourEvent`, capability `behaviour`; an optional Поведение card on Overview and a feed item type |
+| Teacher's remark on a lesson without a mark (by-eschools: a comment with no mark) | `BehaviourEvent` with `lessonExternalId` on `Lesson.behaviour`, `behaviour: 'derived'`; shown with the lesson, never as a mark (ux-principles D56) |
 | Attendance as a percentage with lates and authorised / unauthorised absences | `Attendance` with `status` and `reason`; percentage derived |
 | Three terms with half-terms | `Term.kind = 'other'` with labels, or six terms; reports per term |
 

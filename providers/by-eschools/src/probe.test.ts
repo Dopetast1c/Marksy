@@ -34,6 +34,19 @@ describe('endpoint names and routes', () => {
     expect(name('GET', `${D}/somewhere/else`)).toBeNull();
   });
 
+  it('names the school details by student, class and school; the rooms filter stays out of the route', () => {
+    const name = (url: string) => endpointName('GET', new URL(url), [S1], [W1], ['c'], ['s']);
+    const API = 'https://diary.example.com/api/v1';
+    expect(name(`${D}/schools/s/students/${S1}/classes/c/subjects`)).toBe('student_subjects-1');
+    expect(name(`${D}/schools/s/bells/whole`)).toBe('bells-1');
+    expect(name(`${D}/schools/s/classes/c/timetables/whole`)).toBe('timetable-1');
+    expect(name(`${API}/education/planning/classes/c/educational_subjects`)).toBe('planning-1');
+    expect(name(`${API}/institution/schools/s/premises?q=%7B%7D`)).toBe('premises-1');
+    expect(sanitisedRoute('GET', new URL(`${API}/institution/schools/4711/premises?q=%7B%7D`))).toBe(
+      `GET /api/v1/institution/schools/${fakeUuid('4711')}/premises`,
+    );
+  });
+
   it('fakes every id segment of a route, uuid or not, the way sanitize() fakes ids', () => {
     const route = sanitisedRoute(
       'GET',

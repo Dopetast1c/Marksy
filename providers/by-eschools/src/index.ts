@@ -6,27 +6,50 @@ import {
   ProviderUnavailableError,
   providerManifest,
 } from '@marksy/core';
-import type { DiaryProvider, HttpResponse, ProviderContext, Session, StudentRef, Subject } from '@marksy/core';
+import type { DiaryProvider, HttpResponse, Lesson, ProviderContext, Session, StudentRef, Subject } from '@marksy/core';
 import manifestJson from '../provider.json';
-import { dayRange, overlaps } from './dates';
-import { currentClass, mapAccount, mapCalendar, mapFinals, mapLessonsWeek, mapSubjects } from './map';
+import { dayRange, overlaps, toISODate } from './dates';
+import { currentClass, mapAccount, mapCalendar, mapFinals, mapLessonsResponse, mapSubjects } from './map';
 import { redactRaw } from './redact';
 import { sanitize } from './sanitize';
 import {
+  enrichSubjects,
+  mapBellSchedules,
+  mapWeekTemplate,
+  pickTimetable,
+  roomFacts,
+  studentTemplates,
+} from './school';
+import type { LessonRefs } from './school';
+import {
+  bellScheduleRaw,
+  classTimetable,
   finalWholeResponse,
-  lessonsDay,
   loginResponse,
   meResponse,
+  planningSubject,
+  premise,
   schoolClass,
   schoolYearResponse,
+  studentSubjectRow,
   timeActivity,
   weekActivity,
 } from './schemas';
-import type { SchoolClass, SchoolYearResponse, TimeActivity, WeekActivity } from './schemas';
+import type {
+  BellScheduleRaw,
+  ClassTimetable,
+  PlanningSubject,
+  Premise,
+  SchoolClass,
+  SchoolYearResponse,
+  StudentSubjectRow,
+  TimeActivity,
+  WeekActivity,
+} from './schemas';
 
 // by-eschools: Belarus, diary.e-schools.by (docs/api-spec.md). Read-only, one login per run, every request through
 // ctx.http. The week list, the calendar, classes and subjects are fetched once per session and reused, so a week of
-// lessons costs one request.
+// lessons costs one request. School details (6.7a, 6.10) are read once a day, when the collector asks for them.
 
 export const manifest = providerManifest.parse(manifestJson);
 
@@ -40,11 +63,33 @@ interface SessionCache {
   weeks?: WeekActivity[];
   classes: Map<string, SchoolClass | undefined>;
   subjects: Map<string, Subject[]>;
+  /** per student: what their lessons in this session said about their groups */
+  refs: Map<string, { templates: Set<string>; teachers: Map<string, Set<string>> }>;
+  bells: Map<string, BellScheduleRaw[]>;
+  premises: Map<string, Premise[]>;
+  timetables: Map<string, ClassTimetable[]>;
+  planning: Map<string, PlanningSubject[]>;
+  rows: Map<string, StudentSubjectRow[]>;
+  /** students whose school details were read in this session: their subjects come back enriched */
+  details: Set<string>;
 }
 const caches = new WeakMap<Session, SessionCache>();
 function cacheOf(session: Session): SessionCache {
   let c = caches.get(session);
-  if (!c) caches.set(session, (c = { classes: new Map(), subjects: new Map() }));
+  if (!c) {
+    c = {
+      classes: new Map(),
+      subjects: new Map(),
+      refs: new Map(),
+      bells: new Map(),
+      premises: new Map(),
+      timetables: new Map(),
+      planning: new Map(),
+      rows: new Map(),
+      details: new Set(),
+    };
+    caches.set(session, c);
+  }
   return c;
 }
 
@@ -125,6 +170,97 @@ async function classPath(session: Session, student: StudentRef, ctx: ProviderCon
   return `${DIARY}/schools/${seg(student.schoolId)}/classes/${seg(classId)}/students/${seg(student.externalId)}`;
 }
 
+async function classIdOf(session: Session, student: StudentRef, ctx: ProviderContext): Promise<string> {
+  const classId = student.classExternalId ?? (await classOf(session, student, ctx))?.uuid;
+  if (!classId || !student.schoolId) throw new ProviderSchemaError('classes: the student has no class');
+  return classId;
+}
+
+/** Remembers which templates and teachers the student's lessons came from (their subgroups) */
+function remember(session: Session, student: StudentRef, lessons: readonly Lesson[]) {
+  const cache = cacheOf(session);
+  let refs = cache.refs.get(student.externalId);
+  if (!refs) cache.refs.set(student.externalId, (refs = { templates: new Set(), teachers: new Map() }));
+  for (const l of lessons) {
+    if (l.templateRef) refs.templates.add(l.templateRef);
+    // a lesson's template says its group; its teacher only when it has none (a substitute may teach the other group)
+    if (l.teacherExternalId && !l.templateRef) {
+      const set = refs.teachers.get(l.subjectExternalId) ?? new Set<string>();
+      refs.teachers.set(l.subjectExternalId, set.add(l.teacherExternalId));
+    }
+  }
+}
+
+/** The student's lesson references; reads the current week once when no lesson was read in this session yet */
+async function refsOf(session: Session, student: StudentRef, ctx: ProviderContext): Promise<LessonRefs> {
+  const cache = cacheOf(session);
+  if (!cache.refs.has(student.externalId)) {
+    const today = toISODate(ctx.now().getTime(), manifest.timezone);
+    const [week] = await recentWeekRanges(session, ctx, today, 1);
+    if (week) await byEschools.getLessons!(session, student, week, ctx);
+    else remember(session, student, []);
+  }
+  return cache.refs.get(student.externalId)!;
+}
+
+const PREMISES_QUERY = JSON.stringify({
+  expr: { units: [{ field: 'dt_delete', operator: 'ISNULL', operands: [] }], operator: 'AND' },
+  sorting: { audience_number: 'ASC' },
+});
+
+/** The class's timetable for today (6.10.2): a class may have a quarter's and a half year's, see pickTimetable */
+async function timetableOf(session: Session, student: StudentRef, ctx: ProviderContext) {
+  const cache = cacheOf(session);
+  const classId = await classIdOf(session, student, ctx);
+  if (!cache.timetables.has(classId)) {
+    const check = driftChecker(ctx.drift, 'timetables');
+    const raw = await get(
+      session,
+      ctx,
+      'timetables',
+      `${DIARY}/schools/${seg(student.schoolId!)}/classes/${seg(classId)}/timetables/whole`,
+    );
+    cache.timetables.set(classId, check.items(classTimetable, raw, 'timetables'));
+  }
+  const { terms } = await byEschools.getCalendar(session, student, ctx);
+  const today = toISODate(ctx.now().getTime(), manifest.timezone);
+  return pickTimetable(cache.timetables.get(classId)!, terms, today, driftChecker(ctx.drift, 'timetables'));
+}
+
+async function schoolDetails(session: Session, student: StudentRef, ctx: ProviderContext) {
+  const cache = cacheOf(session);
+  const school = student.schoolId!;
+  const classId = await classIdOf(session, student, ctx);
+  if (!cache.planning.has(classId)) {
+    const raw = await get(
+      session,
+      ctx,
+      'planning',
+      `${API}/education/planning/classes/${seg(classId)}/educational_subjects`,
+    );
+    cache.planning.set(classId, driftChecker(ctx.drift, 'planning').items(planningSubject, raw, 'planning'));
+  }
+  if (!cache.premises.has(school)) {
+    const raw = await get(session, ctx, 'premises', `${API}/institution/schools/${seg(school)}/premises`, {
+      q: PREMISES_QUERY,
+    });
+    cache.premises.set(school, driftChecker(ctx.drift, 'premises').items(premise, raw, 'premises'));
+  }
+  if (!cache.rows.has(student.externalId)) {
+    const path = `${DIARY}/schools/${seg(school)}/students/${seg(student.externalId)}/classes/${seg(classId)}/subjects`;
+    const raw = await get(session, ctx, 'student_subjects', path);
+    cache.rows.set(
+      student.externalId,
+      driftChecker(ctx.drift, 'student_subjects').items(studentSubjectRow, raw, 'subjects'),
+    );
+  }
+  return {
+    planning: cache.planning.get(classId)!,
+    premises: cache.premises.get(school)!,
+    rows: cache.rows.get(student.externalId)!,
+  };
+}
+
 async function calendarSources(session: Session, ctx: ProviderContext) {
   const cache = cacheOf(session);
   cache.year ??= driftChecker(ctx.drift, 'school_year').parse(
@@ -159,6 +295,13 @@ export async function recentWeekRanges(session: Session, ctx: ProviderContext, t
     .filter((r) => r.from <= today)
     .sort((a, b) => a.from.localeCompare(b.from))
     .slice(-count);
+}
+
+/** For the probe: counts of the rooms in the student's own slots (after getWeekTemplate, from the session's cache) */
+export async function roomFactsOf(session: Session, student: StudentRef, ctx: ProviderContext) {
+  const details = await schoolDetails(session, student, ctx);
+  const mine = studentTemplates(details.planning, await refsOf(session, student, ctx));
+  return roomFacts(await timetableOf(session, student, ctx), mine, details.premises);
 }
 
 export const byEschools: DiaryProvider = {
@@ -206,6 +349,19 @@ export const byEschools: DiaryProvider = {
   async getSubjects(session, student, ctx) {
     const cache = cacheOf(session);
     const cached = cache.subjects.get(student.externalId);
+    // after the school details of the day: the student's teacher, group, level and lessons per week
+    if (cached && cache.details.has(student.externalId)) {
+      const d = await schoolDetails(session, student, ctx);
+      const refs = await refsOf(session, student, ctx);
+      return enrichSubjects(
+        cached,
+        d.rows,
+        d.planning,
+        studentTemplates(d.planning, refs),
+        refs,
+        driftChecker(ctx.drift, 'student_subjects'),
+      );
+    }
     if (cached) return cached;
     const path = `${await classPath(session, student, ctx)}/educational_subjects`;
     const subjects = mapSubjects(
@@ -214,6 +370,37 @@ export const byEschools: DiaryProvider = {
     );
     cache.subjects.set(student.externalId, subjects);
     return subjects;
+  },
+
+  async getBellSchedule(session, student, ctx) {
+    const cache = cacheOf(session);
+    const school = student.schoolId;
+    if (!school) return [];
+    if (!cache.bells.has(school)) {
+      const raw = await get(session, ctx, 'bells', `${DIARY}/schools/${seg(school)}/bells/whole`);
+      cache.bells.set(school, driftChecker(ctx.drift, 'bells').items(bellScheduleRaw, raw, 'bells'));
+    }
+    return mapBellSchedules(cache.bells.get(school)!, await timetableOf(session, student, ctx), student.grade);
+  },
+
+  async getWeekTemplate(session, student, ctx) {
+    const timetable = await timetableOf(session, student, ctx);
+    const refs = await refsOf(session, student, ctx);
+    const details = await schoolDetails(session, student, ctx);
+    cacheOf(session).details.add(student.externalId);
+    if (!timetable) return null;
+    const mine = studentTemplates(details.planning, refs);
+    const subjects = await byEschools.getSubjects(session, student, ctx);
+    const { terms } = await byEschools.getCalendar(session, student, ctx);
+    return mapWeekTemplate(
+      timetable,
+      details.planning,
+      details.rows,
+      details.premises,
+      mine,
+      terms,
+      new Map(subjects.map((x) => [x.externalId, x.name])),
+    );
   },
 
   async getLessons(session, student, range, ctx) {
@@ -225,8 +412,9 @@ export const byEschools: DiaryProvider = {
     const out = [];
     for (const w of weeks) {
       const raw = await get(session, ctx, 'lessons', `${base}/lessons`, { week_activity_uuid: w.uuid });
-      out.push(...mapLessonsWeek(check.items(lessonsDay, raw, 'days'), manifest.timezone, check));
+      out.push(...mapLessonsResponse(raw, manifest.timezone, check));
     }
+    remember(session, student, out);
     return out.filter((l) => l.date >= range.from && l.date <= range.to);
   },
 

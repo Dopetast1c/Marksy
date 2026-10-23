@@ -1,0 +1,26 @@
+{
+  "name": "@marksy/demo-diary",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "The fictional diary behind the demo providers and the fictional school of the seeded demo family",
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "fixtures": "tsx scripts/write-fixtures.ts"
+  },
+  "dependencies": {
+    "@marksy/core": "workspace:*",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "tsx": "^4.23.15",
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.5"
+  }
+}

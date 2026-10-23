@@ -1,0 +1,134 @@
+[
+  {
+    "id": "00000000-0000-4000-8000-2418c2b37063",
+    "partition_type": "CLASS",
+    "type": "SUBJECT",
+    "subject_title": "Беларуская мова",
+    "level_of_study": "Базовый",
+    "teacher_id": "00000000-0000-4000-8000-c4a16c765a52",
+    "teacher": "[text]",
+    "group_id": "00000000-0000-4000-8000-0fa9ae8fca77",
+    "group_name": null
+  },
+  {
+    "id": "00000000-0000-4000-8000-150772195747",
+    "partition_type": "CLASS",
+    "type": "SUBJECT",
+    "subject_title": "Изобразительное искусство",
+    "level_of_study": "Базовый",
+    "teacher_id": "00000000-0000-4000-8000-c4a16c765a52",
+    "teacher": "[text]",
+    "group_id": "00000000-0000-4000-8000-0fa9ae8fca77",
+    "group_name": null
+  },
+  {
+    "id": "00000000-0000-4000-8000-d5a09bb36784",
+    "partition_type": "CLASS",
+    "type": "SUBJECT",
+    "subject_title": "Информационный час",
+    "level_of_study": "Базовый",
+    "teacher_id": "00000000-0000-4000-8000-c4a16c765a52",
+    "teacher": "[text]",
+    "group_id": "00000000-0000-4000-8000-0fa9ae8fca77",
+    "group_name": null
+  },
+  {
+    "id": "00000000-0000-4000-8000-59300a1f57ff",
+    "partition_type": "CLASS",
+    "type": "SUBJECT",
+    "subject_title": "Классный час",
+    "level_of_study": "Базовый",
+    "teacher_id": "00000000-0000-4000-8000-c4a16c765a52",
+    "teacher": "[text]",
+    "group_id": "00000000-0000-4000-8000-0fa9ae8fca77",
+    "group_name": null
+  },
+  {
+    "id": "00000000-0000-4000-8000-6a0b59d44938",
+    "partition_type": "CLASS",
+    "type": "SUBJECT",
+    "subject_title": "Математика",
+    "level_of_study": "Базовый",
+    "teacher_id": "00000000-0000-4000-8000-c4a16c765a52",
+    "teacher": "[text]",
+    "group_id": "00000000-0000-4000-8000-0fa9ae8fca77",
+    "group_name": null
+  },
+  {
+    "id": "00000000-0000-4000-8000-a3b56d35bf73",
+    "partition_type": "CLASS",
+    "type": "SUBJECT",
+    "subject_title": "Музыка",
+    "level_of_study": "Базовый",
+    "teacher_id": "00000000-0000-4000-8000-3a26ef61ff48",
+    "teacher": "[text]",
+    "group_id": "00000000-0000-4000-8000-0fa9ae8fca77",
+    "group_name": null
+  },
+  {
+    "id": "00000000-0000-4000-8000-6ec1e0073584",
+    "partition_type": "CLASS",
+    "type": "SUBJECT",
+    "subject_title": "Обучение грамоте (письмо)",
+    "level_of_study": "Базовый",
+    "teacher_id": "00000000-0000-4000-8000-c4a16c765a52",
+    "teacher": "[text]",
+    "group_id": "00000000-0000-4000-8000-0fa9ae8fca77",
+    "group_name": null
+  },
+  {
+    "id": "00000000-0000-4000-8000-7a638e00350e",
+    "partition_type": "CLASS",
+    "type": "SUBJECT",
+    "subject_title": "Обучение грамоте (чтение)",
+    "level_of_study": "Базовый",
+    "teacher_id": "00000000-0000-4000-8000-c4a16c765a52",
+    "teacher": "[text]",
+    "group_id": "00000000-0000-4000-8000-0fa9ae8fca77",
+    "group_name": null
+  },
+  {
+    "id": "00000000-0000-4000-8000-730c97e70f0c",
+    "partition_type": "CLASS",
+    "type": "SUBJECT",
+    "subject_title": "Трудовое обучение",
+    "level_of_study": "Базовый",
+    "teacher_id": "00000000-0000-4000-8000-c4a16c765a52",
+    "teacher": "[text]",
+    "group_id": "00000000-0000-4000-8000-0fa9ae8fca77",
+    "group_name": null
+  },
+  {
+    "id": "00000000-0000-4000-8000-1a5ca5c21a89",
+    "partition_type": "CLASS",
+    "type": "SUBJECT",
+    "subject_title": "Физическая культура и здоровье",
+    "level_of_study": "Базовый",
+    "teacher_id": "00000000-0000-4000-8000-02609b849200",
+    "teacher": "[text]",
+    "group_id": "00000000-0000-4000-8000-0fa9ae8fca77",
+    "group_name": null
+  },
+  {
+    "id": "00000000-0000-4000-8000-c7bd6c2b2796",
+    "partition_type": "CLASS",
+    "type": "SUBJECT",
+    "subject_title": "Человек и мир",
+    "level_of_study": "Базовый",
+    "teacher_id": "00000000-0000-4000-8000-c4a16c765a52",
+    "teacher": "[text]",
+    "group_id": "00000000-0000-4000-8000-0fa9ae8fca77",
+    "group_name": null
+  },
+  {
+    "id": "00000000-0000-4000-8000-51b0dd6fac44",
+    "partition_type": "CLASS",
+    "type": "SUBJECT",
+    "subject_title": "Введение в школьную жизнь",
+    "level_of_study": null,
+    "teacher_id": null,
+    "teacher": null,
+    "group_id": null,
+    "group_name": null
+  }
+]

@@ -102,7 +102,7 @@ Useful for a "paste session JSON" dev mode. `localStorage["e-school-auth-diary"]
 ```
 
 - **Hourly run (school days, 08:00 to 14:00):** current week + previous week per child (late marks are common), plus `final/whole` once a day. About 12 requests total.
-- **Weekly re-scan (Friday evening):** every week of the current quarter per child, to catch marks that teachers changed or removed.
+- **Re-scan inside the school day:** every week of the current quarter not checked for six days is taken again by the ordinary school-day runs, to catch marks that teachers changed or removed (design.md 10.2).
 - **Backfill:** all past weeks of the school year (36 weeks per child), run once at night, throttled.
 - **Upsert key:** `(student_id, lesson_uuid)`, and when `lesson_uuid` is null `(student_id, date, number, subject_id)` (7.5); marks also have their own `uuid`. Track `first_seen_at`, `changed_at`, `removed_at` and keep previous versions (`mark_history`) to power "new marks" and to catch edits and deletions. Scheduling, change detection and API drift logging are specified in `design.md` sections 8 and 10.
 - **Grade 1 child:** no marks at all (Belarus grades 1 to 2 are unmarked). Still sync lessons and homework; show "no marks" gracefully.
@@ -329,7 +329,7 @@ Observed: three schedules (shift 1 for grades 2 to 11, shift 2 for some grades w
 
 #### 6.10.2 `GET /education/diary/schools/{school}/classes/{class_uuid}/timetables/whole` [VERIFIED]
 
-The class timetable for the term, with rooms and bell times. No student in the path: it is the whole class, both subgroups included.
+The class's timetables, with rooms and bell times. No student in the path: it is the whole class, both subgroups included.
 
 ```jsonc
 [{
@@ -337,16 +337,16 @@ The class timetable for the term, with rooms and bell times. No student in the p
   "schedule_of_bells_uuid": "uuid",   // -> 6.10.1 uuid [VERIFIED]
   "class_id": "uuid",
   "class_level": 7,
-  "period": "FIRST_QUARTER",          // the term this timetable is for
+  "period": "FIRST_QUARTER",          // a quarter, or a half year: FIRST_HALF_YEAR [VERIFIED], SECOND_HALF_YEAR [ASSUMED]
   "days_of_week": [{
     "day_of_week": 1,                 // 1..6; Saturday present and empty in the observed class
     "timetable_slots": [{
       "time_of_bells": { "uuid": "uuid", "summary": null, "number": 1, "start_time": "08:00:00", "end_time": "08:45:00" },
       "slots": [{                     // one per subgroup taught at that time (1 or 2 observed)
         "uuid": "uuid",
-        "summary": "string",          // subject title, with the group in brackets when split
+        "summary": "string",          // subject title, a part in brackets («Обучение грамоте (письмо)»); not read, dropped
         "number": 1,
-        "room_id": "uuid",            // -> 6.10.4 uuid; 35 of 38 slots found there, the rest unknown
+        "room_id": "uuid",            // -> 6.10.4 uuid, or null when the school set no room (second probe: grade 1 class 21 of 21 null, grade 7 class 3 of 30 null, every other one in the list)
         "lesson_template_id": "uuid"  // -> 6.10.3 templates[].uuid and lessons slot lesson_template_id
       }]
     }]
@@ -354,7 +354,7 @@ The class timetable for the term, with rooms and bell times. No student in the p
 }]
 ```
 
-One item observed (the current term). Whether other terms appear once they are planned is open (10).
+One item per planned period. A school may plan a timetable per quarter or per half year (`FIRST_HALF_YEAR` seen in the second probe, 2026-10; `SECOND_HALF_YEAR` assumed by symmetry, a value outside the list is drift). The regular week is the timetable whose period covers today, the narrower one when a quarter and a half year both do (a half year is its two quarters, from 6.4); between periods the next one to start, after the last one the latest. A quarter's timetable belongs to that term, a half year's to none (`WeekTemplate.termExternalId` absent).
 
 #### 6.10.3 `GET /education/planning/classes/{class_uuid}/educational_subjects` [VERIFIED]
 
@@ -365,8 +365,13 @@ The class's teaching plan (the `planning` area, outside `/education/diary`). One
   "uuid": "uuid",                     // = subject id
   "partition_type": "CLASS",          // CLASS | GROUP
   "type": "SUBJECT", "pass_exam": false, "additional_characteristic": null, "special_students": null,
-  "school_subject": { "summary": "string", "kind": "01_EDUCATIONAL_SCHOOL_SUBJECT", "as_json": { "short_name": "Рус. яз." /* … */ } /* … */ },
-  "templates": [{                     // lesson templates: one per teaching group
+  "summary": "string", "author": "uuid", "dt_create": 0, "dt_update": 0,   // present, not read
+  "school_subject": {
+    "uuid": "uuid", "summary": "string", "kind": "01_EDUCATIONAL_SCHOOL_SUBJECT", "status": "…", "ic_code": "…", "version": 0,
+    "as_json": { "short_name": "Рус. яз.", "uuid": "uuid", "author": "uuid", "school": "uuid", "subject": "…", "summary": "string",
+                 "dt_create": 0, "dt_update": 0, "dt_delete": null }   // only short_name is read; subject (the catalogue entry, { as_json: { value: "Математика" } }) is dropped
+  },
+  "templates": [{                     // lesson templates: one per teaching group; null when the subject has none this period
     "uuid": "uuid",                   // = lesson_template_id in lessons and the timetable [VERIFIED: 30 of 30]
     "study_hours": 3,                 // lessons per week
     "study_group": { "uuid": "uuid", "name": "1-я подгруппа", "summary": "string" },   // null for the whole class
@@ -377,7 +382,7 @@ The class's teaching plan (the `planning` area, outside `/education/diary`). One
 }]
 ```
 
-Gives the subject's short name, lessons per week and, through `lesson_template_id`, the exact group, teacher and level of each of the child's lessons. 6.7a gives the same teacher, group and level in a flatter form; 6.10.3 adds `study_hours` and `short_name`.
+Gives the subject's short name, lessons per week and, through `lesson_template_id`, the exact group, teacher and level of each of the child's lessons. 6.7a gives the same teacher, group and level in a flatter form; 6.10.3 adds `study_hours` and `short_name`. `templates: null` [VERIFIED, second probe] means the subject has no lessons planned this period, not an error. Every `summary` and `author` here (on the subject, `school_subject` and `as_json`) is free text or a person's id that nothing reads: `redactRaw()` drops them before a body is stored and `sanitize()` drops them in fixtures, since a summary may hold a teacher's name.
 
 #### 6.10.4 `GET /institution/schools/{school}/premises?q=…` [VERIFIED]
 
@@ -389,12 +394,13 @@ The school's rooms. The site passes `q={"expr":{"units":[{"field":"dt_delete","o
   "audience_number": "201",           // what the timetable shows as «Каб»
   "audience_name": "string",
   "hull": null,                       // building, when the school has several
-  "premise_type": { "summary": "string", "as_json": { "short_name": "string" /* … */ } /* … */ },
+  "premise_type": { "summary": "string", "as_json": { "name": "string", "short_name": "string" /* … */ } /* … */ },
+  "summary": "string", "author": "uuid", "dt_create": 0, "dt_update": 0,   // present, not read
   "dt_delete": null, "school": "uuid"
 }]
 ```
 
-About 60 rooms for one school.
+About 60 rooms for one school. Only `uuid` and `audience_number` are read, and only those two are stored (`redactRaw()`). In fixtures `summary`, `author` and the room's own `audience_name` (it may be named after a person) are dropped, `premise_type.as_json.name` and `short_name` become one typical value («Кабинет», «каб.»), and a numbered room keeps only its form (`101С` becomes three other digits and `А`): the whole room list with its buildings' letters, next to the bells, could point to the school. A room named in words only («спортзал») stays.
 
 #### 6.10.5 How the pieces connect
 
@@ -462,6 +468,9 @@ Second probe, six weeks of two children: 44 `SINGLE`, 1 `DOUBLE`, 27 `ABSENT`; n
 | `EXEMPT` | Exempt (освоб.) | non-numeric |
 | `MASTERED` / `NOT_MASTERED` | Mastered / not (осв. / не осв.) | non-numeric |
 | `NOT_TAKEN` | Not assessed (н/а) | non-numeric |
+| `null` [VERIFIED, 2026-10-23] | A teacher's comment without a mark: `type` null, `mark` empty, `comment` set | empty |
+
+A `lesson_mark` with neither a kind nor a mark but a comment is the teacher's remark on the lesson («нет домашнего задания»): a `BehaviourEvent` on `Lesson.behaviour` (`polarity: neutral`, `category: lesson_comment`, the lesson, subject and author ids), never a mark (`behaviour: derived` in the manifest; ux-principles D56). One with no comment either is nothing. Before 2026-10-23 such a slot failed the schema and its lesson was taken for removed. Now any day or slot that cannot be read (or a response that is not a list of days) makes the whole week unusable (it stays unverified, nothing is removed) instead of being skipped.
 
 The frontend counts weekly absences as slots with `lesson_mark.kind === "ABSENT"` and highlights a cell red if any numeric part of `mark` is below 4.
 
@@ -504,11 +513,12 @@ The frontend counts weekly absences as slots with `lesson_mark.kind === "ABSENT"
 - Calendar: QUARTER entries are `Term`s (`kind: quarter`, index from FIRST_QUARTER ... FOURTH_QUARTER), HOLIDAYS are holidays, with dates converted in Europe/Minsk (6.4). ADDITIONAL_HOLIDAYS are holidays only for a class with `level` 1 or 2; for older grades those days are school days (6.4). A non-empty `description` is kept with the term or holiday as a note. A class with `level` 1 or 2 gets `gradingScaleId: null`, the school year without marks (`ux-principles.md` D49); from grade 3 the manifest's `by-10` applies.
 - Lesson identity: `lesson_uuid` when present. When it is null, the lesson's id is `slot:<date>:<number>:<subject_id>` (start time instead of the number if that is missing too), which is unique within one student's week; its mark and absence point to that id. The collector (design.md 8) matches a fetched lesson first by id, then by `(student, date, slot, subject)`, so a lesson that gets a real `lesson_uuid` on a later fetch keeps its row, its ticks and its history instead of being removed and created again.
 - School details (M3a; 6.7a, 6.10), all for the one student, fetched once a day, not every run:
-  - The student's group per subject: the 6.7a row whose `teacher_id` (or the 6.10.3 template behind the lesson's `lesson_template_id`) matches the student's lessons. A split subject with no lesson seen yet this term has no group and no teacher until the first one appears. → `Subject.groupLabel` (`group_name`), `teacherExternalId`, `teacherName` (6.7a `teacher`, family name first), `Lesson.groupLabel`, `Lesson.teacherName`.
+  - The student's group per subject: the 6.7a row of the teacher of the student's own 6.10.3 template (the one behind their lessons' `lesson_template_id`). A split subject with no lesson seen yet this term has no group and no teacher until the first one appears. It fails closed: evidence for two groups (a lesson without a template ref given by the other group's teacher, say a substitute), a subject whose `partition_type` is missing or new with several templates, a template without its `study_group`, or rows of two teachers give no group, no teacher and none of that subject's template entries. → `Subject.groupLabel` (`group_name`), `teacherExternalId`, `teacherName` (6.7a `teacher`, family name first). Teacher names come only from 6.7a, for the student's own rows; 6.10.3's `teacher` objects are never mapped. Subjects carry these details only when `getSubjects` is called after `getWeekTemplate` in the same login (the collector does that once a day).
   - `level_of_study`: «Базовый» → `level: 'regular'`, «Углубленный» → `level: 'advanced'`, the text in `levelLabel`. `study_hours` of the student's template → `lessonsPerWeek`; `short_name` → `shortName`.
   - `BellSchedule`: the 6.10.1 schedule named by the class timetable's `schedule_of_bells_uuid`; `title` → `label`, `days`, `time_of_bells` → periods ("HH:MM"). Shift numbers stay inside.
-  - `WeekTemplate` for the current term: 6.10.2 slots whose `lesson_template_id` is one of the student's (the whole-class slots plus the student's group), `cycleWeeks: 1`, `room` = 6.10.4 `audience_number` of `room_id` (absent when the room is not in the list), times from `time_of_bells`.
-  - `Lesson.endTime` and `Lesson.room`: from the template entry with the lesson's weekday, `number` and `lesson_template_id`; `endTime` falls back to the bell schedule's period with that number.
+  - `WeekTemplate` from the timetable for today (6.10.2, a quarter's or a half year's): 6.10.2 slots whose `lesson_template_id` is one of the student's (the whole-class slots plus the student's group), `cycleWeeks: 1`, `room` = 6.10.4 `audience_number` of `room_id` (absent when the room is not in the list), times from `time_of_bells`.
+  - `Lesson.templateRef` = `lesson_template_id`, and the template entries carry the same key. The provider does not join lessons with the timetable: the server does, once a day, from the stored week template (`docs/providers.md` 4, «Room, subgroup, teacher and end time of a lesson»), so a run costs no extra requests. The end time comes from the bells by lesson number.
+  - The student's templates are the templates of every subject the class learns whole (`partition_type: CLASS`, or a single template that is not a group's: a `GROUP` subject with one template planned so far needs the lessons' evidence like any other) plus the group templates their lessons came from (`lesson_template_id`; the lesson's `teacher_id` counts only for a lesson without one), and only when those are of one group. When no lesson was read in the login yet, the provider reads the current week once to learn them.
   - Teachers of other groups and the school's room list are never returned or stored.
 - Students: `profile_id`, `full_name` and `school_id` from `/admin/auth/me`, class id, `class_number` and `level` from the class (`StudentRef.classExternalId`, `className`, `grade`).
 
@@ -518,7 +528,7 @@ The frontend counts weekly absences as slots with `lesson_mark.kind === "ABSENT"
 - Through a VPN: 503 on everything, then connections hung. Treat 503 or a hanging connection as "probably wrong network path" first.
 - Real rate limits are unknown. Stay conservative:
   - strictly serial requests, 1.5 to 3 s apart; backfill and re-scans slower (3 to 5 s after 40 requests);
-  - at most one login per hour per account, whatever triggers the run; scheduled runs on school days inside a window (default 08:00 to 14:00 Europe/Minsk) with a random 0 to 20 minute offset, weekly re-scan Friday evening, backfill at night; details in `design.md` section 10.2;
+  - at most one login per hour per account, whatever triggers the run; scheduled runs only during each child's school day (from their timetable and bells; the manifest's 08:00 to 14:00 Europe/Minsk only when the day's times are unknown) with a random 0 to 20 minute offset, the term's re-scan inside those runs, backfill in any allowed run; details in `design.md` section 10.2;
   - on 503/429/network error: exponential backoff (30 s, 2 min, 10 min), then give up until the next schedule;
   - one login per run; never loop on failed logins (risk of account lock);
   - normal browser-like `User-Agent`; no parallel requests.
@@ -568,7 +578,7 @@ Still open:
 - [ ] Whether a re-fetched week can return a different `lesson_uuid` for the same slot (timetable edits), which affects removal detection.
 - [ ] `substitution` on a lesson: null in every lesson seen; its shape when a substitute teacher takes the lesson.
 - [ ] Whether 6.7a, 6.10.2 and 6.10.3 answer the same way for the grade 1 child, and whether 6.10.2 returns the next term's timetable once it is planned.
-- [ ] Rooms for the 3 of 38 timetable slots whose `room_id` is not in 6.10.4 (deleted rooms or a missing filter).
+- [x] Rooms missing from the regular week: `room_id` is null in those slots (the school set no room), never a room absent from 6.10.4 (second probe, 2026-10).
 
 Save sanitised fixtures (names and ids replaced) of every endpoint into `fixtures/` on the first run and write parser tests against them.
 

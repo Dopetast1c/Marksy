@@ -1,0 +1,140 @@
+{
+  "term": "q1",
+  "week": [
+    {
+      "day": 1,
+      "n": 1,
+      "tpl": "TPL-LIT1",
+      "subject": {
+        "code": "lit1",
+        "title": "Обучение грамоте"
+      },
+      "group": null,
+      "room": "105",
+      "teacher": {
+        "id": "T-6",
+        "name": "Миронова Анна Сергеевна"
+      }
+    },
+    {
+      "day": 2,
+      "n": 1,
+      "tpl": "TPL-LIT1",
+      "subject": {
+        "code": "lit1",
+        "title": "Обучение грамоте"
+      },
+      "group": null,
+      "room": "105",
+      "teacher": {
+        "id": "T-6",
+        "name": "Миронова Анна Сергеевна"
+      }
+    },
+    {
+      "day": 3,
+      "n": 1,
+      "tpl": "TPL-LIT1",
+      "subject": {
+        "code": "lit1",
+        "title": "Обучение грамоте"
+      },
+      "group": null,
+      "room": "105",
+      "teacher": {
+        "id": "T-6",
+        "name": "Миронова Анна Сергеевна"
+      }
+    },
+    {
+      "day": 4,
+      "n": 1,
+      "tpl": "TPL-LIT1",
+      "subject": {
+        "code": "lit1",
+        "title": "Обучение грамоте"
+      },
+      "group": null,
+      "room": "105",
+      "teacher": {
+        "id": "T-6",
+        "name": "Миронова Анна Сергеевна"
+      }
+    },
+    {
+      "day": 5,
+      "n": 1,
+      "tpl": "TPL-LIT1",
+      "subject": {
+        "code": "lit1",
+        "title": "Обучение грамоте"
+      },
+      "group": null,
+      "room": "105",
+      "teacher": {
+        "id": "T-6",
+        "name": "Миронова Анна Сергеевна"
+      }
+    },
+    {
+      "day": 1,
+      "n": 2,
+      "tpl": "TPL-MATH1",
+      "subject": {
+        "code": "math1",
+        "title": "Математика"
+      },
+      "group": null,
+      "room": "105",
+      "teacher": {
+        "id": "T-6",
+        "name": "Миронова Анна Сергеевна"
+      }
+    },
+    {
+      "day": 2,
+      "n": 2,
+      "tpl": "TPL-MATH1",
+      "subject": {
+        "code": "math1",
+        "title": "Математика"
+      },
+      "group": null,
+      "room": "105",
+      "teacher": {
+        "id": "T-6",
+        "name": "Миронова Анна Сергеевна"
+      }
+    },
+    {
+      "day": 3,
+      "n": 2,
+      "tpl": "TPL-MATH1",
+      "subject": {
+        "code": "math1",
+        "title": "Математика"
+      },
+      "group": null,
+      "room": "105",
+      "teacher": {
+        "id": "T-6",
+        "name": "Миронова Анна Сергеевна"
+      }
+    },
+    {
+      "day": 4,
+      "n": 2,
+      "tpl": "TPL-MATH1",
+      "subject": {
+        "code": "math1",
+        "title": "Математика"
+      },
+      "group": null,
+      "room": "105",
+      "teacher": {
+        "id": "T-6",
+        "name": "Миронова Анна Сергеевна"
+      }
+    }
+  ]
+}
