@@ -220,7 +220,8 @@ export type GateDecision =
   | { start: true; kind: 'scheduled' | 'catchup' | 'rescan' | 'manual' | 'backfill' }
   | {
       start: false;
-      reason: 'requires_action' | 'paused' | 'interval' | 'offline_retry' | 'jitter' | 'outside_window';
+      reason:
+        'requires_action' | 'paused' | 'interval' | 'offline_retry' | 'jitter' | 'outside_window' | 'checked_today';
       /** Manual triggers leave a skipped row so the user sees why; scheduled ticks leave nothing */
       record: 'skipped_paused' | 'skipped_interval' | null;
       /** When the login budget allows the next attempt */

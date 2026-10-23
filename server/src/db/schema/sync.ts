@@ -6,7 +6,15 @@ import { terms } from './school';
 // The planner's state (docs/design.md 10.4): every attempt is a sync_runs row, every verified week a sync_coverage
 // row. The planner reads these and nothing else to decide what to fetch, so an outage needs no special code path.
 
-export type SyncRunKind = 'scheduled' | 'catchup' | 'weekly_rescan' | 'manual' | 'rescan' | 'backfill' | 'connect';
+export type SyncRunKind =
+  | 'scheduled'
+  | 'catchup'
+  | 'manual'
+  | 'rescan'
+  | 'backfill'
+  | 'connect'
+  /** a login only to confirm with getAccount() that an account still shows its children (design.md 10.4) */
+  | 'source_check';
 export type SyncRunStatus =
   'running' | 'success' | 'partial' | 'failed' | 'skipped_offline' | 'skipped_paused' | 'skipped_interval';
 export type SyncErrorClass = 'offline' | 'provider_unavailable' | 'auth' | 'blocked' | 'needs_2fa' | 'partial';

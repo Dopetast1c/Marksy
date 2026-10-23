@@ -95,5 +95,7 @@
   "notification.syncNeeds2fa.title": "The diary asks for a confirmation code",
   "notification.syncNeeds2fa.body": "Sign in again under Family and enter the code.",
   "notification.drift.title": "The diary changed its data format",
-  "notification.drift.body": "{{endpoint}}: {{kind}} at {{path}}. Syncing goes on."
+  "notification.drift.body": "{{endpoint}}: {{kind}} at {{path}}. Syncing goes on.",
+  "notification.childFollowed.title": "Another family now follows {{child}}",
+  "notification.childFollowed.body": "They see {{child}}'s diary and the work {{child}} does in the app. Your family's members, tags, rules and settings stay yours."
 }

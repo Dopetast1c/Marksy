@@ -97,5 +97,7 @@
   "notification.syncNeeds2fa.title": "Дневник просит код подтверждения",
   "notification.syncNeeds2fa.body": "Войдите заново в разделе «Семья» и введите код.",
   "notification.drift.title": "Дневник изменил формат данных",
-  "notification.drift.body": "{{endpoint}}: {{kind}}, {{path}}. Синхронизация продолжается."
+  "notification.drift.body": "{{endpoint}}: {{kind}}, {{path}}. Синхронизация продолжается.",
+  "notification.childFollowed.title": "Ещё одна семья теперь следит за ребёнком: {{child}}",
+  "notification.childFollowed.body": "Ей видны дневник и то, что ребёнок отмечает в приложении. Участники, теги, правила и настройки вашей семьи остаются только вашими."
 }

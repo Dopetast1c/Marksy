@@ -63,6 +63,11 @@ export interface CollectorOptions {
   runId: string;
   /** The weeks to fetch for one student, in the planner's order, decided with the fresh calendar */
   plan(input: PlanInput): Promise<WeekRequest[]> | WeekRequest[];
+  /**
+   * Only the login and getAccount(): a source check of an account that reads none of its children. No calendar, no
+   * weeks, no coverage (design.md 10.4)
+   */
+  accountOnly?: boolean;
   /** Whether finals are fetched for this student in this run; default: once per local day */
   finalsDue?(input: PlanInput): Promise<boolean> | boolean;
   /** Whether bells and the regular week are fetched for this student in this run; default: once per local day */
@@ -209,6 +214,7 @@ export async function runCollector(opts: CollectorOptions): Promise<CollectorRes
     const info = await provider.getAccount(session, ctx);
     // every listed child is stored and linked; only those this account is the active source of are read
     students = (await storeStudents(db, account, info, now())).readable;
+    if (opts.accountOnly) students = [];
     const today = localTime(now(), manifest.timezone).date;
 
     const units: Unit[] = [];

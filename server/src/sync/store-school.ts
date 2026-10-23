@@ -3,7 +3,6 @@ import type { AccountInfo, Calendar, FinalMark, ProviderManifest, StudentRef, Su
 import { and, eq } from 'drizzle-orm';
 import type { Db } from '../db/client';
 import {
-  familyStudents,
   finalMarks,
   finalMarksRaw,
   holidays,
@@ -16,6 +15,7 @@ import {
   subjects,
   terms,
 } from '../db/schema';
+import { dropUnlisted, linkFamily, rebalance } from './sources';
 import { normName } from './upsert';
 
 // Students, school years, terms, holidays, subjects and finals: what a run learns before it fetches any week. Every
@@ -38,8 +38,8 @@ export interface StoredStudents {
 
 /**
  * The children an account lists: one row per child and system, whichever login lists them (design.md 7.1, 7.2). The
- * account becomes a source of each; it becomes the active one when the child has none yet. The account's family follows
- * each child it lists.
+ * account becomes a source of each (the active one when the child has no source that can read), its family follows each
+ * child it lists (sources.ts linkFamily), and a child it no longer lists loses this source (dropUnlisted).
  */
 export async function storeStudents(
   db: Db,
@@ -72,23 +72,22 @@ export async function storeStudents(
       .insert(studentIdentities)
       .values({ providerId: account.providerId, externalId: s.externalId, studentId })
       .onConflictDoNothing();
-    const [active] = await db
-      .select({ accountId: studentSources.diaryAccountId })
-      .from(studentSources)
-      .where(and(eq(studentSources.studentId, studentId), eq(studentSources.active, true)));
     await db
       .insert(studentSources)
-      .values({ studentId, diaryAccountId: account.id, externalId: s.externalId, lastSeenAt: now, active: !active })
+      .values({ studentId, diaryAccountId: account.id, externalId: s.externalId, lastSeenAt: now })
       .onConflictDoUpdate({
         target: [studentSources.studentId, studentSources.diaryAccountId],
         set: { externalId: s.externalId, lastSeenAt: now },
       });
-    await db
-      .insert(familyStudents)
-      .values({ familyId: account.familyId, studentId, status: 'active', linkedAt: now })
-      .onConflictDoNothing();
+    await rebalance(db, studentId, now);
+    await linkFamily(db, account.familyId, studentId, now);
     listed.push(row!);
   }
+  await dropUnlisted(
+    db,
+    account,
+    listed.map((s) => s.id),
+  );
   const mine = await db
     .select({ studentId: studentSources.studentId })
     .from(studentSources)
@@ -107,6 +106,15 @@ export async function readableStudents(db: Db, accountId: string): Promise<Stude
       and(eq(studentSources.diaryAccountId, accountId), eq(studentSources.active, true), eq(students.isActive, true)),
     );
   return rows.map((r) => r.student);
+}
+
+/** Every child an account is a source of, active or not */
+export async function sourcedStudents(db: Db, accountId: string): Promise<string[]> {
+  const rows = await db
+    .select({ studentId: studentSources.studentId })
+    .from(studentSources)
+    .where(eq(studentSources.diaryAccountId, accountId));
+  return rows.map((r) => r.studentId);
 }
 
 /** The provider's view of a stored student, for the provider's methods. */

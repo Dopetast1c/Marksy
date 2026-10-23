@@ -18,7 +18,8 @@ import type { Alert } from './failures';
 import { decideStart, isManual, selectWeeks, termBookkeeping } from './plan';
 import type { GateDecision, Trigger } from './plan';
 import { accountToday, planCalendarOf, planState, storedPlanCalendar, weekContext } from './state';
-import { readableStudents } from './store-school';
+import { readableStudents, sourcedStudents } from './store-school';
+import { rebalanceAccount } from './sources';
 import { localTime } from './time';
 
 // One attempt to sync one diary account (docs/design.md 10.4), whatever triggered it: the scheduler's tick, the
@@ -109,12 +110,11 @@ async function runLocked(opts: RunSyncOptions): Promise<RunSyncResult> {
 
   // what the stored state says, before anyone logs in: each child's school day today and what is waiting
   const pupils = await readableStudents(db, account.id);
-  const today = await accountToday(
-    db,
-    pupils.map((p) => p.id),
-    ctx,
-    limits,
-  );
+  // an account that is the active source of none of the children it shows only checks, once a school day, that it
+  // still shows them (design.md 10.4, "Source checks")
+  const sourced = pupils.length ? [] : await sourcedStudents(db, account.id);
+  const sourceCheck = sourced.length > 0;
+  const today = await accountToday(db, sourceCheck ? sourced : pupils.map((p) => p.id), ctx, limits);
   const [lastOffline] = await db
     .select({ startedAt: syncRuns.startedAt })
     .from(syncRuns)
@@ -131,9 +131,9 @@ async function runLocked(opts: RunSyncOptions): Promise<RunSyncResult> {
     limits,
     windows: today.windows,
     weekday: manifest.calendar.schoolDays.includes(local.weekday),
-    // an account that reads no child yet (just connected) has everything waiting
-    backlog: today.backlog || pupils.length === 0,
-    postTerm: today.postTerm,
+    // an account that reads no child yet (just connected) has everything waiting; a source check has nothing
+    backlog: sourceCheck ? false : today.backlog || pupils.length === 0,
+    postTerm: sourceCheck ? false : today.postTerm,
     lastOfflineAt: lastOffline?.startedAt ?? null,
     seed: account.id,
   });
@@ -144,6 +144,12 @@ async function runLocked(opts: RunSyncOptions): Promise<RunSyncResult> {
     trigger: opts.trigger,
     startedAt: started,
   };
+  const checkedToday =
+    sourceCheck && !!account.lastSuccessAt && localTime(account.lastSuccessAt, manifest.timezone).date === local.date;
+  if (decision.start && checkedToday && !isManual(opts.trigger)) {
+    return { outcome: 'skipped', decision: { start: false, reason: 'checked_today', record: null } };
+  }
+  const kind = sourceCheck && decision.start ? 'source_check' : decision.start ? decision.kind : 'manual';
   if (!decision.start) {
     if (!decision.record) return { outcome: 'skipped', decision };
     const [row] = await db
@@ -159,7 +165,7 @@ async function runLocked(opts: RunSyncOptions): Promise<RunSyncResult> {
       .insert(syncRuns)
       .values({
         ...base,
-        kind: decision.kind,
+        kind,
         status: 'skipped_offline',
         errorClass: 'offline',
         finishedAt: now(),
@@ -172,7 +178,7 @@ async function runLocked(opts: RunSyncOptions): Promise<RunSyncResult> {
 
   const [run] = await db
     .insert(syncRuns)
-    .values({ ...base, kind: decision.kind, status: 'running' })
+    .values({ ...base, kind, status: 'running' })
     .returning({ id: syncRuns.id });
   const runId = run!.id;
   await db
@@ -196,6 +202,7 @@ async function runLocked(opts: RunSyncOptions): Promise<RunSyncResult> {
   }
 
   const collected = await runCollector({
+    accountOnly: sourceCheck,
     db,
     provider,
     account,
@@ -234,6 +241,8 @@ async function runLocked(opts: RunSyncOptions): Promise<RunSyncResult> {
 
   const { patch, alert } = applyOutcome(account, { ...collected, manual: isManual(opts.trigger) }, finished, config);
   await db.update(diaryAccounts).set(patch).where(eq(diaryAccounts.id, account.id));
+  // a paused account or one that needs action hands its children to another source that can read
+  await rebalanceAccount(db, account.id, finished);
   if (alert) {
     await notifyAdmins(db, account.familyId, {
       ...NOTICES[alert],
