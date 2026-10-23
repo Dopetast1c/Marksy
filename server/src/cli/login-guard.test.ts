@@ -79,8 +79,15 @@ describe('login guard of probe and sync:once', () => {
     expect(await db.select().from(cliLogins)).toHaveLength(1);
   });
 
-  it('MARKSY_RUNNER=claude marks Claude Code; anything else is the owner', () => {
+  it('MARKSY_RUNNER=claude or a Claude Code shell (CLAUDECODE=1) marks Claude Code; anything else is the owner', () => {
     expect(runnerOf({ MARKSY_RUNNER: 'claude' })).toBe('claude');
+    expect(runnerOf({ CLAUDECODE: '1', MARKSY_RUNNER: 'owner' })).toBe('claude');
     expect(runnerOf({})).toBe('owner');
+  });
+
+  it('two runs started together: one passes, the other waits for the interval', async () => {
+    const results = await Promise.all([claimLogin(db, claim()), claimLogin(db, claim({ command: 'sync:once' }))]);
+    expect(results.filter((r) => r.ok)).toHaveLength(1);
+    expect(results.filter((r) => !r.ok)).toEqual([expect.objectContaining({ reason: 'interval' })]);
   });
 });

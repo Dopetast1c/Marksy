@@ -138,7 +138,7 @@ export async function runProbe(o: ProbeRunOptions): Promise<number> {
     keepLatestRuns(join(o.root, 'data', 'probe'), KEPT_RUNS);
   }
   // the local deny-list of the pre-commit guard (CLAUDE.md): names and ids from these responses, never committed
-  writeDenyList(o.root, denyValues(named));
+  writeDenyList(o.root, denyValues(named), o.saveRaw ? o.credentials.login : undefined);
 
   // everything sanitize() does not keep, from every response, every URL and the login itself, is checked against
   // what is about to be written: the fixtures and the route keys

@@ -1,9 +1,11 @@
 // pnpm probe: one real read of the owner's account from a Belarusian IP (docs/build-plan.md M2, M3a; CLAUDE.md "Real
-// diary runs"). scripts/probe.mjs asks the login guard first (one login an hour; Claude Code's cap and hours); this
-// script logs in with DIARY_LOGIN and DIARY_PASSWORD from .env and does one run of src/probe-run.ts over the network.
+// diary runs"). It asks the login guard first, whoever starts it and however (one login an hour; Claude Code's cap
+// and hours; server/src/cli/login-guard.ts), then logs in with DIARY_LOGIN and DIARY_PASSWORD from .env and does one
+// run of src/probe-run.ts over the network.
 // Importing it starts a real login: never import it, and never run it but through `pnpm probe`. The same run on saved
 // responses, without a login: `pnpm probe --offline` (scripts/probe-offline.ts).
 
+import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { fetchTransport, ProviderError } from '@marksy/core';
 import { MAX_WEEKS, weeksArg } from '../src/probe';
@@ -25,6 +27,17 @@ async function main(): Promise<number> {
     console.error('Set DIARY_LOGIN and DIARY_PASSWORD in .env (see .env.example), then run pnpm probe again.');
     return 2;
   }
+  // the guard records the login before it happens; a refusal names the next allowed time (exit 3)
+  const guard = spawnSync(
+    'pnpm',
+    ['--silent', '--filter', '@marksy/server', 'login:claim', '--provider', 'by-eschools'],
+    {
+      cwd: root,
+      stdio: 'inherit',
+      shell: true,
+    },
+  );
+  if (guard.status !== 0) return guard.status === 3 ? 3 : 1;
   return runProbe({
     transport: fetchTransport,
     credentials: { login, password },

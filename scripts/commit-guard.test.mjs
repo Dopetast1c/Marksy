@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { checkStaged, denyHits, forbiddenPath, stagedFiles } from './commit-guard.mjs';
+import { checkStaged, denyHits, forbiddenPath, messageProblem, stagedFiles } from './commit-guard.mjs';
 
 // A fictional deny-list: what pnpm probe would build from real responses
 const deny = {
@@ -46,6 +46,16 @@ describe('pre-commit guard', () => {
       'непетровская',
     ].join('\n');
     expect(denyHits(text, deny)).toEqual([2, 4, 5]);
+    // ё and е are the same letter for names
+    expect(denyHits('Фёдорова', { words: new Set(['федорова']), phrases: [], ids: [] })).toEqual([1]);
+    expect(denyHits('Федорова', { words: new Set(['фёдорова']), phrases: [], ids: [] })).toEqual([1]);
+  });
+
+  it('checks a commit message the same way (the commit-msg hook), naming the line only', () => {
+    const problem = messageProblem('fix: lessons\n\nseen with Петровская\n', deny);
+    expect(problem).toBe('commit refused: the commit message, line 3, has a name or id from the real diary');
+    expect(messageProblem('fix: lessons', deny)).toBeNull();
+    expect(messageProblem('Петровская', null)).toBeNull();
   });
 
   it('reports the file and the line, never the value', () => {

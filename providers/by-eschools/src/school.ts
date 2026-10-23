@@ -32,7 +32,8 @@ const weekday = (d: number) => d % 7;
 const clean = (s: string | null | undefined) => (s && s.trim() ? s.trim() : undefined);
 
 /**
- * The templates the student is in: a subject's templates when the class learns it whole (CLASS, or a single template),
+ * The templates the student is in: a subject's templates when the class learns it whole (CLASS, or a single template
+ * that is not a group's),
  * otherwise the group templates their lessons came from, and only when those are of one group. Fails closed: a
  * missing or new partition type, a template without its group, or evidence for two groups gives nothing.
  */
@@ -40,7 +41,9 @@ export function studentTemplates(planning: readonly PlanningSubject[], refs: Les
   const out = new Set<string>();
   for (const subject of planning) {
     const templates = subject.templates ?? [];
-    if (subject.partition_type === 'CLASS' || templates.length === 1) {
+    // a single template is the whole class only when nothing says it is a group's (another may not be planned yet)
+    const single = templates.length === 1 && subject.partition_type !== 'GROUP' && !templates[0]!.study_group;
+    if (subject.partition_type === 'CLASS' || single) {
       for (const t of templates) out.add(t.uuid);
       continue;
     }

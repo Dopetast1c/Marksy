@@ -2,7 +2,8 @@
 // commit that stages anything under data/, an environment file other than .env.example, an SQL dump, a raw response;
 // runs the privacy check on the staged files; and checks them against the local deny-list that `pnpm probe` builds
 // from the latest raw responses (data/deny-list.json: the children's and teachers' names, the account's and school's
-// ids). A hit names the file and the line, never the value. Never bypassed: no --no-verify.
+// ids). A hit names the file and the line, never the value. The commit-msg hook checks the message the same way
+// (--message <file>). Never bypassed: no --no-verify.
 import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -29,13 +30,15 @@ export function loadDenyList(root) {
   const file = join(root, 'data', 'deny-list.json');
   if (!existsSync(file)) return null;
   const raw = JSON.parse(readFileSync(file, 'utf8'));
-  const low = (a) => (Array.isArray(a) ? a.map((s) => String(s).toLowerCase()).filter(Boolean) : []);
+  const low = (a) => (Array.isArray(a) ? a.map((s) => fold(String(s))).filter(Boolean) : []);
   return { words: new Set(low(raw.words)), phrases: low(raw.phrases), ids: low(raw.ids) };
 }
 
+/** Lower case, ё as е: a name written either way is the same name */
+const fold = (s) => s.toLowerCase().replace(/ё/g, 'е');
+
 const tokens = (line) =>
-  line
-    .toLowerCase()
+  fold(line)
     .split(/[^\p{L}-]+/u)
     .flatMap((t) => (t.includes('-') ? [t, ...t.split('-')] : [t]))
     .filter(Boolean);
@@ -44,11 +47,12 @@ const tokens = (line) =>
 export function denyHits(text, deny) {
   const hits = [];
   text.split('\n').forEach((line, i) => {
-    const low = line.toLowerCase();
+    const low = fold(line);
+    const words = new Set([...deny.words].map(fold));
     if (
-      deny.phrases.some((p) => low.includes(p)) ||
-      deny.ids.some((id) => low.includes(id)) ||
-      tokens(line).some((t) => deny.words.has(t))
+      deny.phrases.some((p) => low.includes(fold(p))) ||
+      deny.ids.some((id) => low.includes(fold(id))) ||
+      tokens(line).some((t) => words.has(t))
     )
       hits.push(i + 1);
   });
@@ -86,8 +90,25 @@ export function stagedFiles(root) {
   });
 }
 
+/** The commit-msg hook: the message, too, never carries a real name or id. The refusal, or null */
+export function messageProblem(text, deny) {
+  const hits = deny ? denyHits(text, deny) : [];
+  return hits.length
+    ? `commit refused: the commit message, line ${hits.join(', ')}, has a name or id from the real diary`
+    : null;
+}
+
 function main() {
   const root = fileURLToPath(new URL('..', import.meta.url));
+  const at = process.argv.indexOf('--message');
+  if (at >= 0) {
+    const problem = messageProblem(readFileSync(process.argv[at + 1], 'utf8'), loadDenyList(root));
+    if (problem) {
+      console.error(problem);
+      process.exit(1);
+    }
+    return;
+  }
   const deny = loadDenyList(root);
   const problems = checkStaged(stagedFiles(root), deny);
   if (problems.length) {

@@ -4,7 +4,7 @@
 // provider leaking outside providers/by-eschools. Heuristic on purpose: a false positive is cheap, a leak is not.
 // To allow a deliberate match, put `privacy-ok` in a comment on the same line and say why.
 // --staged checks only the files staged for commit, as staged (the pre-commit guard, scripts/commit-guard.mjs).
-import { execSync } from 'node:child_process';
+import { execFileSync, execSync } from 'node:child_process';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 
@@ -24,7 +24,7 @@ const SKIP_DIRS = new Set([
 
 function listFiles() {
   if (staged) {
-    const out = execSync('git diff --cached --name-only -z --diff-filter=ACMR', { cwd: root });
+    const out = execFileSync('git', ['diff', '--cached', '--name-only', '-z', '--diff-filter=ACMR'], { cwd: root });
     return out.toString().split('\0').filter(Boolean);
   }
   try {
@@ -94,10 +94,13 @@ for (const file of listFiles()) {
   if (!TEXT_EXT.test(file) || file === 'pnpm-lock.yaml') continue;
   let text;
   try {
+    // staged: git itself, no shell, so no file name is ever expanded
     text = staged
-      ? execSync(`git show ${JSON.stringify(':' + file)}`, { cwd: root, maxBuffer: 256 * 1024 * 1024 }).toString('utf8')
+      ? execFileSync('git', ['show', `:${file}`], { cwd: root, maxBuffer: 256 * 1024 * 1024 }).toString('utf8')
       : readFileSync(join(root, file), 'utf8');
   } catch {
+    // a staged file that cannot be read is not passed unchecked
+    if (staged) problems.push(`${file}: could not read the staged content`);
     continue;
   }
   text.split('\n').forEach((line, i) => {

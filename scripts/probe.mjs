@@ -1,6 +1,6 @@
 // pnpm probe [--provider <id>] [--weeks <1-8>]: runs a provider's own probe script (docs/providers.md 8). It logs in to
-// the real diary with the logins in .env, after the login guard allowed it (server/src/cli/login-guard.ts: one login
-// an hour per account; for Claude Code, MARKSY_RUNNER=claude, three runs a day between 07:00 and 20:00 school time).
+// the real diary with the logins in .env, after the login guard allowed it (the provider's probe asks it itself,
+// server/src/cli/login-guard.ts: one login an hour per account; for Claude Code three runs a day, 07:00 to 20:00).
 // pnpm probe --offline [run] re-runs the provider's probe on saved raw responses in data/probe/ without a login.
 // Without --provider it picks the only provider that has a probe.
 import { spawnSync } from 'node:child_process';
@@ -39,17 +39,10 @@ if (!known) {
 const command = offline
   ? ['--dir', `providers/${id}`, 'probe:offline', ...rest.slice(1)]
   : ['--dir', `providers/${id}`, 'probe', ...rest];
-const claim = ['--filter', '@marksy/server', 'login:claim', '--provider', id];
 // MARKSY_PROBE_DRY_RUN=1 prints what would run and stops: the launcher can be tested without ever logging in
 if (process.env.MARKSY_PROBE_DRY_RUN === '1') {
-  if (!offline) console.log(`dry run: pnpm ${claim.join(' ')}`);
   console.log(`dry run: pnpm ${command.join(' ')}`);
   process.exit(0);
-}
-if (!offline) {
-  // the guard records the login before it happens; a refusal names the next allowed time
-  const guard = spawnSync('pnpm', ['--silent', ...claim], { stdio: 'inherit', shell: true });
-  if (guard.status !== 0) process.exit(guard.status === 3 ? 3 : 1);
 }
 const res = spawnSync('pnpm', command, { stdio: 'inherit', shell: true });
 process.exit(res.status ?? 1);

@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 // The local deny-list of the pre-commit guard (CLAUDE.md "Real diary runs", .githooks/pre-commit): the names and ids
@@ -58,11 +58,28 @@ export function denyValues(responses: readonly { name: string; raw: unknown }[])
   return { words: [...w].sort(), phrases: [...p].sort(), ids: [...ids].sort() };
 }
 
-/** data/deny-list.json, replaced by every probe run */
-export function writeDenyList(root: string, list: DenyList): void {
+/**
+ * data/deny-list.json, merged with what earlier runs found (an offline run on an older run never drops a newer name);
+ * `login` is the diary login of a real run, kept as an id
+ */
+export function writeDenyList(root: string, list: DenyList, login?: string): void {
+  const file = join(root, 'data', 'deny-list.json');
+  const old: Partial<DenyList> = existsSync(file) ? (JSON.parse(readFileSync(file, 'utf8')) as Partial<DenyList>) : {};
+  const merge = (a: readonly string[] = [], b: readonly string[] = []) => [...new Set([...a, ...b])].sort();
+  const ids = login && login.trim().length >= 4 ? [...list.ids, login.trim().toLowerCase()] : list.ids;
   mkdirSync(join(root, 'data'), { recursive: true });
   writeFileSync(
-    join(root, 'data', 'deny-list.json'),
-    JSON.stringify({ builtAt: new Date().toISOString(), source: 'by-eschools probe', ...list }, null, 2),
+    file,
+    JSON.stringify(
+      {
+        builtAt: new Date().toISOString(),
+        source: 'by-eschools probe',
+        words: merge(old.words, list.words),
+        phrases: merge(old.phrases, list.phrases),
+        ids: merge(old.ids, ids),
+      },
+      null,
+      2,
+    ),
   );
 }

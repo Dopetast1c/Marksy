@@ -167,6 +167,15 @@ describe('school details fail closed', () => {
     expect(rich.filter((s) => s.teacherName).length).toBeGreaterThan(5);
   });
 
+  it("a group subject with one template planned so far is the student's only on their lessons' evidence", () => {
+    const split = planning.find((p) => p.partition_type === 'GROUP')!;
+    const lone = { ...split, templates: split.templates!.slice(1) };
+    const none: LessonRefs = { templates: new Set(), teachers: new Map() };
+    expect(studentTemplates([lone], none).size).toBe(0);
+    const seen: LessonRefs = { templates: new Set([lone.templates[0]!.uuid]), teachers: new Map() };
+    expect([...studentTemplates([lone], seen)]).toEqual([lone.templates[0]!.uuid]);
+  });
+
   it('a subject without templates this period is no error', () => {
     const empty = planningSubject.parse({ ...planning2[0], templates: null });
     expect(studentTemplates([empty], lessonRefs()).size).toBe(0);

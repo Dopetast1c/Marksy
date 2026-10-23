@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import type { ISODate } from '@marksy/core';
 import { and, desc, eq, gte, sql } from 'drizzle-orm';
 import type { Db } from '../db/client';
+import type { Tx } from '../sync/upsert';
 import { cliLogins, diaryAccounts } from '../db/schema';
 import { fromLocal, localTime } from '../sync/time';
 
@@ -17,8 +18,12 @@ export const CLAUDE_RUNS_PER_DAY = 3;
 /** Local minutes: 07:00 to 20:00 */
 export const CLAUDE_HOURS: readonly [number, number] = [7 * 60, 20 * 60];
 
+/** Claude Code: MARKSY_RUNNER=claude (.claude/settings.json), or the CLAUDECODE=1 every Claude Code shell has */
 export const runnerOf = (env: Record<string, string | undefined> = process.env): Runner =>
-  env.MARKSY_RUNNER === 'claude' ? 'claude' : 'owner';
+  env.MARKSY_RUNNER === 'claude' || env.CLAUDECODE === '1' ? 'claude' : 'owner';
+
+/** One advisory lock for every claim: two runs started together cannot both pass */
+const CLAIM_LOCK = 7_341_001;
 
 export const loginHash = (login: string) => createHash('sha256').update(login.trim().toLowerCase()).digest('hex');
 
@@ -42,6 +47,13 @@ const nextDay = (date: ISODate) => new Date(Date.parse(`${date}T00:00:00Z`) + 86
  * last_login_at, so the scheduler keeps the interval; sync:once leaves that to the run itself.
  */
 export async function claimLogin(db: Db, c: LoginClaim): Promise<ClaimResult> {
+  return db.transaction(async (tx) => {
+    await tx.execute(sql`select pg_advisory_xact_lock(${CLAIM_LOCK})`);
+    return claimIn(tx, c);
+  });
+}
+
+async function claimIn(db: Tx, c: LoginClaim): Promise<ClaimResult> {
   const hash = loginHash(c.login);
   const [account] = await db
     .select({ id: diaryAccounts.id, lastLoginAt: diaryAccounts.lastLoginAt })
