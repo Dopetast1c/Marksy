@@ -24,7 +24,16 @@ export const capabilities = z.object({
   attendance: z.enum(['separate', 'derived', 'none']),
   terms: z.enum(['quarter', 'trimester', 'semester', 'other', 'none']),
   finalMarks: z.boolean(),
+  /** Teachers of the student's own lessons and subjects, never of other groups */
   teacherNames: z.boolean(),
+  /** A room on lessons and in the week template */
+  rooms: z.boolean(),
+  /** The student's subgroup, set or section on split subjects */
+  teachingGroups: z.boolean(),
+  /** Start and end of every period (getBellSchedule) */
+  bellSchedule: z.boolean(),
+  /** The student's regular week for a term (getWeekTemplate) */
+  weekTemplate: z.boolean(),
   pastYears: z.boolean(),
   homeworkAssignments: z.boolean(),
   behaviour: z.boolean(),

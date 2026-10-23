@@ -189,6 +189,7 @@ describe('lessons and marks', () => {
       subjectExternalId: 's-alg',
       subjectName: 'Алгебра',
       teacherExternalId: 't-1',
+      templateRef: 'tpl',
       topic: 'Системы уравнений',
       homework: 'стр. 45 № 3',
       hasAttachments: true,

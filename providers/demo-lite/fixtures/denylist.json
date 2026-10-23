@@ -1,0 +1,5 @@
+{
+  "strings": ["Halyna", "Dovbush", "Taras", "U-72914", "p-55302", "S-8812", "C-9031"],
+  "patterns": ["[\\w.]+@[\\w.]+", "\\b\\d{7,}\\b"],
+  "keep": ["title", "school_title"]
+}

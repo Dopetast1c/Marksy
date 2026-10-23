@@ -7,8 +7,15 @@
   "website": "https://diary.e-schools.by",
   "status": "beta",
   "maintainers": [],
-  "languages": { "default": "ru", "preferred": ["ru", "be"] },
-  "calendar": { "weekStart": 1, "weekend": [6, 0], "schoolDays": [1, 2, 3, 4, 5, 6] },
+  "languages": {
+    "default": "ru",
+    "preferred": ["ru", "be"]
+  },
+  "calendar": {
+    "weekStart": 1,
+    "weekend": [6, 0],
+    "schoolDays": [1, 2, 3, 4, 5, 6]
+  },
   "nameOrder": "family-first",
   "timezone": "Europe/Minsk",
   "roles": ["parent"],
@@ -16,8 +23,24 @@
   "auth": {
     "kind": "password",
     "fields": [
-      { "key": "login", "label": { "ru": "Логин", "be": "Лагін", "en": "Login" }, "type": "text" },
-      { "key": "password", "label": { "ru": "Пароль", "be": "Пароль", "en": "Password" }, "type": "password" }
+      {
+        "key": "login",
+        "label": {
+          "ru": "Логин",
+          "be": "Лагін",
+          "en": "Login"
+        },
+        "type": "text"
+      },
+      {
+        "key": "password",
+        "label": {
+          "ru": "Пароль",
+          "be": "Пароль",
+          "en": "Password"
+        },
+        "type": "password"
+      }
     ],
     "loginRequest": "POST /api/v1/auth/login/parent"
   },
@@ -37,7 +60,11 @@
     "attendance": "derived",
     "terms": "quarter",
     "finalMarks": true,
-    "teacherNames": false,
+    "teacherNames": true,
+    "rooms": true,
+    "teachingGroups": true,
+    "bellSchedule": true,
+    "weekTemplate": true,
     "pastYears": false,
     "homeworkAssignments": false,
     "behaviour": false,
@@ -71,6 +98,11 @@
     "GET /api/v1/education/diary/schools/*/students/*/classes",
     "GET /api/v1/education/diary/schools/*/classes/*/students/*/educational_subjects",
     "GET /api/v1/education/diary/schools/*/classes/*/students/*/lessons",
-    "GET /api/v1/education/diary/schools/*/classes/*/students/*/final/whole"
+    "GET /api/v1/education/diary/schools/*/classes/*/students/*/final/whole",
+    "GET /api/v1/education/diary/schools/*/students/*/classes/*/subjects",
+    "GET /api/v1/education/diary/schools/*/bells/whole",
+    "GET /api/v1/education/diary/schools/*/classes/*/timetables/whole",
+    "GET /api/v1/education/planning/classes/*/educational_subjects",
+    "GET /api/v1/institution/schools/*/premises"
   ]
 }

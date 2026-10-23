@@ -1,0 +1,426 @@
+[
+  {
+    "uuid": "00000000-0000-4000-8000-349d8ba0509d",
+    "summary": null,
+    "schedule_of_bells_uuid": "00000000-0000-4000-8000-4fcb42ab7e7a",
+    "class_id": "00000000-0000-4000-8000-24bf61ed606f",
+    "class_level": 1,
+    "period": "FIRST_QUARTER",
+    "days_of_week": [
+      {
+        "day_of_week": 1,
+        "timetable_slots": [
+          {
+            "time_of_bells": {
+              "uuid": "00000000-0000-4000-8000-1d334f6496b1",
+              "summary": null,
+              "number": 1,
+              "start_time": "08:30:00",
+              "end_time": "09:05:00"
+            },
+            "slots": [
+              {
+                "uuid": "00000000-0000-4000-8000-2b6bc7c98606",
+                "summary": "[text]",
+                "number": 1,
+                "room_id": "00000000-0000-4000-8000-790a50bd93d6",
+                "lesson_template_id": "00000000-0000-4000-8000-b1ad987d29c5"
+              }
+            ]
+          },
+          {
+            "time_of_bells": {
+              "uuid": "00000000-0000-4000-8000-16893ae1509b",
+              "summary": null,
+              "number": 2,
+              "start_time": "09:20:00",
+              "end_time": "09:55:00"
+            },
+            "slots": [
+              {
+                "uuid": "00000000-0000-4000-8000-c730c9822e59",
+                "summary": "[text]",
+                "number": 2,
+                "room_id": "00000000-0000-4000-8000-465bf37fde20",
+                "lesson_template_id": "00000000-0000-4000-8000-708e00f74dcb"
+              }
+            ]
+          },
+          {
+            "time_of_bells": {
+              "uuid": "00000000-0000-4000-8000-12e4d8c63eca",
+              "summary": null,
+              "number": 3,
+              "start_time": "10:15:00",
+              "end_time": "10:50:00"
+            },
+            "slots": [
+              {
+                "uuid": "00000000-0000-4000-8000-b46771b18b2b",
+                "summary": "[text]",
+                "number": 3,
+                "room_id": "00000000-0000-4000-8000-c671a7ac179f",
+                "lesson_template_id": "00000000-0000-4000-8000-8b4207a4eec7"
+              }
+            ]
+          },
+          {
+            "time_of_bells": {
+              "uuid": "00000000-0000-4000-8000-453753f191ae",
+              "summary": null,
+              "number": 4,
+              "start_time": "11:10:00",
+              "end_time": "11:45:00"
+            },
+            "slots": [
+              {
+                "uuid": "00000000-0000-4000-8000-41b068cbec5e",
+                "summary": "[text]",
+                "number": 4,
+                "room_id": "00000000-0000-4000-8000-bd7a8aa51f90",
+                "lesson_template_id": "00000000-0000-4000-8000-500be61f0bd7"
+              },
+              {
+                "uuid": "00000000-0000-4000-8000-c2869c1f9b3e",
+                "summary": "[text]",
+                "number": 4,
+                "room_id": "00000000-0000-4000-8000-7634bd650f51",
+                "lesson_template_id": "00000000-0000-4000-8000-f89c39c1ae0f"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "day_of_week": 2,
+        "timetable_slots": [
+          {
+            "time_of_bells": {
+              "uuid": "00000000-0000-4000-8000-1d334f6496b1",
+              "summary": null,
+              "number": 1,
+              "start_time": "08:30:00",
+              "end_time": "09:05:00"
+            },
+            "slots": [
+              {
+                "uuid": "00000000-0000-4000-8000-05f65563f134",
+                "summary": "[text]",
+                "number": 1,
+                "room_id": "00000000-0000-4000-8000-4d2430112f8a",
+                "lesson_template_id": "00000000-0000-4000-8000-561d277eb117"
+              }
+            ]
+          },
+          {
+            "time_of_bells": {
+              "uuid": "00000000-0000-4000-8000-16893ae1509b",
+              "summary": null,
+              "number": 2,
+              "start_time": "09:20:00",
+              "end_time": "09:55:00"
+            },
+            "slots": [
+              {
+                "uuid": "00000000-0000-4000-8000-64afee946fde",
+                "summary": "[text]",
+                "number": 2,
+                "room_id": "00000000-0000-4000-8000-860b70f3dae3",
+                "lesson_template_id": "00000000-0000-4000-8000-d5b8da2c4c2a"
+              }
+            ]
+          },
+          {
+            "time_of_bells": {
+              "uuid": "00000000-0000-4000-8000-12e4d8c63eca",
+              "summary": null,
+              "number": 3,
+              "start_time": "10:15:00",
+              "end_time": "10:50:00"
+            },
+            "slots": [
+              {
+                "uuid": "00000000-0000-4000-8000-3106a02cd041",
+                "summary": "[text]",
+                "number": 3,
+                "room_id": "00000000-0000-4000-8000-335510762ffb",
+                "lesson_template_id": "00000000-0000-4000-8000-38b52a6f7265"
+              }
+            ]
+          },
+          {
+            "time_of_bells": {
+              "uuid": "00000000-0000-4000-8000-453753f191ae",
+              "summary": null,
+              "number": 4,
+              "start_time": "11:10:00",
+              "end_time": "11:45:00"
+            },
+            "slots": [
+              {
+                "uuid": "00000000-0000-4000-8000-94ff9c08ce47",
+                "summary": "[text]",
+                "number": 4,
+                "room_id": "00000000-0000-4000-8000-4813e9a375c9",
+                "lesson_template_id": "00000000-0000-4000-8000-ea701d8f4e61"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "day_of_week": 3,
+        "timetable_slots": [
+          {
+            "time_of_bells": {
+              "uuid": "00000000-0000-4000-8000-1d334f6496b1",
+              "summary": null,
+              "number": 1,
+              "start_time": "08:30:00",
+              "end_time": "09:05:00"
+            },
+            "slots": [
+              {
+                "uuid": "00000000-0000-4000-8000-d85640ae160b",
+                "summary": "[text]",
+                "number": 1,
+                "room_id": "00000000-0000-4000-8000-c671a7ac179f",
+                "lesson_template_id": "00000000-0000-4000-8000-8b4207a4eec7"
+              }
+            ]
+          },
+          {
+            "time_of_bells": {
+              "uuid": "00000000-0000-4000-8000-16893ae1509b",
+              "summary": null,
+              "number": 2,
+              "start_time": "09:20:00",
+              "end_time": "09:55:00"
+            },
+            "slots": [
+              {
+                "uuid": "00000000-0000-4000-8000-499d5ecd706b",
+                "summary": "[text]",
+                "number": 2,
+                "room_id": "00000000-0000-4000-8000-860b70f3dae3",
+                "lesson_template_id": "00000000-0000-4000-8000-d5b8da2c4c2a"
+              }
+            ]
+          },
+          {
+            "time_of_bells": {
+              "uuid": "00000000-0000-4000-8000-12e4d8c63eca",
+              "summary": null,
+              "number": 3,
+              "start_time": "10:15:00",
+              "end_time": "10:50:00"
+            },
+            "slots": [
+              {
+                "uuid": "00000000-0000-4000-8000-cd8cc3f8df8b",
+                "summary": "[text]",
+                "number": 3,
+                "room_id": "00000000-0000-4000-8000-790a50bd93d6",
+                "lesson_template_id": "00000000-0000-4000-8000-b1ad987d29c5"
+              }
+            ]
+          },
+          {
+            "time_of_bells": {
+              "uuid": "00000000-0000-4000-8000-453753f191ae",
+              "summary": null,
+              "number": 4,
+              "start_time": "11:10:00",
+              "end_time": "11:45:00"
+            },
+            "slots": [
+              {
+                "uuid": "00000000-0000-4000-8000-aa985f66c29d",
+                "summary": "[text]",
+                "number": 4,
+                "room_id": "00000000-0000-4000-8000-465bf37fde20",
+                "lesson_template_id": "00000000-0000-4000-8000-708e00f74dcb"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "day_of_week": 4,
+        "timetable_slots": [
+          {
+            "time_of_bells": {
+              "uuid": "00000000-0000-4000-8000-1d334f6496b1",
+              "summary": null,
+              "number": 1,
+              "start_time": "08:30:00",
+              "end_time": "09:05:00"
+            },
+            "slots": [
+              {
+                "uuid": "00000000-0000-4000-8000-f94446c68bc2",
+                "summary": "[text]",
+                "number": 1,
+                "room_id": "00000000-0000-4000-8000-6e3f5aa263b1",
+                "lesson_template_id": "00000000-0000-4000-8000-fde047cd7f6a"
+              }
+            ]
+          },
+          {
+            "time_of_bells": {
+              "uuid": "00000000-0000-4000-8000-16893ae1509b",
+              "summary": null,
+              "number": 2,
+              "start_time": "09:20:00",
+              "end_time": "09:55:00"
+            },
+            "slots": [
+              {
+                "uuid": "00000000-0000-4000-8000-4dc9cf3521be",
+                "summary": "[text]",
+                "number": 2,
+                "room_id": "00000000-0000-4000-8000-860b70f3dae3",
+                "lesson_template_id": "00000000-0000-4000-8000-d5b8da2c4c2a"
+              }
+            ]
+          },
+          {
+            "time_of_bells": {
+              "uuid": "00000000-0000-4000-8000-12e4d8c63eca",
+              "summary": null,
+              "number": 3,
+              "start_time": "10:15:00",
+              "end_time": "10:50:00"
+            },
+            "slots": [
+              {
+                "uuid": "00000000-0000-4000-8000-7147a0664c5a",
+                "summary": "[text]",
+                "number": 3,
+                "room_id": "00000000-0000-4000-8000-790a50bd93d6",
+                "lesson_template_id": "00000000-0000-4000-8000-b1ad987d29c5"
+              }
+            ]
+          },
+          {
+            "time_of_bells": {
+              "uuid": "00000000-0000-4000-8000-453753f191ae",
+              "summary": null,
+              "number": 4,
+              "start_time": "11:10:00",
+              "end_time": "11:45:00"
+            },
+            "slots": [
+              {
+                "uuid": "00000000-0000-4000-8000-15f2170507aa",
+                "summary": "[text]",
+                "number": 4,
+                "room_id": "00000000-0000-4000-8000-465bf37fde20",
+                "lesson_template_id": "00000000-0000-4000-8000-708e00f74dcb"
+              }
+            ]
+          },
+          {
+            "time_of_bells": {
+              "uuid": "00000000-0000-4000-8000-27395da511a8",
+              "summary": null,
+              "number": 5,
+              "start_time": "12:00:00",
+              "end_time": "12:35:00"
+            },
+            "slots": [
+              {
+                "uuid": "00000000-0000-4000-8000-1c29bb4a0b71",
+                "summary": "[text]",
+                "number": 5,
+                "room_id": "00000000-0000-4000-8000-4813e9a375c9",
+                "lesson_template_id": "00000000-0000-4000-8000-ea701d8f4e61"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "day_of_week": 5,
+        "timetable_slots": [
+          {
+            "time_of_bells": {
+              "uuid": "00000000-0000-4000-8000-1d334f6496b1",
+              "summary": null,
+              "number": 1,
+              "start_time": "08:30:00",
+              "end_time": "09:05:00"
+            },
+            "slots": [
+              {
+                "uuid": "00000000-0000-4000-8000-2942b74d93d3",
+                "summary": "[text]",
+                "number": 1,
+                "room_id": "00000000-0000-4000-8000-860b70f3dae3",
+                "lesson_template_id": "00000000-0000-4000-8000-d5b8da2c4c2a"
+              }
+            ]
+          },
+          {
+            "time_of_bells": {
+              "uuid": "00000000-0000-4000-8000-16893ae1509b",
+              "summary": null,
+              "number": 2,
+              "start_time": "09:20:00",
+              "end_time": "09:55:00"
+            },
+            "slots": [
+              {
+                "uuid": "00000000-0000-4000-8000-5c61543a01e4",
+                "summary": "[text]",
+                "number": 2,
+                "room_id": "00000000-0000-4000-8000-c671a7ac179f",
+                "lesson_template_id": "00000000-0000-4000-8000-8b4207a4eec7"
+              }
+            ]
+          },
+          {
+            "time_of_bells": {
+              "uuid": "00000000-0000-4000-8000-12e4d8c63eca",
+              "summary": null,
+              "number": 3,
+              "start_time": "10:15:00",
+              "end_time": "10:50:00"
+            },
+            "slots": [
+              {
+                "uuid": "00000000-0000-4000-8000-317a85930016",
+                "summary": "[text]",
+                "number": 3,
+                "room_id": "00000000-0000-4000-8000-8afe4a932351",
+                "lesson_template_id": "00000000-0000-4000-8000-ca35bdf8b11e"
+              }
+            ]
+          },
+          {
+            "time_of_bells": {
+              "uuid": "00000000-0000-4000-8000-453753f191ae",
+              "summary": null,
+              "number": 4,
+              "start_time": "11:10:00",
+              "end_time": "11:45:00"
+            },
+            "slots": [
+              {
+                "uuid": "00000000-0000-4000-8000-6508d97be5d6",
+                "summary": "[text]",
+                "number": 4,
+                "room_id": "00000000-0000-4000-8000-dd91afec9bad",
+                "lesson_template_id": "00000000-0000-4000-8000-05e67f9d0c06"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "day_of_week": 6,
+        "timetable_slots": []
+      }
+    ]
+  }
+]

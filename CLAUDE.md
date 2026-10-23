@@ -38,6 +38,8 @@ packages/registry/      the list of providers; the only package that imports pro
 providers/_template/    starting point for a new provider
 providers/demo-minimal/ fictional fixture-only provider with the thinnest capability set
 providers/demo-full/    fictional fixture-only provider with a rich capability set: the seed family and the collector tests
+providers/demo-lite/    the same fictional diary with fewer capabilities (prototype CAPS_OTHER): the demo family's second school
+packages/demo-diary/    the fictional diary API, mapper and school shared by the demo providers and pnpm db:seed
 providers/by-eschools/  Belarus, diary.e-schools.by: manifest, schemas, mapper, sanitize, fixtures
 server/                 Express API + collector + Drizzle schema and migrations
 web/                    PWA frontend
@@ -98,7 +100,7 @@ pnpm dev:lan            the same, with the PWA open to the home network for test
 pnpm check              formatting, typecheck, lint, tests, privacy check: must be green before every commit
 pnpm format             Prettier over the workspace
 pnpm --filter @marksy/server test    one package
-pnpm test:provider <id> the shared conformance suite for one provider (demo-minimal, demo-full, by-eschools)
+pnpm test:provider <id> the shared conformance suite for one provider (demo-minimal, demo-full, demo-lite, by-eschools)
 pnpm i18n:check         every key, plural form and placeholder in every language file
 pnpm privacy            scripts/privacy-check.mjs: secrets, forbidden files, personal data, provider names outside the provider
 pnpm db:migrate         applies server/drizzle to DATABASE_URL (pnpm --filter @marksy/server db:generate writes a new migration)

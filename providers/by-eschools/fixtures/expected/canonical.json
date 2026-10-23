@@ -95,47 +95,104 @@
       "subjects": [
         {
           "externalId": "00000000-0000-4000-8000-7a89c6163f36",
-          "name": "Беларуская мова"
+          "name": "Беларуская мова",
+          "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "teacherName": "[text]",
+          "level": "regular",
+          "levelLabel": "Базовый",
+          "lessonsPerWeek": 1
         },
         {
           "externalId": "00000000-0000-4000-8000-52a50ce81660",
-          "name": "Изобразительное искусство"
+          "name": "Изобразительное искусство",
+          "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "teacherName": "[text]",
+          "level": "regular",
+          "levelLabel": "Базовый",
+          "lessonsPerWeek": 2
         },
         {
           "externalId": "00000000-0000-4000-8000-886310be281c",
-          "name": "Информационный час"
+          "name": "Информационный час",
+          "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "teacherName": "[text]",
+          "level": "regular",
+          "levelLabel": "Базовый",
+          "lessonsPerWeek": 1
         },
         {
           "externalId": "00000000-0000-4000-8000-bc3f2daf673f",
-          "name": "Классный час"
+          "name": "Классный час",
+          "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "teacherName": "[text]",
+          "level": "regular",
+          "levelLabel": "Базовый",
+          "lessonsPerWeek": 1
         },
         {
           "externalId": "00000000-0000-4000-8000-6bc92998fc83",
-          "name": "Математика"
+          "name": "Математика",
+          "shortName": "Матем.",
+          "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "teacherName": "[text]",
+          "level": "regular",
+          "levelLabel": "Базовый",
+          "lessonsPerWeek": 4
         },
         {
           "externalId": "00000000-0000-4000-8000-6a0095b65bcf",
-          "name": "Музыка"
+          "name": "Музыка",
+          "teacherExternalId": "00000000-0000-4000-8000-3f98b08ca0d6",
+          "teacherName": "[text]",
+          "level": "regular",
+          "levelLabel": "Базовый",
+          "lessonsPerWeek": 1
         },
         {
           "externalId": "00000000-0000-4000-8000-dddf5985f15a",
-          "name": "Обучение грамоте (письмо)"
+          "name": "Обучение грамоте (письмо)",
+          "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "teacherName": "[text]",
+          "level": "regular",
+          "levelLabel": "Базовый",
+          "lessonsPerWeek": 3
         },
         {
           "externalId": "00000000-0000-4000-8000-b16b106c3968",
-          "name": "Обучение грамоте (чтение)"
+          "name": "Обучение грамоте (чтение)",
+          "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "teacherName": "[text]",
+          "level": "regular",
+          "levelLabel": "Базовый",
+          "lessonsPerWeek": 3
         },
         {
           "externalId": "00000000-0000-4000-8000-8962a4af176d",
-          "name": "Трудовое обучение"
+          "name": "Трудовое обучение",
+          "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "teacherName": "[text]",
+          "groupLabel": "1-я подгруппа (девочки)",
+          "level": "regular",
+          "levelLabel": "Базовый",
+          "lessonsPerWeek": 1
         },
         {
           "externalId": "00000000-0000-4000-8000-1afc93265920",
-          "name": "Физическая культура и здоровье"
+          "name": "Физическая культура и здоровье",
+          "teacherExternalId": "00000000-0000-4000-8000-d8a10599a207",
+          "teacherName": "[text]",
+          "level": "regular",
+          "levelLabel": "Базовый",
+          "lessonsPerWeek": 3
         },
         {
           "externalId": "00000000-0000-4000-8000-8cc3dfd4e033",
-          "name": "Человек и мир"
+          "name": "Человек и мир",
+          "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "teacherName": "[text]",
+          "level": "regular",
+          "levelLabel": "Базовый",
+          "lessonsPerWeek": 1
         }
       ],
       "lessons": [
@@ -147,6 +204,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-b16b106c3968",
           "subjectName": "Обучение грамоте (чтение)",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-b1ad987d29c5",
           "hasAttachments": false,
           "marks": []
         },
@@ -158,6 +216,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-dddf5985f15a",
           "subjectName": "Обучение грамоте (письмо)",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-708e00f74dcb",
           "hasAttachments": false,
           "marks": []
         },
@@ -169,6 +228,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-1afc93265920",
           "subjectName": "Физическая культура и здоровье",
           "teacherExternalId": "00000000-0000-4000-8000-d8a10599a207",
+          "templateRef": "00000000-0000-4000-8000-8b4207a4eec7",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -181,6 +241,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-8962a4af176d",
           "subjectName": "Трудовое обучение",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-500be61f0bd7",
           "hasAttachments": false,
           "marks": []
         },
@@ -192,6 +253,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-8cc3dfd4e033",
           "subjectName": "Человек и мир",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-561d277eb117",
           "hasAttachments": false,
           "marks": []
         },
@@ -203,6 +265,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-6bc92998fc83",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-d5b8da2c4c2a",
           "hasAttachments": false,
           "marks": []
         },
@@ -214,6 +277,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-7a89c6163f36",
           "subjectName": "Беларуская мова",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-38b52a6f7265",
           "hasAttachments": false,
           "marks": []
         },
@@ -225,6 +289,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-52a50ce81660",
           "subjectName": "Изобразительное искусство",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-ea701d8f4e61",
           "hasAttachments": false,
           "marks": []
         },
@@ -236,6 +301,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-1afc93265920",
           "subjectName": "Физическая культура и здоровье",
           "teacherExternalId": "00000000-0000-4000-8000-d8a10599a207",
+          "templateRef": "00000000-0000-4000-8000-8b4207a4eec7",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -248,6 +314,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-6bc92998fc83",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-d5b8da2c4c2a",
           "hasAttachments": false,
           "marks": []
         },
@@ -259,6 +326,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-b16b106c3968",
           "subjectName": "Обучение грамоте (чтение)",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-b1ad987d29c5",
           "hasAttachments": false,
           "marks": []
         },
@@ -270,6 +338,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-dddf5985f15a",
           "subjectName": "Обучение грамоте (письмо)",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-708e00f74dcb",
           "hasAttachments": false,
           "marks": []
         },
@@ -281,6 +350,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-886310be281c",
           "subjectName": "Информационный час",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-fde047cd7f6a",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -293,6 +363,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-6bc92998fc83",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-d5b8da2c4c2a",
           "hasAttachments": false,
           "marks": []
         },
@@ -304,6 +375,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-b16b106c3968",
           "subjectName": "Обучение грамоте (чтение)",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-b1ad987d29c5",
           "hasAttachments": false,
           "marks": []
         },
@@ -315,6 +387,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-dddf5985f15a",
           "subjectName": "Обучение грамоте (письмо)",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-708e00f74dcb",
           "hasAttachments": false,
           "marks": []
         },
@@ -325,6 +398,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-52a50ce81660",
           "subjectName": "Изобразительное искусство",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-ea701d8f4e61",
           "hasAttachments": false,
           "marks": []
         },
@@ -336,6 +410,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-6bc92998fc83",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-d5b8da2c4c2a",
           "hasAttachments": false,
           "marks": []
         },
@@ -347,6 +422,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-1afc93265920",
           "subjectName": "Физическая культура и здоровье",
           "teacherExternalId": "00000000-0000-4000-8000-d8a10599a207",
+          "templateRef": "00000000-0000-4000-8000-8b4207a4eec7",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -359,6 +435,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-6a0095b65bcf",
           "subjectName": "Музыка",
           "teacherExternalId": "00000000-0000-4000-8000-3f98b08ca0d6",
+          "templateRef": "00000000-0000-4000-8000-ca35bdf8b11e",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -371,6 +448,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-bc3f2daf673f",
           "subjectName": "Классный час",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-05e67f9d0c06",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -383,6 +461,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-b16b106c3968",
           "subjectName": "Обучение грамоте (чтение)",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-b1ad987d29c5",
           "hasAttachments": false,
           "marks": []
         },
@@ -394,6 +473,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-dddf5985f15a",
           "subjectName": "Обучение грамоте (письмо)",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-708e00f74dcb",
           "hasAttachments": false,
           "marks": []
         },
@@ -405,6 +485,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-1afc93265920",
           "subjectName": "Физическая культура и здоровье",
           "teacherExternalId": "00000000-0000-4000-8000-d8a10599a207",
+          "templateRef": "00000000-0000-4000-8000-8b4207a4eec7",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -417,6 +498,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-8962a4af176d",
           "subjectName": "Трудовое обучение",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-500be61f0bd7",
           "hasAttachments": false,
           "marks": []
         },
@@ -428,6 +510,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-8cc3dfd4e033",
           "subjectName": "Человек и мир",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-561d277eb117",
           "hasAttachments": false,
           "marks": []
         },
@@ -439,6 +522,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-6bc92998fc83",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-d5b8da2c4c2a",
           "hasAttachments": false,
           "marks": []
         },
@@ -450,6 +534,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-7a89c6163f36",
           "subjectName": "Беларуская мова",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-38b52a6f7265",
           "hasAttachments": false,
           "marks": []
         },
@@ -461,6 +546,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-52a50ce81660",
           "subjectName": "Изобразительное искусство",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-ea701d8f4e61",
           "hasAttachments": false,
           "marks": []
         },
@@ -472,6 +558,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-1afc93265920",
           "subjectName": "Физическая культура и здоровье",
           "teacherExternalId": "00000000-0000-4000-8000-d8a10599a207",
+          "templateRef": "00000000-0000-4000-8000-8b4207a4eec7",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -484,6 +571,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-6bc92998fc83",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-d5b8da2c4c2a",
           "hasAttachments": false,
           "marks": []
         },
@@ -495,6 +583,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-b16b106c3968",
           "subjectName": "Обучение грамоте (чтение)",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-b1ad987d29c5",
           "hasAttachments": false,
           "marks": []
         },
@@ -506,6 +595,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-dddf5985f15a",
           "subjectName": "Обучение грамоте (письмо)",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-708e00f74dcb",
           "hasAttachments": false,
           "marks": []
         },
@@ -517,6 +607,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-886310be281c",
           "subjectName": "Информационный час",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-fde047cd7f6a",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -529,6 +620,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-6bc92998fc83",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-d5b8da2c4c2a",
           "hasAttachments": false,
           "marks": []
         },
@@ -540,6 +632,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-b16b106c3968",
           "subjectName": "Обучение грамоте (чтение)",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-b1ad987d29c5",
           "hasAttachments": false,
           "marks": []
         },
@@ -551,6 +644,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-dddf5985f15a",
           "subjectName": "Обучение грамоте (письмо)",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-708e00f74dcb",
           "hasAttachments": false,
           "marks": []
         },
@@ -561,6 +655,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-52a50ce81660",
           "subjectName": "Изобразительное искусство",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-ea701d8f4e61",
           "hasAttachments": false,
           "marks": []
         },
@@ -572,6 +667,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-6bc92998fc83",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-d5b8da2c4c2a",
           "hasAttachments": false,
           "marks": []
         },
@@ -583,6 +679,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-1afc93265920",
           "subjectName": "Физическая культура и здоровье",
           "teacherExternalId": "00000000-0000-4000-8000-d8a10599a207",
+          "templateRef": "00000000-0000-4000-8000-8b4207a4eec7",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -595,6 +692,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-6a0095b65bcf",
           "subjectName": "Музыка",
           "teacherExternalId": "00000000-0000-4000-8000-3f98b08ca0d6",
+          "templateRef": "00000000-0000-4000-8000-ca35bdf8b11e",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -607,6 +705,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-bc3f2daf673f",
           "subjectName": "Классный час",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-05e67f9d0c06",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -619,6 +718,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-b16b106c3968",
           "subjectName": "Обучение грамоте (чтение)",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-b1ad987d29c5",
           "hasAttachments": false,
           "marks": []
         },
@@ -630,6 +730,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-dddf5985f15a",
           "subjectName": "Обучение грамоте (письмо)",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-708e00f74dcb",
           "hasAttachments": false,
           "marks": []
         },
@@ -641,6 +742,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-1afc93265920",
           "subjectName": "Физическая культура и здоровье",
           "teacherExternalId": "00000000-0000-4000-8000-d8a10599a207",
+          "templateRef": "00000000-0000-4000-8000-8b4207a4eec7",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -653,6 +755,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-8962a4af176d",
           "subjectName": "Трудовое обучение",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-500be61f0bd7",
           "hasAttachments": false,
           "marks": []
         },
@@ -664,6 +767,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-8cc3dfd4e033",
           "subjectName": "Человек и мир",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-561d277eb117",
           "hasAttachments": false,
           "marks": []
         },
@@ -675,6 +779,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-6bc92998fc83",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-d5b8da2c4c2a",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -687,6 +792,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-7a89c6163f36",
           "subjectName": "Беларуская мова",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-38b52a6f7265",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -699,6 +805,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-52a50ce81660",
           "subjectName": "Изобразительное искусство",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-ea701d8f4e61",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -711,6 +818,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-1afc93265920",
           "subjectName": "Физическая культура и здоровье",
           "teacherExternalId": "00000000-0000-4000-8000-d8a10599a207",
+          "templateRef": "00000000-0000-4000-8000-8b4207a4eec7",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -723,6 +831,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-6bc92998fc83",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-d5b8da2c4c2a",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -735,6 +844,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-b16b106c3968",
           "subjectName": "Обучение грамоте (чтение)",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-b1ad987d29c5",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -747,6 +857,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-dddf5985f15a",
           "subjectName": "Обучение грамоте (письмо)",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-708e00f74dcb",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -759,6 +870,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-886310be281c",
           "subjectName": "Информационный час",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-fde047cd7f6a",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -771,6 +883,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-6bc92998fc83",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-d5b8da2c4c2a",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -783,6 +896,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-b16b106c3968",
           "subjectName": "Обучение грамоте (чтение)",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-b1ad987d29c5",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -795,6 +909,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-dddf5985f15a",
           "subjectName": "Обучение грамоте (письмо)",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-708e00f74dcb",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -806,6 +921,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-52a50ce81660",
           "subjectName": "Изобразительное искусство",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-ea701d8f4e61",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -818,6 +934,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-6bc92998fc83",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-d5b8da2c4c2a",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -830,6 +947,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-1afc93265920",
           "subjectName": "Физическая культура и здоровье",
           "teacherExternalId": "00000000-0000-4000-8000-d8a10599a207",
+          "templateRef": "00000000-0000-4000-8000-8b4207a4eec7",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -842,6 +960,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-6a0095b65bcf",
           "subjectName": "Музыка",
           "teacherExternalId": "00000000-0000-4000-8000-3f98b08ca0d6",
+          "templateRef": "00000000-0000-4000-8000-ca35bdf8b11e",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -854,6 +973,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-bc3f2daf673f",
           "subjectName": "Классный час",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-05e67f9d0c06",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -866,6 +986,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-b16b106c3968",
           "subjectName": "Обучение грамоте (чтение)",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-b1ad987d29c5",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -878,6 +999,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-dddf5985f15a",
           "subjectName": "Обучение грамоте (письмо)",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-708e00f74dcb",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -890,6 +1012,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-1afc93265920",
           "subjectName": "Физическая культура и здоровье",
           "teacherExternalId": "00000000-0000-4000-8000-d8a10599a207",
+          "templateRef": "00000000-0000-4000-8000-8b4207a4eec7",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -902,6 +1025,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-8962a4af176d",
           "subjectName": "Трудовое обучение",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-500be61f0bd7",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -914,6 +1038,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-8cc3dfd4e033",
           "subjectName": "Человек и мир",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-561d277eb117",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -926,6 +1051,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-6bc92998fc83",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-d5b8da2c4c2a",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -938,6 +1064,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-7a89c6163f36",
           "subjectName": "Беларуская мова",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-38b52a6f7265",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -950,6 +1077,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-52a50ce81660",
           "subjectName": "Изобразительное искусство",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-ea701d8f4e61",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -962,6 +1090,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-1afc93265920",
           "subjectName": "Физическая культура и здоровье",
           "teacherExternalId": "00000000-0000-4000-8000-d8a10599a207",
+          "templateRef": "00000000-0000-4000-8000-8b4207a4eec7",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -974,6 +1103,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-6bc92998fc83",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-d5b8da2c4c2a",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -986,6 +1116,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-b16b106c3968",
           "subjectName": "Обучение грамоте (чтение)",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-b1ad987d29c5",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -998,6 +1129,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-dddf5985f15a",
           "subjectName": "Обучение грамоте (письмо)",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-708e00f74dcb",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1010,6 +1142,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-886310be281c",
           "subjectName": "Информационный час",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-fde047cd7f6a",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1022,6 +1155,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-6bc92998fc83",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-d5b8da2c4c2a",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1034,6 +1168,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-b16b106c3968",
           "subjectName": "Обучение грамоте (чтение)",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-b1ad987d29c5",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1046,6 +1181,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-dddf5985f15a",
           "subjectName": "Обучение грамоте (письмо)",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-708e00f74dcb",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1057,6 +1193,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-52a50ce81660",
           "subjectName": "Изобразительное искусство",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-ea701d8f4e61",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1069,6 +1206,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-6bc92998fc83",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-d5b8da2c4c2a",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1081,6 +1219,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-1afc93265920",
           "subjectName": "Физическая культура и здоровье",
           "teacherExternalId": "00000000-0000-4000-8000-d8a10599a207",
+          "templateRef": "00000000-0000-4000-8000-8b4207a4eec7",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1093,6 +1232,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-6a0095b65bcf",
           "subjectName": "Музыка",
           "teacherExternalId": "00000000-0000-4000-8000-3f98b08ca0d6",
+          "templateRef": "00000000-0000-4000-8000-ca35bdf8b11e",
           "hasAttachments": false,
           "marks": []
         },
@@ -1104,6 +1244,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-bc3f2daf673f",
           "subjectName": "Классный час",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-05e67f9d0c06",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1116,6 +1257,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-b16b106c3968",
           "subjectName": "Обучение грамоте (чтение)",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-b1ad987d29c5",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1128,6 +1270,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-dddf5985f15a",
           "subjectName": "Обучение грамоте (письмо)",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-708e00f74dcb",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1140,6 +1283,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-1afc93265920",
           "subjectName": "Физическая культура и здоровье",
           "teacherExternalId": "00000000-0000-4000-8000-d8a10599a207",
+          "templateRef": "00000000-0000-4000-8000-8b4207a4eec7",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1152,6 +1296,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-8962a4af176d",
           "subjectName": "Трудовое обучение",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-500be61f0bd7",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1164,6 +1309,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-8cc3dfd4e033",
           "subjectName": "Человек и мир",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-561d277eb117",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1176,6 +1322,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-6bc92998fc83",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-d5b8da2c4c2a",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1188,6 +1335,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-7a89c6163f36",
           "subjectName": "Беларуская мова",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-38b52a6f7265",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1200,6 +1348,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-52a50ce81660",
           "subjectName": "Изобразительное искусство",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-ea701d8f4e61",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1212,6 +1361,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-1afc93265920",
           "subjectName": "Физическая культура и здоровье",
           "teacherExternalId": "00000000-0000-4000-8000-d8a10599a207",
+          "templateRef": "00000000-0000-4000-8000-8b4207a4eec7",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1224,6 +1374,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-6bc92998fc83",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-d5b8da2c4c2a",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1236,6 +1387,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-b16b106c3968",
           "subjectName": "Обучение грамоте (чтение)",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-b1ad987d29c5",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1248,6 +1400,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-dddf5985f15a",
           "subjectName": "Обучение грамоте (письмо)",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-708e00f74dcb",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1260,6 +1413,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-886310be281c",
           "subjectName": "Информационный час",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-fde047cd7f6a",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1272,6 +1426,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-6bc92998fc83",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-d5b8da2c4c2a",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1284,6 +1439,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-b16b106c3968",
           "subjectName": "Обучение грамоте (чтение)",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-b1ad987d29c5",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1296,6 +1452,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-dddf5985f15a",
           "subjectName": "Обучение грамоте (письмо)",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-708e00f74dcb",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1307,6 +1464,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-52a50ce81660",
           "subjectName": "Изобразительное искусство",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-ea701d8f4e61",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1319,6 +1477,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-6bc92998fc83",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-d5b8da2c4c2a",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1331,6 +1490,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-1afc93265920",
           "subjectName": "Физическая культура и здоровье",
           "teacherExternalId": "00000000-0000-4000-8000-d8a10599a207",
+          "templateRef": "00000000-0000-4000-8000-8b4207a4eec7",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1343,6 +1503,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-6a0095b65bcf",
           "subjectName": "Музыка",
           "teacherExternalId": "00000000-0000-4000-8000-3f98b08ca0d6",
+          "templateRef": "00000000-0000-4000-8000-ca35bdf8b11e",
           "hasAttachments": false,
           "marks": []
         },
@@ -1354,6 +1515,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-bc3f2daf673f",
           "subjectName": "Классный час",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-05e67f9d0c06",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1366,6 +1528,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-b16b106c3968",
           "subjectName": "Обучение грамоте (чтение)",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-b1ad987d29c5",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1378,6 +1541,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-dddf5985f15a",
           "subjectName": "Обучение грамоте (письмо)",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-708e00f74dcb",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1390,6 +1554,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-1afc93265920",
           "subjectName": "Физическая культура и здоровье",
           "teacherExternalId": "00000000-0000-4000-8000-d8a10599a207",
+          "templateRef": "00000000-0000-4000-8000-8b4207a4eec7",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1402,6 +1567,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-8962a4af176d",
           "subjectName": "Трудовое обучение",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-500be61f0bd7",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1414,6 +1580,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-8cc3dfd4e033",
           "subjectName": "Человек и мир",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-561d277eb117",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1426,6 +1593,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-6bc92998fc83",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-d5b8da2c4c2a",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1438,6 +1606,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-7a89c6163f36",
           "subjectName": "Беларуская мова",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-38b52a6f7265",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1450,6 +1619,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-52a50ce81660",
           "subjectName": "Изобразительное искусство",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-ea701d8f4e61",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1462,6 +1632,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-1afc93265920",
           "subjectName": "Физическая культура и здоровье",
           "teacherExternalId": "00000000-0000-4000-8000-d8a10599a207",
+          "templateRef": "00000000-0000-4000-8000-8b4207a4eec7",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1474,6 +1645,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-6bc92998fc83",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-d5b8da2c4c2a",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1486,6 +1658,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-b16b106c3968",
           "subjectName": "Обучение грамоте (чтение)",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-b1ad987d29c5",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1498,6 +1671,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-dddf5985f15a",
           "subjectName": "Обучение грамоте (письмо)",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-708e00f74dcb",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1510,6 +1684,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-886310be281c",
           "subjectName": "Информационный час",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-fde047cd7f6a",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1522,6 +1697,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-6bc92998fc83",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-d5b8da2c4c2a",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1534,6 +1710,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-b16b106c3968",
           "subjectName": "Обучение грамоте (чтение)",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-b1ad987d29c5",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1546,6 +1723,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-dddf5985f15a",
           "subjectName": "Обучение грамоте (письмо)",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-708e00f74dcb",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1557,6 +1735,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-52a50ce81660",
           "subjectName": "Изобразительное искусство",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-ea701d8f4e61",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1569,6 +1748,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-6bc92998fc83",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-d5b8da2c4c2a",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1581,6 +1761,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-1afc93265920",
           "subjectName": "Физическая культура и здоровье",
           "teacherExternalId": "00000000-0000-4000-8000-d8a10599a207",
+          "templateRef": "00000000-0000-4000-8000-8b4207a4eec7",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1593,6 +1774,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-6a0095b65bcf",
           "subjectName": "Музыка",
           "teacherExternalId": "00000000-0000-4000-8000-3f98b08ca0d6",
+          "templateRef": "00000000-0000-4000-8000-ca35bdf8b11e",
           "hasAttachments": false,
           "marks": []
         },
@@ -1604,12 +1786,332 @@
           "subjectExternalId": "00000000-0000-4000-8000-bc3f2daf673f",
           "subjectName": "Классный час",
           "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+          "templateRef": "00000000-0000-4000-8000-05e67f9d0c06",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
         }
       ],
-      "finalMarks": []
+      "finalMarks": [],
+      "bellSchedules": [
+        {
+          "externalId": "00000000-0000-4000-8000-4fcb42ab7e7a",
+          "label": "[text]",
+          "days": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "periods": [
+            {
+              "slot": 1,
+              "start": "08:30",
+              "end": "09:05"
+            },
+            {
+              "slot": 2,
+              "start": "09:20",
+              "end": "09:55"
+            },
+            {
+              "slot": 3,
+              "start": "10:15",
+              "end": "10:50"
+            },
+            {
+              "slot": 4,
+              "start": "11:10",
+              "end": "11:45"
+            },
+            {
+              "slot": 5,
+              "start": "12:00",
+              "end": "12:35"
+            }
+          ]
+        }
+      ],
+      "weekTemplate": {
+        "termExternalId": "00000000-0000-4000-8000-6ee6581c0838",
+        "cycleWeeks": 1,
+        "entries": [
+          {
+            "cycleWeek": 1,
+            "weekday": 1,
+            "slot": 1,
+            "start": "08:30",
+            "end": "09:05",
+            "subjectExternalId": "00000000-0000-4000-8000-b16b106c3968",
+            "subjectName": "Обучение грамоте (чтение)",
+            "room": "210",
+            "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-b1ad987d29c5"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 1,
+            "slot": 2,
+            "start": "09:20",
+            "end": "09:55",
+            "subjectExternalId": "00000000-0000-4000-8000-dddf5985f15a",
+            "subjectName": "Обучение грамоте (письмо)",
+            "room": "211",
+            "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-708e00f74dcb"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 1,
+            "slot": 3,
+            "start": "10:15",
+            "end": "10:50",
+            "subjectExternalId": "00000000-0000-4000-8000-1afc93265920",
+            "subjectName": "Физическая культура и здоровье",
+            "room": "212",
+            "teacherExternalId": "00000000-0000-4000-8000-d8a10599a207",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-8b4207a4eec7"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 1,
+            "slot": 4,
+            "start": "11:10",
+            "end": "11:45",
+            "subjectExternalId": "00000000-0000-4000-8000-8962a4af176d",
+            "subjectName": "Трудовое обучение",
+            "groupLabel": "1-я подгруппа (девочки)",
+            "room": "213",
+            "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-500be61f0bd7"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 2,
+            "slot": 1,
+            "start": "08:30",
+            "end": "09:05",
+            "subjectExternalId": "00000000-0000-4000-8000-8cc3dfd4e033",
+            "subjectName": "Человек и мир",
+            "room": "215",
+            "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-561d277eb117"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 2,
+            "slot": 2,
+            "start": "09:20",
+            "end": "09:55",
+            "subjectExternalId": "00000000-0000-4000-8000-6bc92998fc83",
+            "subjectName": "Математика",
+            "room": "216",
+            "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-d5b8da2c4c2a"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 2,
+            "slot": 3,
+            "start": "10:15",
+            "end": "10:50",
+            "subjectExternalId": "00000000-0000-4000-8000-7a89c6163f36",
+            "subjectName": "Беларуская мова",
+            "room": "217",
+            "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-38b52a6f7265"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 2,
+            "slot": 4,
+            "start": "11:10",
+            "end": "11:45",
+            "subjectExternalId": "00000000-0000-4000-8000-52a50ce81660",
+            "subjectName": "Изобразительное искусство",
+            "room": "218",
+            "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-ea701d8f4e61"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 3,
+            "slot": 1,
+            "start": "08:30",
+            "end": "09:05",
+            "subjectExternalId": "00000000-0000-4000-8000-1afc93265920",
+            "subjectName": "Физическая культура и здоровье",
+            "room": "212",
+            "teacherExternalId": "00000000-0000-4000-8000-d8a10599a207",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-8b4207a4eec7"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 3,
+            "slot": 2,
+            "start": "09:20",
+            "end": "09:55",
+            "subjectExternalId": "00000000-0000-4000-8000-6bc92998fc83",
+            "subjectName": "Математика",
+            "room": "216",
+            "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-d5b8da2c4c2a"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 3,
+            "slot": 3,
+            "start": "10:15",
+            "end": "10:50",
+            "subjectExternalId": "00000000-0000-4000-8000-b16b106c3968",
+            "subjectName": "Обучение грамоте (чтение)",
+            "room": "210",
+            "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-b1ad987d29c5"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 3,
+            "slot": 4,
+            "start": "11:10",
+            "end": "11:45",
+            "subjectExternalId": "00000000-0000-4000-8000-dddf5985f15a",
+            "subjectName": "Обучение грамоте (письмо)",
+            "room": "211",
+            "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-708e00f74dcb"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 4,
+            "slot": 1,
+            "start": "08:30",
+            "end": "09:05",
+            "subjectExternalId": "00000000-0000-4000-8000-886310be281c",
+            "subjectName": "Информационный час",
+            "room": "219",
+            "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-fde047cd7f6a"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 4,
+            "slot": 2,
+            "start": "09:20",
+            "end": "09:55",
+            "subjectExternalId": "00000000-0000-4000-8000-6bc92998fc83",
+            "subjectName": "Математика",
+            "room": "216",
+            "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-d5b8da2c4c2a"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 4,
+            "slot": 3,
+            "start": "10:15",
+            "end": "10:50",
+            "subjectExternalId": "00000000-0000-4000-8000-b16b106c3968",
+            "subjectName": "Обучение грамоте (чтение)",
+            "room": "210",
+            "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-b1ad987d29c5"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 4,
+            "slot": 4,
+            "start": "11:10",
+            "end": "11:45",
+            "subjectExternalId": "00000000-0000-4000-8000-dddf5985f15a",
+            "subjectName": "Обучение грамоте (письмо)",
+            "room": "211",
+            "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-708e00f74dcb"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 4,
+            "slot": 5,
+            "start": "12:00",
+            "end": "12:35",
+            "subjectExternalId": "00000000-0000-4000-8000-52a50ce81660",
+            "subjectName": "Изобразительное искусство",
+            "room": "218",
+            "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-ea701d8f4e61"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 5,
+            "slot": 1,
+            "start": "08:30",
+            "end": "09:05",
+            "subjectExternalId": "00000000-0000-4000-8000-6bc92998fc83",
+            "subjectName": "Математика",
+            "room": "216",
+            "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-d5b8da2c4c2a"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 5,
+            "slot": 2,
+            "start": "09:20",
+            "end": "09:55",
+            "subjectExternalId": "00000000-0000-4000-8000-1afc93265920",
+            "subjectName": "Физическая культура и здоровье",
+            "room": "212",
+            "teacherExternalId": "00000000-0000-4000-8000-d8a10599a207",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-8b4207a4eec7"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 5,
+            "slot": 3,
+            "start": "10:15",
+            "end": "10:50",
+            "subjectExternalId": "00000000-0000-4000-8000-6a0095b65bcf",
+            "subjectName": "Музыка",
+            "teacherExternalId": "00000000-0000-4000-8000-3f98b08ca0d6",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-ca35bdf8b11e"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 5,
+            "slot": 4,
+            "start": "11:10",
+            "end": "11:45",
+            "subjectExternalId": "00000000-0000-4000-8000-bc3f2daf673f",
+            "subjectName": "Классный час",
+            "room": "220",
+            "teacherExternalId": "00000000-0000-4000-8000-3aab0b4ee3b0",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-05e67f9d0c06"
+          }
+        ]
+      }
     },
     "00000000-0000-4000-8000-53f0dd727676": {
       "calendar": {
@@ -1677,67 +2179,153 @@
       "subjects": [
         {
           "externalId": "00000000-0000-4000-8000-9ffadbcb6c66",
-          "name": "Английский язык"
+          "name": "Английский язык",
+          "shortName": "Англ. яз.",
+          "teacherExternalId": "00000000-0000-4000-8000-dbfd10f90f2e",
+          "teacherName": "[text]",
+          "groupLabel": "2-я подгруппа",
+          "level": "advanced",
+          "levelLabel": "Углубленный",
+          "lessonsPerWeek": 3
         },
         {
           "externalId": "00000000-0000-4000-8000-2d176b4d7bb4",
-          "name": "Беларуская літаратура (літаратурнае чытанне)"
+          "name": "Беларуская літаратура (літаратурнае чытанне)",
+          "teacherExternalId": "00000000-0000-4000-8000-5c04a33d5b7b",
+          "teacherName": "[text]",
+          "level": "regular",
+          "levelLabel": "Базовый",
+          "lessonsPerWeek": 1
         },
         {
           "externalId": "00000000-0000-4000-8000-0c22f4011058",
-          "name": "Беларуская мова"
+          "name": "Беларуская мова",
+          "teacherExternalId": "00000000-0000-4000-8000-5c04a33d5b7b",
+          "teacherName": "[text]",
+          "level": "regular",
+          "levelLabel": "Базовый",
+          "lessonsPerWeek": 2
         },
         {
           "externalId": "00000000-0000-4000-8000-521207624c2f",
-          "name": "Биология"
+          "name": "Биология",
+          "teacherExternalId": "00000000-0000-4000-8000-ae5a334c612a",
+          "teacherName": "[text]",
+          "level": "regular",
+          "levelLabel": "Базовый",
+          "lessonsPerWeek": 2
         },
         {
           "externalId": "00000000-0000-4000-8000-0b85a354309d",
-          "name": "Всемирная история"
+          "name": "Всемирная история",
+          "teacherExternalId": "00000000-0000-4000-8000-1b8aaffcdfc7",
+          "teacherName": "[text]",
+          "level": "regular",
+          "levelLabel": "Базовый",
+          "lessonsPerWeek": 1
         },
         {
           "externalId": "00000000-0000-4000-8000-532fe26fffc8",
-          "name": "География"
+          "name": "География",
+          "teacherExternalId": "00000000-0000-4000-8000-0b0beb902f6c",
+          "teacherName": "[text]",
+          "level": "regular",
+          "levelLabel": "Базовый",
+          "lessonsPerWeek": 1
         },
         {
           "externalId": "00000000-0000-4000-8000-ead74922e023",
-          "name": "Информатика"
+          "name": "Информатика",
+          "teacherExternalId": "00000000-0000-4000-8000-5034414dc6e9",
+          "teacherName": "[text]",
+          "groupLabel": "1-я подгруппа",
+          "level": "regular",
+          "levelLabel": "Базовый",
+          "lessonsPerWeek": 1
         },
         {
           "externalId": "00000000-0000-4000-8000-dc8f8b8adf47",
-          "name": "Искусство (отечественная и мировая художественная культура)"
+          "name": "Искусство (отечественная и мировая художественная культура)",
+          "teacherExternalId": "00000000-0000-4000-8000-3f98b08ca0d6",
+          "teacherName": "[text]",
+          "level": "regular",
+          "levelLabel": "Базовый",
+          "lessonsPerWeek": 1
         },
         {
           "externalId": "00000000-0000-4000-8000-073c7c3bf74a",
-          "name": "История Беларуси"
+          "name": "История Беларуси",
+          "teacherExternalId": "00000000-0000-4000-8000-1b8aaffcdfc7",
+          "teacherName": "[text]",
+          "level": "regular",
+          "levelLabel": "Базовый",
+          "lessonsPerWeek": 1
         },
         {
           "externalId": "00000000-0000-4000-8000-bc0f7f9e33e5",
-          "name": "Математика"
+          "name": "Математика",
+          "shortName": "Матем.",
+          "teacherExternalId": "00000000-0000-4000-8000-0132b72c7a53",
+          "teacherName": "[text]",
+          "level": "regular",
+          "levelLabel": "Базовый",
+          "lessonsPerWeek": 5
         },
         {
           "externalId": "00000000-0000-4000-8000-46d1ef9b667c",
-          "name": "Русская литература (литературное чтение)"
+          "name": "Русская литература (литературное чтение)",
+          "teacherExternalId": "00000000-0000-4000-8000-3d1ee95c438f",
+          "teacherName": "[text]",
+          "level": "regular",
+          "levelLabel": "Базовый",
+          "lessonsPerWeek": 2
         },
         {
           "externalId": "00000000-0000-4000-8000-a6da3da42698",
-          "name": "Русский язык"
+          "name": "Русский язык",
+          "shortName": "Рус. яз.",
+          "teacherExternalId": "00000000-0000-4000-8000-3d1ee95c438f",
+          "teacherName": "[text]",
+          "level": "regular",
+          "levelLabel": "Базовый",
+          "lessonsPerWeek": 2
         },
         {
           "externalId": "00000000-0000-4000-8000-b788f8f67f5c",
-          "name": "Трудовое обучение"
+          "name": "Трудовое обучение",
+          "teacherExternalId": "00000000-0000-4000-8000-5821b5c36595",
+          "teacherName": "[text]",
+          "groupLabel": "1-я подгруппа (девочки)",
+          "level": "regular",
+          "levelLabel": "Базовый",
+          "lessonsPerWeek": 2
         },
         {
           "externalId": "00000000-0000-4000-8000-78e8d4ba3ff6",
-          "name": "Физика"
+          "name": "Физика",
+          "teacherExternalId": "00000000-0000-4000-8000-41c29d6d68fa",
+          "teacherName": "[text]",
+          "level": "regular",
+          "levelLabel": "Базовый",
+          "lessonsPerWeek": 2
         },
         {
           "externalId": "00000000-0000-4000-8000-31539928a46c",
-          "name": "Физическая культура и здоровье"
+          "name": "Физическая культура и здоровье",
+          "teacherExternalId": "00000000-0000-4000-8000-77d5dcdda04a",
+          "teacherName": "[text]",
+          "level": "regular",
+          "levelLabel": "Базовый",
+          "lessonsPerWeek": 3
         },
         {
           "externalId": "00000000-0000-4000-8000-d7dc9f2dc13d",
-          "name": "Химия"
+          "name": "Химия",
+          "teacherExternalId": "00000000-0000-4000-8000-9d8a4879b45c",
+          "teacherName": "[text]",
+          "level": "regular",
+          "levelLabel": "Базовый",
+          "lessonsPerWeek": 1
         }
       ],
       "lessons": [
@@ -1749,6 +2337,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-46d1ef9b667c",
           "subjectName": "Русская литература (литературное чтение)",
           "teacherExternalId": "00000000-0000-4000-8000-3d1ee95c438f",
+          "templateRef": "00000000-0000-4000-8000-5435778ac440",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -1776,6 +2365,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-a6da3da42698",
           "subjectName": "Русский язык",
           "teacherExternalId": "00000000-0000-4000-8000-3d1ee95c438f",
+          "templateRef": "00000000-0000-4000-8000-0d980427681a",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -1803,6 +2393,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-bc0f7f9e33e5",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-0132b72c7a53",
+          "templateRef": "00000000-0000-4000-8000-04c022dfc7c5",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -1816,6 +2407,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-521207624c2f",
           "subjectName": "Биология",
           "teacherExternalId": "00000000-0000-4000-8000-ae5a334c612a",
+          "templateRef": "00000000-0000-4000-8000-6b7d4571bb61",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -1829,6 +2421,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-0c22f4011058",
           "subjectName": "Беларуская мова",
           "teacherExternalId": "00000000-0000-4000-8000-5c04a33d5b7b",
+          "templateRef": "00000000-0000-4000-8000-34616cf67d0c",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -1856,6 +2449,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-2d176b4d7bb4",
           "subjectName": "Беларуская літаратура (літаратурнае чытанне)",
           "teacherExternalId": "00000000-0000-4000-8000-5c04a33d5b7b",
+          "templateRef": "00000000-0000-4000-8000-243569c9816f",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -1883,6 +2477,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-dc8f8b8adf47",
           "subjectName": "Искусство (отечественная и мировая художественная культура)",
           "teacherExternalId": "00000000-0000-4000-8000-3f98b08ca0d6",
+          "templateRef": "00000000-0000-4000-8000-db5100b7c957",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1895,6 +2490,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-31539928a46c",
           "subjectName": "Физическая культура и здоровье",
           "teacherExternalId": "00000000-0000-4000-8000-77d5dcdda04a",
+          "templateRef": "00000000-0000-4000-8000-c40069ffc243",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -1907,6 +2503,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-073c7c3bf74a",
           "subjectName": "История Беларуси",
           "teacherExternalId": "00000000-0000-4000-8000-1b8aaffcdfc7",
+          "templateRef": "00000000-0000-4000-8000-12f0fc37591d",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -1920,6 +2517,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-a6da3da42698",
           "subjectName": "Русский язык",
           "teacherExternalId": "00000000-0000-4000-8000-3d1ee95c438f",
+          "templateRef": "00000000-0000-4000-8000-0d980427681a",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -1933,6 +2531,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-bc0f7f9e33e5",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-0132b72c7a53",
+          "templateRef": "00000000-0000-4000-8000-04c022dfc7c5",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -1946,6 +2545,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-78e8d4ba3ff6",
           "subjectName": "Физика",
           "teacherExternalId": "00000000-0000-4000-8000-41c29d6d68fa",
+          "templateRef": "00000000-0000-4000-8000-9039f236c809",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -1959,6 +2559,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-532fe26fffc8",
           "subjectName": "География",
           "teacherExternalId": "00000000-0000-4000-8000-0b0beb902f6c",
+          "templateRef": "00000000-0000-4000-8000-8a9742942eca",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -1987,6 +2588,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-0c22f4011058",
           "subjectName": "Беларуская мова",
           "teacherExternalId": "00000000-0000-4000-8000-5c04a33d5b7b",
+          "templateRef": "00000000-0000-4000-8000-34616cf67d0c",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -2000,6 +2602,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-bc0f7f9e33e5",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-0132b72c7a53",
+          "templateRef": "00000000-0000-4000-8000-04c022dfc7c5",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -2013,6 +2616,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-9ffadbcb6c66",
           "subjectName": "Английский язык",
           "teacherExternalId": "00000000-0000-4000-8000-dbfd10f90f2e",
+          "templateRef": "00000000-0000-4000-8000-69c38d2441b6",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -2040,6 +2644,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-ead74922e023",
           "subjectName": "Информатика",
           "teacherExternalId": "00000000-0000-4000-8000-5034414dc6e9",
+          "templateRef": "00000000-0000-4000-8000-4de93f447068",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -2053,6 +2658,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-d7dc9f2dc13d",
           "subjectName": "Химия",
           "teacherExternalId": "00000000-0000-4000-8000-9d8a4879b45c",
+          "templateRef": "00000000-0000-4000-8000-30fe427b28f1",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -2066,6 +2672,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-bc0f7f9e33e5",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-0132b72c7a53",
+          "templateRef": "00000000-0000-4000-8000-04c022dfc7c5",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -2079,6 +2686,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-9ffadbcb6c66",
           "subjectName": "Английский язык",
           "teacherExternalId": "00000000-0000-4000-8000-dbfd10f90f2e",
+          "templateRef": "00000000-0000-4000-8000-69c38d2441b6",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -2106,6 +2714,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-521207624c2f",
           "subjectName": "Биология",
           "teacherExternalId": "00000000-0000-4000-8000-ae5a334c612a",
+          "templateRef": "00000000-0000-4000-8000-6b7d4571bb61",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -2133,6 +2742,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-b788f8f67f5c",
           "subjectName": "Трудовое обучение",
           "teacherExternalId": "00000000-0000-4000-8000-5821b5c36595",
+          "templateRef": "00000000-0000-4000-8000-f67891a31b29",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -2145,6 +2755,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-b788f8f67f5c",
           "subjectName": "Трудовое обучение",
           "teacherExternalId": "00000000-0000-4000-8000-5821b5c36595",
+          "templateRef": "00000000-0000-4000-8000-f67891a31b29",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": [
@@ -2171,6 +2782,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-31539928a46c",
           "subjectName": "Физическая культура и здоровье",
           "teacherExternalId": "00000000-0000-4000-8000-77d5dcdda04a",
+          "templateRef": "00000000-0000-4000-8000-c40069ffc243",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -2183,6 +2795,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-9ffadbcb6c66",
           "subjectName": "Английский язык",
           "teacherExternalId": "00000000-0000-4000-8000-dbfd10f90f2e",
+          "templateRef": "00000000-0000-4000-8000-69c38d2441b6",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -2196,6 +2809,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-78e8d4ba3ff6",
           "subjectName": "Физика",
           "teacherExternalId": "00000000-0000-4000-8000-41c29d6d68fa",
+          "templateRef": "00000000-0000-4000-8000-9039f236c809",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -2223,6 +2837,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-bc0f7f9e33e5",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-0132b72c7a53",
+          "templateRef": "00000000-0000-4000-8000-04c022dfc7c5",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -2236,6 +2851,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-31539928a46c",
           "subjectName": "Физическая культура и здоровье",
           "teacherExternalId": "00000000-0000-4000-8000-77d5dcdda04a",
+          "templateRef": "00000000-0000-4000-8000-c40069ffc243",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -2248,6 +2864,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-46d1ef9b667c",
           "subjectName": "Русская литература (литературное чтение)",
           "teacherExternalId": "00000000-0000-4000-8000-3d1ee95c438f",
+          "templateRef": "00000000-0000-4000-8000-5435778ac440",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -2275,6 +2892,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-0b85a354309d",
           "subjectName": "Всемирная история",
           "teacherExternalId": "00000000-0000-4000-8000-1b8aaffcdfc7",
+          "templateRef": "00000000-0000-4000-8000-857b1d93b4b9",
           "hasAttachments": false,
           "marks": []
         },
@@ -2286,6 +2904,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-46d1ef9b667c",
           "subjectName": "Русская литература (литературное чтение)",
           "teacherExternalId": "00000000-0000-4000-8000-3d1ee95c438f",
+          "templateRef": "00000000-0000-4000-8000-5435778ac440",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -2299,6 +2918,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-a6da3da42698",
           "subjectName": "Русский язык",
           "teacherExternalId": "00000000-0000-4000-8000-3d1ee95c438f",
+          "templateRef": "00000000-0000-4000-8000-0d980427681a",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -2326,6 +2946,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-bc0f7f9e33e5",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-0132b72c7a53",
+          "templateRef": "00000000-0000-4000-8000-04c022dfc7c5",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -2338,6 +2959,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-521207624c2f",
           "subjectName": "Биология",
           "teacherExternalId": "00000000-0000-4000-8000-ae5a334c612a",
+          "templateRef": "00000000-0000-4000-8000-6b7d4571bb61",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -2365,6 +2987,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-0c22f4011058",
           "subjectName": "Беларуская мова",
           "teacherExternalId": "00000000-0000-4000-8000-5c04a33d5b7b",
+          "templateRef": "00000000-0000-4000-8000-34616cf67d0c",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -2378,6 +3001,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-2d176b4d7bb4",
           "subjectName": "Беларуская літаратура (літаратурнае чытанне)",
           "teacherExternalId": "00000000-0000-4000-8000-5c04a33d5b7b",
+          "templateRef": "00000000-0000-4000-8000-243569c9816f",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -2391,6 +3015,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-dc8f8b8adf47",
           "subjectName": "Искусство (отечественная и мировая художественная культура)",
           "teacherExternalId": "00000000-0000-4000-8000-3f98b08ca0d6",
+          "templateRef": "00000000-0000-4000-8000-db5100b7c957",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -2403,6 +3028,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-31539928a46c",
           "subjectName": "Физическая культура и здоровье",
           "teacherExternalId": "00000000-0000-4000-8000-77d5dcdda04a",
+          "templateRef": "00000000-0000-4000-8000-c40069ffc243",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": [],
@@ -2425,6 +3051,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-073c7c3bf74a",
           "subjectName": "История Беларуси",
           "teacherExternalId": "00000000-0000-4000-8000-1b8aaffcdfc7",
+          "templateRef": "00000000-0000-4000-8000-12f0fc37591d",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -2448,6 +3075,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-a6da3da42698",
           "subjectName": "Русский язык",
           "teacherExternalId": "00000000-0000-4000-8000-3d1ee95c438f",
+          "templateRef": "00000000-0000-4000-8000-0d980427681a",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": [],
@@ -2470,6 +3098,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-bc0f7f9e33e5",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-0132b72c7a53",
+          "templateRef": "00000000-0000-4000-8000-04c022dfc7c5",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -2493,6 +3122,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-78e8d4ba3ff6",
           "subjectName": "Физика",
           "teacherExternalId": "00000000-0000-4000-8000-41c29d6d68fa",
+          "templateRef": "00000000-0000-4000-8000-9039f236c809",
           "hasAttachments": false,
           "marks": []
         },
@@ -2504,6 +3134,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-532fe26fffc8",
           "subjectName": "География",
           "teacherExternalId": "00000000-0000-4000-8000-0b0beb902f6c",
+          "templateRef": "00000000-0000-4000-8000-8a9742942eca",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -2527,6 +3158,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-0c22f4011058",
           "subjectName": "Беларуская мова",
           "teacherExternalId": "00000000-0000-4000-8000-5c04a33d5b7b",
+          "templateRef": "00000000-0000-4000-8000-34616cf67d0c",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -2550,6 +3182,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-bc0f7f9e33e5",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-0132b72c7a53",
+          "templateRef": "00000000-0000-4000-8000-04c022dfc7c5",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -2573,6 +3206,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-9ffadbcb6c66",
           "subjectName": "Английский язык",
           "teacherExternalId": "00000000-0000-4000-8000-dbfd10f90f2e",
+          "templateRef": "00000000-0000-4000-8000-69c38d2441b6",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -2596,6 +3230,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-ead74922e023",
           "subjectName": "Информатика",
           "teacherExternalId": "00000000-0000-4000-8000-5034414dc6e9",
+          "templateRef": "00000000-0000-4000-8000-4de93f447068",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -2619,6 +3254,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-d7dc9f2dc13d",
           "subjectName": "Химия",
           "teacherExternalId": "00000000-0000-4000-8000-9d8a4879b45c",
+          "templateRef": "00000000-0000-4000-8000-30fe427b28f1",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -2642,6 +3278,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-bc0f7f9e33e5",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-0132b72c7a53",
+          "templateRef": "00000000-0000-4000-8000-04c022dfc7c5",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -2655,6 +3292,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-9ffadbcb6c66",
           "subjectName": "Английский язык",
           "teacherExternalId": "00000000-0000-4000-8000-dbfd10f90f2e",
+          "templateRef": "00000000-0000-4000-8000-69c38d2441b6",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -2678,6 +3316,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-521207624c2f",
           "subjectName": "Биология",
           "teacherExternalId": "00000000-0000-4000-8000-ae5a334c612a",
+          "templateRef": "00000000-0000-4000-8000-6b7d4571bb61",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -2701,6 +3340,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-b788f8f67f5c",
           "subjectName": "Трудовое обучение",
           "teacherExternalId": "00000000-0000-4000-8000-5821b5c36595",
+          "templateRef": "00000000-0000-4000-8000-f67891a31b29",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": [],
@@ -2723,6 +3363,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-b788f8f67f5c",
           "subjectName": "Трудовое обучение",
           "teacherExternalId": "00000000-0000-4000-8000-5821b5c36595",
+          "templateRef": "00000000-0000-4000-8000-f67891a31b29",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": [],
@@ -2745,6 +3386,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-31539928a46c",
           "subjectName": "Физическая культура и здоровье",
           "teacherExternalId": "00000000-0000-4000-8000-77d5dcdda04a",
+          "templateRef": "00000000-0000-4000-8000-c40069ffc243",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": [],
@@ -2767,6 +3409,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-9ffadbcb6c66",
           "subjectName": "Английский язык",
           "teacherExternalId": "00000000-0000-4000-8000-dbfd10f90f2e",
+          "templateRef": "00000000-0000-4000-8000-69c38d2441b6",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -2790,6 +3433,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-78e8d4ba3ff6",
           "subjectName": "Физика",
           "teacherExternalId": "00000000-0000-4000-8000-41c29d6d68fa",
+          "templateRef": "00000000-0000-4000-8000-9039f236c809",
           "hasAttachments": false,
           "marks": [],
           "attendance": [
@@ -2811,6 +3455,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-bc0f7f9e33e5",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-0132b72c7a53",
+          "templateRef": "00000000-0000-4000-8000-04c022dfc7c5",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -2834,6 +3479,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-31539928a46c",
           "subjectName": "Физическая культура и здоровье",
           "teacherExternalId": "00000000-0000-4000-8000-77d5dcdda04a",
+          "templateRef": "00000000-0000-4000-8000-c40069ffc243",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": [],
@@ -2856,6 +3502,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-46d1ef9b667c",
           "subjectName": "Русская литература (литературное чтение)",
           "teacherExternalId": "00000000-0000-4000-8000-3d1ee95c438f",
+          "templateRef": "00000000-0000-4000-8000-5435778ac440",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -2879,6 +3526,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-0b85a354309d",
           "subjectName": "Всемирная история",
           "teacherExternalId": "00000000-0000-4000-8000-1b8aaffcdfc7",
+          "templateRef": "00000000-0000-4000-8000-857b1d93b4b9",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -2902,6 +3550,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-46d1ef9b667c",
           "subjectName": "Русская литература (литературное чтение)",
           "teacherExternalId": "00000000-0000-4000-8000-3d1ee95c438f",
+          "templateRef": "00000000-0000-4000-8000-5435778ac440",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -2925,6 +3574,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-a6da3da42698",
           "subjectName": "Русский язык",
           "teacherExternalId": "00000000-0000-4000-8000-3d1ee95c438f",
+          "templateRef": "00000000-0000-4000-8000-0d980427681a",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -2948,6 +3598,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-bc0f7f9e33e5",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-0132b72c7a53",
+          "templateRef": "00000000-0000-4000-8000-04c022dfc7c5",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -2971,6 +3622,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-521207624c2f",
           "subjectName": "Биология",
           "teacherExternalId": "00000000-0000-4000-8000-ae5a334c612a",
+          "templateRef": "00000000-0000-4000-8000-6b7d4571bb61",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -2994,6 +3646,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-0c22f4011058",
           "subjectName": "Беларуская мова",
           "teacherExternalId": "00000000-0000-4000-8000-5c04a33d5b7b",
+          "templateRef": "00000000-0000-4000-8000-34616cf67d0c",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -3017,6 +3670,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-2d176b4d7bb4",
           "subjectName": "Беларуская літаратура (літаратурнае чытанне)",
           "teacherExternalId": "00000000-0000-4000-8000-5c04a33d5b7b",
+          "templateRef": "00000000-0000-4000-8000-243569c9816f",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -3030,6 +3684,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-dc8f8b8adf47",
           "subjectName": "Искусство (отечественная и мировая художественная культура)",
           "teacherExternalId": "00000000-0000-4000-8000-3f98b08ca0d6",
+          "templateRef": "00000000-0000-4000-8000-db5100b7c957",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": [],
@@ -3052,6 +3707,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-31539928a46c",
           "subjectName": "Физическая культура и здоровье",
           "teacherExternalId": "00000000-0000-4000-8000-77d5dcdda04a",
+          "templateRef": "00000000-0000-4000-8000-c40069ffc243",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -3064,6 +3720,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-073c7c3bf74a",
           "subjectName": "История Беларуси",
           "teacherExternalId": "00000000-0000-4000-8000-1b8aaffcdfc7",
+          "templateRef": "00000000-0000-4000-8000-12f0fc37591d",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -3091,6 +3748,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-a6da3da42698",
           "subjectName": "Русский язык",
           "teacherExternalId": "00000000-0000-4000-8000-3d1ee95c438f",
+          "templateRef": "00000000-0000-4000-8000-0d980427681a",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -3104,6 +3762,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-bc0f7f9e33e5",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-0132b72c7a53",
+          "templateRef": "00000000-0000-4000-8000-04c022dfc7c5",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": [
@@ -3130,6 +3789,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-78e8d4ba3ff6",
           "subjectName": "Физика",
           "teacherExternalId": "00000000-0000-4000-8000-41c29d6d68fa",
+          "templateRef": "00000000-0000-4000-8000-9039f236c809",
           "hasAttachments": false,
           "marks": []
         },
@@ -3141,6 +3801,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-532fe26fffc8",
           "subjectName": "География",
           "teacherExternalId": "00000000-0000-4000-8000-0b0beb902f6c",
+          "templateRef": "00000000-0000-4000-8000-8a9742942eca",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -3168,6 +3829,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-0c22f4011058",
           "subjectName": "Беларуская мова",
           "teacherExternalId": "00000000-0000-4000-8000-5c04a33d5b7b",
+          "templateRef": "00000000-0000-4000-8000-34616cf67d0c",
           "topic": "Тема урока",
           "hasAttachments": false,
           "lessonType": "test",
@@ -3181,6 +3843,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-bc0f7f9e33e5",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-0132b72c7a53",
+          "templateRef": "00000000-0000-4000-8000-04c022dfc7c5",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -3193,6 +3856,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-9ffadbcb6c66",
           "subjectName": "Английский язык",
           "teacherExternalId": "00000000-0000-4000-8000-dbfd10f90f2e",
+          "templateRef": "00000000-0000-4000-8000-69c38d2441b6",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -3206,6 +3870,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-ead74922e023",
           "subjectName": "Информатика",
           "teacherExternalId": "00000000-0000-4000-8000-5034414dc6e9",
+          "templateRef": "00000000-0000-4000-8000-4de93f447068",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -3233,6 +3898,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-d7dc9f2dc13d",
           "subjectName": "Химия",
           "teacherExternalId": "00000000-0000-4000-8000-9d8a4879b45c",
+          "templateRef": "00000000-0000-4000-8000-30fe427b28f1",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -3260,6 +3926,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-bc0f7f9e33e5",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-0132b72c7a53",
+          "templateRef": "00000000-0000-4000-8000-04c022dfc7c5",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -3287,6 +3954,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-9ffadbcb6c66",
           "subjectName": "Английский язык",
           "teacherExternalId": "00000000-0000-4000-8000-dbfd10f90f2e",
+          "templateRef": "00000000-0000-4000-8000-69c38d2441b6",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -3300,6 +3968,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-521207624c2f",
           "subjectName": "Биология",
           "teacherExternalId": "00000000-0000-4000-8000-ae5a334c612a",
+          "templateRef": "00000000-0000-4000-8000-6b7d4571bb61",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -3313,6 +3982,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-b788f8f67f5c",
           "subjectName": "Трудовое обучение",
           "teacherExternalId": "00000000-0000-4000-8000-5821b5c36595",
+          "templateRef": "00000000-0000-4000-8000-f67891a31b29",
           "hasAttachments": false,
           "marks": []
         },
@@ -3324,6 +3994,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-b788f8f67f5c",
           "subjectName": "Трудовое обучение",
           "teacherExternalId": "00000000-0000-4000-8000-5821b5c36595",
+          "templateRef": "00000000-0000-4000-8000-f67891a31b29",
           "hasAttachments": false,
           "marks": [
             {
@@ -3349,6 +4020,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-31539928a46c",
           "subjectName": "Физическая культура и здоровье",
           "teacherExternalId": "00000000-0000-4000-8000-77d5dcdda04a",
+          "templateRef": "00000000-0000-4000-8000-c40069ffc243",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -3361,6 +4033,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-9ffadbcb6c66",
           "subjectName": "Английский язык",
           "teacherExternalId": "00000000-0000-4000-8000-dbfd10f90f2e",
+          "templateRef": "00000000-0000-4000-8000-69c38d2441b6",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -3374,6 +4047,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-78e8d4ba3ff6",
           "subjectName": "Физика",
           "teacherExternalId": "00000000-0000-4000-8000-41c29d6d68fa",
+          "templateRef": "00000000-0000-4000-8000-9039f236c809",
           "hasAttachments": false,
           "marks": [
             {
@@ -3399,6 +4073,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-bc0f7f9e33e5",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-0132b72c7a53",
+          "templateRef": "00000000-0000-4000-8000-04c022dfc7c5",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -3412,6 +4087,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-31539928a46c",
           "subjectName": "Физическая культура и здоровье",
           "teacherExternalId": "00000000-0000-4000-8000-77d5dcdda04a",
+          "templateRef": "00000000-0000-4000-8000-c40069ffc243",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -3424,6 +4100,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-46d1ef9b667c",
           "subjectName": "Русская литература (литературное чтение)",
           "teacherExternalId": "00000000-0000-4000-8000-3d1ee95c438f",
+          "templateRef": "00000000-0000-4000-8000-5435778ac440",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -3451,6 +4128,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-0b85a354309d",
           "subjectName": "Всемирная история",
           "teacherExternalId": "00000000-0000-4000-8000-1b8aaffcdfc7",
+          "templateRef": "00000000-0000-4000-8000-857b1d93b4b9",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -3478,6 +4156,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-46d1ef9b667c",
           "subjectName": "Русская литература (литературное чтение)",
           "teacherExternalId": "00000000-0000-4000-8000-3d1ee95c438f",
+          "templateRef": "00000000-0000-4000-8000-5435778ac440",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -3491,6 +4170,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-a6da3da42698",
           "subjectName": "Русский язык",
           "teacherExternalId": "00000000-0000-4000-8000-3d1ee95c438f",
+          "templateRef": "00000000-0000-4000-8000-0d980427681a",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -3519,6 +4199,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-bc0f7f9e33e5",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-0132b72c7a53",
+          "templateRef": "00000000-0000-4000-8000-04c022dfc7c5",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -3546,6 +4227,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-521207624c2f",
           "subjectName": "Биология",
           "teacherExternalId": "00000000-0000-4000-8000-ae5a334c612a",
+          "templateRef": "00000000-0000-4000-8000-6b7d4571bb61",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -3573,6 +4255,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-0c22f4011058",
           "subjectName": "Беларуская мова",
           "teacherExternalId": "00000000-0000-4000-8000-5c04a33d5b7b",
+          "templateRef": "00000000-0000-4000-8000-34616cf67d0c",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -3586,6 +4269,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-2d176b4d7bb4",
           "subjectName": "Беларуская літаратура (літаратурнае чытанне)",
           "teacherExternalId": "00000000-0000-4000-8000-5c04a33d5b7b",
+          "templateRef": "00000000-0000-4000-8000-243569c9816f",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -3613,6 +4297,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-dc8f8b8adf47",
           "subjectName": "Искусство (отечественная и мировая художественная культура)",
           "teacherExternalId": "00000000-0000-4000-8000-3f98b08ca0d6",
+          "templateRef": "00000000-0000-4000-8000-db5100b7c957",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -3625,6 +4310,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-31539928a46c",
           "subjectName": "Физическая культура и здоровье",
           "teacherExternalId": "00000000-0000-4000-8000-77d5dcdda04a",
+          "templateRef": "00000000-0000-4000-8000-c40069ffc243",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -3637,6 +4323,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-073c7c3bf74a",
           "subjectName": "История Беларуси",
           "teacherExternalId": "00000000-0000-4000-8000-1b8aaffcdfc7",
+          "templateRef": "00000000-0000-4000-8000-12f0fc37591d",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -3650,6 +4337,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-a6da3da42698",
           "subjectName": "Русский язык",
           "teacherExternalId": "00000000-0000-4000-8000-3d1ee95c438f",
+          "templateRef": "00000000-0000-4000-8000-0d980427681a",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -3662,6 +4350,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-bc0f7f9e33e5",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-0132b72c7a53",
+          "templateRef": "00000000-0000-4000-8000-04c022dfc7c5",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -3675,6 +4364,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-78e8d4ba3ff6",
           "subjectName": "Физика",
           "teacherExternalId": "00000000-0000-4000-8000-41c29d6d68fa",
+          "templateRef": "00000000-0000-4000-8000-9039f236c809",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": [
@@ -3701,6 +4391,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-532fe26fffc8",
           "subjectName": "География",
           "teacherExternalId": "00000000-0000-4000-8000-0b0beb902f6c",
+          "templateRef": "00000000-0000-4000-8000-8a9742942eca",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -3728,6 +4419,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-0c22f4011058",
           "subjectName": "Беларуская мова",
           "teacherExternalId": "00000000-0000-4000-8000-5c04a33d5b7b",
+          "templateRef": "00000000-0000-4000-8000-34616cf67d0c",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -3755,6 +4447,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-bc0f7f9e33e5",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-0132b72c7a53",
+          "templateRef": "00000000-0000-4000-8000-04c022dfc7c5",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -3768,6 +4461,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-9ffadbcb6c66",
           "subjectName": "Английский язык",
           "teacherExternalId": "00000000-0000-4000-8000-dbfd10f90f2e",
+          "templateRef": "00000000-0000-4000-8000-69c38d2441b6",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -3795,6 +4489,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-ead74922e023",
           "subjectName": "Информатика",
           "teacherExternalId": "00000000-0000-4000-8000-5034414dc6e9",
+          "templateRef": "00000000-0000-4000-8000-4de93f447068",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -3822,6 +4517,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-d7dc9f2dc13d",
           "subjectName": "Химия",
           "teacherExternalId": "00000000-0000-4000-8000-9d8a4879b45c",
+          "templateRef": "00000000-0000-4000-8000-30fe427b28f1",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -3835,6 +4531,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-bc0f7f9e33e5",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-0132b72c7a53",
+          "templateRef": "00000000-0000-4000-8000-04c022dfc7c5",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -3847,6 +4544,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-9ffadbcb6c66",
           "subjectName": "Английский язык",
           "teacherExternalId": "00000000-0000-4000-8000-dbfd10f90f2e",
+          "templateRef": "00000000-0000-4000-8000-69c38d2441b6",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -3860,6 +4558,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-521207624c2f",
           "subjectName": "Биология",
           "teacherExternalId": "00000000-0000-4000-8000-ae5a334c612a",
+          "templateRef": "00000000-0000-4000-8000-6b7d4571bb61",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -3873,6 +4572,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-b788f8f67f5c",
           "subjectName": "Трудовое обучение",
           "teacherExternalId": "00000000-0000-4000-8000-5821b5c36595",
+          "templateRef": "00000000-0000-4000-8000-f67891a31b29",
           "hasAttachments": false,
           "marks": []
         },
@@ -3884,6 +4584,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-b788f8f67f5c",
           "subjectName": "Трудовое обучение",
           "teacherExternalId": "00000000-0000-4000-8000-5821b5c36595",
+          "templateRef": "00000000-0000-4000-8000-f67891a31b29",
           "hasAttachments": false,
           "marks": [
             {
@@ -3909,6 +4610,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-31539928a46c",
           "subjectName": "Физическая культура и здоровье",
           "teacherExternalId": "00000000-0000-4000-8000-77d5dcdda04a",
+          "templateRef": "00000000-0000-4000-8000-c40069ffc243",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -3921,6 +4623,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-9ffadbcb6c66",
           "subjectName": "Английский язык",
           "teacherExternalId": "00000000-0000-4000-8000-dbfd10f90f2e",
+          "templateRef": "00000000-0000-4000-8000-69c38d2441b6",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -3934,6 +4637,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-78e8d4ba3ff6",
           "subjectName": "Физика",
           "teacherExternalId": "00000000-0000-4000-8000-41c29d6d68fa",
+          "templateRef": "00000000-0000-4000-8000-9039f236c809",
           "homework": "Домашнее задание",
           "hasAttachments": true,
           "marks": [
@@ -3960,6 +4664,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-bc0f7f9e33e5",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-0132b72c7a53",
+          "templateRef": "00000000-0000-4000-8000-04c022dfc7c5",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -3989,6 +4694,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-31539928a46c",
           "subjectName": "Физическая культура и здоровье",
           "teacherExternalId": "00000000-0000-4000-8000-77d5dcdda04a",
+          "templateRef": "00000000-0000-4000-8000-c40069ffc243",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -4001,6 +4707,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-46d1ef9b667c",
           "subjectName": "Русская литература (литературное чтение)",
           "teacherExternalId": "00000000-0000-4000-8000-3d1ee95c438f",
+          "templateRef": "00000000-0000-4000-8000-5435778ac440",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -4014,6 +4721,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-0b85a354309d",
           "subjectName": "Всемирная история",
           "teacherExternalId": "00000000-0000-4000-8000-1b8aaffcdfc7",
+          "templateRef": "00000000-0000-4000-8000-857b1d93b4b9",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -4027,6 +4735,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-46d1ef9b667c",
           "subjectName": "Русская литература (литературное чтение)",
           "teacherExternalId": "00000000-0000-4000-8000-3d1ee95c438f",
+          "templateRef": "00000000-0000-4000-8000-5435778ac440",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -4054,6 +4763,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-a6da3da42698",
           "subjectName": "Русский язык",
           "teacherExternalId": "00000000-0000-4000-8000-3d1ee95c438f",
+          "templateRef": "00000000-0000-4000-8000-0d980427681a",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -4067,6 +4777,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-bc0f7f9e33e5",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-0132b72c7a53",
+          "templateRef": "00000000-0000-4000-8000-04c022dfc7c5",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -4080,6 +4791,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-521207624c2f",
           "subjectName": "Биология",
           "teacherExternalId": "00000000-0000-4000-8000-ae5a334c612a",
+          "templateRef": "00000000-0000-4000-8000-6b7d4571bb61",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -4093,6 +4805,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-0c22f4011058",
           "subjectName": "Беларуская мова",
           "teacherExternalId": "00000000-0000-4000-8000-5c04a33d5b7b",
+          "templateRef": "00000000-0000-4000-8000-34616cf67d0c",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -4106,6 +4819,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-2d176b4d7bb4",
           "subjectName": "Беларуская літаратура (літаратурнае чытанне)",
           "teacherExternalId": "00000000-0000-4000-8000-5c04a33d5b7b",
+          "templateRef": "00000000-0000-4000-8000-243569c9816f",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -4133,6 +4847,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-dc8f8b8adf47",
           "subjectName": "Искусство (отечественная и мировая художественная культура)",
           "teacherExternalId": "00000000-0000-4000-8000-3f98b08ca0d6",
+          "templateRef": "00000000-0000-4000-8000-db5100b7c957",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -4145,6 +4860,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-31539928a46c",
           "subjectName": "Физическая культура и здоровье",
           "teacherExternalId": "00000000-0000-4000-8000-77d5dcdda04a",
+          "templateRef": "00000000-0000-4000-8000-c40069ffc243",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -4157,6 +4873,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-073c7c3bf74a",
           "subjectName": "История Беларуси",
           "teacherExternalId": "00000000-0000-4000-8000-1b8aaffcdfc7",
+          "templateRef": "00000000-0000-4000-8000-12f0fc37591d",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -4184,6 +4901,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-a6da3da42698",
           "subjectName": "Русский язык",
           "teacherExternalId": "00000000-0000-4000-8000-3d1ee95c438f",
+          "templateRef": "00000000-0000-4000-8000-0d980427681a",
           "hasAttachments": false,
           "marks": []
         },
@@ -4195,6 +4913,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-bc0f7f9e33e5",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-0132b72c7a53",
+          "templateRef": "00000000-0000-4000-8000-04c022dfc7c5",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -4208,6 +4927,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-78e8d4ba3ff6",
           "subjectName": "Физика",
           "teacherExternalId": "00000000-0000-4000-8000-41c29d6d68fa",
+          "templateRef": "00000000-0000-4000-8000-9039f236c809",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -4235,6 +4955,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-532fe26fffc8",
           "subjectName": "География",
           "teacherExternalId": "00000000-0000-4000-8000-0b0beb902f6c",
+          "templateRef": "00000000-0000-4000-8000-8a9742942eca",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -4248,6 +4969,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-0c22f4011058",
           "subjectName": "Беларуская мова",
           "teacherExternalId": "00000000-0000-4000-8000-5c04a33d5b7b",
+          "templateRef": "00000000-0000-4000-8000-34616cf67d0c",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -4261,6 +4983,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-bc0f7f9e33e5",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-0132b72c7a53",
+          "templateRef": "00000000-0000-4000-8000-04c022dfc7c5",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -4274,6 +4997,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-9ffadbcb6c66",
           "subjectName": "Английский язык",
           "teacherExternalId": "00000000-0000-4000-8000-dbfd10f90f2e",
+          "templateRef": "00000000-0000-4000-8000-69c38d2441b6",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -4301,6 +5025,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-ead74922e023",
           "subjectName": "Информатика",
           "teacherExternalId": "00000000-0000-4000-8000-5034414dc6e9",
+          "templateRef": "00000000-0000-4000-8000-4de93f447068",
           "homework": "Домашнее задание",
           "hasAttachments": false,
           "marks": []
@@ -4313,6 +5038,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-d7dc9f2dc13d",
           "subjectName": "Химия",
           "teacherExternalId": "00000000-0000-4000-8000-9d8a4879b45c",
+          "templateRef": "00000000-0000-4000-8000-30fe427b28f1",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -4340,6 +5066,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-bc0f7f9e33e5",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-0132b72c7a53",
+          "templateRef": "00000000-0000-4000-8000-04c022dfc7c5",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -4353,6 +5080,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-9ffadbcb6c66",
           "subjectName": "Английский язык",
           "teacherExternalId": "00000000-0000-4000-8000-dbfd10f90f2e",
+          "templateRef": "00000000-0000-4000-8000-69c38d2441b6",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -4366,6 +5094,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-521207624c2f",
           "subjectName": "Биология",
           "teacherExternalId": "00000000-0000-4000-8000-ae5a334c612a",
+          "templateRef": "00000000-0000-4000-8000-6b7d4571bb61",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -4379,6 +5108,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-b788f8f67f5c",
           "subjectName": "Трудовое обучение",
           "teacherExternalId": "00000000-0000-4000-8000-5821b5c36595",
+          "templateRef": "00000000-0000-4000-8000-f67891a31b29",
           "hasAttachments": false,
           "marks": []
         },
@@ -4390,6 +5120,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-b788f8f67f5c",
           "subjectName": "Трудовое обучение",
           "teacherExternalId": "00000000-0000-4000-8000-5821b5c36595",
+          "templateRef": "00000000-0000-4000-8000-f67891a31b29",
           "hasAttachments": false,
           "marks": [
             {
@@ -4415,6 +5146,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-31539928a46c",
           "subjectName": "Физическая культура и здоровье",
           "teacherExternalId": "00000000-0000-4000-8000-77d5dcdda04a",
+          "templateRef": "00000000-0000-4000-8000-c40069ffc243",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": [
@@ -4441,6 +5173,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-9ffadbcb6c66",
           "subjectName": "Английский язык",
           "teacherExternalId": "00000000-0000-4000-8000-dbfd10f90f2e",
+          "templateRef": "00000000-0000-4000-8000-69c38d2441b6",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -4468,6 +5201,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-78e8d4ba3ff6",
           "subjectName": "Физика",
           "teacherExternalId": "00000000-0000-4000-8000-41c29d6d68fa",
+          "templateRef": "00000000-0000-4000-8000-9039f236c809",
           "homework": "Домашнее задание",
           "hasAttachments": false,
           "marks": []
@@ -4480,6 +5214,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-bc0f7f9e33e5",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-0132b72c7a53",
+          "templateRef": "00000000-0000-4000-8000-04c022dfc7c5",
           "hasAttachments": false,
           "marks": []
         },
@@ -4491,6 +5226,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-31539928a46c",
           "subjectName": "Физическая культура и здоровье",
           "teacherExternalId": "00000000-0000-4000-8000-77d5dcdda04a",
+          "templateRef": "00000000-0000-4000-8000-c40069ffc243",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -4503,6 +5239,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-46d1ef9b667c",
           "subjectName": "Русская литература (литературное чтение)",
           "teacherExternalId": "00000000-0000-4000-8000-3d1ee95c438f",
+          "templateRef": "00000000-0000-4000-8000-5435778ac440",
           "hasAttachments": false,
           "marks": []
         },
@@ -4514,6 +5251,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-0b85a354309d",
           "subjectName": "Всемирная история",
           "teacherExternalId": "00000000-0000-4000-8000-1b8aaffcdfc7",
+          "templateRef": "00000000-0000-4000-8000-857b1d93b4b9",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -4527,6 +5265,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-46d1ef9b667c",
           "subjectName": "Русская литература (литературное чтение)",
           "teacherExternalId": "00000000-0000-4000-8000-3d1ee95c438f",
+          "templateRef": "00000000-0000-4000-8000-5435778ac440",
           "hasAttachments": false,
           "marks": []
         },
@@ -4538,6 +5277,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-a6da3da42698",
           "subjectName": "Русский язык",
           "teacherExternalId": "00000000-0000-4000-8000-3d1ee95c438f",
+          "templateRef": "00000000-0000-4000-8000-0d980427681a",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -4552,6 +5292,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-bc0f7f9e33e5",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-0132b72c7a53",
+          "templateRef": "00000000-0000-4000-8000-04c022dfc7c5",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -4564,6 +5305,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-521207624c2f",
           "subjectName": "Биология",
           "teacherExternalId": "00000000-0000-4000-8000-ae5a334c612a",
+          "templateRef": "00000000-0000-4000-8000-6b7d4571bb61",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -4591,6 +5333,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-0c22f4011058",
           "subjectName": "Беларуская мова",
           "teacherExternalId": "00000000-0000-4000-8000-5c04a33d5b7b",
+          "templateRef": "00000000-0000-4000-8000-34616cf67d0c",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -4604,6 +5347,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-2d176b4d7bb4",
           "subjectName": "Беларуская літаратура (літаратурнае чытанне)",
           "teacherExternalId": "00000000-0000-4000-8000-5c04a33d5b7b",
+          "templateRef": "00000000-0000-4000-8000-243569c9816f",
           "hasAttachments": false,
           "marks": []
         },
@@ -4615,6 +5359,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-dc8f8b8adf47",
           "subjectName": "Искусство (отечественная и мировая художественная культура)",
           "teacherExternalId": "00000000-0000-4000-8000-3f98b08ca0d6",
+          "templateRef": "00000000-0000-4000-8000-db5100b7c957",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -4628,6 +5373,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-31539928a46c",
           "subjectName": "Физическая культура и здоровье",
           "teacherExternalId": "00000000-0000-4000-8000-77d5dcdda04a",
+          "templateRef": "00000000-0000-4000-8000-c40069ffc243",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -4640,6 +5386,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-073c7c3bf74a",
           "subjectName": "История Беларуси",
           "teacherExternalId": "00000000-0000-4000-8000-1b8aaffcdfc7",
+          "templateRef": "00000000-0000-4000-8000-12f0fc37591d",
           "hasAttachments": false,
           "marks": []
         },
@@ -4651,6 +5398,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-a6da3da42698",
           "subjectName": "Русский язык",
           "teacherExternalId": "00000000-0000-4000-8000-3d1ee95c438f",
+          "templateRef": "00000000-0000-4000-8000-0d980427681a",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -4663,6 +5411,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-bc0f7f9e33e5",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-0132b72c7a53",
+          "templateRef": "00000000-0000-4000-8000-04c022dfc7c5",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -4676,6 +5425,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-78e8d4ba3ff6",
           "subjectName": "Физика",
           "teacherExternalId": "00000000-0000-4000-8000-41c29d6d68fa",
+          "templateRef": "00000000-0000-4000-8000-9039f236c809",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -4689,6 +5439,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-532fe26fffc8",
           "subjectName": "География",
           "teacherExternalId": "00000000-0000-4000-8000-0b0beb902f6c",
+          "templateRef": "00000000-0000-4000-8000-8a9742942eca",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -4702,6 +5453,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-0c22f4011058",
           "subjectName": "Беларуская мова",
           "teacherExternalId": "00000000-0000-4000-8000-5c04a33d5b7b",
+          "templateRef": "00000000-0000-4000-8000-34616cf67d0c",
           "hasAttachments": false,
           "marks": []
         },
@@ -4713,6 +5465,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-bc0f7f9e33e5",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-0132b72c7a53",
+          "templateRef": "00000000-0000-4000-8000-04c022dfc7c5",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -4725,6 +5478,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-9ffadbcb6c66",
           "subjectName": "Английский язык",
           "teacherExternalId": "00000000-0000-4000-8000-dbfd10f90f2e",
+          "templateRef": "00000000-0000-4000-8000-69c38d2441b6",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -4738,6 +5492,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-ead74922e023",
           "subjectName": "Информатика",
           "teacherExternalId": "00000000-0000-4000-8000-5034414dc6e9",
+          "templateRef": "00000000-0000-4000-8000-4de93f447068",
           "hasAttachments": false,
           "marks": []
         },
@@ -4749,6 +5504,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-d7dc9f2dc13d",
           "subjectName": "Химия",
           "teacherExternalId": "00000000-0000-4000-8000-9d8a4879b45c",
+          "templateRef": "00000000-0000-4000-8000-30fe427b28f1",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -4762,6 +5518,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-bc0f7f9e33e5",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-0132b72c7a53",
+          "templateRef": "00000000-0000-4000-8000-04c022dfc7c5",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -4774,6 +5531,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-9ffadbcb6c66",
           "subjectName": "Английский язык",
           "teacherExternalId": "00000000-0000-4000-8000-dbfd10f90f2e",
+          "templateRef": "00000000-0000-4000-8000-69c38d2441b6",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -4787,6 +5545,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-521207624c2f",
           "subjectName": "Биология",
           "teacherExternalId": "00000000-0000-4000-8000-ae5a334c612a",
+          "templateRef": "00000000-0000-4000-8000-6b7d4571bb61",
           "topic": "Тема урока",
           "homework": "Домашнее задание",
           "hasAttachments": false,
@@ -4800,6 +5559,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-b788f8f67f5c",
           "subjectName": "Трудовое обучение",
           "teacherExternalId": "00000000-0000-4000-8000-5821b5c36595",
+          "templateRef": "00000000-0000-4000-8000-f67891a31b29",
           "hasAttachments": false,
           "marks": []
         },
@@ -4811,6 +5571,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-b788f8f67f5c",
           "subjectName": "Трудовое обучение",
           "teacherExternalId": "00000000-0000-4000-8000-5821b5c36595",
+          "templateRef": "00000000-0000-4000-8000-f67891a31b29",
           "hasAttachments": false,
           "marks": []
         },
@@ -4822,6 +5583,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-31539928a46c",
           "subjectName": "Физическая культура и здоровье",
           "teacherExternalId": "00000000-0000-4000-8000-77d5dcdda04a",
+          "templateRef": "00000000-0000-4000-8000-c40069ffc243",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -4834,6 +5596,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-9ffadbcb6c66",
           "subjectName": "Английский язык",
           "teacherExternalId": "00000000-0000-4000-8000-dbfd10f90f2e",
+          "templateRef": "00000000-0000-4000-8000-69c38d2441b6",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -4846,6 +5609,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-78e8d4ba3ff6",
           "subjectName": "Физика",
           "teacherExternalId": "00000000-0000-4000-8000-41c29d6d68fa",
+          "templateRef": "00000000-0000-4000-8000-9039f236c809",
           "homework": "Домашнее задание",
           "hasAttachments": false,
           "marks": []
@@ -4858,6 +5622,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-bc0f7f9e33e5",
           "subjectName": "Математика",
           "teacherExternalId": "00000000-0000-4000-8000-0132b72c7a53",
+          "templateRef": "00000000-0000-4000-8000-04c022dfc7c5",
           "homework": "Домашнее задание",
           "hasAttachments": false,
           "marks": []
@@ -4870,6 +5635,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-31539928a46c",
           "subjectName": "Физическая культура и здоровье",
           "teacherExternalId": "00000000-0000-4000-8000-77d5dcdda04a",
+          "templateRef": "00000000-0000-4000-8000-c40069ffc243",
           "topic": "Тема урока",
           "hasAttachments": false,
           "marks": []
@@ -4882,6 +5648,7 @@
           "subjectExternalId": "00000000-0000-4000-8000-46d1ef9b667c",
           "subjectName": "Русская литература (литературное чтение)",
           "teacherExternalId": "00000000-0000-4000-8000-3d1ee95c438f",
+          "templateRef": "00000000-0000-4000-8000-5435778ac440",
           "homework": "Домашнее задание",
           "hasAttachments": false,
           "marks": []
@@ -4894,12 +5661,466 @@
           "subjectExternalId": "00000000-0000-4000-8000-0b85a354309d",
           "subjectName": "Всемирная история",
           "teacherExternalId": "00000000-0000-4000-8000-1b8aaffcdfc7",
+          "templateRef": "00000000-0000-4000-8000-857b1d93b4b9",
           "homework": "Домашнее задание",
           "hasAttachments": false,
           "marks": []
         }
       ],
-      "finalMarks": []
+      "finalMarks": [],
+      "bellSchedules": [
+        {
+          "externalId": "00000000-0000-4000-8000-3cf8a10af576",
+          "label": "[text]",
+          "days": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "periods": [
+            {
+              "slot": 1,
+              "start": "08:00",
+              "end": "08:45"
+            },
+            {
+              "slot": 2,
+              "start": "08:55",
+              "end": "09:40"
+            },
+            {
+              "slot": 3,
+              "start": "09:55",
+              "end": "10:40"
+            },
+            {
+              "slot": 4,
+              "start": "10:55",
+              "end": "11:40"
+            },
+            {
+              "slot": 5,
+              "start": "11:55",
+              "end": "12:40"
+            },
+            {
+              "slot": 6,
+              "start": "12:50",
+              "end": "13:35"
+            },
+            {
+              "slot": 7,
+              "start": "13:45",
+              "end": "14:30"
+            }
+          ]
+        }
+      ],
+      "weekTemplate": {
+        "termExternalId": "00000000-0000-4000-8000-6ee6581c0838",
+        "cycleWeeks": 1,
+        "entries": [
+          {
+            "cycleWeek": 1,
+            "weekday": 1,
+            "slot": 1,
+            "start": "08:00",
+            "end": "08:45",
+            "subjectExternalId": "00000000-0000-4000-8000-46d1ef9b667c",
+            "subjectName": "Русская литература (литературное чтение)",
+            "room": "220",
+            "teacherExternalId": "00000000-0000-4000-8000-3d1ee95c438f",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-5435778ac440"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 1,
+            "slot": 2,
+            "start": "08:55",
+            "end": "09:40",
+            "subjectExternalId": "00000000-0000-4000-8000-a6da3da42698",
+            "subjectName": "Русский язык",
+            "room": "221",
+            "teacherExternalId": "00000000-0000-4000-8000-3d1ee95c438f",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-0d980427681a"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 1,
+            "slot": 3,
+            "start": "09:55",
+            "end": "10:40",
+            "subjectExternalId": "00000000-0000-4000-8000-bc0f7f9e33e5",
+            "subjectName": "Математика",
+            "room": "222",
+            "teacherExternalId": "00000000-0000-4000-8000-0132b72c7a53",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-04c022dfc7c5"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 1,
+            "slot": 4,
+            "start": "10:55",
+            "end": "11:40",
+            "subjectExternalId": "00000000-0000-4000-8000-521207624c2f",
+            "subjectName": "Биология",
+            "room": "223",
+            "teacherExternalId": "00000000-0000-4000-8000-ae5a334c612a",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-6b7d4571bb61"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 1,
+            "slot": 5,
+            "start": "11:55",
+            "end": "12:40",
+            "subjectExternalId": "00000000-0000-4000-8000-0c22f4011058",
+            "subjectName": "Беларуская мова",
+            "room": "224",
+            "teacherExternalId": "00000000-0000-4000-8000-5c04a33d5b7b",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-34616cf67d0c"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 1,
+            "slot": 6,
+            "start": "12:50",
+            "end": "13:35",
+            "subjectExternalId": "00000000-0000-4000-8000-2d176b4d7bb4",
+            "subjectName": "Беларуская літаратура (літаратурнае чытанне)",
+            "room": "225",
+            "teacherExternalId": "00000000-0000-4000-8000-5c04a33d5b7b",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-243569c9816f"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 1,
+            "slot": 7,
+            "start": "13:45",
+            "end": "14:30",
+            "subjectExternalId": "00000000-0000-4000-8000-dc8f8b8adf47",
+            "subjectName": "Искусство (отечественная и мировая художественная культура)",
+            "room": "226",
+            "teacherExternalId": "00000000-0000-4000-8000-3f98b08ca0d6",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-db5100b7c957"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 2,
+            "slot": 1,
+            "start": "08:00",
+            "end": "08:45",
+            "subjectExternalId": "00000000-0000-4000-8000-31539928a46c",
+            "subjectName": "Физическая культура и здоровье",
+            "room": "227",
+            "teacherExternalId": "00000000-0000-4000-8000-77d5dcdda04a",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-c40069ffc243"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 2,
+            "slot": 2,
+            "start": "08:55",
+            "end": "09:40",
+            "subjectExternalId": "00000000-0000-4000-8000-073c7c3bf74a",
+            "subjectName": "История Беларуси",
+            "room": "228",
+            "teacherExternalId": "00000000-0000-4000-8000-1b8aaffcdfc7",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-12f0fc37591d"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 2,
+            "slot": 3,
+            "start": "09:55",
+            "end": "10:40",
+            "subjectExternalId": "00000000-0000-4000-8000-a6da3da42698",
+            "subjectName": "Русский язык",
+            "room": "221",
+            "teacherExternalId": "00000000-0000-4000-8000-3d1ee95c438f",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-0d980427681a"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 2,
+            "slot": 4,
+            "start": "10:55",
+            "end": "11:40",
+            "subjectExternalId": "00000000-0000-4000-8000-bc0f7f9e33e5",
+            "subjectName": "Математика",
+            "room": "222",
+            "teacherExternalId": "00000000-0000-4000-8000-0132b72c7a53",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-04c022dfc7c5"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 2,
+            "slot": 5,
+            "start": "11:55",
+            "end": "12:40",
+            "subjectExternalId": "00000000-0000-4000-8000-78e8d4ba3ff6",
+            "subjectName": "Физика",
+            "room": "229",
+            "teacherExternalId": "00000000-0000-4000-8000-41c29d6d68fa",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-9039f236c809"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 2,
+            "slot": 6,
+            "start": "12:50",
+            "end": "13:35",
+            "subjectExternalId": "00000000-0000-4000-8000-532fe26fffc8",
+            "subjectName": "География",
+            "room": "230",
+            "teacherExternalId": "00000000-0000-4000-8000-0b0beb902f6c",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-8a9742942eca"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 3,
+            "slot": 2,
+            "start": "08:55",
+            "end": "09:40",
+            "subjectExternalId": "00000000-0000-4000-8000-0c22f4011058",
+            "subjectName": "Беларуская мова",
+            "room": "224",
+            "teacherExternalId": "00000000-0000-4000-8000-5c04a33d5b7b",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-34616cf67d0c"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 3,
+            "slot": 3,
+            "start": "09:55",
+            "end": "10:40",
+            "subjectExternalId": "00000000-0000-4000-8000-bc0f7f9e33e5",
+            "subjectName": "Математика",
+            "room": "222",
+            "teacherExternalId": "00000000-0000-4000-8000-0132b72c7a53",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-04c022dfc7c5"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 3,
+            "slot": 4,
+            "start": "10:55",
+            "end": "11:40",
+            "subjectExternalId": "00000000-0000-4000-8000-9ffadbcb6c66",
+            "subjectName": "Английский язык",
+            "groupLabel": "2-я подгруппа",
+            "room": "231",
+            "teacherExternalId": "00000000-0000-4000-8000-dbfd10f90f2e",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-69c38d2441b6"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 3,
+            "slot": 5,
+            "start": "11:55",
+            "end": "12:40",
+            "subjectExternalId": "00000000-0000-4000-8000-ead74922e023",
+            "subjectName": "Информатика",
+            "groupLabel": "1-я подгруппа",
+            "room": "233",
+            "teacherExternalId": "00000000-0000-4000-8000-5034414dc6e9",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-4de93f447068"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 3,
+            "slot": 6,
+            "start": "12:50",
+            "end": "13:35",
+            "subjectExternalId": "00000000-0000-4000-8000-d7dc9f2dc13d",
+            "subjectName": "Химия",
+            "room": "235",
+            "teacherExternalId": "00000000-0000-4000-8000-9d8a4879b45c",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-30fe427b28f1"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 4,
+            "slot": 2,
+            "start": "08:55",
+            "end": "09:40",
+            "subjectExternalId": "00000000-0000-4000-8000-bc0f7f9e33e5",
+            "subjectName": "Математика",
+            "room": "222",
+            "teacherExternalId": "00000000-0000-4000-8000-0132b72c7a53",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-04c022dfc7c5"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 4,
+            "slot": 3,
+            "start": "09:55",
+            "end": "10:40",
+            "subjectExternalId": "00000000-0000-4000-8000-9ffadbcb6c66",
+            "subjectName": "Английский язык",
+            "groupLabel": "2-я подгруппа",
+            "room": "231",
+            "teacherExternalId": "00000000-0000-4000-8000-dbfd10f90f2e",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-69c38d2441b6"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 4,
+            "slot": 4,
+            "start": "10:55",
+            "end": "11:40",
+            "subjectExternalId": "00000000-0000-4000-8000-521207624c2f",
+            "subjectName": "Биология",
+            "room": "223",
+            "teacherExternalId": "00000000-0000-4000-8000-ae5a334c612a",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-6b7d4571bb61"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 4,
+            "slot": 5,
+            "start": "11:55",
+            "end": "12:40",
+            "subjectExternalId": "00000000-0000-4000-8000-b788f8f67f5c",
+            "subjectName": "Трудовое обучение",
+            "groupLabel": "1-я подгруппа (девочки)",
+            "room": "236",
+            "teacherExternalId": "00000000-0000-4000-8000-5821b5c36595",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-f67891a31b29"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 4,
+            "slot": 6,
+            "start": "12:50",
+            "end": "13:35",
+            "subjectExternalId": "00000000-0000-4000-8000-b788f8f67f5c",
+            "subjectName": "Трудовое обучение",
+            "groupLabel": "1-я подгруппа (девочки)",
+            "room": "236",
+            "teacherExternalId": "00000000-0000-4000-8000-5821b5c36595",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-f67891a31b29"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 4,
+            "slot": 7,
+            "start": "13:45",
+            "end": "14:30",
+            "subjectExternalId": "00000000-0000-4000-8000-31539928a46c",
+            "subjectName": "Физическая культура и здоровье",
+            "room": "227",
+            "teacherExternalId": "00000000-0000-4000-8000-77d5dcdda04a",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-c40069ffc243"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 5,
+            "slot": 2,
+            "start": "08:55",
+            "end": "09:40",
+            "subjectExternalId": "00000000-0000-4000-8000-9ffadbcb6c66",
+            "subjectName": "Английский язык",
+            "groupLabel": "2-я подгруппа",
+            "room": "231",
+            "teacherExternalId": "00000000-0000-4000-8000-dbfd10f90f2e",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-69c38d2441b6"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 5,
+            "slot": 3,
+            "start": "09:55",
+            "end": "10:40",
+            "subjectExternalId": "00000000-0000-4000-8000-78e8d4ba3ff6",
+            "subjectName": "Физика",
+            "room": "229",
+            "teacherExternalId": "00000000-0000-4000-8000-41c29d6d68fa",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-9039f236c809"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 5,
+            "slot": 4,
+            "start": "10:55",
+            "end": "11:40",
+            "subjectExternalId": "00000000-0000-4000-8000-bc0f7f9e33e5",
+            "subjectName": "Математика",
+            "room": "222",
+            "teacherExternalId": "00000000-0000-4000-8000-0132b72c7a53",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-04c022dfc7c5"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 5,
+            "slot": 5,
+            "start": "11:55",
+            "end": "12:40",
+            "subjectExternalId": "00000000-0000-4000-8000-31539928a46c",
+            "subjectName": "Физическая культура и здоровье",
+            "room": "227",
+            "teacherExternalId": "00000000-0000-4000-8000-77d5dcdda04a",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-c40069ffc243"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 5,
+            "slot": 6,
+            "start": "12:50",
+            "end": "13:35",
+            "subjectExternalId": "00000000-0000-4000-8000-46d1ef9b667c",
+            "subjectName": "Русская литература (литературное чтение)",
+            "room": "220",
+            "teacherExternalId": "00000000-0000-4000-8000-3d1ee95c438f",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-5435778ac440"
+          },
+          {
+            "cycleWeek": 1,
+            "weekday": 5,
+            "slot": 7,
+            "start": "13:45",
+            "end": "14:30",
+            "subjectExternalId": "00000000-0000-4000-8000-0b85a354309d",
+            "subjectName": "Всемирная история",
+            "room": "238",
+            "teacherExternalId": "00000000-0000-4000-8000-1b8aaffcdfc7",
+            "teacherName": "[text]",
+            "templateRef": "00000000-0000-4000-8000-857b1d93b4b9"
+          }
+        ]
+      }
     }
   }
 }

@@ -1,0 +1,245 @@
+{
+  "term": "q1",
+  "week": [
+    {
+      "day": 1,
+      "n": 1,
+      "tpl": "mt0",
+      "subject": {
+        "code": "s1",
+        "title": "Обучение грамоте"
+      },
+      "group": null,
+      "room": "105",
+      "teacher": {
+        "id": "T-3",
+        "name": "Миронова Анна Сергеевна"
+      }
+    },
+    {
+      "day": 2,
+      "n": 1,
+      "tpl": "mt0",
+      "subject": {
+        "code": "s1",
+        "title": "Обучение грамоте"
+      },
+      "group": null,
+      "room": "105",
+      "teacher": {
+        "id": "T-3",
+        "name": "Миронова Анна Сергеевна"
+      }
+    },
+    {
+      "day": 3,
+      "n": 1,
+      "tpl": "mt0",
+      "subject": {
+        "code": "s1",
+        "title": "Обучение грамоте"
+      },
+      "group": null,
+      "room": "105",
+      "teacher": {
+        "id": "T-3",
+        "name": "Миронова Анна Сергеевна"
+      }
+    },
+    {
+      "day": 4,
+      "n": 1,
+      "tpl": "mt0",
+      "subject": {
+        "code": "s1",
+        "title": "Обучение грамоте"
+      },
+      "group": null,
+      "room": "105",
+      "teacher": {
+        "id": "T-3",
+        "name": "Миронова Анна Сергеевна"
+      }
+    },
+    {
+      "day": 5,
+      "n": 1,
+      "tpl": "mt0",
+      "subject": {
+        "code": "s1",
+        "title": "Обучение грамоте"
+      },
+      "group": null,
+      "room": "105",
+      "teacher": {
+        "id": "T-3",
+        "name": "Миронова Анна Сергеевна"
+      }
+    },
+    {
+      "day": 1,
+      "n": 2,
+      "tpl": "mt1",
+      "subject": {
+        "code": "s2",
+        "title": "Математика"
+      },
+      "group": null,
+      "room": "105",
+      "teacher": {
+        "id": "T-3",
+        "name": "Миронова Анна Сергеевна"
+      }
+    },
+    {
+      "day": 2,
+      "n": 2,
+      "tpl": "mt1",
+      "subject": {
+        "code": "s2",
+        "title": "Математика"
+      },
+      "group": null,
+      "room": "105",
+      "teacher": {
+        "id": "T-3",
+        "name": "Миронова Анна Сергеевна"
+      }
+    },
+    {
+      "day": 3,
+      "n": 2,
+      "tpl": "mt1",
+      "subject": {
+        "code": "s2",
+        "title": "Математика"
+      },
+      "group": null,
+      "room": "105",
+      "teacher": {
+        "id": "T-3",
+        "name": "Миронова Анна Сергеевна"
+      }
+    },
+    {
+      "day": 4,
+      "n": 2,
+      "tpl": "mt1",
+      "subject": {
+        "code": "s2",
+        "title": "Математика"
+      },
+      "group": null,
+      "room": "105",
+      "teacher": {
+        "id": "T-3",
+        "name": "Миронова Анна Сергеевна"
+      }
+    },
+    {
+      "day": 2,
+      "n": 3,
+      "tpl": "mt2",
+      "subject": {
+        "code": "s3",
+        "title": "Чалавек і свет"
+      },
+      "group": null,
+      "room": "105",
+      "teacher": {
+        "id": "T-3",
+        "name": "Миронова Анна Сергеевна"
+      }
+    },
+    {
+      "day": 4,
+      "n": 3,
+      "tpl": "mt3",
+      "subject": {
+        "code": "s4",
+        "title": "Белорусский язык"
+      },
+      "group": null,
+      "room": "105",
+      "teacher": {
+        "id": "T-3",
+        "name": "Миронова Анна Сергеевна"
+      }
+    },
+    {
+      "day": 1,
+      "n": 3,
+      "tpl": "mt4",
+      "subject": {
+        "code": "s5",
+        "title": "Изобразительное искусство"
+      },
+      "group": null,
+      "room": "105",
+      "teacher": {
+        "id": "T-3",
+        "name": "Миронова Анна Сергеевна"
+      }
+    },
+    {
+      "day": 3,
+      "n": 3,
+      "tpl": "mt5",
+      "subject": {
+        "code": "s6",
+        "title": "Музыка"
+      },
+      "group": null,
+      "room": "112",
+      "teacher": {
+        "id": "T-2",
+        "name": "Кравец Лилия Викторовна"
+      }
+    },
+    {
+      "day": 2,
+      "n": 4,
+      "tpl": "mt6",
+      "subject": {
+        "code": "s7",
+        "title": "Физическая культура"
+      },
+      "group": null,
+      "room": "спортзал",
+      "teacher": {
+        "id": "T-1",
+        "name": "Ермаков Виталий Иванович"
+      }
+    },
+    {
+      "day": 5,
+      "n": 2,
+      "tpl": "mt6",
+      "subject": {
+        "code": "s7",
+        "title": "Физическая культура"
+      },
+      "group": null,
+      "room": "спортзал",
+      "teacher": {
+        "id": "T-1",
+        "name": "Ермаков Виталий Иванович"
+      }
+    },
+    {
+      "day": 5,
+      "n": 3,
+      "tpl": "mt7",
+      "subject": {
+        "code": "s8",
+        "title": "Трудовое обучение"
+      },
+      "group": null,
+      "room": "105",
+      "teacher": {
+        "id": "T-3",
+        "name": "Миронова Анна Сергеевна"
+      }
+    }
+  ]
+}

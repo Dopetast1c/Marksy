@@ -21,5 +21,13 @@
   "GET /api/v1/education/diary/schools/00000000-0000-4000-8000-2326a58a04b1/classes/00000000-0000-4000-8000-7d0ed373a01f/students/00000000-0000-4000-8000-53f0dd727676/lessons?week_activity_uuid=00000000-0000-4000-8000-d69747619bcf": "lessons-2-w6",
   "GET /api/v1/education/diary/schools/00000000-0000-4000-8000-2326a58a04b1/classes/00000000-0000-4000-8000-7d0ed373a01f/students/00000000-0000-4000-8000-53f0dd727676/lessons?week_activity_uuid=00000000-0000-4000-8000-f78da4d98e2f": "lessons-2-w7",
   "GET /api/v1/education/diary/schools/00000000-0000-4000-8000-2326a58a04b1/classes/00000000-0000-4000-8000-7d0ed373a01f/students/00000000-0000-4000-8000-53f0dd727676/lessons?week_activity_uuid=00000000-0000-4000-8000-83317fbc6329": "lessons-2-w8",
-  "GET /api/v1/education/diary/schools/00000000-0000-4000-8000-2326a58a04b1/classes/00000000-0000-4000-8000-7d0ed373a01f/students/00000000-0000-4000-8000-53f0dd727676/final/whole": "final-2"
+  "GET /api/v1/education/diary/schools/00000000-0000-4000-8000-2326a58a04b1/classes/00000000-0000-4000-8000-7d0ed373a01f/students/00000000-0000-4000-8000-53f0dd727676/final/whole": "final-2",
+  "GET /api/v1/education/diary/schools/00000000-0000-4000-8000-2326a58a04b1/students/00000000-0000-4000-8000-455161283970/classes/00000000-0000-4000-8000-24bf61ed606f/subjects": "student_subjects-1",
+  "GET /api/v1/education/diary/schools/00000000-0000-4000-8000-2326a58a04b1/classes/00000000-0000-4000-8000-24bf61ed606f/timetables/whole": "timetable-1",
+  "GET /api/v1/education/planning/classes/00000000-0000-4000-8000-24bf61ed606f/educational_subjects": "planning-1",
+  "GET /api/v1/education/diary/schools/00000000-0000-4000-8000-2326a58a04b1/students/00000000-0000-4000-8000-53f0dd727676/classes/00000000-0000-4000-8000-7d0ed373a01f/subjects": "student_subjects-2",
+  "GET /api/v1/education/diary/schools/00000000-0000-4000-8000-2326a58a04b1/classes/00000000-0000-4000-8000-7d0ed373a01f/timetables/whole": "timetable-2",
+  "GET /api/v1/education/planning/classes/00000000-0000-4000-8000-7d0ed373a01f/educational_subjects": "planning-2",
+  "GET /api/v1/education/diary/schools/00000000-0000-4000-8000-2326a58a04b1/bells/whole": "bells-1",
+  "GET /api/v1/institution/schools/00000000-0000-4000-8000-2326a58a04b1/premises": "premises-1"
 }

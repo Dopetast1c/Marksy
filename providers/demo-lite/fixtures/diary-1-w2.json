@@ -1,0 +1,254 @@
+{
+  "week": "2026-10-12",
+  "days": [
+    {
+      "date": "2026-10-12",
+      "lessons": [
+        {
+          "uid": "L-m0-2026-10-12",
+          "n": 1,
+          "starts": "08:30",
+          "subject": {
+            "code": "s1",
+            "title": "Обучение грамоте"
+          },
+          "topic": "Буква М",
+          "homework": "Прописи с. 12, строки 1–3",
+          "kind": null,
+          "tpl": "mt0",
+          "marks": []
+        },
+        {
+          "uid": "L-m1-2026-10-12",
+          "n": 2,
+          "starts": "09:20",
+          "subject": {
+            "code": "s2",
+            "title": "Математика"
+          },
+          "topic": "Число 6",
+          "homework": "Тетрадь с. 9, № 2",
+          "kind": null,
+          "tpl": "mt1",
+          "marks": []
+        },
+        {
+          "uid": "L-m4-2026-10-12",
+          "n": 3,
+          "starts": "10:15",
+          "subject": {
+            "code": "s5",
+            "title": "Изобразительное искусство"
+          },
+          "topic": "Осенний лист",
+          "homework": null,
+          "kind": null,
+          "tpl": "mt4",
+          "marks": []
+        }
+      ]
+    },
+    {
+      "date": "2026-10-13",
+      "lessons": [
+        {
+          "uid": "L-m0-2026-10-13",
+          "n": 1,
+          "starts": "08:30",
+          "subject": {
+            "code": "s1",
+            "title": "Обучение грамоте"
+          },
+          "topic": "Буква Н",
+          "homework": "Прописи с. 12, строки 1–3",
+          "kind": null,
+          "tpl": "mt0",
+          "marks": []
+        },
+        {
+          "uid": "L-m1-2026-10-13",
+          "n": 2,
+          "starts": "09:20",
+          "subject": {
+            "code": "s2",
+            "title": "Математика"
+          },
+          "topic": "Сравнение чисел",
+          "homework": "Тетрадь с. 9, № 2",
+          "kind": null,
+          "tpl": "mt1",
+          "marks": []
+        },
+        {
+          "uid": "L-m2-2026-10-13",
+          "n": 3,
+          "starts": "10:15",
+          "subject": {
+            "code": "s3",
+            "title": "Чалавек і свет"
+          },
+          "topic": "Восень",
+          "homework": null,
+          "kind": null,
+          "tpl": "mt2",
+          "marks": []
+        },
+        {
+          "uid": "L-m6-2026-10-13",
+          "n": 4,
+          "starts": "11:10",
+          "subject": {
+            "code": "s7",
+            "title": "Физическая культура"
+          },
+          "topic": "Игры на свежем воздухе",
+          "homework": null,
+          "kind": null,
+          "tpl": "mt6",
+          "marks": []
+        }
+      ]
+    },
+    {
+      "date": "2026-10-14",
+      "lessons": [
+        {
+          "uid": "L-m0-2026-10-14",
+          "n": 1,
+          "starts": "08:30",
+          "subject": {
+            "code": "s1",
+            "title": "Обучение грамоте"
+          },
+          "topic": "Буква Н",
+          "homework": "Прописи с. 12, строки 1–3",
+          "kind": null,
+          "tpl": "mt0",
+          "marks": []
+        },
+        {
+          "uid": "L-m1-2026-10-14",
+          "n": 2,
+          "starts": "09:20",
+          "subject": {
+            "code": "s2",
+            "title": "Математика"
+          },
+          "topic": "Сравнение чисел",
+          "homework": "Тетрадь с. 9, № 2",
+          "kind": null,
+          "tpl": "mt1",
+          "marks": []
+        },
+        {
+          "uid": "L-m5-2026-10-14",
+          "n": 3,
+          "starts": "10:15",
+          "subject": {
+            "code": "s6",
+            "title": "Музыка"
+          },
+          "topic": "Песня «Осень»",
+          "homework": null,
+          "kind": null,
+          "tpl": "mt5",
+          "marks": []
+        }
+      ]
+    },
+    {
+      "date": "2026-10-15",
+      "lessons": [
+        {
+          "uid": "L-m0-2026-10-15",
+          "n": 1,
+          "starts": "08:30",
+          "subject": {
+            "code": "s1",
+            "title": "Обучение грамоте"
+          },
+          "topic": "Буква Н",
+          "homework": "Прописи с. 12, строки 1–3",
+          "kind": null,
+          "tpl": "mt0",
+          "marks": []
+        },
+        {
+          "uid": "L-m1-2026-10-15",
+          "n": 2,
+          "starts": "09:20",
+          "subject": {
+            "code": "s2",
+            "title": "Математика"
+          },
+          "topic": "Сравнение чисел",
+          "homework": "Тетрадь с. 9, № 2",
+          "kind": null,
+          "tpl": "mt1",
+          "marks": []
+        },
+        {
+          "uid": "L-m3-2026-10-15",
+          "n": 3,
+          "starts": "10:15",
+          "subject": {
+            "code": "s4",
+            "title": "Белорусский язык"
+          },
+          "topic": "Гукі і літары",
+          "homework": "Паўтарыць літары",
+          "kind": null,
+          "tpl": "mt3",
+          "marks": []
+        }
+      ]
+    },
+    {
+      "date": "2026-10-16",
+      "lessons": [
+        {
+          "uid": "L-m0-2026-10-16",
+          "n": 1,
+          "starts": "08:30",
+          "subject": {
+            "code": "s1",
+            "title": "Обучение грамоте"
+          },
+          "topic": "Буква Н",
+          "homework": "Прописи с. 12, строки 1–3",
+          "kind": null,
+          "tpl": "mt0",
+          "marks": []
+        },
+        {
+          "uid": "L-m6-2026-10-16",
+          "n": 2,
+          "starts": "09:20",
+          "subject": {
+            "code": "s7",
+            "title": "Физическая культура"
+          },
+          "topic": "Игры на свежем воздухе",
+          "homework": null,
+          "kind": null,
+          "tpl": "mt6",
+          "marks": []
+        },
+        {
+          "uid": "L-m7-2026-10-16",
+          "n": 3,
+          "starts": "10:15",
+          "subject": {
+            "code": "s8",
+            "title": "Трудовое обучение"
+          },
+          "topic": "Аппликация из листьев",
+          "homework": "Принести цветную бумагу и клей",
+          "kind": null,
+          "tpl": "mt7",
+          "marks": []
+        }
+      ]
+    }
+  ]
+}

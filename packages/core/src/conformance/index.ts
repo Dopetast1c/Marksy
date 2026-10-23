@@ -79,6 +79,8 @@ export interface CanonicalSnapshot {
       finalMarks?: schemas.FinalMark[];
       homework?: schemas.HomeworkItem[];
       behaviour?: schemas.BehaviourEvent[];
+      bellSchedules?: schemas.BellSchedule[];
+      weekTemplate?: schemas.WeekTemplate | null;
     }
   >;
 }
@@ -128,6 +130,12 @@ export async function readAll(
     if (caps.finalMarks) entry.finalMarks = await provider.getFinalMarks!(session, student, ctx);
     if (caps.homeworkAssignments) entry.homework = await provider.getHomework!(session, student, range, ctx);
     if (caps.behaviour) entry.behaviour = await provider.getBehaviour!(session, student, range, ctx);
+    // school details come once a day after the run's lessons; subjects may then carry teacher, group and level
+    if (caps.bellSchedule) entry.bellSchedules = await provider.getBellSchedule!(session, student, ctx);
+    if (caps.weekTemplate) {
+      entry.weekTemplate = await provider.getWeekTemplate!(session, student, ctx);
+      entry.subjects = await provider.getSubjects(session, student, ctx);
+    }
     students[student.externalId] = entry;
   }
   return { snapshot: { account, students }, requests, drift: [...run.drift.events] };
@@ -184,6 +192,8 @@ export function defineConformanceSuite(opts: ConformanceOptions): void {
       need(caps.finalMarks, 'getFinalMarks');
       need(caps.homeworkAssignments, 'getHomework');
       need(caps.behaviour, 'getBehaviour');
+      need(caps.bellSchedule, 'getBellSchedule');
+      need(caps.weekTemplate, 'getWeekTemplate');
     });
 
     it('has fixtures and a denylist, and no folder the suite would not check', () => {
@@ -207,6 +217,8 @@ export function defineConformanceSuite(opts: ConformanceOptions): void {
         for (const x of s.finalMarks ?? []) expect(schemas.finalMark.parse(x)).toEqual(x);
         for (const x of s.homework ?? []) expect(schemas.homeworkItem.parse(x)).toEqual(x);
         for (const x of s.behaviour ?? []) expect(schemas.behaviourEvent.parse(x)).toEqual(x);
+        for (const x of s.bellSchedules ?? []) expect(schemas.bellSchedule.parse(x)).toEqual(x);
+        if (s.weekTemplate) expect(schemas.weekTemplate.parse(s.weekTemplate)).toEqual(s.weekTemplate);
       }
       const allowed = createAllowList(manifest.readOnlyAllowList);
       for (const r of requests) expect(allowed(r.method, new URL(r.url).pathname), `${r.method} ${r.url}`).toBe(true);
@@ -239,6 +251,36 @@ export function defineConformanceSuite(opts: ConformanceOptions): void {
             expect(v).toBeGreaterThanOrEqual(scale!.min);
             expect(v).toBeLessThanOrEqual(scale!.max);
           }
+        }
+      }
+    });
+
+    it("school details: only what the capabilities promise, only the student's own", async () => {
+      const { snapshot } = await readAll(opts, fixtures);
+      for (const [id, s] of Object.entries(snapshot.students)) {
+        const lessons = s.lessons ?? [];
+        const entries = s.weekTemplate?.entries ?? [];
+        const rooms = [...lessons.map((l) => l.room), ...entries.map((e) => e.room)].filter(Boolean);
+        const groups = [...lessons, ...s.subjects, ...entries].map((x) => x.groupLabel).filter(Boolean);
+        const teachers = [...lessons, ...s.subjects, ...entries].map((x) => x.teacherName).filter(Boolean);
+        if (!caps.rooms) expect(rooms, `${id}: rooms without capabilities.rooms`).toEqual([]);
+        if (!caps.teachingGroups) expect(groups, `${id}: groups without capabilities.teachingGroups`).toEqual([]);
+        if (!caps.teacherNames) expect(teachers, `${id}: teachers without capabilities.teacherNames`).toEqual([]);
+        // the student is in one place at a time: two entries in one slot would be another group's lesson
+        const slots = entries.map((e) => `${e.cycleWeek}/${e.weekday}/${e.slot}`);
+        expect(new Set(slots).size, `${id}: one entry per slot of the week`).toBe(slots.length);
+        // one teacher per subject: the student's own, never the other subgroup's as well
+        const bySubject = new Map<string, Set<string>>();
+        for (const x of [...s.subjects.map((v) => ({ ...v, subjectExternalId: v.externalId })), ...entries]) {
+          if (!x.teacherName) continue;
+          const set = bySubject.get(x.subjectExternalId) ?? new Set<string>();
+          bySubject.set(x.subjectExternalId, set.add(x.teacherName));
+        }
+        for (const [subject, names] of bySubject) expect(names.size, `${id}: teachers of ${subject}`).toBe(1);
+        for (const b of s.bellSchedules ?? []) {
+          const numbers = b.periods.map((p) => p.slot);
+          expect(new Set(numbers).size, `${id}: slots of ${b.externalId}`).toBe(numbers.length);
+          for (const p of b.periods) expect(p.start < p.end, `${id}: ${p.start}-${p.end}`).toBe(true);
         }
       }
     });

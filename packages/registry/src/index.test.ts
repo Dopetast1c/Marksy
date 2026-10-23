@@ -13,6 +13,12 @@ describe('registry', () => {
     expect(listProviders().map((p) => p.manifest.id)).not.toContain('demo-full');
   });
 
+  it('knows demo-lite, the thinner system, but does not offer it', () => {
+    expect(getProvider('demo-lite')?.manifest.capabilities.rooms).toBe(false);
+    expect(getProvider('demo-lite')?.getFinalMarks).toBeUndefined();
+    expect(listProviders().map((p) => p.manifest.id)).not.toContain('demo-lite');
+  });
+
   it('offers by-eschools as beta', () => {
     expect(listProviders().map((p) => [p.manifest.id, p.manifest.status])).toEqual([['by-eschools', 'beta']]);
   });

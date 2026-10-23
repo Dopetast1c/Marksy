@@ -251,6 +251,8 @@ export function mapLesson(s: Slot, date: string, check: DriftCheck): Lesson {
     subjectExternalId: s.subject_id,
     subjectName: s.subject_title,
     ...(nonEmpty(s.teacher_id) && { teacherExternalId: s.teacher_id! }),
+    // the server matches the lesson to the student's regular week with it: room, subgroup, teacher (providers.md 4)
+    ...(nonEmpty(s.lesson_template_id) && { templateRef: s.lesson_template_id! }),
     ...(nonEmpty(s.topic) && { topic: s.topic!.trim() }),
     ...(nonEmpty(s.homework) && { homework: s.homework!.trim() }),
     ...(s.has_attachments_or_links != null && { hasAttachments: s.has_attachments_or_links }),

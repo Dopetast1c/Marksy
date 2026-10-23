@@ -1,0 +1,134 @@
+[
+  {
+    "id": "00000000-0000-4000-8000-b16b106c3968",
+    "partition_type": "CLASS",
+    "type": "SUBJECT",
+    "subject_title": "Обучение грамоте (чтение)",
+    "level_of_study": "Базовый",
+    "teacher_id": "00000000-0000-4000-8000-3aab0b4ee3b0",
+    "teacher": "[text]",
+    "group_id": null,
+    "group_name": null
+  },
+  {
+    "id": "00000000-0000-4000-8000-dddf5985f15a",
+    "partition_type": "CLASS",
+    "type": "SUBJECT",
+    "subject_title": "Обучение грамоте (письмо)",
+    "level_of_study": "Базовый",
+    "teacher_id": "00000000-0000-4000-8000-3aab0b4ee3b0",
+    "teacher": "[text]",
+    "group_id": null,
+    "group_name": null
+  },
+  {
+    "id": "00000000-0000-4000-8000-1afc93265920",
+    "partition_type": "CLASS",
+    "type": "SUBJECT",
+    "subject_title": "Физическая культура и здоровье",
+    "level_of_study": "Базовый",
+    "teacher_id": "00000000-0000-4000-8000-d8a10599a207",
+    "teacher": "[text]",
+    "group_id": null,
+    "group_name": null
+  },
+  {
+    "id": "00000000-0000-4000-8000-8962a4af176d",
+    "partition_type": "GROUP",
+    "type": "SUBJECT",
+    "subject_title": "Трудовое обучение",
+    "level_of_study": "Базовый",
+    "teacher_id": "00000000-0000-4000-8000-3aab0b4ee3b0",
+    "teacher": "[text]",
+    "group_id": "00000000-0000-4000-8000-6e60190bd58b",
+    "group_name": "1-я подгруппа (девочки)"
+  },
+  {
+    "id": "00000000-0000-4000-8000-8962a4af176d",
+    "partition_type": "GROUP",
+    "type": "SUBJECT",
+    "subject_title": "Трудовое обучение",
+    "level_of_study": "Базовый",
+    "teacher_id": "00000000-0000-4000-8000-965cd4abd43d",
+    "teacher": "[text]",
+    "group_id": "00000000-0000-4000-8000-9343bb6277d9",
+    "group_name": "2-я подгруппа (мальчики)"
+  },
+  {
+    "id": "00000000-0000-4000-8000-8cc3dfd4e033",
+    "partition_type": "CLASS",
+    "type": "SUBJECT",
+    "subject_title": "Человек и мир",
+    "level_of_study": "Базовый",
+    "teacher_id": "00000000-0000-4000-8000-3aab0b4ee3b0",
+    "teacher": "[text]",
+    "group_id": null,
+    "group_name": null
+  },
+  {
+    "id": "00000000-0000-4000-8000-6bc92998fc83",
+    "partition_type": "CLASS",
+    "type": "SUBJECT",
+    "subject_title": "Математика",
+    "level_of_study": "Базовый",
+    "teacher_id": "00000000-0000-4000-8000-3aab0b4ee3b0",
+    "teacher": "[text]",
+    "group_id": null,
+    "group_name": null
+  },
+  {
+    "id": "00000000-0000-4000-8000-7a89c6163f36",
+    "partition_type": "CLASS",
+    "type": "SUBJECT",
+    "subject_title": "Беларуская мова",
+    "level_of_study": "Базовый",
+    "teacher_id": "00000000-0000-4000-8000-3aab0b4ee3b0",
+    "teacher": "[text]",
+    "group_id": null,
+    "group_name": null
+  },
+  {
+    "id": "00000000-0000-4000-8000-52a50ce81660",
+    "partition_type": "CLASS",
+    "type": "SUBJECT",
+    "subject_title": "Изобразительное искусство",
+    "level_of_study": "Базовый",
+    "teacher_id": "00000000-0000-4000-8000-3aab0b4ee3b0",
+    "teacher": "[text]",
+    "group_id": null,
+    "group_name": null
+  },
+  {
+    "id": "00000000-0000-4000-8000-886310be281c",
+    "partition_type": "CLASS",
+    "type": "SUBJECT",
+    "subject_title": "Информационный час",
+    "level_of_study": "Базовый",
+    "teacher_id": "00000000-0000-4000-8000-3aab0b4ee3b0",
+    "teacher": "[text]",
+    "group_id": null,
+    "group_name": null
+  },
+  {
+    "id": "00000000-0000-4000-8000-6a0095b65bcf",
+    "partition_type": "CLASS",
+    "type": "SUBJECT",
+    "subject_title": "Музыка",
+    "level_of_study": "Базовый",
+    "teacher_id": "00000000-0000-4000-8000-3f98b08ca0d6",
+    "teacher": "[text]",
+    "group_id": null,
+    "group_name": null
+  },
+  {
+    "id": "00000000-0000-4000-8000-bc3f2daf673f",
+    "partition_type": "CLASS",
+    "type": "SUBJECT",
+    "subject_title": "Классный час",
+    "level_of_study": "Базовый",
+    "teacher_id": "00000000-0000-4000-8000-3aab0b4ee3b0",
+    "teacher": "[text]",
+    "group_id": null,
+    "group_name": null
+  }
+]

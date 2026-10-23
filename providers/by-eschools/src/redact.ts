@@ -4,7 +4,16 @@ import { PERSONAL_FIELDS } from './schemas';
 // fields Marksy never maps (docs/api-spec.md 6.1, "never stored, never logged"). Ids stay, so a body can be parsed
 // again after a drift fix. This is not sanitize(): fixtures replace ids and texts, stored bodies must still work.
 
-const NEVER_STORED = new Set<string>([...PERSONAL_FIELDS, 'email', 'phone', 'phone_number', 'birthday', 'address']);
+// teacher: 6.7a and 6.10.3 name the teacher of every group; only the student's own is kept, in the subject row
+const NEVER_STORED = new Set<string>([
+  ...PERSONAL_FIELDS,
+  'teacher',
+  'email',
+  'phone',
+  'phone_number',
+  'birthday',
+  'address',
+]);
 
 function walk(value: unknown, inChild: boolean): unknown {
   if (Array.isArray(value)) return value.map((v) => walk(v, inChild));

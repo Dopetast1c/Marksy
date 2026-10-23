@@ -19,6 +19,12 @@ const ENUM = /^[A-Z][A-Z0-9_]{0,39}$/;
 /** Looks like a person: initials ("И.О.") or three capitalised words ("Иванова Мария Петровна"). */
 const PERSON_LIKE = /\p{Lu}\.\s?\p{Lu}\.|(\p{Lu}\p{Ll}+[\s-]+){2}\p{Lu}\p{Ll}+/u;
 const MARK_LABELS = /^(н|зач\.|незач\.|освоб\.|осв\.|не осв\.|н\/а)$/;
+/** A teaching group as the diary names it: "1-я подгруппа", "2-я подгруппа (мальчики)" (api-spec 6.7a) */
+const GROUP_NAME = /^\d-я подгруппа( \((девочки|мальчики)\))?$/;
+const LEVEL_OF_STUDY = /^(Базовый|Углубленный|Углублённый)$/;
+/** A room number as the timetable shows it: "201", "спортзал", "Лаб. 2"; never something with a person's shape */
+const ROOM = /^[\p{L}\d][\p{L}\d .-]{0,15}$/u;
+const CLOCK = /^\d{1,2}:\d{2}(:\d{2})?$/;
 /** A school year label: "2026-2027" in real responses (second probe), "2026/2027" in the bundle */
 const YEAR_LABEL = /^\d{4}\s?[/-]\s?\d{4}$/;
 
@@ -31,12 +37,30 @@ export interface Place {
 }
 
 /** Does sanitize() keep this string as it is? The probe's leak check treats every other string as sensitive. */
-export function keepsString({ endpoint, key, depth }: Place, value: string): boolean {
+export function keepsString({ endpoint, key, container, depth }: Place, value: string): boolean {
   switch (key) {
+    case 'group_name':
+      return GROUP_NAME.test(value);
+    case 'level_of_study':
+      return LEVEL_OF_STUDY.test(value);
+    case 'value':
+      // level_of_study.value in the teaching plan (6.10.3)
+      return container === 'level_of_study' && LEVEL_OF_STUDY.test(value);
+    case 'audience_number':
+      return ROOM.test(value) && !PERSON_LIKE.test(value);
+    case 'short_name':
+      return value.length <= 20 && !PERSON_LIKE.test(value);
+    case 'end_time':
+      return CLOCK.test(value);
+    case 'partition_type':
+    case 'period':
+      return ENUM.test(value);
     case 'subject_title':
       return value.length <= 80 && !PERSON_LIKE.test(value);
     case 'name':
       // a subject's name: only directly on the items of the subjects list, never nested deeper
+      // a teaching group's name in the plan (6.10.3); a teacher's name is never kept
+      if (container === 'study_group') return GROUP_NAME.test(value);
       return (
         /^(subjects|educational_subjects)/.test(endpoint) &&
         depth === 1 &&
@@ -45,7 +69,7 @@ export function keepsString({ endpoint, key, depth }: Place, value: string): boo
       );
     case 'start_time':
       // "08:30" in the bundle; seconds allowed, the first probe's values were not plain HH:MM
-      return /^\d{1,2}:\d{2}(:\d{2})?$/.test(value);
+      return CLOCK.test(value);
     case 'kind':
     case 'type':
     case 'title':
@@ -82,11 +106,17 @@ const SAFE_NUMBERS = new Set([
   'dt_disbanded',
   'day_of_week',
   'level',
+  // school details (6.10): shifts, grades a bell schedule applies to, weekdays, lessons per week
+  'shift',
+  'levels',
+  'days',
+  'class_level',
+  'study_hours',
 ]);
 
 /** Does sanitize() keep this number? A lesson's position only on a lesson slot, never as a school number. */
 export function keepsNumber({ key, container }: Place): boolean {
-  if (key === 'number') return container === 'slots';
+  if (key === 'number') return container === 'slots' || container === 'time_of_bells';
   return key !== null && SAFE_NUMBERS.has(key);
 }
 

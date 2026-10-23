@@ -17,15 +17,27 @@ export function weeksArg(argv: readonly string[]): number | null {
   return Number.isInteger(n) && n >= 1 && n <= MAX_WEEKS ? n : null;
 }
 
-/** The fixture name of a request: me, classes-1, lessons-2-w1, final-1 ... (students and weeks numbered in order). */
+/**
+ * The fixture name of a request: me, classes-1, lessons-2-w1, final-1, timetable-1, bells-1 ... (students, weeks,
+ * classes and schools numbered in order).
+ */
 export function endpointName(
   method: string,
   url: URL,
   students: readonly string[],
   weeks: readonly string[],
+  classes: readonly string[] = [],
+  schools: readonly string[] = [],
 ): string | null {
   const p = url.pathname;
   const student = students.findIndex((s) => p.includes(`/students/${s}`)) + 1;
+  const cls = classes.findIndex((c) => p.includes(`/classes/${c}/`)) + 1;
+  const school = schools.findIndex((s) => p.includes(`/schools/${s}/`)) + 1;
+  // school details (6.10): per class or per school, no student in the path
+  if (p.endsWith('/bells/whole')) return school ? `bells-${school}` : null;
+  if (p.endsWith('/premises')) return school ? `premises-${school}` : null;
+  if (p.endsWith('/timetables/whole')) return cls ? `timetable-${cls}` : null;
+  if (p.startsWith('/api/v1/education/planning/')) return cls ? `planning-${cls}` : null;
   if (method === 'POST' && p === '/api/v1/auth/login/parent') return 'login';
   if (p === '/api/v1/admin/auth/me') return 'me';
   if (p === `${D}/school_year`) return 'school_year';
@@ -33,6 +45,7 @@ export function endpointName(
   if (p === `${D}/time_activities/week_activities`) return 'week_activities';
   if (!student) return null;
   if (p.endsWith('/classes')) return `classes-${student}`;
+  if (/\/classes\/[^/]+\/subjects$/.test(p)) return `student_subjects-${student}`;
   if (p.endsWith('/educational_subjects')) return `subjects-${student}`;
   if (p.endsWith('/final/whole')) return `final-${student}`;
   if (p.endsWith('/lessons')) {
@@ -63,7 +76,16 @@ const API_WORDS = new Set([
   'lessons',
   'final',
   'whole',
+  'subjects',
+  'bells',
+  'timetables',
+  'planning',
+  'institution',
+  'premises',
 ]);
+
+/** Query parameters that are the same for everyone (the premises filter): left out of the route, not faked */
+const CONSTANT_PARAMS = new Set(['q']);
 
 /** The route key of a request with every id (any segment that is not an API word, every query value) faked. */
 export function sanitisedRoute(method: string, url: URL): string {
@@ -71,7 +93,10 @@ export function sanitisedRoute(method: string, url: URL): string {
     .split('/')
     .map((s) => (s === '' || API_WORDS.has(s) ? s : fakeUuid(decodeURIComponent(s))))
     .join('/');
-  const query = [...url.searchParams].map(([k, v]) => `${k}=${fakeUuid(v)}`).join('&');
+  const query = [...url.searchParams]
+    .filter(([k]) => !CONSTANT_PARAMS.has(k))
+    .map(([k, v]) => `${k}=${fakeUuid(v)}`)
+    .join('&');
   return `${method} ${path}${query ? `?${query}` : ''}`;
 }
 
@@ -204,6 +229,17 @@ export interface ProbeFacts {
   rawKinds: Record<string, number>;
   rawWorkTypes: Record<string, number>;
   rawLessonTypes: Record<string, number>;
+  /** School details per student (6.7a, 6.10): counts only */
+  details?: {
+    bellSchedules: number;
+    periods: number;
+    weekEntries: number;
+    entriesWithRoom: number;
+    subjectsWithTeacher: number;
+    subjectsWithGroup: number;
+    subjectsAdvanced: number;
+    lessonsWithTemplate: number;
+  }[];
   drift: readonly DriftEvent[];
 }
 
@@ -237,6 +273,12 @@ export function report(f: ProbeFacts): string {
     `  ${box((f.rawKinds.ABSENT ?? 0) > 0)} ABSENT marks seen`,
     `  ${box(Object.keys(f.rawWorkTypes).some((t) => t !== 'null'))} marks with a non-null type seen`,
     `  ${box(null)} token expiry, student login, lesson_uuid stability: not checked by one probe run`,
+    '',
+    'School details (6.7a, 6.10), per student',
+    ...(f.details ?? []).map(
+      (d, i) =>
+        `  student ${i + 1}: bell schedules ${d.bellSchedules} (${d.periods} periods), regular week ${d.weekEntries} lessons (${d.entriesWithRoom} with a room), subjects with a teacher ${d.subjectsWithTeacher}, in a subgroup ${d.subjectsWithGroup}, advanced ${d.subjectsAdvanced}, lessons with a template ${d.lessonsWithTemplate}`,
+    ),
     '',
     'Other checks',
     `  week length in days (6 or 7 means end_ts is the last day, 8 means it is the next midnight): ${tally(f.weekLengths)}`,

@@ -139,7 +139,8 @@ export const LESSON_TYPES = ['INDEPENDENT_WORK', 'PRACTICAL_WORK', 'LABORATORY_W
 export const slot = z.looseObject({
   /** null in real responses for some lessons (first probe, 2026-10); the id then falls back, see map.ts lessonIdOf */
   lesson_uuid: z.string().min(1).nullable(),
-  lesson_template_id: seen,
+  /** The timetable entry of the lesson (6.10.3 template): its subgroup, teacher, room and bell time */
+  lesson_template_id: z.string().nullable().optional(),
   homework_source_id: seen,
   subject_id: id,
   subject_title: z.string().min(1),
@@ -177,3 +178,114 @@ export const finalWholeResponse = z.looseObject({
   diary_signature: z.unknown().optional(),
 });
 export type FinalWholeResponse = z.infer<typeof finalWholeResponse>;
+
+// --- School details (docs/api-spec.md 6.7a, 6.10), read once a day ---------------------------------------------
+
+/** 6.7a: the class's subjects, one row per subject and teaching group, with the teacher (personal data) */
+export const studentSubjectRow = z.looseObject({
+  id,
+  partition_type: z.string().nullable().optional(),
+  type: seen,
+  subject_title: z.string().nullable().optional(),
+  level_of_study: z.string().nullable().optional(),
+  teacher_id: z.string().nullable().optional(),
+  /** a third person's full name, family name first: only the student's own teacher is ever kept */
+  teacher: z.string().nullable().optional(),
+  group_id: z.string().nullable().optional(),
+  group_name: z.string().nullable().optional(),
+});
+export type StudentSubjectRow = z.infer<typeof studentSubjectRow>;
+export const PARTITION_TYPES = ['CLASS', 'GROUP'] as const;
+
+const bellTime = z.looseObject({
+  uuid: seen,
+  summary: seen,
+  number: z.number().int(),
+  start_time: z.string(),
+  end_time: z.string(),
+});
+export type BellTime = z.infer<typeof bellTime>;
+
+/** 6.10.1: the school's bell schedules, one per shift and group of grades */
+export const bellScheduleRaw = z.looseObject({
+  uuid: id,
+  summary: seen,
+  title: z.string().nullable().optional(),
+  shift: z.number().nullable().optional(),
+  levels: z.array(z.number()).nullable().optional(),
+  period: z.string().nullable().optional(),
+  days_of_week: z.array(
+    z.looseObject({ uuid: seen, summary: seen, days: z.array(z.number().int()), time_of_bells: z.array(bellTime) }),
+  ),
+});
+export type BellScheduleRaw = z.infer<typeof bellScheduleRaw>;
+
+/** 6.10.2: the class timetable for the term, both subgroups included */
+export const classTimetable = z.looseObject({
+  uuid: seen,
+  summary: seen,
+  schedule_of_bells_uuid: z.string().nullable().optional(),
+  class_id: seen,
+  class_level: seen,
+  period: z.string().nullable().optional(),
+  days_of_week: z.array(
+    z.looseObject({
+      day_of_week: z.number().int(),
+      timetable_slots: z.array(
+        z.looseObject({
+          time_of_bells: bellTime.nullable().optional(),
+          slots: z.array(
+            z.looseObject({
+              uuid: seen,
+              summary: seen,
+              number: z.number().int().nullable().optional(),
+              room_id: z.string().nullable().optional(),
+              lesson_template_id: z.string().nullable().optional(),
+            }),
+          ),
+        }),
+      ),
+    }),
+  ),
+});
+export type ClassTimetable = z.infer<typeof classTimetable>;
+
+/** 6.10.3: the class's teaching plan; a template per teaching group, with its teacher (personal data) */
+export const planningSubject = z.looseObject({
+  uuid: id,
+  partition_type: z.string().nullable().optional(),
+  type: seen,
+  pass_exam: seen,
+  additional_characteristic: seen,
+  special_students: seen,
+  school_subject: z
+    .looseObject({ summary: seen, kind: seen, as_json: z.looseObject({ short_name: text }).nullable().optional() })
+    .nullable()
+    .optional(),
+  templates: z.array(
+    z.looseObject({
+      uuid: id,
+      study_hours: z.number().nullable().optional(),
+      study_group: z.looseObject({ uuid: seen, name: text, summary: seen }).nullable().optional(),
+      teacher: z
+        .looseObject({ id: z.string().nullable().optional(), name: personal, surname: personal, patronymic: personal })
+        .nullable()
+        .optional(),
+      level_of_study: z.looseObject({ uuid: seen, value: text }).nullable().optional(),
+      description: seen,
+    }),
+  ),
+});
+export type PlanningSubject = z.infer<typeof planningSubject>;
+
+/** 6.10.4: the school's rooms; only the numbers of the student's own rooms leave the provider */
+export const premise = z.looseObject({
+  uuid: id,
+  audience_number: z.string().nullable().optional(),
+  audience_name: seen,
+  hull: seen,
+  premise_type: seen,
+  dt_delete: seen,
+  school: seen,
+});
+export type Premise = z.infer<typeof premise>;

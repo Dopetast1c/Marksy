@@ -25,8 +25,8 @@ import { hashPassword } from '../auth/password';
 import { fromLocal, localTime } from '../sync/time';
 import { normName } from '../sync/upsert';
 import type { Tx } from '../sync/upsert';
-import { generateGrade1, generateGrade7, generateSessions, SEED_TAGS, seedCalendar } from './generate';
-import type { SeedCalendar, SeedStudent } from './generate';
+import { generateGrade1, generateGrade7, generateSessions, SEED_TAGS, seedCalendar } from '@marksy/demo-diary';
+import type { SeedCalendar, SeedStudent } from '@marksy/demo-diary';
 
 // `pnpm db:seed [--reset]`: the fictional demo family (docs/build-plan.md M3, "Data for testing"), two children on the
 // fictional provider demo-full, one of them in a class without marks. No diary account is attached, so the planner
@@ -77,8 +77,12 @@ export async function seedDemo(db: Db, opts: { reset?: boolean; now?: Date } = {
   const tz = manifest.timezone;
   const now = opts.now ?? new Date();
   const today = localTime(now, tz).date;
-  const cal = seedCalendar(today, manifest.calendar.schoolDays);
-  const kids = [generateGrade7(today, cal), generateGrade1(today, cal)];
+  // each child's own calendar: the February week is a holiday for grades 1 and 2 only
+  const calendars = {
+    k: seedCalendar(today, manifest.calendar.schoolDays, 7),
+    m: seedCalendar(today, manifest.calendar.schoolDays, 1),
+  };
+  const kids = [generateGrade7(today, calendars.k), generateGrade1(today, calendars.m)];
   const passwordHash = await hashPassword(DEMO_PASSWORD);
   const counts: Record<string, number> = {};
   const count = (k: string, n: number) => (counts[k] = (counts[k] ?? 0) + n);
@@ -101,9 +105,9 @@ export async function seedDemo(db: Db, opts: { reset?: boolean; now?: Date } = {
 
     const studentIds: Record<string, string> = {};
     for (const kid of kids) {
-      const id = await insertStudent(tx, fid, kid, cal, count);
+      const id = await insertStudent(tx, fid, kid, calendars[kid.key], count);
       studentIds[kid.key] = id.studentId;
-      await insertDiary(tx, fid, id, kid, cal, now, tz, count, child!.id);
+      await insertDiary(tx, fid, id, kid, calendars[kid.key], now, tz, count, child!.id);
     }
     await tx.insert(userStudentAccess).values([
       { userId: parent!.id, studentId: studentIds.k! },
@@ -197,7 +201,7 @@ async function insertStudent(
   const subjectRows = await db
     .insert(subjects)
     .values(
-      kid.subjects.map((name, i) => ({
+      kid.subjects.map(({ name }, i) => ({
         studentId,
         schoolYearId: yearId,
         providerId: DEMO_PROVIDER,

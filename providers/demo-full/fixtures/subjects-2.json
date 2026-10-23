@@ -1,4 +1,26 @@
 [
-  { "code": "lit1", "title": "Обучение грамоте" },
-  { "code": "math1", "title": "Математика" }
+  {
+    "code": "lit1",
+    "title": "Обучение грамоте",
+    "teacher": {
+      "id": "T-6",
+      "name": "Миронова Анна Сергеевна"
+    },
+    "group": null,
+    "level": null,
+    "level_text": null,
+    "per_week": 5
+  },
+  {
+    "code": "math1",
+    "title": "Математика",
+    "teacher": {
+      "id": "T-6",
+      "name": "Миронова Анна Сергеевна"
+    },
+    "group": null,
+    "level": null,
+    "level_text": null,
+    "per_week": 4
+  }
 ]

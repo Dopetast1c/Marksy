@@ -24,11 +24,14 @@ packages/
   core/                 canonical types, DiaryProvider interface, grading scales, marks math,
                         guidance rules, shared HTTP client, conformance suite (@marksy/core/conformance)
   registry/             the list of providers: the only package that imports providers/*
+  demo-diary/           the fictional diary API, mapper and school behind the demo providers and the seeded demo family
 providers/
   _template/            copy this to start a provider (compiles, fails conformance until filled in)
   demo-minimal/         fixture-only provider with the thinnest capability set; what CI and the UI snapshots run against
-  demo-full/            fixture-only fictional diary with a rich capability set (lessons, quarters, work types, comments,
-                        absences in the mark cell, finals); the seeded demo family and the collector tests use it
+  demo-full/            the fictional diary of packages/demo-diary with a rich capability set (lessons, quarters, work types,
+                        comments, absences in the mark cell, finals, bells, the regular week, rooms, subgroups, teachers)
+  demo-lite/            the same fictional diary as a thinner system (no lesson or work types, attendance, rooms, subgroups or
+                        finals); its fixtures are written from the shared fictional school (pnpm --filter @marksy/demo-diary fixtures)
   by-eschools/          Belarus, diary.e-schools.by (reference implementation)
     provider.json       manifest
     src/index.ts        DiaryProvider implementation
@@ -240,8 +243,9 @@ export interface Lesson {
   date: ISODate; slot?: number; startTime?: string; endTime?: string;
   subjectExternalId: string; subjectName: string;
   teacherExternalId?: string; teacherName?: string;
-  room?: string;             // as the timetable shows it ("201", "Лаб. 2", "S12"); from the lesson or the week template
+  room?: string;             // as the timetable shows it ("201", "Лаб. 2", "S12"); from the lesson or, on the server, the week template
   groupLabel?: string;       // the student's subgroup when the subject is split
+  templateRef?: string;      // opaque key of the timetable entry the lesson comes from (e-schools: lesson_template_id); absent when the system has none
   topic?: string; homework?: string; homeworkDueDate?: ISODate; hasAttachments?: boolean;   // homeworkDueDate when the system states it; otherwise the core assumes the next lesson of the subject
   lessonType?: 'regular' | 'test' | 'lab' | 'practical' | 'excursion' | 'other';
   substituteTeacherName?: string;   // Poland zastępstwo, e-schools substitution
@@ -254,7 +258,7 @@ export interface Lesson {
 export interface BellSchedule {
   externalId: string;
   label?: string;                   // the system's title, e.g. a shift or "Year 1"
-  days: number[];                   // ISO weekdays it applies to
+  days: number[];                   // weekdays it applies to, 0 = Sunday as in manifest.calendar
   periods: { slot: number; start: string; end: string }[];   // "HH:MM"; slot numbers as lessons use them (may start at 0)
   validFrom?: ISODate; validTo?: ISODate;                     // when it applies to part of the year only
 }
@@ -265,13 +269,26 @@ export interface WeekTemplate {
   cycleWeeks: number;               // 1, or 2 for Week A / Week B timetables
   entries: {
     cycleWeek: number;              // 1..cycleWeeks
-    weekday: number;                // ISO weekday
+    weekday: number;                // 0 = Sunday as in manifest.calendar
     slot: number; start?: string; end?: string;
     subjectExternalId: string; subjectName: string;
     groupLabel?: string; room?: string;
     teacherExternalId?: string; teacherName?: string;
+    templateRef?: string;           // the same opaque key lessons carry
   }[];
 }
+```
+
+**Room, subgroup, teacher and end time of a lesson.** A provider returns lessons as the diary has them and the student's week template once a day; it does not join the two. The server fills a lesson's `room`, `groupLabel` and `teacherName` from the stored template, in this order, and stops at the first match:
+
+1. weekday, slot and `templateRef` → room, subgroup and teacher;
+2. only `templateRef` (the lesson was moved to another slot) → subgroup and teacher, no room;
+3. weekday, slot and subject (a provider without `templateRef`) → room and subgroup;
+4. nothing: an empty room is better than another lesson's room.
+
+The end time always comes from the bell schedule by slot number, never from the template. Values the lesson already carries from the diary are kept.
+
+```ts
 
 export interface Mark {
   externalId: string;        // if the system has none, build one from lesson id + index

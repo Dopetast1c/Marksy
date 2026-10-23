@@ -71,8 +71,10 @@ async function main(): Promise<number> {
   const account = await byEschools.getAccount(session, ctx);
   const today = toISODate(Date.now(), manifest.timezone);
   const recentWeeks = await recentWeekRanges(session, ctx, today, weeksWanted);
-  // calendar (2, once), then per student: subjects, one request per week, finals
-  const needed = 2 + account.students.length * (2 + recentWeeks.length);
+  // calendar (2, once), then per student: subjects, one request per week, finals, and the school details (6.7a, the
+  // class timetable and teaching plan), plus bells and rooms once per school
+  const schoolIds = [...new Set(account.students.map((s) => s.schoolId).filter((x): x is string => !!x))];
+  const needed = 2 + account.students.length * (5 + recentWeeks.length) + 2 * schoolIds.length;
   const left = manifest.limits.maxRequestsPerRun - ctx.http.requestCount;
   if (needed > left) {
     console.error(
@@ -91,7 +93,11 @@ async function main(): Promise<number> {
     // one request per week, so each week becomes its own fixture
     for (const week of recentWeeks) lessons.push(...(await byEschools.getLessons!(session, student, week, ctx)));
     const finals = await byEschools.getFinalMarks!(session, student, ctx);
-    perStudent.push({ student, calendar, subjects, lessons, finals });
+    // school details, read after the lessons as the collector does: subjects come back with teacher, group, level
+    const bellSchedules = await byEschools.getBellSchedule!(session, student, ctx);
+    const weekTemplate = await byEschools.getWeekTemplate!(session, student, ctx);
+    const detailed = await byEschools.getSubjects(session, student, ctx);
+    perStudent.push({ student, calendar, subjects, lessons, finals, bellSchedules, weekTemplate, detailed });
   }
 
   // name every response; raw ones stay on this machine, the login response without its tokens
@@ -108,6 +114,8 @@ async function main(): Promise<number> {
       r.url,
       students,
       weeks.map((w) => w.uuid),
+      account.students.map((s) => s.classExternalId ?? ''),
+      schoolIds,
     );
     let raw = safeJson(r.text);
     if (name === 'login') raw = { auth_token: '[token]', refresh_token: '[token]' };
@@ -198,6 +206,16 @@ async function main(): Promise<number> {
       rawWorkTypes,
       rawLessonTypes,
       shapes,
+      details: perStudent.map((s) => ({
+        bellSchedules: s.bellSchedules.length,
+        periods: s.bellSchedules.reduce((n, b) => n + b.periods.length, 0),
+        weekEntries: s.weekTemplate?.entries.length ?? 0,
+        entriesWithRoom: s.weekTemplate?.entries.filter((e) => e.room).length ?? 0,
+        subjectsWithTeacher: s.detailed.filter((x) => x.teacherName).length,
+        subjectsWithGroup: s.detailed.filter((x) => x.groupLabel).length,
+        subjectsAdvanced: s.detailed.filter((x) => x.level === 'advanced').length,
+        lessonsWithTemplate: s.lessons.filter((l) => l.templateRef).length,
+      })),
       drift: run.drift.events,
     }),
   );

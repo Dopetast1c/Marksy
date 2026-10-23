@@ -1,18 +1,32 @@
 import type {
   AccountInfo,
   Attendance,
+  BellSchedule,
   Calendar,
+  Capabilities,
+  DriftCheck,
   FinalMark,
   Lesson,
   LessonType,
   Mark,
   Subject,
+  WeekTemplate,
   WorkType,
 } from '@marksy/core';
-import type { DriftCheck } from '@marksy/core';
-import type { FinalRow, LessonRaw, MarkRaw, ProfileResponse, YearResponse } from './schemas';
+import type {
+  BellsRaw,
+  FinalRow,
+  LessonRaw,
+  MarkRaw,
+  ProfileResponse,
+  SubjectRaw,
+  TimetableRaw,
+  YearResponse,
+} from './api';
 
-// Raw demo diary -> canonical types. The only place that knows the demo's field names and codes.
+// Raw demo diary -> canonical types. The only place that knows the demo's field names and codes. What a provider's
+// manifest does not promise is never returned (strip*), so demo-full and demo-lite share this code and differ by
+// their capabilities only.
 
 export function mapAccount(p: ProfileResponse): AccountInfo {
   return {
@@ -25,12 +39,15 @@ export function mapAccount(p: ProfileResponse): AccountInfo {
       givenName: x.name.first,
       familyName: x.name.last,
       schoolId: x.school,
+      ...(x.school_title && { schoolName: x.school_title }),
       classExternalId: x.class.id,
       className: x.class.title,
       grade: x.class.year,
     })),
   };
 }
+
+const remark = (r: string | undefined) => (r?.trim() ? { note: r.trim() } : {});
 
 export function mapCalendar(y: YearResponse, check: DriftCheck): Calendar {
   return {
@@ -44,14 +61,30 @@ export function mapCalendar(y: YearResponse, check: DriftCheck): Calendar {
         label: String(p.n),
         start: p.from,
         end: p.till,
+        ...remark(p.remark),
       })),
-    holidays: y.breaks.map((b) => ({ from: b.from, to: b.till })),
+    holidays: y.breaks.map((b) => ({ from: b.from, to: b.till, ...remark(b.remark) })),
     ...(!y.graded && { gradingScaleId: null }),
   };
 }
 
-export function mapSubjects(list: { code: string; title: string }[]): Subject[] {
-  return list.map((s) => ({ externalId: s.code, name: s.title }));
+const LEVELS: Record<string, Subject['level']> = { BASIC: 'regular', ADVANCED: 'advanced' };
+
+export function mapSubjects(list: SubjectRaw[], check: DriftCheck): Subject[] {
+  return list.map((s) => {
+    const level =
+      s.level && check.known(s.level, Object.keys(LEVELS), 'subjects[].level') ? LEVELS[s.level] : undefined;
+    return {
+      externalId: s.code,
+      name: s.title,
+      ...(s.short && { shortName: s.short }),
+      ...(s.teacher && { teacherExternalId: s.teacher.id, teacherName: s.teacher.name }),
+      ...(s.group && { groupLabel: s.group }),
+      ...(level && { level }),
+      ...(s.level_text && { levelLabel: s.level_text }),
+      ...(s.per_week && { lessonsPerWeek: s.per_week }),
+    };
+  });
 }
 
 const WORK_TYPES: Record<string, WorkType> = {
@@ -127,6 +160,7 @@ export function mapLesson(date: string, l: LessonRaw, check: DriftCheck): Lesson
     ...(l.topic && { topic: l.topic }),
     ...(l.homework && { homework: l.homework }),
     ...(type && { lessonType: type }),
+    ...(l.tpl && { templateRef: l.tpl }),
     marks,
     ...(attendance.length > 0 && { attendance }),
   };
@@ -142,5 +176,85 @@ export function mapFinal(r: FinalRow): FinalMark {
     value: numeric ? Number(r.value) : null,
     kind: numeric ? 'numeric' : (TEXT_MARKS[r.value] ?? 'other'),
     role: 'final',
+  };
+}
+
+export function mapBells(list: BellsRaw[]): BellSchedule[] {
+  return list.map((b) => ({
+    externalId: b.code,
+    ...(b.title && { label: b.title }),
+    // the demo API counts weekdays from Monday = 1 and Sunday = 7; the model from Sunday = 0
+    days: b.days.map((d) => d % 7),
+    periods: b.periods.map((p) => ({ slot: p.n, start: p.from, end: p.till })),
+  }));
+}
+
+export function mapTimetable(t: TimetableRaw): WeekTemplate {
+  return {
+    ...(t.term && { termExternalId: t.term }),
+    cycleWeeks: 1,
+    entries: t.week.map((e) => ({
+      cycleWeek: 1,
+      weekday: e.day % 7,
+      slot: e.n,
+      subjectExternalId: e.subject.code,
+      subjectName: e.subject.title,
+      ...(e.group && { groupLabel: e.group }),
+      ...(e.room && { room: e.room }),
+      ...(e.teacher && { teacherExternalId: e.teacher.id, teacherName: e.teacher.name }),
+      ...(e.tpl && { templateRef: e.tpl }),
+    })),
+  };
+}
+
+// --- what the manifest promises -------------------------------------------------------------------------------
+
+type Caps = Pick<
+  Capabilities,
+  'rooms' | 'teachingGroups' | 'teacherNames' | 'lessonTypes' | 'workTypes' | 'comments' | 'attendance'
+>;
+
+/** A copy without the keys the manifest does not promise */
+function without<T extends object>(x: T, ...keys: (keyof T)[]): T {
+  const out = { ...x };
+  for (const k of keys) delete out[k];
+  return out;
+}
+
+const teacherKeys = ['teacherName', 'teacherExternalId'] as const;
+
+export function stripSubject(s: Subject, caps: Caps): Subject {
+  return without(s, ...(caps.teacherNames ? [] : teacherKeys), ...(caps.teachingGroups ? [] : ['groupLabel' as const]));
+}
+
+export function stripLesson(l: Lesson, caps: Caps): Lesson {
+  const marks = l.marks.map((m) =>
+    without(
+      m,
+      ...(caps.workTypes ? [] : (['workType', 'workTypeRaw'] as const)),
+      ...(caps.comments ? [] : ['comment' as const]),
+    ),
+  );
+  return without(
+    { ...l, marks },
+    ...(caps.lessonTypes ? [] : ['lessonType' as const]),
+    ...(caps.rooms ? [] : ['room' as const]),
+    ...(caps.teachingGroups ? [] : ['groupLabel' as const]),
+    ...(caps.teacherNames ? [] : teacherKeys),
+    ...(caps.attendance === 'none' ? ['attendance' as const] : []),
+  );
+}
+
+export function stripTemplate(t: WeekTemplate, caps: Caps): WeekTemplate {
+  return {
+    ...t,
+    entries: t.entries.map((e) =>
+      without(
+        e,
+        ...(caps.rooms ? [] : ['room' as const]),
+        ...(caps.teachingGroups ? [] : ['groupLabel' as const]),
+        ...(caps.teacherNames ? [] : teacherKeys),
+      ),
+    ),
   };
 }

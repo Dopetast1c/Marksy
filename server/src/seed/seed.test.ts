@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { resetDb, testDb } from '../../test/db';
 import { verifyPassword } from '../auth/password';
 import { families, lessons, lessonTags, marks, attendance, studySessions, users } from '../db/schema';
-import { generateGrade7, seedCalendar } from './generate';
+import { generateGrade7, seedCalendar } from '@marksy/demo-diary';
 import { DEMO_LOGINS, DEMO_PASSWORD, demoStudents, seedAllowed, seedDemo } from './seed';
 
 const db = testDb();
@@ -12,7 +12,7 @@ const MON_SAT = [1, 2, 3, 4, 5, 6];
 
 describe('seed generator', () => {
   it('is deterministic and dated around today', () => {
-    const cal = seedCalendar('2026-10-15', MON_SAT);
+    const cal = seedCalendar('2026-10-15', MON_SAT, 7);
     expect(cal.year).toEqual({ label: '2026-2027', start: '2026-09-01', end: '2027-05-31' });
     const a = generateGrade7('2026-10-15', cal);
     expect(generateGrade7('2026-10-15', cal)).toEqual(a);
@@ -28,7 +28,7 @@ describe('seed generator', () => {
   });
 
   it('in summer the demo shows the year that just ended', () => {
-    expect(seedCalendar('2027-07-10', MON_SAT).year.label).toBe('2026-2027');
+    expect(seedCalendar('2027-07-10', MON_SAT, 7).year.label).toBe('2026-2027');
   });
 });
 

@@ -184,6 +184,8 @@ packages/registry/      the list of providers the app offers
 providers/_template/    starting point for a new provider
 providers/demo-minimal/ a fictional diary with the fewest features, served from fixtures
 providers/demo-full/    a fictional diary with many features: the demo family and the collector tests use it
+providers/demo-lite/    the same fictional diary with fewer features: the demo family's second school
+packages/demo-diary/    the fictional diary and school behind the demo providers and the demo family
 providers/<id>/         one folder per diary system: manifest, schemas, mapper, fixtures
 server/                 Express API, collector, Drizzle schema and migrations
 web/                    React + Vite PWA, Tailwind driven by docs/tokens.json

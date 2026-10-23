@@ -1,0 +1,211 @@
+[
+  {
+    "id": "00000000-0000-4000-8000-46d1ef9b667c",
+    "partition_type": "CLASS",
+    "type": "SUBJECT",
+    "subject_title": "Русская литература (литературное чтение)",
+    "level_of_study": "Базовый",
+    "teacher_id": "00000000-0000-4000-8000-3d1ee95c438f",
+    "teacher": "[text]",
+    "group_id": null,
+    "group_name": null
+  },
+  {
+    "id": "00000000-0000-4000-8000-a6da3da42698",
+    "partition_type": "CLASS",
+    "type": "SUBJECT",
+    "subject_title": "Русский язык",
+    "level_of_study": "Базовый",
+    "teacher_id": "00000000-0000-4000-8000-3d1ee95c438f",
+    "teacher": "[text]",
+    "group_id": null,
+    "group_name": null
+  },
+  {
+    "id": "00000000-0000-4000-8000-bc0f7f9e33e5",
+    "partition_type": "CLASS",
+    "type": "SUBJECT",
+    "subject_title": "Математика",
+    "level_of_study": "Базовый",
+    "teacher_id": "00000000-0000-4000-8000-0132b72c7a53",
+    "teacher": "[text]",
+    "group_id": null,
+    "group_name": null
+  },
+  {
+    "id": "00000000-0000-4000-8000-521207624c2f",
+    "partition_type": "CLASS",
+    "type": "SUBJECT",
+    "subject_title": "Биология",
+    "level_of_study": "Базовый",
+    "teacher_id": "00000000-0000-4000-8000-ae5a334c612a",
+    "teacher": "[text]",
+    "group_id": null,
+    "group_name": null
+  },
+  {
+    "id": "00000000-0000-4000-8000-0c22f4011058",
+    "partition_type": "CLASS",
+    "type": "SUBJECT",
+    "subject_title": "Беларуская мова",
+    "level_of_study": "Базовый",
+    "teacher_id": "00000000-0000-4000-8000-5c04a33d5b7b",
+    "teacher": "[text]",
+    "group_id": null,
+    "group_name": null
+  },
+  {
+    "id": "00000000-0000-4000-8000-2d176b4d7bb4",
+    "partition_type": "CLASS",
+    "type": "SUBJECT",
+    "subject_title": "Беларуская літаратура (літаратурнае чытанне)",
+    "level_of_study": "Базовый",
+    "teacher_id": "00000000-0000-4000-8000-5c04a33d5b7b",
+    "teacher": "[text]",
+    "group_id": null,
+    "group_name": null
+  },
+  {
+    "id": "00000000-0000-4000-8000-dc8f8b8adf47",
+    "partition_type": "CLASS",
+    "type": "SUBJECT",
+    "subject_title": "Искусство (отечественная и мировая художественная культура)",
+    "level_of_study": "Базовый",
+    "teacher_id": "00000000-0000-4000-8000-3f98b08ca0d6",
+    "teacher": "[text]",
+    "group_id": null,
+    "group_name": null
+  },
+  {
+    "id": "00000000-0000-4000-8000-31539928a46c",
+    "partition_type": "CLASS",
+    "type": "SUBJECT",
+    "subject_title": "Физическая культура и здоровье",
+    "level_of_study": "Базовый",
+    "teacher_id": "00000000-0000-4000-8000-77d5dcdda04a",
+    "teacher": "[text]",
+    "group_id": null,
+    "group_name": null
+  },
+  {
+    "id": "00000000-0000-4000-8000-073c7c3bf74a",
+    "partition_type": "CLASS",
+    "type": "SUBJECT",
+    "subject_title": "История Беларуси",
+    "level_of_study": "Базовый",
+    "teacher_id": "00000000-0000-4000-8000-1b8aaffcdfc7",
+    "teacher": "[text]",
+    "group_id": null,
+    "group_name": null
+  },
+  {
+    "id": "00000000-0000-4000-8000-78e8d4ba3ff6",
+    "partition_type": "CLASS",
+    "type": "SUBJECT",
+    "subject_title": "Физика",
+    "level_of_study": "Базовый",
+    "teacher_id": "00000000-0000-4000-8000-41c29d6d68fa",
+    "teacher": "[text]",
+    "group_id": null,
+    "group_name": null
+  },
+  {
+    "id": "00000000-0000-4000-8000-532fe26fffc8",
+    "partition_type": "CLASS",
+    "type": "SUBJECT",
+    "subject_title": "География",
+    "level_of_study": "Базовый",
+    "teacher_id": "00000000-0000-4000-8000-0b0beb902f6c",
+    "teacher": "[text]",
+    "group_id": null,
+    "group_name": null
+  },
+  {
+    "id": "00000000-0000-4000-8000-9ffadbcb6c66",
+    "partition_type": "GROUP",
+    "type": "SUBJECT",
+    "subject_title": "Английский язык",
+    "level_of_study": "Углубленный",
+    "teacher_id": "00000000-0000-4000-8000-dbfd10f90f2e",
+    "teacher": "[text]",
+    "group_id": "00000000-0000-4000-8000-882642c02b18",
+    "group_name": "2-я подгруппа"
+  },
+  {
+    "id": "00000000-0000-4000-8000-9ffadbcb6c66",
+    "partition_type": "GROUP",
+    "type": "SUBJECT",
+    "subject_title": "Английский язык",
+    "level_of_study": "Углубленный",
+    "teacher_id": "00000000-0000-4000-8000-6f20eed3e331",
+    "teacher": "[text]",
+    "group_id": "00000000-0000-4000-8000-3553445d53d0",
+    "group_name": "1-я подгруппа"
+  },
+  {
+    "id": "00000000-0000-4000-8000-ead74922e023",
+    "partition_type": "GROUP",
+    "type": "SUBJECT",
+    "subject_title": "Информатика",
+    "level_of_study": "Базовый",
+    "teacher_id": "00000000-0000-4000-8000-5034414dc6e9",
+    "teacher": "[text]",
+    "group_id": "00000000-0000-4000-8000-26c1e2f2fa09",
+    "group_name": "1-я подгруппа"
+  },
+  {
+    "id": "00000000-0000-4000-8000-ead74922e023",
+    "partition_type": "GROUP",
+    "type": "SUBJECT",
+    "subject_title": "Информатика",
+    "level_of_study": "Базовый",
+    "teacher_id": "00000000-0000-4000-8000-95f3a3fbf379",
+    "teacher": "[text]",
+    "group_id": "00000000-0000-4000-8000-16c5ef4796d1",
+    "group_name": "2-я подгруппа"
+  },
+  {
+    "id": "00000000-0000-4000-8000-d7dc9f2dc13d",
+    "partition_type": "CLASS",
+    "type": "SUBJECT",
+    "subject_title": "Химия",
+    "level_of_study": "Базовый",
+    "teacher_id": "00000000-0000-4000-8000-9d8a4879b45c",
+    "teacher": "[text]",
+    "group_id": null,
+    "group_name": null
+  },
+  {
+    "id": "00000000-0000-4000-8000-b788f8f67f5c",
+    "partition_type": "GROUP",
+    "type": "SUBJECT",
+    "subject_title": "Трудовое обучение",
+    "level_of_study": "Базовый",
+    "teacher_id": "00000000-0000-4000-8000-5821b5c36595",
+    "teacher": "[text]",
+    "group_id": "00000000-0000-4000-8000-085c11944972",
+    "group_name": "1-я подгруппа (девочки)"
+  },
+  {
+    "id": "00000000-0000-4000-8000-b788f8f67f5c",
+    "partition_type": "GROUP",
+    "type": "SUBJECT",
+    "subject_title": "Трудовое обучение",
+    "level_of_study": "Базовый",
+    "teacher_id": "00000000-0000-4000-8000-f70fc1a74579",
+    "teacher": "[text]",
+    "group_id": "00000000-0000-4000-8000-c7c26e53f1b4",
+    "group_name": "2-я подгруппа (мальчики)"
+  },
+  {
+    "id": "00000000-0000-4000-8000-0b85a354309d",
+    "partition_type": "CLASS",
+    "type": "SUBJECT",
+    "subject_title": "Всемирная история",
+    "level_of_study": "Базовый",
+    "teacher_id": "00000000-0000-4000-8000-1b8aaffcdfc7",
+    "teacher": "[text]",
+    "group_id": null,
+    "group_name": null
+  }
+]

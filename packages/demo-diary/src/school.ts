@@ -1,19 +1,46 @@
 import { addDays, daysBetween, weekdayOf } from '@marksy/core';
 import type { DateRange, ISODate, LessonType, MarkKind, WorkType } from '@marksy/core';
 
-// The fictional demo family of `pnpm db:seed` (docs/build-plan.md M3), ported from the prototype's buildGrade7 and
-// buildGrade1 (docs/mockups.html). Deterministic: the same `today` always gives the same family. Dates are relative
-// to today, so the demo always has a current week, marks from this morning and tests coming up. Nothing here is real.
+// The fictional school of the demo family (`pnpm db:seed`) and of the demo providers' fixtures, ported from the
+// prototype's buildGrade7, buildGrade1 and SCHOOL (docs/mockups.html). Deterministic: the same `today` always gives
+// the same family. Dates are relative to today, so the demo always has a current week, marks from this morning and
+// tests coming up. School details are per child (ux-principles D51): Милена has the first shift's bells and her own
+// subgroups, Марк the grade 1 bells. Every name, room and time here is invented.
 
 export interface SeedLesson {
   key: string;
   date: ISODate;
   slot: number;
   startTime: string;
+  endTime: string;
   subject: string;
   topic: string | null;
   homework: string | null;
   lessonType: LessonType | null;
+  room: string | null;
+  /** The child's subgroup on a split subject */
+  groupLabel: string | null;
+  /** The timetable entry it comes from, the same in the week template */
+  templateRef: string;
+}
+
+export interface SeedBells {
+  label: string;
+  /** 0 = Sunday, as manifest.calendar */
+  days: number[];
+  periods: { slot: number; start: string; end: string }[];
+}
+
+/** What the child's own subject looks like: their teacher, subgroup and level */
+export interface SeedSubject {
+  name: string;
+  teacher: string | null;
+  group: string | null;
+  /** The diary's wording; null = the regular level */
+  level: string | null;
+  room: string | null;
+  /** [weekday (1 = Monday), lesson number] of the regular week */
+  slots: [number, number][];
 }
 
 export interface SeedMark {
@@ -37,7 +64,8 @@ export interface SeedStudent {
   /** null: a class without marks (ux-principles D49) */
   scale: string | null;
   avatar: Record<string, unknown>;
-  subjects: string[];
+  subjects: SeedSubject[];
+  bells: SeedBells;
   lessons: SeedLesson[];
   marks: SeedMark[];
   /** Lesson keys with an absence */
@@ -49,28 +77,40 @@ export interface SeedCalendar {
   /** The demo provider's school weekdays (manifest.calendar.schoolDays) */
   schoolDays: readonly number[];
   year: { label: string; start: ISODate; end: ISODate };
-  terms: { index: number; start: ISODate; end: ISODate }[];
-  holidays: DateRange[];
+  terms: { index: number; start: ISODate; end: ISODate; note?: string }[];
+  holidays: (DateRange & { name: string; note?: string })[];
 }
 
-/** The school year containing today (in summer: the one that just ended), with quarters and breaks */
-export function seedCalendar(today: ISODate, schoolDays: readonly number[]): SeedCalendar {
+/** Grades with the extra February week (as the Belarusian calendar has it, api-spec 6.4) */
+const LAST_GRADE_WITH_EXTRA_HOLIDAYS = 2;
+
+/**
+ * The child's school year containing today (in summer: the one that just ended): quarters and breaks as in the
+ * prototype's CALENDAR. The February week is a holiday only for grades 1 and 2; remarks the diary cannot apply to the
+ * dates travel as notes.
+ */
+export function seedCalendar(today: ISODate, schoolDays: readonly number[], grade: number): SeedCalendar {
   const y = Number(today.slice(0, 4)) - (Number(today.slice(5, 7)) < 8 ? 1 : 0);
   const n = y + 1;
+  const holidays: SeedCalendar['holidays'] = [
+    { name: 'Осенние каникулы', from: `${y}-11-01`, to: `${y}-11-08` },
+    { name: 'Зимние каникулы', from: `${y}-12-25`, to: `${n}-01-10` },
+    { name: 'Весенние каникулы', from: `${n}-03-21`, to: `${n}-03-28` },
+    { name: 'Летние каникулы', from: `${n}-06-01`, to: `${n}-08-31`, note: `Для окончивших 9 класс: с 11.06.${n}.` },
+  ];
+  if (grade <= LAST_GRADE_WITH_EXTRA_HOLIDAYS) {
+    holidays.push({ name: 'Дополнительные каникулы', from: `${n}-02-15`, to: `${n}-02-21` });
+  }
   return {
     schoolDays,
     year: { label: `${y}-${n}`, start: `${y}-09-01`, end: `${n}-05-31` },
     terms: [
-      { index: 1, start: `${y}-09-01`, end: `${y}-10-25` },
-      { index: 2, start: `${y}-11-03`, end: `${y}-12-24` },
-      { index: 3, start: `${n}-01-12`, end: `${n}-03-21` },
-      { index: 4, start: `${n}-03-30`, end: `${n}-05-31` },
+      { index: 1, start: `${y}-09-01`, end: `${y}-10-31` },
+      { index: 2, start: `${y}-11-09`, end: `${y}-12-24` },
+      { index: 3, start: `${n}-01-11`, end: `${n}-03-20` },
+      { index: 4, start: `${n}-03-29`, end: `${n}-05-31`, note: `Для 9 и 11 классов: с 30.03.${n} по 25.05.${n}.` },
     ],
-    holidays: [
-      { from: `${y}-10-26`, to: `${y}-11-02` },
-      { from: `${y}-12-25`, to: `${n}-01-11` },
-      { from: `${n}-03-22`, to: `${n}-03-29` },
-    ],
+    holidays: holidays.sort((a, b) => a.from.localeCompare(b.from)),
   };
 }
 
@@ -176,8 +216,56 @@ const SUBJ7: [string, number, [number, number][], string[]][] = [
     ],
     ['Бег 60 м', 'Прыжки в длину', 'Волейбол', 'Подтягивание'],
   ],
+  [
+    'Трудовое обучение',
+    9.0,
+    [
+      [3, 5],
+      [3, 6],
+    ],
+    ['Ручные швы', 'Технология обработки ткани', 'Кулинария: блюда из круп'],
+  ],
 ];
-const TIMES7 = ['08:30', '09:25', '10:25', '11:25', '12:25', '13:20'];
+
+/** The child's own school: bells, and per subject the child's teacher, subgroup, level and room (prototype SCHOOL) */
+const SCHOOL7 = {
+  bells: {
+    label: '1 смена',
+    days: [1, 2, 3, 4, 5, 6],
+    periods: [
+      [1, '08:00', '08:45'],
+      [2, '08:55', '09:40'],
+      [3, '09:55', '10:40'],
+      [4, '10:55', '11:40'],
+      [5, '11:55', '12:40'],
+      [6, '12:50', '13:35'],
+      [7, '13:45', '14:30'],
+    ],
+  },
+  subjects: {
+    Алгебра: { teacher: 'Ковалёва Ирина Петровна', room: '305' },
+    Геометрия: { teacher: 'Ковалёва Ирина Петровна', room: '305' },
+    Физика: { teacher: 'Лосев Андрей Викторович', room: '301' },
+    'Русский язык': { teacher: 'Савченко Ольга Николаевна', room: '204' },
+    'Русская литература': { teacher: 'Савченко Ольга Николаевна', room: '204' },
+    'Белорусский язык': { teacher: 'Жук Тамара Васильевна', room: '206' },
+    'Белорусская литература': { teacher: 'Жук Тамара Васильевна', room: '206' },
+    'Английский язык': {
+      teacher: 'Климович Елена Сергеевна',
+      group: '2-я подгруппа',
+      level: 'Углублённый',
+      room: '412',
+    },
+    'История Беларуси': { teacher: 'Сидоренко Павел Олегович', room: '210' },
+    'Всемирная история': { teacher: 'Сидоренко Павел Олегович', room: '210' },
+    География: { teacher: 'Бондарь Наталья Владимировна', room: '214' },
+    Биология: { teacher: 'Гринько Светлана Аркадьевна', room: '218' },
+    Информатика: { teacher: 'Новиков Денис Александрович', group: '1-я подгруппа', room: '401' },
+    'Физическая культура': { teacher: 'Ермаков Виталий Иванович', room: 'спортзал' },
+    'Трудовое обучение': { teacher: 'Мельник Галина Ивановна', group: '1-я подгруппа (девочки)', room: '108' },
+  } as Record<string, SubjectInfo>,
+  classTeacher: null as SubjectInfo | null,
+};
 
 const SUBJ1: [string, [number, number][], string[], string | null][] = [
   [
@@ -218,7 +306,53 @@ const SUBJ1: [string, [number, number][], string[], string | null][] = [
   ],
   ['Трудовое обучение', [[5, 3]], ['Аппликация из листьев'], 'Принести цветную бумагу и клей'],
 ];
-const TIMES1 = ['09:00', '09:50', '10:50', '11:45'];
+const SCHOOL1 = {
+  bells: {
+    label: '1-е классы',
+    days: [1, 2, 3, 4, 5],
+    periods: [
+      [1, '08:30', '09:05'],
+      [2, '09:20', '09:55'],
+      [3, '10:15', '10:50'],
+      [4, '11:10', '11:45'],
+    ],
+  },
+  subjects: {
+    'Физическая культура': { teacher: 'Ермаков Виталий Иванович', room: 'спортзал' },
+    Музыка: { teacher: 'Кравец Лилия Викторовна', room: '112' },
+  } as Record<string, SubjectInfo>,
+  /** In grade 1 one teacher takes every other subject in the class's own room */
+  classTeacher: { teacher: 'Миронова Анна Сергеевна', room: '105' } as SubjectInfo | null,
+};
+
+interface SubjectInfo {
+  teacher: string;
+  group?: string;
+  level?: string;
+  room?: string;
+}
+type School = typeof SCHOOL7;
+
+const bellsOf = (school: School): SeedBells => ({
+  label: school.bells.label,
+  days: school.bells.days.map((d) => d % 7),
+  periods: (school.bells.periods as [number, string, string][]).map(([slot, start, end]) => ({ slot, start, end })),
+});
+const infoOf = (school: School, subject: string): SubjectInfo | null => school.subjects[subject] ?? school.classTeacher;
+
+function subjectsOf(school: School, list: { name: string; slots: [number, number][] }[]): SeedSubject[] {
+  return list.map(({ name, slots }) => {
+    const info = infoOf(school, name);
+    return {
+      name,
+      teacher: info?.teacher ?? null,
+      group: info?.group ?? null,
+      level: info?.level ?? null,
+      room: info?.room ?? null,
+      slots,
+    };
+  });
+}
 
 function hwFor(subject: string, topic: string): string | null {
   const map: Record<string, string | null> = {
@@ -236,6 +370,7 @@ function hwFor(subject: string, topic: string): string | null {
     Биология: '§ 11, рисунок в тетради',
     Информатика: 'написать программу из задания 3',
     'Физическая культура': null,
+    'Трудовое обучение': null,
   };
   return map[subject] ?? null;
 }
@@ -255,6 +390,21 @@ export function isSchoolDay(d: ISODate, cal: SeedCalendar): boolean {
   return !cal.holidays.some((h) => d >= h.from && d <= h.to);
 }
 
+/** The child's regular week, one entry per lesson slot (WeekTemplate) */
+export function weekTemplateOf(student: SeedStudent) {
+  return student.subjects.flatMap((s, si) =>
+    s.slots.map(([day, slot]) => ({
+      weekday: day % 7,
+      slot,
+      subject: s.name,
+      group: s.group,
+      room: s.room,
+      teacher: s.teacher,
+      templateRef: `${student.key}t${si}`,
+    })),
+  );
+}
+
 /** The end of next week: the timetable shows a week ahead */
 const lastLessonDay = (today: ISODate) => addDays(today, 13 - weekdayOf(today));
 
@@ -265,31 +415,41 @@ function lessonsFor(
     topics: string[];
     homework: (topic: string, r: () => number) => string | null;
   }[],
-  times: string[],
+  school: School,
   cal: SeedCalendar,
   today: ISODate,
   prefix: string,
 ): SeedLesson[] {
+  const bells = bellsOf(school);
   const out: SeedLesson[] = [];
   const end = lastLessonDay(today);
   subjects.forEach((sub, si) => {
     const r = rng(1000 + si * 97);
     for (let d = cal.year.start; d <= end && d <= cal.year.end; d = addDays(d, 1)) {
       if (!isSchoolDay(d, cal)) continue;
-      const slot = sub.slots.find((s) => s[0] === weekdayOf(d));
-      if (!slot) continue;
-      const topic = sub.topics[Math.floor(daysBetween(cal.year.start, d) / 7) % sub.topics.length]!;
-      out.push({
-        key: `${prefix}${si}-${d}`,
-        date: d,
-        slot: slot[1],
-        startTime: times[slot[1] - 1]!,
-        subject: sub.name,
-        topic,
-        homework: sub.homework(topic, r),
-        // the diary almost never sets a lesson type (api-spec 7.3, D50): only the physics labs carry one
-        lessonType: sub.name === 'Физика' && r() < 0.12 ? 'lab' : null,
-      });
+      // a subject may have two lessons on one day (a double lesson); the first keeps the plain key
+      sub.slots
+        .filter((s) => s[0] === weekdayOf(d))
+        .forEach((slot, i) => {
+          const topic = sub.topics[Math.floor(daysBetween(cal.year.start, d) / 7) % sub.topics.length]!;
+          const period = bells.periods.find((p) => p.slot === slot[1])!;
+          const info = infoOf(school, sub.name);
+          out.push({
+            key: i === 0 ? `${prefix}${si}-${d}` : `${prefix}${si}-${d}-${slot[1]}`,
+            date: d,
+            slot: slot[1],
+            startTime: period.start,
+            endTime: period.end,
+            room: info?.room ?? null,
+            groupLabel: info?.group ?? null,
+            templateRef: `${prefix}t${si}`,
+            subject: sub.name,
+            topic,
+            homework: sub.homework(topic, r),
+            // the diary almost never sets a lesson type (api-spec 7.3, D50): only the physics labs carry one
+            lessonType: sub.name === 'Физика' && r() < 0.12 ? 'lab' : null,
+          });
+        });
     }
   });
   return out.sort((a, b) => a.date.localeCompare(b.date) || a.slot - b.slot);
@@ -303,7 +463,7 @@ export function generateGrade7(today: ISODate, cal: SeedCalendar): SeedStudent {
       topics,
       homework: (topic, r) => (r() < 0.7 ? hwFor(name, topic) : null),
     })),
-    TIMES7,
+    SCHOOL7,
     cal,
     today,
     'k',
@@ -411,7 +571,11 @@ export function generateGrade7(today: ISODate, cal: SeedCalendar): SeedStudent {
     grade: 7,
     scale: 'by-10',
     avatar: { age: 'preteen', look: 'girl', skin: 'light', hair: 'dark', style: 'long', eyes: 'brown', glasses: false },
-    subjects: SUBJ7.map(([name]) => name),
+    subjects: subjectsOf(
+      SCHOOL7,
+      SUBJ7.map(([name, , slots]) => ({ name, slots })),
+    ),
+    bells: bellsOf(SCHOOL7),
     lessons,
     marks: marks.sort((a, b) => a.date.localeCompare(b.date)),
     absences,
@@ -428,10 +592,14 @@ export function generateGrade1(today: ISODate, cal: SeedCalendar): SeedStudent {
     grade: 1,
     scale: null,
     avatar: { age: 'kid', look: 'boy', skin: 'light', hair: 'dark', style: 'short', eyes: 'brown', glasses: false },
-    subjects: SUBJ1.map(([name]) => name),
+    subjects: subjectsOf(
+      SCHOOL1,
+      SUBJ1.map(([name, slots]) => ({ name, slots })),
+    ),
+    bells: bellsOf(SCHOOL1),
     lessons: lessonsFor(
       SUBJ1.map(([name, slots, topics, hw]) => ({ name, slots, topics, homework: () => hw })),
-      TIMES1,
+      SCHOOL1 as School,
       cal,
       today,
       'm',

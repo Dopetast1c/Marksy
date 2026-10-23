@@ -3,6 +3,7 @@ import type {
   AccountInfo,
   Attendance,
   BehaviourEvent,
+  BellSchedule,
   Calendar,
   DateRange,
   FinalMark,
@@ -11,6 +12,7 @@ import type {
   Mark,
   StudentRef,
   Subject,
+  WeekTemplate,
 } from '../model/schemas';
 import type { ProviderManifest } from './manifest';
 
@@ -78,6 +80,14 @@ export interface DiaryProvider {
     range: DateRange,
     ctx: ProviderContext,
   ): Promise<BehaviourEvent[]>;
+  /** The bell schedules of the student's class this school year (capabilities.bellSchedule). */
+  getBellSchedule?(session: Session, student: StudentRef, ctx: ProviderContext): Promise<BellSchedule[]>;
+  /**
+   * The student's own regular week for the current term (capabilities.weekTemplate): only the student's lessons,
+   * never another group's. Called once a day, after the run's lessons; a provider may then also return richer
+   * subjects from getSubjects (teacher, group, level), which the collector reads again.
+   */
+  getWeekTemplate?(session: Session, student: StudentRef, ctx: ProviderContext): Promise<WeekTemplate | null>;
   /** Lessons ahead without marks; falls back to getLessons. */
   getTimetable?(session: Session, student: StudentRef, range: DateRange, ctx: ProviderContext): Promise<Lesson[]>;
 

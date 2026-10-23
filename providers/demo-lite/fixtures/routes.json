@@ -1,0 +1,11 @@
+{
+  "POST /api/v2/auth": "auth",
+  "GET /api/v2/profile": "profile",
+  "GET /api/v2/pupils/p-1/year": "year-1",
+  "GET /api/v2/pupils/p-1/subjects": "subjects-1",
+  "GET /api/v2/pupils/p-1/bells": "bells-1",
+  "GET /api/v2/pupils/p-1/timetable": "timetable-1",
+  "GET /api/v2/pupils/p-1/diary?week=2026-10-05": "diary-1-w1",
+  "GET /api/v2/pupils/p-1/diary?week=2026-10-12": "diary-1-w2",
+  "GET /api/v2/pupils/*/diary": "diary-empty"
+}

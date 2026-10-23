@@ -1,7 +1,7 @@
 import { createMemoryDrift, driftChecker } from '@marksy/core';
 import { describe, expect, it } from 'vitest';
 import { mapLesson } from './map';
-import type { LessonRaw } from './schemas';
+import type { LessonRaw } from './api';
 
 const lesson = (over: Partial<LessonRaw> = {}): LessonRaw => ({
   uid: 'L-1',

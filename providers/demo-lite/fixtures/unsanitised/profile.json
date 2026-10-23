@@ -1,0 +1,13 @@
+{
+  "user_id": "U-72914",
+  "display_name": "Halyna Dovbush",
+  "pupils": [
+    {
+      "pupil_id": "p-55302",
+      "name": { "first": "Taras", "last": "Dovbush" },
+      "school": "S-8812",
+      "school_title": "Гимназия № 2",
+      "class": { "id": "C-9031", "title": "1 «Д»", "year": 1 }
+    }
+  ]
+}
