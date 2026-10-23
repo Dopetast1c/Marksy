@@ -1,7 +1,7 @@
 import { createMemoryDrift, driftChecker, ProviderSchemaError } from '@marksy/core';
 import { describe, expect, it } from 'vitest';
 import { toISODate } from './dates';
-import { currentClass, mapCalendar, mapFinals, mapLessonsWeek, mapStudent } from './map';
+import { currentClass, mapCalendar, mapFinals, mapLessonsResponse, mapLessonsWeek, mapStudent } from './map';
 import timeActivities from '../fixtures/time_activities.json';
 import { lessonsDay, timeActivity } from './schemas';
 import type { LessonMark, SchoolYearResponse, TimeActivity } from './schemas';
@@ -309,6 +309,15 @@ describe('lessons and marks', () => {
         ['new_enum_value', 'lesson_mark.type'],
       ]),
     );
+  });
+
+  it('a day or a response that cannot be read makes the week unusable too; an empty week is fine', () => {
+    const { check } = setup();
+    const day = { day_of_week: 1, date: minsk('2026-10-12'), slots: [slot()] };
+    expect(mapLessonsResponse([day], TZ, check)).toHaveLength(1);
+    expect(() => mapLessonsResponse([day, { day_of_week: 2, slots: null }], TZ, check)).toThrow(ProviderSchemaError);
+    expect(() => mapLessonsResponse({ error: 'x' }, TZ, check)).toThrow(ProviderSchemaError);
+    expect(mapLessonsResponse([], TZ, check)).toEqual([]);
   });
 
   it('a slot that cannot be read makes the week unusable: reported, never a lesson silently left out', () => {

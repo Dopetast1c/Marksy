@@ -470,7 +470,7 @@ Second probe, six weeks of two children: 44 `SINGLE`, 1 `DOUBLE`, 27 `ABSENT`; n
 | `NOT_TAKEN` | Not assessed (н/а) | non-numeric |
 | `null` [VERIFIED, 2026-10-23] | A teacher's comment without a mark: `type` null, `mark` empty, `comment` set | empty |
 
-A `lesson_mark` with neither a kind nor a mark but a comment is the teacher's remark on the lesson («нет домашнего задания»): a `BehaviourEvent` on `Lesson.behaviour` (`polarity: neutral`, `category: lesson_comment`, the lesson, subject and author ids), never a mark (`behaviour: derived` in the manifest; ux-principles D56). One with no comment either is nothing. Before 2026-10-23 such a slot failed the schema and its lesson was taken for removed. Now any slot that cannot be read makes the whole week unusable (it stays unverified, nothing is removed) instead of being skipped.
+A `lesson_mark` with neither a kind nor a mark but a comment is the teacher's remark on the lesson («нет домашнего задания»): a `BehaviourEvent` on `Lesson.behaviour` (`polarity: neutral`, `category: lesson_comment`, the lesson, subject and author ids), never a mark (`behaviour: derived` in the manifest; ux-principles D56). One with no comment either is nothing. Before 2026-10-23 such a slot failed the schema and its lesson was taken for removed. Now any day or slot that cannot be read (or a response that is not a list of days) makes the whole week unusable (it stays unverified, nothing is removed) instead of being skipped.
 
 The frontend counts weekly absences as slots with `lesson_mark.kind === "ABSENT"` and highlights a cell red if any numeric part of `mark` is below 4.
 

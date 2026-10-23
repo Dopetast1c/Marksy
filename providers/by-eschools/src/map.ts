@@ -25,6 +25,7 @@ import {
   slot as slotSchema,
   TIME_ACTIVITY_TYPES,
   WORK_TYPES,
+  lessonsDay,
 } from './schemas';
 import type {
   FinalWholeResponse,
@@ -297,10 +298,18 @@ export function mapLessonsWeek(days: readonly LessonsDay[], timeZone: string, ch
   return days.flatMap((day) => {
     const date = toISODate(day.date, timeZone);
     const slots = check.items(slotSchema, day.slots, 'days[].slots');
-    if (Array.isArray(day.slots) && slots.length !== day.slots.length)
+    if (slots.length !== day.slots.length)
       throw new ProviderSchemaError('lessons: a lesson in this week cannot be read');
     return slots.map((s) => mapLesson(s, date, check));
   });
+}
+
+/** A whole lessons response (6.8): a day that cannot be read makes the week unusable, like a slot (see above) */
+export function mapLessonsResponse(raw: unknown, timeZone: string, check: DriftCheck): Lesson[] {
+  const days = check.items(lessonsDay, raw, 'days');
+  if (!Array.isArray(raw) || days.length !== raw.length)
+    throw new ProviderSchemaError('lessons: a day in this week cannot be read');
+  return mapLessonsWeek(days, timeZone, check);
 }
 
 /** Words of a final-marks period key that mean the whole year (provisional: the populated shape is unverified). */

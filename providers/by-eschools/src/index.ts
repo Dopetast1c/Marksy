@@ -9,7 +9,7 @@ import {
 import type { DiaryProvider, HttpResponse, Lesson, ProviderContext, Session, StudentRef, Subject } from '@marksy/core';
 import manifestJson from '../provider.json';
 import { dayRange, overlaps, toISODate } from './dates';
-import { currentClass, mapAccount, mapCalendar, mapFinals, mapLessonsWeek, mapSubjects } from './map';
+import { currentClass, mapAccount, mapCalendar, mapFinals, mapLessonsResponse, mapSubjects } from './map';
 import { redactRaw } from './redact';
 import { sanitize } from './sanitize';
 import {
@@ -25,7 +25,6 @@ import {
   bellScheduleRaw,
   classTimetable,
   finalWholeResponse,
-  lessonsDay,
   loginResponse,
   meResponse,
   planningSubject,
@@ -413,7 +412,7 @@ export const byEschools: DiaryProvider = {
     const out = [];
     for (const w of weeks) {
       const raw = await get(session, ctx, 'lessons', `${base}/lessons`, { week_activity_uuid: w.uuid });
-      out.push(...mapLessonsWeek(check.items(lessonsDay, raw, 'days'), manifest.timezone, check));
+      out.push(...mapLessonsResponse(raw, manifest.timezone, check));
     }
     remember(session, student, out);
     return out.filter((l) => l.date >= range.from && l.date <= range.to);
