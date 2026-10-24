@@ -133,7 +133,7 @@ git clone https://github.com/Dopetast1c/Marksy.git
 cd Marksy
 pnpm setup:env                  # creates .env and generates its secrets
 pnpm install                    # also points git at .githooks/ (the pre-commit guard)
-pnpm db:up                      # PostgreSQL 16 in Docker (dev and test databases)
+pnpm db:up                      # PostgreSQL 16 in Docker: the app database (5432) and an in-memory one for tests (5434)
 pnpm db:migrate                 # creates the schema
 pnpm db:seed                    # a fictional demo family with demo logins (--reset replaces it)
 pnpm check                      # formatting, typecheck, lint, tests, privacy check
@@ -159,7 +159,7 @@ All configuration is in `.env` (created by `pnpm setup:env` from `.env.example`)
 
 | Variable | Purpose |
 |---|---|
-| `DATABASE_URL`, `TEST_DATABASE_URL` | PostgreSQL for the app and a separate database for `pnpm test` |
+| `DATABASE_URL`, `TEST_DATABASE_URL` | PostgreSQL for the app (`marksy`, port 5432, kept in a Docker volume) and for `pnpm test` (`marksy_test` on a separate in-memory server, port 5434, empty after every restart) |
 | `PORT`, `HOST` | API port (3000) and bind address (`127.0.0.1`; other devices reach the API through the app server) |
 | `SESSION_SECRET` | Random string for session cookies (generated) |
 | `CREDENTIALS_KEY` | 32-byte key (base64) that encrypts diary passwords at rest (generated) |

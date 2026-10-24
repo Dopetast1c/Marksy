@@ -2,10 +2,10 @@ import { afterAll } from 'vitest';
 import { createDb } from '../src/db/client';
 import type { Db } from '../src/db/client';
 
-// The test database (docker/postgres/init.sql creates it). Test files run one at a time (vitest.config.ts) and each
-// test starts from empty tables with resetDb().
+// The test database: marksy_test on the in-memory test server (docker-compose.yml, port 5434), never the app's. Test
+// files run one at a time (vitest.config.ts) and each test starts from empty tables with resetDb().
 
-export const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL ?? 'postgres://marksy:marksy@localhost:5432/marksy_test';
+export const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL ?? 'postgres://marksy:marksy@localhost:5434/marksy_test';
 
 let db: Db | undefined;
 

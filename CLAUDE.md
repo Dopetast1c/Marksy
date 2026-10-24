@@ -94,7 +94,8 @@ docker-compose.yml      postgres:16
 
 ```
 pnpm install            install the workspace (Node 22, pnpm via corepack)
-pnpm db:up              PostgreSQL 16 in Docker, waits until healthy (databases marksy and marksy_test)
+pnpm db:up              PostgreSQL 16 in Docker, waits until healthy: marksy-postgres (marksy, port 5432, volume pgdata) and
+                        marksy-postgres-test (marksy_test, port 5434, in memory, no fsync: tests only)
 pnpm dev                API on 127.0.0.1:3000 (tsx watch) and PWA on :5173 (Vite, /api proxied)
 pnpm dev:lan            the same, with the PWA open to the home network for testing on a phone (README)
 pnpm check              formatting, typecheck, lint, tests (packages and scripts/), privacy check: must be green before every commit
@@ -115,7 +116,7 @@ pnpm sync:once          one real collector run of the account in .env (login gua
 pnpm dev:connect        the owner's family from .env through the connect service (the owner's only, never yours)
 ```
 
-Server tests use `marksy_test` (wiped and migrated at the start of every run); never point a test or a script you run at `marksy` except `db:migrate`, `db:backup`, `db:seed`, `sync:plan` and, under "Real diary runs" below, `probe` and `sync:once`.
+Server tests use `marksy_test` on the in-memory test server (port 5434, wiped and migrated at the start of every run, one test file at a time); never point a test or a script you run at `marksy` except `db:migrate`, `db:backup`, `db:seed`, `sync:plan` and, under "Real diary runs" below, `probe` and `sync:once`.
 
 **Migrations are yours, not the owner's.** Whenever `main` (or the branch you are on) gains migrations that `marksy` does not have yet, after a merge, a pull or your own new migration, run `pnpm db:migrate` yourself and report which migrations were applied; never leave it as a step for the owner. Before a migration that rewrites, moves or deletes existing rows or columns (anything beyond a new table, a new nullable column or an index), run `pnpm db:backup` first and say where the dump is. If a migration fails, stop: do not edit applied migrations, do not restore the backup on your own, tell the owner what failed. After migrating, check with counts only (rows per table, links per child), never row contents. `pnpm db:seed --reset` is fine; `drizzle-kit push`, dropping the database or removing the Docker volume are not. `pnpm sync:plan` is yours too: it never logs in to a diary and prints ids, times and counts only. You never read `.env` and never run `pnpm dev:connect`.
 
