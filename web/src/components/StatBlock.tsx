@@ -159,6 +159,7 @@ export function BandCard({
     bar: string,
     goodIsUp: boolean,
     arrows: boolean,
+    showWas: boolean,
   ) => (
     <div key={key} className="grid min-w-0 grid-rows-[18px_30px_28px_14px] items-end justify-items-center gap-y-[3px]">
       {pill}
@@ -175,7 +176,7 @@ export function BandCard({
         />
       </span>
       <span className="text-[11px] font-semibold text-ink3">
-        {hasPrev && p != null && (n || p) ? t('stat.was', { value: String(p) }) : ''}
+        {showWas && p != null && (n || p) ? t('stat.was', { value: String(p) }) : ''}
       </span>
     </div>
   );
@@ -204,6 +205,7 @@ export function BandCard({
             BAND_BAR[b.band],
             b.band === 'good' || b.band === 'top',
             both,
+            hasPrev,
           );
         })}
         {absences != null &&
@@ -217,6 +219,8 @@ export function BandCard({
             'text-band-low-fg',
             'bg-line',
             false,
+            // an arrow needs data in this period too: a Monday morning's 0 against last week's 2 is not a gain (D23)
+            prevAbsences != null && (comparison?.current === 'marks' || absences > 0),
             prevAbsences != null,
           )}
       </div>

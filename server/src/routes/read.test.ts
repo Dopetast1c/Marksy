@@ -19,6 +19,8 @@ import {
 import { diaryAccounts } from '../db/schema';
 import { listProviders } from '@marksy/registry';
 import { DEMO_LOGINS, DEMO_PASSWORD, demoStudents, seedDemo } from '../seed/seed';
+import type { AppDeps } from '../http/context';
+import { missedSchoolDay } from './sync';
 
 const db = testDb();
 // Thursday 15 October 2026, 19:12 in the demo's time zone (the seed builds its diary around it)
@@ -261,6 +263,23 @@ describe('read API', () => {
     expect(status.accounts).toEqual([expect.objectContaining({ id: account!.id, status: 'loading' })]);
     const runs = (await mama.get('/api/sync/runs')).body;
     expect(runs[0]).toMatchObject({ kind: 'connect', trigger: 'user' });
+  });
+
+  it('stale only when a school day of the child passed unread: a weekend is not an alarm (D22, D55)', async () => {
+    const deps = { db } as AppDeps;
+    const day = 86_400_000;
+    // the last read: Saturday 10 October, 14:00 at the school (the demo school has lessons on Saturdays)
+    const saturday = new Date('2026-10-10T11:00:00Z');
+    const stale = (now: string) => missedSchoolDay(deps, [milena.id], saturday, new Date(now), 'Europe/Minsk', day);
+    expect(await stale('2026-10-12T04:00:00Z')).toBe(false); // Monday 07:00: only Sunday in between
+    expect(await stale('2026-10-14T04:00:00Z')).toBe(true); // Wednesday: Monday and Tuesday were not read
+    expect(await missedSchoolDay(deps, [milena.id], null, new Date(), 'Europe/Minsk', day)).toBe(true);
+    // a child no login reads (the demo family) is not stale: there is nothing to read them through
+    const mama = await signIn(DEMO_LOGINS.parent);
+    const status = (await mama.get('/api/sync/status')).body;
+    expect(
+      status.students.every((s: { readThrough: string; stale: boolean }) => s.readThrough !== 'none' || !s.stale),
+    ).toBe(true);
   });
 });
 

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router';
 import { api, data } from '../../api/client';
+import { useMe } from '../../api/queries';
 import type { paths } from '../../api/schema';
 import { Button, Field } from '../../components/Field';
 import { i18n, rememberForUser, useT } from '../../i18n';
@@ -18,6 +19,7 @@ export function InviteForm({ initialCode = '' }: { initialCode?: string }) {
   const t = useT();
   const navigate = useNavigate();
   const queries = useQueryClient();
+  const me = useMe();
   const [code, setCode] = useState(initialCode);
   const [invite, setInvite] = useState<Invite | null>(null);
   const [user, setUser] = useState({ displayName: '', login: '', password: '' });
@@ -43,7 +45,9 @@ export function InviteForm({ initialCode = '' }: { initialCode?: string }) {
     setBusy(true);
     setError(null);
     try {
-      await data(api.POST('/api/invites/{code}/accept', { params: { path: { code: clean } }, body: user }));
+      await data(
+        api.POST('/api/invites/{code}/accept', { params: { path: { code: clean } }, body: me.data ? {} : user }),
+      );
       rememberForUser(i18n.language);
       // a new person on this device: nothing of the previous one may show, not even from the cache
       queries.clear();
@@ -81,15 +85,34 @@ export function InviteForm({ initialCode = '' }: { initialCode?: string }) {
       </form>
     );
 
+  const card = (
+    <div className="rounded-lg bg-surface p-4 shadow-card">
+      <b className="block">{t('invite.family', { family: invite.family })}</b>
+      <span className="text-small text-ink2">
+        {t(`invite.role.${invite.role}`)}
+        {invite.students.length > 0 && ` · ${invite.students.map((s) => s.name).join(', ')}`}
+      </span>
+    </div>
+  );
+
+  // a person already signed in joins with their own login: one more family, no second Marksy login (design.md 7.3)
+  if (me.data)
+    return (
+      <form onSubmit={accept} className="flex flex-col gap-3.5">
+        {card}
+        {alert}
+        <Button type="submit" disabled={busy}>
+          {t('invite.acceptAs', { name: me.data.user.displayName })}
+        </Button>
+      </form>
+    );
+
   return (
     <form onSubmit={accept} className="flex flex-col gap-3.5">
-      <div className="rounded-lg bg-surface p-4 shadow-card">
-        <b className="block">{t('invite.family', { family: invite.family })}</b>
-        <span className="text-small text-ink2">
-          {t(`invite.role.${invite.role}`)}
-          {invite.students.length > 0 && ` · ${invite.students.map((s) => s.name).join(', ')}`}
-        </span>
-      </div>
+      {card}
+      <Button ghost onClick={() => navigate(`/login?next=${encodeURIComponent(`/join/${clean}`)}`)}>
+        {t('invite.haveLogin')}
+      </Button>
       <Field
         label={t('connect.displayName')}
         placeholder={t('connect.displayName.hint')}

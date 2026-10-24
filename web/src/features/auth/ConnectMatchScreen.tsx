@@ -48,7 +48,8 @@ export function ConnectMatchScreen() {
     return (
       <button
         type="button"
-        aria-pressed={on}
+        role="radio"
+        aria-checked={on}
         onClick={() => setChoices({ ...choices, [studentId]: value })}
         className={`flex w-full gap-3 rounded-lg bg-surface p-4 text-left shadow-card ${on ? 'outline-2 outline-accent outline-solid' : ''}`}
       >
@@ -72,9 +73,13 @@ export function ConnectMatchScreen() {
             <b className="block">{t('match.known', { name: m.name })}</b>
             <span className="text-small text-ink3">{t('match.followed')}</span>
           </div>
-          <span className="text-label text-ink3 uppercase">{t('match.how')}</span>
-          {option(m.studentId, 'follow')}
-          {option(m.studentId, 'join')}
+          <span id={`how-${m.studentId}`} className="text-label text-ink3 uppercase">
+            {t('match.how')}
+          </span>
+          <div role="radiogroup" aria-labelledby={`how-${m.studentId}`} className="flex flex-col gap-2.5">
+            {option(m.studentId, 'follow')}
+            {option(m.studentId, 'join')}
+          </div>
         </section>
       ))}
       {error && (

@@ -21,6 +21,12 @@ const BRAND = 'Marksy';
 
 type Mode = 'login' | 'connect' | 'invite';
 
+/** Where a sign-in continues: back to an invite («Уже есть вход в Marksy»), otherwise the app; nothing else is honoured */
+function nextPath(): string {
+  const next = new URLSearchParams(window.location.search).get('next');
+  return next && /^\/join\/[A-Za-z0-9]{6,12}$/.test(next) ? next : '/';
+}
+
 export function LoginScreen() {
   const t = useT();
   const { code } = useParams();
@@ -28,7 +34,7 @@ export function LoginScreen() {
   const [mode, setMode] = useState<Mode>(code ? 'invite' : 'login');
   // someone is signed in on this device: the login screen is not theirs to use (an invite link still is, it may add
   // a family to the signed-in person, design.md 7.3)
-  if (!code && me.data) return <Navigate to="/" replace />;
+  if (!code && me.data) return <Navigate to={nextPath()} replace />;
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-[560px] flex-col gap-4 px-6 pt-6 pb-5">
       <div className="flex flex-1 flex-col justify-center gap-[22px]">
@@ -101,7 +107,7 @@ function SignIn() {
       // the cached answer is "nobody": drop it, so the next screen asks again
       // a new person on this device: nothing of the previous one may show, not even from the cache
       queries.clear();
-      navigate('/', { replace: true });
+      navigate(nextPath(), { replace: true });
     } catch (err) {
       setError(errorText(t, err));
     } finally {

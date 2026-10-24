@@ -35,11 +35,11 @@ export function instanceTitle(t: TFunction, i: Instance, ds: ShortDateStyle): st
         : i.offset === 1
           ? t('period.lastMonth')
           : capital(monthName(i.from, ds.locale), ds.locale);
-    case 'term':
-      return (
-        i.termLabel ??
-        t('period.termN', { index: i.termIndex ?? i.offset + 1, name: t(`term.${i.termKind ?? 'other'}`) })
-      );
+    case 'term': {
+      // the diary's own name of the term when it has one; else «I четверть» from the term's kind and number
+      const index = i.termIndex ?? i.offset + 1;
+      return i.termLabel ?? t(`period.termN.${i.termKind ?? 'other'}`, { roman: roman(index) });
+    }
     default:
       return yearLabel(i);
   }
@@ -56,9 +56,40 @@ export function instanceSub(t: TFunction, i: Instance, ds: ShortDateStyle): stri
   return running ? t('period.withRunning', { what }) : what;
 }
 
-/** What "было" compares with, said once in the navigator: the instance right before the selected one */
+/**
+ * What "было" compares with, said once in the navigator: the instance right before the selected one. A week by its
+ * dates ("против 5–11 окт"), a month by its name in the form a date uses ("против сентября", from Intl's day-and-month
+ * format, so no month name is typed in a translation), a term by its kind ("против прошлой четверти"), a year by its label.
+ */
 export function comparedWith(t: TFunction, list: readonly Instance[], i: Instance, ds: ShortDateStyle): string {
   const prev = list.find((x) => x.offset === i.offset + 1);
   if (!prev) return t('period.nothingToCompare');
-  return t('period.vs', { what: prev.kind === 'year' ? yearLabel(prev) : shortRange(prev.from, prev.end, ds) });
+  switch (prev.kind) {
+    case 'week':
+      return t('period.vs', { what: shortRange(prev.from, prev.end, ds) });
+    case 'month': {
+      const month = new Intl.DateTimeFormat(ds.locale, { timeZone: 'UTC', day: 'numeric', month: 'long' })
+        .formatToParts(plain(prev.from))
+        .find((p) => p.type === 'month')?.value;
+      return t('period.vs', { what: month ?? monthName(prev.from, ds.locale) });
+    }
+    case 'term':
+      return t(`period.vsPrevTerm.${prev.termKind ?? 'other'}`);
+    default:
+      return t('period.vs', { what: yearLabel(prev) });
+  }
+}
+
+/** I, II, III, IV: how terms are numbered in a school year (the label sits next to the term word in the language) */
+export function roman(n: number): string {
+  const table: [number, string][] = [
+    [10, 'X'],
+    [9, 'IX'],
+    [5, 'V'],
+    [4, 'IV'],
+    [1, 'I'],
+  ];
+  let out = '';
+  for (const [v, s] of table) for (; n >= v; n -= v) out += s;
+  return out;
 }

@@ -43,6 +43,15 @@ export const usePeriods = (id: string) =>
     staleTime: 5 * 60_000,
   });
 
+/**
+ * While the next period loads, the previous one stays on screen (dimmed by the screen); never another child's numbers
+ * under this child's header (D53): the placeholder is kept only when it belongs to the same child
+ */
+const sameChild =
+  (id: string) =>
+  <T>(prev: T | undefined, query?: { queryKey: readonly unknown[] }): T | undefined =>
+    query?.queryKey[1] === id ? prev : undefined;
+
 type PeriodQuery = { period: 'week' | 'month' | 'term' | 'year'; offset: number };
 const periodParams = (id: string, q: PeriodQuery) => ({ params: { path: { id }, query: q } });
 
@@ -51,7 +60,7 @@ export const useOverview = (id: string, q: PeriodQuery) =>
   useQuery({
     queryKey: ['overview', id, q.period, q.offset],
     queryFn: () => data(api.GET('/api/students/{id}/overview', periodParams(id, q))),
-    placeholderData: (prev) => prev,
+    placeholderData: sameChild(id),
   });
 
 /** Динамика over all marks (TrendCard on Главная) */
@@ -59,7 +68,7 @@ export const useTrend = (id: string, q: PeriodQuery) =>
   useQuery({
     queryKey: ['trend', id, q.period, q.offset],
     queryFn: () => data(api.GET('/api/students/{id}/trend', periodParams(id, q))),
-    placeholderData: (prev) => prev,
+    placeholderData: sameChild(id),
   });
 
 /** Every row of Внимание for one child and period */
@@ -67,7 +76,7 @@ export const useEvents = (id: string, q: PeriodQuery) =>
   useQuery({
     queryKey: ['events', id, q.period, q.offset],
     queryFn: () => data(api.GET('/api/students/{id}/events', periodParams(id, q))),
-    placeholderData: (prev) => prev,
+    placeholderData: sameChild(id),
   });
 
 /** The child's school: bells, terms, holidays (Школа, the empty slots of a day) */

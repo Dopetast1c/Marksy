@@ -63,7 +63,7 @@ export function LessonRow({
   const openSubject = () => navigate(`/s/${studentId}/subjects/${lesson.subjectId}`);
   if (lesson.cancelled)
     return (
-      <div className="grid grid-cols-[46px_1fr] gap-2.5 py-2.5" style={subject}>
+      <div className="grid grid-cols-[46px_1fr] gap-2.5 border-t border-line py-3 first:border-t-0" style={subject}>
         <TimeCell slot={lesson.slot} start={lesson.start} end={lesson.end} />
         <div className="grid grid-cols-[3px_1fr] gap-2.5">
           <i className="bg-subject self-stretch opacity-30" />
@@ -93,13 +93,17 @@ export function LessonRow({
     );
   const homework = lesson.homework ?? lesson.ownHomework[0]?.text ?? null;
   return (
-    <div className="grid grid-cols-[46px_1fr] gap-2.5 py-2.5" style={subject}>
+    <div className="grid grid-cols-[46px_1fr] gap-2.5 border-t border-line py-3 first:border-t-0" style={subject}>
       <TimeCell slot={lesson.slot} start={lesson.start} end={lesson.end} />
       <div className="flex min-w-0 flex-col">
         <div className="grid grid-cols-[3px_1fr] gap-2.5">
           <i className="bg-subject self-stretch" />
           <div className="flex min-w-0 flex-col gap-[3px]">
-            <button type="button" onClick={openSubject} className="self-start text-left text-[15.5px] font-extrabold">
+            <button
+              type="button"
+              onClick={openSubject}
+              className="-my-2.5 self-start py-2.5 text-left text-[15.5px] font-extrabold"
+            >
               {lesson.subjectName}
             </button>
             {lesson.room && (
@@ -134,7 +138,7 @@ export function GapRow({
 }) {
   const t = useT();
   return (
-    <div className="grid grid-cols-[46px_1fr] gap-2.5 py-2">
+    <div className="grid grid-cols-[46px_1fr] gap-2.5 border-t border-line py-2 first:border-t-0">
       <div className="opacity-70">
         <TimeCell slot={slot} start={start} end={end} />
       </div>

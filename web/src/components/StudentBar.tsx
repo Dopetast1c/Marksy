@@ -17,7 +17,8 @@ export function useSwitchStudent() {
   const choose = useDevice((s) => s.choose);
   return (fromId: string, toId: string) => {
     choose(toId);
-    navigate(location.pathname.replace(`/s/${fromId}`, `/s/${toId}`) + location.search);
+    // the same place for the other child, without a history step: Back still leads where it led (principle 9)
+    navigate(location.pathname.replace(`/s/${fromId}`, `/s/${toId}`) + location.search, { replace: true });
   };
 }
 
@@ -34,7 +35,14 @@ export function StudentBar({ activeId }: { activeId: string }) {
   useLayoutEffect(() => {
     const row = box.current?.closest('[data-header-row]');
     if (!row || typeof ResizeObserver === 'undefined') return;
-    const measure = () => setAvailable(row.getBoundingClientRect().width - TITLE_MIN_PX - 10);
+    // the row minus the title's minimum and whatever else sits in it (the back button; the bell from M9)
+    const measure = () => {
+      const others = [...row.children].filter(
+        (el) => !el.hasAttribute('data-header-title') && !el.contains(box.current),
+      );
+      const taken = others.reduce((w, el) => w + el.getBoundingClientRect().width + 10, 0);
+      setAvailable(row.getBoundingClientRect().width - TITLE_MIN_PX - 10 - taken);
+    };
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(row);
@@ -63,7 +71,7 @@ export function StudentBar({ activeId }: { activeId: string }) {
             aria-label={alert ? t('header.studentAlert', { name: k.name }) : k.name}
             title={k.classLabel ? `${k.name} · ${k.classLabel}` : k.name}
             onClick={() => !on && switchTo(activeId, k.id)}
-            className={`relative grid size-10 place-items-center rounded-pill transition-opacity ${on ? 'opacity-100 outline-[2.5px] outline-offset-1 outline-accent outline-solid' : 'opacity-55 hover:opacity-90'}`}
+            className={`relative grid size-10 place-items-center rounded-pill transition-opacity after:absolute after:-inset-0.5 ${on ? 'opacity-100 outline-[2.5px] outline-offset-1 outline-accent outline-solid' : 'opacity-55 hover:opacity-90'}`}
           >
             <Avatar traits={defaultTraits(k.grade)} index={i} />
             {alert && (
@@ -78,7 +86,7 @@ export function StudentBar({ activeId }: { activeId: string }) {
           aria-haspopup="dialog"
           aria-label={t('header.moreStudents', { count: rest })}
           onClick={() => setSheet(true)}
-          className="size-[34px] rounded-pill bg-surface2 text-[12px] font-extrabold text-ink2"
+          className="relative size-[34px] rounded-pill bg-surface2 text-[12px] font-extrabold text-ink2 after:absolute after:-inset-[5px]"
         >
           +{rest}
         </button>

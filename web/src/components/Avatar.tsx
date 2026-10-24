@@ -16,10 +16,21 @@ export interface AvatarTraits {
   glasses: boolean;
 }
 
-/** The neutral look before the editor exists: age from the grade, nothing else assumed */
-export function defaultTraits(grade: number | null): AvatarTraits {
-  const age = grade == null || grade <= 4 ? 'kid' : grade <= 8 ? 'preteen' : 'teen';
-  return { age, look: 'neutral', skin: 'light', hair: 'dark', style: 'medium', eyes: 'brown', glasses: false };
+/**
+ * The neutral look before the editor exists (owner, M5a): one age for every child, nothing read from the grade or
+ * guessed from the name; children are told apart by the background (avatarHue). The grade stays in the signature for
+ * the call sites the editor (M5d) replaces.
+ */
+export function defaultTraits(_grade: number | null): AvatarTraits {
+  return {
+    age: 'preteen',
+    look: 'neutral',
+    skin: 'light',
+    hair: 'dark',
+    style: 'medium',
+    eyes: 'brown',
+    glasses: false,
+  };
 }
 
 // hues far apart on the wheel first, so two or three children never share a similar background

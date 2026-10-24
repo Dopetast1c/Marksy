@@ -25,6 +25,8 @@ export function PeriodBar({ studentId }: { studentId: string }) {
   useEffect(() => {
     if (periods.data && !kinds.includes(kind)) setKind('week');
   }, [periods.data, kinds, kind, setKind]);
+  // until the child's kinds are known, an empty strip of the same height: the control never jumps from 3 to 4
+  if (!periods.data) return <div className="h-[39px] rounded-pill bg-surface2" />;
   return (
     <SegmentedControl
       label={t('period.kind')}
@@ -64,13 +66,16 @@ export function PeriodNav({ studentId, compare = false }: { studentId: string; c
   if (!current) return <div ref={nav} className="h-[50px]" />;
   const sub = instanceSub(t, current, ds);
   return (
-    <div ref={nav} className="sticky top-0 z-[5] -mx-5 flex items-center gap-1.5 bg-bg px-5 pt-1.5 pb-2">
+    <div
+      ref={nav}
+      className="sticky top-0 z-[5] -mx-5 flex items-center gap-1.5 bg-bg px-5 pt-1.5 pb-2 after:pointer-events-none after:absolute after:inset-x-0 after:-bottom-2.5 after:h-2.5 after:bg-linear-to-b after:from-bg after:to-transparent"
+    >
       <button
         type="button"
         aria-label={t('period.older')}
         disabled={!olderOk}
         onClick={() => go(1)}
-        className="grid size-[34px] flex-none place-items-center rounded-pill bg-surface text-ink2 shadow-card disabled:opacity-30"
+        className="relative grid size-[34px] flex-none place-items-center rounded-pill bg-surface text-ink2 shadow-card after:absolute after:-inset-[5px] disabled:opacity-30"
       >
         <BackIcon size={18} />
       </button>
@@ -90,7 +95,7 @@ export function PeriodNav({ studentId, compare = false }: { studentId: string; c
         aria-label={t('period.newer')}
         disabled={!newerOk}
         onClick={() => go(-1)}
-        className="grid size-[34px] flex-none place-items-center rounded-pill bg-surface text-ink2 shadow-card disabled:opacity-30"
+        className="relative grid size-[34px] flex-none place-items-center rounded-pill bg-surface text-ink2 shadow-card after:absolute after:-inset-[5px] disabled:opacity-30"
       >
         <BackIcon size={18} className="rotate-180" />
       </button>

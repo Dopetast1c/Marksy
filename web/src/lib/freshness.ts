@@ -1,7 +1,8 @@
 import type { Schemas } from '../api/client';
 
-// The FreshnessBanner (ux-principles D22): nothing while data is fresh; one line on every student screen when the
-// child's data is older than a day, syncing is paused, the first load is still running or the diary refused the login.
+// The FreshnessBanner (ux-principles D22): nothing while data is fresh; one line on every student screen when a school
+// day of the child passed unread, syncing is paused, the first load is still running or the diary refused the login.
+// The account is the one that reads the child now (sync status lists only those children under it).
 
 export type SyncStatus = Schemas['SyncStatus'];
 export type Freshness = { kind: 'loading' | 'stale' | 'paused' | 'refused'; since: string | null };
@@ -23,6 +24,7 @@ export function freshnessOf(status: SyncStatus | undefined, studentId: string, n
     case 'loading':
       return { kind: 'loading', since };
   }
-  if (since && now - Date.parse(since) > DAY_MS) return { kind: 'stale', since };
+  // "stale" is the server's: a school day of the child passed unread (D55), so a Monday morning is not an alarm
+  if (child ? child.stale : since != null && now - Date.parse(since) > DAY_MS) return { kind: 'stale', since };
   return null;
 }

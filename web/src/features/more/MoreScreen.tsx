@@ -7,7 +7,7 @@ import { Frame } from '../../app/Frame';
 import { ChevIcon, OutIcon, UsersIcon } from '../../components/icons';
 import { LanguagePicker } from '../../components/LanguagePicker';
 import { setLanguage, useT } from '../../i18n';
-import { useDevice } from '../../state/store';
+import { useContinueChild } from '../../app/guards';
 
 // Ещё (docs/design.md 5.6) opens without a picked child. While nobody is picked it starts with «Ученик не выбран»,
 // which leads back to the choice (design 4). The language is saved to the user at once. Семья, Синхронизация, Теги,
@@ -18,9 +18,10 @@ export function MoreScreen() {
   const navigate = useNavigate();
   const queries = useQueryClient();
   const me = useMe();
-  const pick = useDevice((s) => s.pick);
+  // the child this device continues with under the 12-hour rule: an old pick does not open from a tab (D7)
+  const continueWith = useContinueChild();
   const kids = me.data?.students ?? [];
-  const picked = !!pick && kids.some((k) => k.id === pick.id);
+  const picked = !!continueWith;
   const signOut = async () => {
     await api.POST('/api/auth/logout');
     queries.clear();
@@ -29,7 +30,7 @@ export function MoreScreen() {
   const row = 'flex w-full items-center gap-3 rounded-lg bg-surface px-3.5 py-2.5 text-left shadow-card';
   const icon = 'grid size-8 flex-none place-items-center rounded-[9px] bg-accent-soft text-accent';
   return (
-    <Frame studentId={picked ? pick!.id : null}>
+    <Frame studentId={continueWith}>
       <header className="px-5 pt-1.5 pb-3">
         <h1 className="text-h1">{t('screen.more')}</h1>
       </header>

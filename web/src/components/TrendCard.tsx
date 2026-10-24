@@ -2,7 +2,9 @@ import { formatAverage, formatBandRange } from '@marksy/core';
 import type { GradingScale } from '@marksy/core';
 import type { Schemas } from '../api/client';
 import { dateStyle, intlLocale, useT } from '../i18n';
+import type { TFunction } from 'i18next';
 import type { Kind } from '../lib/period';
+import { roman } from '../lib/period';
 
 // «Динамика» (ux-principles D26, docs/design.md 5.2, 5.4): one stacked bar per bucket of the selected kind (weeks,
 // months, terms, the months of a year), marks stacked by band, worst at the bottom, the average line with its value
@@ -25,17 +27,16 @@ const FILL = {
   top: 'var(--band-top-bg)',
 } as const;
 
-const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI'];
-
-export function bucketLabel(kind: Kind, b: Bucket, index: number): string {
-  const day = b.from.slice(8, 10);
-  const month = b.from.slice(5, 7);
-  if (kind === 'week') return `${day}.${month}`;
-  if (kind === 'term') return ROMAN[index] ?? String(index + 1);
+export function bucketLabel(t: TFunction, kind: Kind, b: Bucket, index: number): string {
   const ds = dateStyle();
+  const at = new Date(`${b.from}T12:00:00Z`);
+  // the week's first day as the language writes a short day and month: "5.10" in Russian, "05/10" in British English
+  if (kind === 'week')
+    return new Intl.DateTimeFormat(ds.locale, { timeZone: 'UTC', day: 'numeric', month: 'numeric' }).format(at);
+  if (kind === 'term') return t('period.termShort', { index: index + 1, roman: roman(index + 1) });
+  const month = b.from.slice(5, 7);
   return (
-    ds.months?.[Number(month) - 1] ??
-    new Intl.DateTimeFormat(ds.locale, { timeZone: 'UTC', month: 'short' }).format(new Date(`${b.from}T12:00:00Z`))
+    ds.months?.[Number(month) - 1] ?? new Intl.DateTimeFormat(ds.locale, { timeZone: 'UTC', month: 'short' }).format(at)
   );
 }
 
@@ -82,9 +83,8 @@ export function TrendCard({
       <div className="flex items-baseline justify-between gap-2">
         <h2 className="text-h2">{t('stat.trend')}</h2>
         <span className="text-small text-ink3">
-          {t(`stat.trend.sub.${kind}`, {
-            name: t(`term.${termKind ?? 'other'}.plural`).toLocaleLowerCase(locale),
-          })}
+          {/* «по четвертям», «по триместрам»: the term word in its case comes with the kind */}
+          {t(kind === 'term' ? `stat.trend.sub.term.${termKind ?? 'other'}` : `stat.trend.sub.${kind}`)}
         </span>
       </div>
       {any ? (
@@ -132,7 +132,7 @@ export function TrendCard({
             />
             {buckets.map((b, i) => {
               const cx = x(i);
-              const label = bucketLabel(kind, b, i);
+              const label = bucketLabel(t, kind, b, i);
               const cls = b.selected ? 'fill-accent' : 'fill-ink3';
               if (b.average == null)
                 return (

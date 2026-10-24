@@ -23,5 +23,13 @@ export function EventRow({ studentId, event, termWord }: { studentId: string; ev
     else if (l.screen === 'schedule') navigate(`/s/${studentId}/schedule${l.date ? `?day=${l.date}` : ''}`);
     else navigate('/more');
   };
-  return <Row stripe={<Stripe severity={event.severity} />} title={title} sub={sub} onClick={go} />;
+  return (
+    <Row
+      stripe={<Stripe severity={event.severity} />}
+      title={title}
+      sub={sub}
+      onClick={go}
+      wrap={event.kind === 'teacher_comment'}
+    />
+  );
 }

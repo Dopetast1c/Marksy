@@ -2,4 +2,4 @@
 // language; its version is recorded with the family (families.consent_version). Changing the text in any language
 // bumps the version here.
 
-export const CONSENT_VERSION = '2026-10-24.2';
+export const CONSENT_VERSION = '2026-10-24.3';

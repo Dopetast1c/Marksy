@@ -70,9 +70,8 @@ export function eventText(
       const days = daysBetween(start, end) + 1;
       return {
         title: t('event.holidays', { date: shortDate(start, ctx.ds) }),
-        sub: [t('event.holidaysUntil', { date: shortDate(end, ctx.ds) }), t('days.count', { count: days }), f.note]
-          .filter(Boolean)
-          .join(' · '),
+        // the provider's remark about the dates (which grades) stays a quiet note in Школа, not a fact here (D51)
+        sub: [t('event.holidaysUntil', { date: shortDate(end, ctx.ds) }), t('days.count', { count: days })].join(' · '),
       };
     }
   }

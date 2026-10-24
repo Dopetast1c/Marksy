@@ -1,6 +1,7 @@
 import { shortDate } from '@marksy/core';
 import { useNavigate } from 'react-router';
 import { useMe, useStudentCards } from '../../api/queries';
+import { EmptyState } from '../../components/EmptyState';
 import { ChevIcon, SlidersIcon } from '../../components/icons';
 import { StudentPickerCard } from '../../components/StudentPickerCard';
 import { Switch } from '../../components/Switch';
@@ -34,6 +35,7 @@ export function PickScreen() {
         </span>
       </header>
       <main className="flex flex-col gap-3.5 px-5 pb-6">
+        {!cards.data && <EmptyState title={cards.isError ? t('app.error') : t('app.loading')} />}
         {(cards.data ?? []).map((card) => {
           const index = kids.findIndex((k) => k.id === card.id);
           return (

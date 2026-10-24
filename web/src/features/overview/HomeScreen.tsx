@@ -146,7 +146,10 @@ export function HomeScreen() {
       <Body>
         {o?.now && <NowCard studentId={studentId} now={o.now} tz={tz} />}
         <PeriodNav studentId={studentId} compare />
-        {body}
+        {/* the previous period stays on screen while the next one loads, dimmed so it is not read as the new one */}
+        <div className={`flex flex-col gap-3.5 transition-opacity ${overview.isPlaceholderData ? 'opacity-50' : ''}`}>
+          {body}
+        </div>
       </Body>
     </Frame>
   );

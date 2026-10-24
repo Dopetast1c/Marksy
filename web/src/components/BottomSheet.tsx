@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { CheckIcon } from './icons';
 
 // Choices with more than four options or with explanations open a bottom sheet, never a native select (ux-principles
@@ -29,8 +30,9 @@ export function BottomSheet({
     };
   }, [open, onClose]);
   if (!open) return null;
-  return (
-    <div className="fixed inset-0 z-20 flex items-end justify-center bg-ink/45" onClick={onClose}>
+  // rendered at the end of <body>: a sticky parent (the period navigator) must not trap it under the tab bar
+  return createPortal(
+    <div className="fixed inset-0 z-30 flex items-end justify-center bg-ink/45" onClick={onClose}>
       <div
         ref={panel}
         role="dialog"
@@ -43,7 +45,8 @@ export function BottomSheet({
         <div className="mx-auto mb-2.5 h-1 w-10 rounded-pill bg-line" />
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

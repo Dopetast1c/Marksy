@@ -4,7 +4,7 @@ import type { Overview } from '../../api/queries';
 import { useSchool } from '../../api/queries';
 import { GapRow, LessonRow } from '../../components/LessonRow';
 import { MoreButton, SectionHeader } from '../../components/Section';
-import { dateStyle, intlLocale, useT } from '../../i18n';
+import { dateStyle, useT } from '../../i18n';
 import { todayIn } from '../../lib/time';
 
 // The next school day on Главная (docs/design.md 5.2, ux-principles D33, D37): the same two-bar rows as Расписание in
@@ -55,10 +55,10 @@ export function NextDay({
   } else lessons.forEach((l) => rows.push(<LessonRow key={l.id} studentId={studentId} lesson={l} tz={tz} compact />));
 
   const tomorrow = day.date === addDays(todayIn(tz), 1);
-  const weekday = new Intl.DateTimeFormat(intlLocale(), { timeZone: 'UTC', weekday: 'long' }).format(
-    new Date(`${day.date}T12:00:00Z`),
-  );
-  const title = `${tomorrow ? t('home.tomorrow') : weekday.charAt(0).toLocaleUpperCase() + weekday.slice(1)}, ${shortDate(day.date, ds)}`;
+  // short, so the lesson count and «ко 2-му, к 09:25» fit beside it on a 360 px phone: «Завтра, 22 окт», «пн, 26 окт»
+  const title = tomorrow
+    ? `${t('home.tomorrow')}, ${shortDate(day.date, ds)}`
+    : shortDate(day.date, ds, { weekday: true });
   // «ко 2-му», «к 3-му»: the second lesson takes its own form in some languages
   const late =
     first && first.slot! > 1

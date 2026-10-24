@@ -2,6 +2,7 @@ import { shortDate } from '@marksy/core';
 import { useSyncStatus } from '../api/queries';
 import { useSchoolTz } from '../hooks/useStudent';
 import { dateStyle, intlLocale, useT } from '../i18n';
+import { freshnessOf } from '../lib/freshness';
 import { formatTime, todayIn } from '../lib/time';
 
 // The footer of Главная (docs/design.md 5.2): one centred quiet line, when the child's data was last updated. The
@@ -19,5 +20,9 @@ export function SyncFooter({ studentId }: { studentId: string }) {
     day === todayIn(tz)
       ? t('time.todayAt', { time: formatTime(since, tz, locale) })
       : t('time.dayAt', { day: shortDate(day, dateStyle(), { weekday: true }), time: formatTime(since, tz, locale) });
-  return <p className="pt-1 text-center text-[12px] text-ink3">{t('home.updated', { when })}</p>;
+  // «Обновлено …» while the data is fresh; «Данные от …» once the banner says they are not (the prototype's syncFoot)
+  const fresh = !freshnessOf(status.data, studentId);
+  return (
+    <p className="pt-1 text-center text-[12px] text-ink3">{t(fresh ? 'home.updated' : 'home.dataFrom', { when })}</p>
+  );
 }

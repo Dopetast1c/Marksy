@@ -26,7 +26,7 @@ export function LanguagePicker({
           onClick={() => setOpen(true)}
           aria-haspopup="dialog"
           aria-label={t('lang.choose')}
-          className="inline-flex min-h-9 items-center gap-6 rounded-pill bg-surface2 py-1.5 pr-2.5 pl-2.5 text-[13px] font-bold text-ink"
+          className="relative inline-flex min-h-9 items-center after:absolute after:-inset-y-1 after:inset-x-0 gap-6 rounded-pill bg-surface2 py-1.5 pr-2.5 pl-2.5 text-[13px] font-bold text-ink"
         >
           {current.nativeName}
           <DownIcon size={16} className="text-ink3" />

@@ -326,7 +326,7 @@ export interface paths {
                             displayName: string;
                         };
                         /** @enum {string} */
-                        consentVersion: "2026-10-24.2";
+                        consentVersion: "2026-10-24.3";
                     };
                 };
             };
@@ -3029,6 +3029,7 @@ export interface components {
                 readThrough: "own" | "otherFamily" | "none";
                 /** Format: date-time */
                 lastSuccessAt: string | null;
+                stale: boolean;
             }[];
         };
     };

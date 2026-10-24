@@ -7,9 +7,10 @@ import { ChevIcon } from './icons';
 
 export function SectionHeader({ title, note }: { title: string; note?: ReactNode }) {
   return (
-    <div className="flex items-baseline justify-between gap-2">
+    // a long note goes under the title rather than losing its end
+    <div className="flex flex-wrap items-baseline justify-between gap-x-2">
       <h2 className="text-h2 whitespace-nowrap">{title}</h2>
-      {note && <span className="min-w-0 truncate text-right text-small text-ink3">{note}</span>}
+      {note && <span className="min-w-0 text-right text-small text-ink3">{note}</span>}
     </div>
   );
 }
@@ -44,6 +45,7 @@ export function Row({
   sub,
   extra,
   onClick,
+  wrap = false,
 }: {
   stripe: ReactNode;
   lead?: ReactNode;
@@ -51,6 +53,8 @@ export function Row({
   sub?: ReactNode;
   extra?: ReactNode;
   onClick?: () => void;
+  /** the second line is the fact itself (a teacher's comment, D56): wrap it, never cut it */
+  wrap?: boolean;
 }) {
   return (
     <button
@@ -62,7 +66,7 @@ export function Row({
       {lead}
       <span className="flex min-w-0 flex-1 flex-col gap-[3px]">
         <span className="truncate font-bold">{title}</span>
-        {sub && <span className="truncate text-small text-ink3">{sub}</span>}
+        {sub && <span className={`text-small ${wrap ? 'text-ink2' : 'truncate text-ink3'}`}>{sub}</span>}
         {extra}
       </span>
       <ChevIcon className="flex-none text-ink3" />

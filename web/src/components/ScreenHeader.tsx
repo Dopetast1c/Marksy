@@ -35,13 +35,16 @@ export function ScreenHeader({
           <button
             type="button"
             aria-label={t('header.back')}
-            onClick={() => navigate(-1)}
-            className="-ml-2 grid size-9 place-items-center rounded-pill text-ink2 hover:bg-surface2"
+            // opened from a link with no screen of this app behind it: back is the child's Главная, not out of the app
+            onClick={() =>
+              (window.history.state as { idx?: number } | null)?.idx ? navigate(-1) : navigate(`/s/${studentId}`)
+            }
+            className="-ml-3 grid size-11 place-items-center rounded-pill text-ink2 hover:bg-surface2"
           >
             <BackIcon size={22} />
           </button>
         )}
-        <div className="flex min-w-[140px] flex-1 flex-col gap-px">
+        <div data-header-title className="flex min-w-[140px] flex-1 flex-col gap-px">
           <h1 className="truncate text-h1 tracking-[-0.01em]">{title}</h1>
           {parent && student && (
             <span className="truncate text-[12px] font-semibold text-ink3">

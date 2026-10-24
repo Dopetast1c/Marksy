@@ -2198,12 +2198,16 @@
                     "null"
                   ],
                   "format": "date-time"
+                },
+                "stale": {
+                  "type": "boolean"
                 }
               },
               "required": [
                 "id",
                 "readThrough",
-                "lastSuccessAt"
+                "lastSuccessAt",
+                "stale"
               ]
             }
           }
@@ -2554,7 +2558,7 @@
                   "consentVersion": {
                     "type": "string",
                     "enum": [
-                      "2026-10-24.2"
+                      "2026-10-24.3"
                     ]
                   }
                 },
