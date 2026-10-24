@@ -3,6 +3,8 @@ import { createBrowserRouter, createMemoryRouter, RouterProvider } from 'react-r
 import type { RouteObject } from 'react-router';
 import { FinalsScreen } from '../features/finals/FinalsScreen';
 import { MarksScreen } from '../features/marks/MarksScreen';
+import { SubjectScreen } from '../features/subjects/SubjectScreen';
+import { SubjectsScreen } from '../features/subjects/SubjectsScreen';
 import { ConnectMatchScreen } from '../features/auth/ConnectMatchScreen';
 import { LoginScreen } from '../features/auth/LoginScreen';
 import { MoreScreen } from '../features/more/MoreScreen';
@@ -34,8 +36,8 @@ export const routes: RouteObject[] = [
           { path: 'events', element: <EventsScreen /> },
           { path: 'marks', element: <MarksScreen /> },
           { path: 'finals', element: <FinalsScreen /> },
-          { path: 'subjects', element: <SoonScreen screen="subjects" /> },
-          { path: 'subjects/:subjectId', element: <SoonScreen screen="subjects" /> },
+          { path: 'subjects', element: <SubjectsScreen /> },
+          { path: 'subjects/:subjectId', element: <SubjectScreen /> },
           { path: 'schedule', element: <SoonScreen screen="schedule" /> },
         ],
       },

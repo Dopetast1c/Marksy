@@ -61,6 +61,7 @@
   --holiday-fill: #F5C543;
   --shadow-card: 0 1px 2px rgba(23, 33, 58, 0.06), 0 4px 16px rgba(23, 33, 58, 0.06);
   --subj-text-l: 32%;
+  --subj-on: #FFFFFF;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -93,6 +94,7 @@
     --holiday-fill: #C9A227;
     --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.3);
     --subj-text-l: 74%;
+    --subj-on: #0F1420;
   }
 }
 
@@ -125,6 +127,7 @@
   --holiday-fill: #C9A227;
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.3);
   --subj-text-l: 74%;
+  --subj-on: #0F1420;
 }
 
 @theme inline {
@@ -192,5 +195,19 @@
 
 @utility bg-subject {
   background-color: hsl(var(--sh, 210) var(--ss, 62%) 46%);
+}
+
+@utility bg-subject-tint {
+  background-color: color-mix(in oklab, hsl(var(--sh, 210) var(--ss, 62%) 50%) 16%, var(--bg));
+}
+
+@utility text-subject-title {
+  color: color-mix(in oklab, hsl(var(--sh, 210) var(--ss, 62%) var(--subj-text-l)) 75%, var(--ink));
+}
+
+@utility subject-accent {
+  --accent: hsl(var(--sh, 210) var(--ss, 62%) var(--subj-text-l));
+  --accent-soft: color-mix(in oklab, hsl(var(--sh, 210) var(--ss, 62%) 50%) 18%, var(--surface));
+  --accent-ink: var(--subj-on);
 }
 

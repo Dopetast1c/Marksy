@@ -1,12 +1,9 @@
-import { bandOf, formatAverage } from '@marksy/core';
-import type { GradingScale } from '@marksy/core';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
-import type { FinalCell } from '../../api/queries';
 import { useTermFinals, useYearFinals } from '../../api/queries';
 import { Body, Frame } from '../../app/Frame';
 import { ChangeArrow } from '../../components/ChangeArrow';
 import { EmptyState } from '../../components/EmptyState';
-import { MarkChip } from '../../components/MarkChip';
+import { FinalCellView } from '../../components/FinalCell';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { ListCard } from '../../components/Section';
 import { SegmentedControl } from '../../components/SegmentedControl';
@@ -21,35 +18,6 @@ import { todayIn } from '../../lib/time';
 // final is a filled chip; a calculation (the running term's average, the year by the scale's year rule over the term
 // finals posted so far) is an italic decimal with no fill, so nobody reads it as the teacher's mark; a dash where there
 // is nothing yet. The legend sits above the table: without it the mix cannot be read. A row opens the subject.
-
-const LIVE = {
-  critical: 'text-band-critical-fg',
-  low: 'text-band-low-fg',
-  good: 'text-band-good-fg',
-  top: 'text-band-top-fg-text',
-} as const;
-
-function Cell({ cell, scale, locale }: { cell: FinalCell; scale: GradingScale | null; locale: string }) {
-  if (cell.kind === 'final' && cell.raw != null) {
-    const band = scale && cell.value != null ? bandOf(scale, cell.value) : null;
-    return (
-      <span className="flex justify-center">
-        <MarkChip
-          mark={{ id: '', values: cell.value == null ? [] : [cell.value], raw: cell.raw, kind: 'numeric', band }}
-        />
-      </span>
-    );
-  }
-  if (cell.kind === 'running' && cell.value != null && scale) {
-    const band = bandOf(scale, cell.value);
-    return (
-      <span className={`text-center text-[13px] font-semibold italic tabular-nums ${band ? LIVE[band] : 'text-ink2'}`}>
-        {formatAverage(scale, cell.value, locale)}
-      </span>
-    );
-  }
-  return <span className="text-center font-semibold text-ink3">–</span>;
-}
 
 const shortDay = (iso: string, locale: string) =>
   new Intl.DateTimeFormat(locale, { timeZone: 'UTC', day: 'numeric', month: 'numeric' }).format(
@@ -119,9 +87,9 @@ function TermsView({ studentId, termKind }: { studentId: string; termKind: strin
               )}
             </span>
             {r.terms.map((c) => (
-              <Cell key={c.termId} cell={c} scale={scale} locale={locale} />
+              <FinalCellView key={c.termId} cell={c} scale={scale} locale={locale} />
             ))}
-            <Cell cell={r.year} scale={scale} locale={locale} />
+            <FinalCellView cell={r.year} scale={scale} locale={locale} />
           </button>
         ))}
       </ListCard>
@@ -166,7 +134,7 @@ function YearsView({ studentId, termKind }: { studentId: string; termKind: strin
                 ) : null}
               </span>
               {r.cells.map((c) => (
-                <Cell key={c.yearId} cell={c} scale={scale} locale={locale} />
+                <FinalCellView key={c.yearId} cell={c} scale={scale} locale={locale} />
               ))}
               <span className="text-center text-[15px]">
                 <ChangeArrow delta={cur != null && prev != null ? cur - prev : null} trend={r.trend} />

@@ -293,5 +293,9 @@ describe('Итоги', () => {
     expect(algebraRow.lastYear).toEqual({ raw: '4', value: 4 });
     const one = (await mama.get(`/api/students/${milena.id}/subjects/${algebra.id}`)).body;
     expect(one.lastYear).toEqual({ label: '2025-2026', raw: '4', value: 4 });
+    // a subject that was not there last year: the year is known, the final is not («новый предмет в этом году»)
+    const otherId = years.rows.find((r: { isNew: boolean }) => r.isNew).subjectId;
+    const fresh = (await mama.get(`/api/students/${milena.id}/subjects/${otherId}`)).body;
+    expect(fresh.lastYear).toEqual({ label: '2025-2026', raw: null, value: null });
   });
 });

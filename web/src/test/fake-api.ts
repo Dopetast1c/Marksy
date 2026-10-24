@@ -13,6 +13,8 @@ export interface FakeState {
   bodies: Record<string, unknown>;
   /** the connected diary refuses the login */
   diaryRefuses?: boolean;
+  /** the subject screen's answer, when a test needs another one */
+  subject?: unknown;
 }
 
 const CARDS = [
@@ -489,6 +491,103 @@ export const YEAR_FINALS = {
   ],
 };
 
+// Предметы and Предмет
+const info = (id: string, name: string, extra: object = {}) => ({
+  id,
+  name,
+  shortName: null,
+  teacherName: null,
+  groupLabel: null,
+  level: null,
+  levelLabel: null,
+  lessonsPerWeek: null,
+  color: null,
+  ...extra,
+});
+const cmp = (average: number | null, prevAverage: number | null, trend: string | null, delta: number | null) => ({
+  current: average == null ? 'empty' : 'marks',
+  previous: prevAverage == null ? 'empty' : 'marks',
+  average,
+  prevAverage,
+  delta,
+  trend,
+});
+export const SUBJECTS = {
+  'kid-milena': [
+    {
+      subject: info('sub-al', 'Алгебра', { color: 'blue' }),
+      comparison: cmp(7.5, 8.5, 'down', -1),
+      count: 2,
+      last: [chip('s1', '7', 'good'), chip('s2', '8', 'good')],
+      absences: 0,
+      final: null,
+      lessons: null,
+    },
+    {
+      subject: info('sub-en', 'Английский язык', { level: 'advanced' }),
+      comparison: cmp(null, 9, null, null),
+      count: 0,
+      last: [],
+      absences: 0,
+      final: null,
+      lessons: null,
+    },
+  ],
+  'kid-mark': [
+    {
+      subject: info('sub-ma', 'Математика'),
+      comparison: null,
+      count: 0,
+      last: [],
+      absences: null,
+      final: null,
+      lessons: { count: 5, homework: 3, next: { date: '2026-10-28', slot: 2, homework: 'с. 14, № 3', lessonId: 'l9' } },
+    },
+  ],
+};
+export const SUBJECT = {
+  subject: info('sub-al', 'Алгебра', { color: 'blue', teacherName: 'Учитель Алгебры', lessonsPerWeek: 3 }),
+  period: PERIOD,
+  settings: { goal: 8, goalAvailable: true },
+  attention: {
+    goal: {
+      target: 8,
+      state: 'short',
+      term: Q1,
+      average: 7.1,
+      projected: 7,
+      need: 7.5,
+      plan: [
+        { value: 10, count: 1 },
+        { value: 9, count: 2 },
+      ],
+      keep: null,
+      final: null,
+    },
+    hints: [
+      {
+        rule: 'lowMark',
+        severity: 'critical',
+        fact: { key: 'guidance.lowMark.fact', params: { raw: '3', workType: null, date: '2026-10-13' } },
+        advice: { key: 'guidance.lowMark.advice', params: { raw: '3' } },
+        date: '2026-10-13',
+      },
+    ],
+  },
+  comparison: cmp(7.5, 8.5, 'down', -1),
+  count: 2,
+  prevCount: 3,
+  bands: bands([0, 0, 2, 0], [0, 0, 2, 1]),
+  distribution: [],
+  timeline: [FEED[0]],
+  upcoming: [{ ...lesson('u1', 2, '08:55', '09:40', 'Алгебра'), subjectId: 'sub-al', date: '2026-10-26' }],
+  lessonTiles: null,
+  terms: [{ ...Q1, cell: cell('running', 7.1), average: 7.1 }],
+  year: cell('none', null),
+  lastYear: { label: '2025-2026', raw: null, value: null },
+  week: [{ weekday: 1, slot: 2, start: '08:55', end: '09:40', room: '305', groupLabel: null }],
+};
+
 export function fakeApi(start: Partial<FakeState> = {}) {
   const state: FakeState = { signedIn: false, calls: [], urls: [], bodies: {}, ...start };
   const error = (status: number, code: string) => json({ error: { code, message: code } }, status);
@@ -562,6 +661,16 @@ export function fakeApi(start: Partial<FakeState> = {}) {
       return json({ outcome: 'followed' });
     }
     if (/^GET \/api\/students\/[^/]+\/periods$/.test(route)) return json(periods);
+    const subj = route.match(/^(GET|PUT) \/api\/students\/([^/]+)\/subjects(?:\/([^/]+))?(?:\/(trend|color|goal))?$/);
+    if (subj) {
+      const [, method, id, sid, what] = subj;
+      if (!sid) return json({ period: PERIOD, subjects: SUBJECTS[id as keyof typeof SUBJECTS] ?? [] });
+      if (what === 'trend') return json({ period: PERIOD, buckets: [] });
+      if (method === 'PUT' && what === 'color') return json(state.bodies[route]);
+      if (method === 'PUT' && what === 'goal')
+        return json({ goal: (state.bodies[route] as { termGoal: number | null }).termGoal });
+      return json(state.subject ?? SUBJECT);
+    }
     const more = route.match(/^GET \/api\/students\/([^/]+)\/(marks|finals\/quarters|finals\/years)$/);
     if (more) {
       const [, id, what] = more;

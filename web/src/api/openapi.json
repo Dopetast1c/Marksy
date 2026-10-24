@@ -6467,7 +6467,10 @@
                           "type": "string"
                         },
                         "raw": {
-                          "type": "string"
+                          "type": [
+                            "string",
+                            "null"
+                          ]
                         },
                         "value": {
                           "type": [

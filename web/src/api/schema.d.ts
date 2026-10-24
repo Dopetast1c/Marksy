@@ -2201,7 +2201,7 @@ export interface paths {
                             year: components["schemas"]["FinalCell"] & (Record<string, never> | null);
                             lastYear: {
                                 label: string;
-                                raw: string;
+                                raw: string | null;
                                 value: number | null;
                             } | null;
                             week: {

@@ -321,7 +321,8 @@ export function subjectRoutes(deps: AppDeps): Router {
         /** По четвертям (independent of the period and the filter): each term's cell and the year's */
         terms: z.array(termRefOut.extend({ cell: finalCellOut, average: z.number().nullable() })),
         year: finalCellOut.nullable(),
-        lastYear: z.object({ label: z.string(), raw: z.string(), value: z.number().nullable() }).nullable(),
+        /** Last school year in Marksy and this subject's year final in it; raw null: «новый предмет в этом году» */
+        lastYear: z.object({ label: z.string(), raw: z.string().nullable(), value: z.number().nullable() }).nullable(),
         /** «Когда» in «О предмете»: the subject's lessons of the regular week */
         week: z.array(
           z.object({
@@ -454,7 +455,7 @@ export function subjectRoutes(deps: AppDeps): Router {
               }))
             : [],
         year: ctx.caps.terms !== 'none' && ctx.caps.finalMarks ? yearCell(ctx, finals, facts, s.id) : null,
-        lastYear: last && prevYear ? { label: last.year.label, raw: prevYear.raw, value: prevYear.value } : null,
+        lastYear: last ? { label: last.year.label, raw: prevYear?.raw ?? null, value: prevYear?.value ?? null } : null,
         week: (template?.entries ?? [])
           .filter((e) => e.subject_id === s.id)
           .map((e) => ({

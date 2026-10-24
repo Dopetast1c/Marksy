@@ -95,3 +95,11 @@ export function markFilterQuery(f: Pick<MarkFilterState, 'comments' | 'tags' | '
     ...(f.tags.length ? { tags: f.tags.join(','), tagMode: f.tagMode } : {}),
   };
 }
+
+export type SubjectSort = 'alpha' | 'weak' | 'strong' | 'fell' | 'rose';
+
+/** The order of Предметы (design.md 5.3a): kept when the child or the period changes */
+export const useSubjectSort = create<{ sort: SubjectSort; setSort: (s: SubjectSort) => void }>()((set) => ({
+  sort: 'alpha',
+  setSort: (sort) => set({ sort }),
+}));

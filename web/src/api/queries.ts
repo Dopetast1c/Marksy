@@ -1,4 +1,5 @@
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { SubjectSort } from '../state/store';
 import { api, ApiFailure, data } from './client';
 import type { Schemas } from './client';
 import type { paths } from './schema';
@@ -137,3 +138,87 @@ export const useYearFinals = (id: string) =>
     queryFn: () => data(api.GET('/api/students/{id}/finals/years', { params: { path: { id } } })),
     placeholderData: sameChild(id),
   });
+
+export type SubjectInfo = Schemas['SubjectInfo'];
+export type Hint = Schemas['Hint'];
+export type GoalRow = Schemas['GoalRow'];
+/** A palette key of docs/tokens.json, or null for «Авто» */
+export type SubjectColor = NonNullable<
+  paths['/api/students/{id}/subjects/{subjectId}/color']['put']['requestBody']
+>['content']['application/json']['color'];
+
+export type SubjectRowData = NonNullable<ReturnType<typeof useSubjects>['data']>['subjects'][number];
+
+/** Предметы: every subject of the child under the period, the mark filter and the order */
+export const useSubjects = (id: string, q: PeriodQuery, f: FilterQuery, sort: SubjectSort) =>
+  useQuery({
+    queryKey: ['subjects', id, q.period, q.offset, f.comments, f.tags ?? '', f.tagMode ?? 'any', sort],
+    queryFn: () =>
+      data(api.GET('/api/students/{id}/subjects', { params: { path: { id }, query: { ...q, ...f, sort } } })),
+    placeholderData: sameChild(id),
+  });
+
+const subjectKey = (id: string, subjectId: string, q: PeriodQuery, f: FilterQuery) =>
+  ['subject', id, subjectId, q.period, q.offset, f.comments, f.tags ?? '', f.tagMode ?? 'any'] as const;
+
+/** Предмет: everything the subject screen shows for the period and the filter */
+export const useSubject = (id: string, subjectId: string, q: PeriodQuery, f: FilterQuery) =>
+  useQuery({
+    queryKey: subjectKey(id, subjectId, q, f),
+    queryFn: () =>
+      data(
+        api.GET('/api/students/{id}/subjects/{subjectId}', {
+          params: { path: { id, subjectId }, query: { ...q, ...f } },
+        }),
+      ),
+    placeholderData: sameChild(id),
+  });
+
+export type SubjectDetail = NonNullable<ReturnType<typeof useSubject>['data']>;
+
+/** Динамика of one subject */
+export const useSubjectTrend = (id: string, subjectId: string, q: PeriodQuery, f: FilterQuery) =>
+  useQuery({
+    queryKey: ['subject-trend', id, subjectId, q.period, q.offset, f.comments, f.tags ?? '', f.tagMode ?? 'any'],
+    queryFn: () =>
+      data(
+        api.GET('/api/students/{id}/subjects/{subjectId}/trend', {
+          params: { path: { id, subjectId }, query: { ...q, ...f } },
+        }),
+      ),
+    placeholderData: sameChild(id),
+  });
+
+/**
+ * «Настройки предмета» (design.md 5.4, 6.6): the colour and the goal, applied at once behind the sheet (the subject's
+ * answers are patched in the cache), then everything of the child is read again: the colour is on every stripe
+ */
+export function useSubjectSettings(id: string, subjectId: string) {
+  const client = useQueryClient();
+  const patch = (fn: (d: SubjectDetail) => SubjectDetail) =>
+    client.setQueriesData<SubjectDetail>({ queryKey: ['subject', id, subjectId] }, (d) => (d ? fn(d) : d));
+  const refresh = () => client.invalidateQueries({ predicate: (q) => q.queryKey[1] === id });
+  const color = useMutation({
+    mutationFn: (value: SubjectColor) =>
+      data(
+        api.PUT('/api/students/{id}/subjects/{subjectId}/color', {
+          params: { path: { id, subjectId } },
+          body: { color: value },
+        }),
+      ),
+    onMutate: (value) => patch((d) => ({ ...d, subject: { ...d.subject, color: value } })),
+    onSettled: refresh,
+  });
+  const goal = useMutation({
+    mutationFn: (value: number | null) =>
+      data(
+        api.PUT('/api/students/{id}/subjects/{subjectId}/goal', {
+          params: { path: { id, subjectId } },
+          body: { termGoal: value },
+        }),
+      ),
+    onMutate: (value) => patch((d) => ({ ...d, settings: { ...d.settings, goal: value } })),
+    onSettled: refresh,
+  });
+  return { color, goal };
+}
