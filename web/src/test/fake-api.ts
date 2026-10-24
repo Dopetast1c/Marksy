@@ -13,6 +13,10 @@ export interface FakeState {
   bodies: Record<string, unknown>;
   /** the connected diary refuses the login */
   diaryRefuses?: boolean;
+  /** a diary without work and lesson types (the usual real case, api-spec 7.3): every type is null */
+  noTypes?: boolean;
+  /** Оценки answers in two pages */
+  feedPages?: boolean;
   /** the signed-in person's interface language */
   locale?: string;
   /** the subject screen's answer, when a test needs another one */
@@ -590,12 +594,15 @@ export const SUBJECT = {
   week: [{ weekday: 1, slot: 2, start: '08:55', end: '09:40', room: '305', groupLabel: null }],
 };
 
+const TYPE_KEYS = new Set(['workType', 'workTypeRaw', 'lessonType']);
+const untyped = (key: string, value: unknown) => (TYPE_KEYS.has(key) ? null : value);
+
 export function fakeApi(start: Partial<FakeState> = {}) {
   const state: FakeState = { signedIn: false, calls: [], urls: [], bodies: {}, ...start };
   const error = (status: number, code: string) => json({ error: { code, message: code } }, status);
   let matchesPending = false;
   const json = (body: unknown, status = 200) =>
-    new Response(status === 204 ? null : JSON.stringify(body), {
+    new Response(status === 204 ? null : JSON.stringify(body, state.noTypes ? untyped : undefined), {
       status,
       headers: { 'content-type': 'application/json' },
     });
@@ -676,7 +683,12 @@ export function fakeApi(start: Partial<FakeState> = {}) {
     const more = route.match(/^GET \/api\/students\/([^/]+)\/(marks|finals\/quarters|finals\/years)$/);
     if (more) {
       const [, id, what] = more;
-      if (what === 'marks') return json({ period: PERIOD, items: id === 'kid-milena' ? FEED : [], next: null });
+      if (what === 'marks') {
+        // with feedPages, a second page of one older mark follows the first
+        if (state.feedPages && url.searchParams.get('cursor') !== '0')
+          return json({ period: PERIOD, items: [{ ...FEED[6], id: 'f-old', date: '2026-10-05' }], next: null });
+        return json({ period: PERIOD, items: id === 'kid-milena' ? FEED : [], next: state.feedPages ? 100 : null });
+      }
       return json(what === 'finals/quarters' ? TERM_FINALS : YEAR_FINALS);
     }
     const kid = route.match(/^GET \/api\/students\/([^/]+)\/(overview|trend|events|school)$/);

@@ -24,7 +24,7 @@ export function Frame({
 /** The scrolling body of a screen: the period navigator's swipe works over it */
 export function Body({ children }: { children: ReactNode }) {
   return (
-    <main data-swipe-body className="flex flex-1 touch-pan-y flex-col gap-3.5 px-5 pb-5">
+    <main data-swipe-body className="flex flex-1 touch-pan-y flex-col gap-3.5 overflow-x-clip px-5 pb-5">
       {children}
     </main>
   );

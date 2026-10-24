@@ -13,6 +13,7 @@ interface Tokens {
   space: Record<string, string>;
   shadow: { card: string; cardDark?: string };
   tap: { min: string };
+  motion: { periodSlide: { distance: string; duration: string } };
   avatar: Record<string, Record<string, string> | string>;
 }
 interface ColorSet {
@@ -52,6 +53,8 @@ export function tokensToCss(t: Tokens): string {
     `--font-body: ${t.font.body};`,
     ...Object.entries(t.radius).map(([k, v]) => `--r-${k}: ${v};`),
     `--tap-min: ${t.tap.min};`,
+    `--slide-distance: ${t.motion.periodSlide.distance};`,
+    `--slide-duration: ${t.motion.periodSlide.duration};`,
     ...Object.entries(t.avatar)
       .filter(([group]) => !group.startsWith('$'))
       .flatMap(([group, values]) =>

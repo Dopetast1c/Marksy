@@ -38,6 +38,16 @@ export function PeriodBar({ studentId }: { studentId: string }) {
   );
 }
 
+/** The short slide of the content when the period steps (base.css); restarted on every step */
+function slide(el: HTMLElement | null, from: 'older' | 'newer') {
+  if (!el) return;
+  delete el.dataset.slide;
+  void el.offsetWidth;
+  el.dataset.slide = from;
+  window.clearTimeout(Number(el.dataset.slideTimer));
+  el.dataset.slideTimer = String(window.setTimeout(() => delete el.dataset.slide, 400));
+}
+
 export function PeriodNav({
   studentId,
   compare = false,
@@ -64,7 +74,9 @@ export function PeriodNav({
   const olderOk = list.some((i) => i.offset === offset + 1);
   const newerOk = offset > 0;
   const go = (delta: 1 | -1) => {
-    if ((delta === 1 && olderOk) || (delta === -1 && newerOk)) step(delta);
+    if (!((delta === 1 && olderOk) || (delta === -1 && newerOk))) return;
+    step(delta);
+    slide(body.current, delta === 1 ? 'older' : 'newer');
   };
   useSwipe(body, go);
 
@@ -78,6 +90,7 @@ export function PeriodNav({
   return (
     <div
       ref={nav}
+      data-period-nav
       style={accent}
       className={`sticky top-0 z-[5] -mx-5 flex items-center gap-1.5 px-5 ${
         accent

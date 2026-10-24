@@ -1,6 +1,6 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../../app/App';
 import { initI18n } from '../../i18n';
 import { useMarkFilter, usePeriod } from '../../state/store';
@@ -68,6 +68,34 @@ describe('Оценки', () => {
     expect(await screen.findByText('В этом классе отметки не ставят.')).toBeTruthy();
     expect(screen.queryByRole('group', { name: 'Какие оценки' })).toBeNull();
     expect(api.urls.find((u) => u.includes('/marks?'))).toContain('comments=all');
+  });
+});
+
+describe('Оценки, the next page', () => {
+  it('comes by itself when the end of the list is near', async () => {
+    // a browser that reports the end of the list as near at once
+    class Near {
+      constructor(private cb: (e: { isIntersecting: boolean }[]) => void) {}
+      observe() {
+        this.cb([{ isIntersecting: true }]);
+      }
+      disconnect() {}
+    }
+    vi.stubGlobal('IntersectionObserver', Near);
+    const api = fakeApi({ signedIn: true, feedPages: true });
+    render(<App at={`/s/${milena.id}/marks`} />);
+    expect(await screen.findByText('Понедельник')).toBeTruthy();
+    expect(api.urls.some((u) => u.includes('/marks?') && u.includes('cursor=100'))).toBe(true);
+    vi.unstubAllGlobals();
+  });
+
+  it('or with «Показать ещё» where the browser cannot tell', async () => {
+    vi.stubGlobal('IntersectionObserver', undefined);
+    fakeApi({ signedIn: true, feedPages: true });
+    render(<App at={`/s/${milena.id}/marks`} />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Показать ещё' }));
+    expect(await screen.findByText('Понедельник')).toBeTruthy();
+    vi.unstubAllGlobals();
   });
 });
 

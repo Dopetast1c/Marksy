@@ -19,7 +19,7 @@ export function MarkFilter({ studentId }: { studentId: string }) {
       type="button"
       aria-pressed={on}
       onClick={onClick}
-      className="flex min-h-9 flex-none items-center gap-1.5 rounded-pill bg-surface px-3 text-[13px] font-bold text-ink2 shadow-card aria-pressed:bg-accent aria-pressed:text-accent-ink"
+      className="relative flex min-h-9 flex-none items-center gap-1.5 rounded-pill bg-surface px-3 after:absolute after:inset-x-0 after:-inset-y-1 text-[13px] font-bold text-ink2 shadow-card aria-pressed:bg-accent aria-pressed:text-accent-ink"
     >
       {label}
     </button>
@@ -29,7 +29,7 @@ export function MarkFilter({ studentId }: { studentId: string }) {
       role="group"
       aria-label={t('filter.label')}
       data-hscroll
-      className="-mx-1 -my-0.5 flex gap-2 overflow-x-auto px-1 py-0.5 [scrollbar-width:none]"
+      className="-mx-1 -my-1 flex gap-2 overflow-x-auto px-1 py-1 [scrollbar-width:none]"
     >
       {chip(t('filter.all'), !f.comments && !f.tags.length, f.clear)}
       {chip(t('filter.comments'), f.comments, () => f.setComments(!f.comments))}

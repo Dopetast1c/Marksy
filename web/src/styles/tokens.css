@@ -9,6 +9,8 @@
   --r-lg: 20px;
   --r-pill: 999px;
   --tap-min: 44px;
+  --slide-distance: 24px;
+  --slide-duration: 180ms;
   --av-skin-pale: #FBE7D6;
   --av-skin-light: #F3D1B4;
   --av-skin-medium: #D9A878;

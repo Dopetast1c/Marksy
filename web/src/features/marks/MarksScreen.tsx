@@ -10,6 +10,7 @@ import { MarkFilter, useMarkFilterFor } from '../../components/MarkFilter';
 import { PeriodBar, PeriodNav } from '../../components/PeriodControls';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { ListCard, MoreButton, Row, Stripe } from '../../components/Section';
+import { useNearEnd } from '../../hooks/useNearEnd';
 import { useCapabilities, useScale, useSchoolTz } from '../../hooks/useStudent';
 import { dateStyle, useT } from '../../i18n';
 import { dayCaption } from '../../lib/days';
@@ -49,6 +50,11 @@ export function MarksScreen() {
   const ds = dateStyle();
   const today = todayIn(tz);
   const items = feed.data?.pages.flatMap((p) => p.items) ?? [];
+  const nearEnd = useNearEnd<HTMLDivElement>(
+    () => void feed.fetchNextPage(),
+    !!feed.hasNextPage && !feed.isFetchingNextPage,
+    feed.data?.pages.length ?? 0,
+  );
   const toSubject = (id: string | undefined) => id && navigate(`/s/${studentId}/subjects/${id}`);
 
   const row = (i: FeedItem) => {
@@ -203,6 +209,8 @@ export function MarksScreen() {
             </section>
           );
         })}
+        {/* the next page comes by itself about two screens before the end; the button is the fallback */}
+        <div ref={nearEnd} aria-hidden="true" />
         {feed.hasNextPage && <MoreButton onClick={() => void feed.fetchNextPage()}>{t('marks.more')}</MoreButton>}
       </>
     );
