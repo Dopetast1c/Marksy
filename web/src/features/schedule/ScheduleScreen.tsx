@@ -68,13 +68,15 @@ function dayCounts(t: TFunction, lessons: readonly ScheduleLesson[], now: Date, 
       {ahead.length > 0 && (
         <>
           {' · '}
-          <b className="text-band-good-fg">{t('schedule.ready', { done: ready, total: ahead.length })}</b>
+          <b className="whitespace-nowrap text-band-good-fg">
+            {t('schedule.ready', { done: ready, total: ahead.length })}
+          </b>
         </>
       )}
       {tests > 0 && (
         <>
           {', '}
-          <b className="text-band-low-fg">{t('schedule.tests', { count: tests })}</b>
+          <b className="whitespace-nowrap text-band-low-fg">{t('schedule.tests', { count: tests })}</b>
         </>
       )}
     </>

@@ -6,7 +6,7 @@ import { lanAddress, ownAddresses } from './smoke-lan.mjs';
 // `pnpm smoke:ui [--host <ip>] [--only seed|own]`: with `pnpm dev:lan` running, opens the app the way a phone does,
 // through http://<computer-ip>:5173, in a phone (360 px, touch) and a tablet (820 px), and walks login, «С кого
 // начнём?», Главная and Внимание for the fictional demo family (pnpm db:seed) and for the owner's family
-// (MARKSY_DEV_EMAIL, MARKSY_DEV_PASSWORD from .env). The same states of docs/mockups.html are shot at the same sizes,
+// (MARKSY_DEV_EMAIL, MARKSY_DEV_PASSWORD from .env), then every child's Оценки, Предметы, Предмет, Итоги and Расписание. The same states of docs/mockups.html are shot at the same sizes,
 // so every screen has a pair to compare. Screenshots go to data/ui/<run>/ (last three runs kept, never committed);
 // the terminal shows file names, statuses and counts only, never a name from the data.
 
@@ -37,6 +37,9 @@ export const PROTOTYPE_STATES = [
   ['subject-2', 'subject', 'm', { subjectId: null }],
   ['finals', 'finals', 'k', { finalsMode: 'quarters' }],
   ['finals-years', 'finals', 'k', { finalsMode: 'years' }],
+  ['schedule-1', 'lessons', 'k', { lkind: 'day' }],
+  ['schedule-week', 'lessons', 'k', { lkind: 'week' }],
+  ['schedule-2', 'lessons', 'm', { lkind: 'day' }],
 ];
 
 /** The demo family is fictional and its password is published (server/src/seed/seed.ts) */
@@ -125,6 +128,22 @@ async function shootApp(browser, base, family, device, dir, log) {
       if (i === 0) {
         await page.goto(`${base}/s/${kid.id}/events`);
         await shot(`events-${i + 1}`);
+      }
+      // Расписание on the child's next day with lessons from today on, as the prototype opens День; the first child's
+      // week and its lesson menu
+      const days = await (await page.request.get(`${base}/api/students/${kid.id}/schedule/days`)).json();
+      const next = (days.days ?? []).find((d) => d.date >= days.today)?.date ?? days.today;
+      await page.goto(`${base}/s/${kid.id}/schedule?day=${next}`);
+      await shot(`schedule-${i + 1}`);
+      if (i === 0) {
+        const menu = page.getByRole('button', { name: /Действия с уроком|Lesson actions/ });
+        if (await menu.count()) {
+          await menu.first().click();
+          await shot('lesson-menu');
+          await page.keyboard.press('Escape');
+        }
+        await page.getByRole('button', { name: /^(Неделя|Week)$/ }).click();
+        await shot('schedule-week');
       }
       // Итоги of the first child with marks (a year without marks has none)
       if (kid.gradingScale && kid === kids.find((k) => k.gradingScale)) {

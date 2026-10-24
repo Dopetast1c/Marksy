@@ -40,7 +40,7 @@ function Option({
       <span className={`grid size-10 flex-none place-items-center rounded-md ${tile}`}>{icon}</span>
       <span className="flex min-w-0 flex-col">
         <b>{title}</b>
-        {sub && <span className="truncate text-small text-ink3">{sub}</span>}
+        {sub && <span className="line-clamp-2 text-small text-ink3">{sub}</span>}
       </span>
     </button>
   );
