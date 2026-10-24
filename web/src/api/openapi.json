@@ -1177,11 +1177,18 @@
               },
               "name": {
                 "type": "string"
+              },
+              "color": {
+                "type": [
+                  "string",
+                  "null"
+                ]
               }
             },
             "required": [
               "id",
-              "name"
+              "name",
+              "color"
             ]
           },
           "facts": {
@@ -1408,6 +1415,12 @@
           "subjectName": {
             "type": "string"
           },
+          "subjectColor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "teacherName": {
             "type": [
               "string",
@@ -1557,6 +1570,7 @@
           "end",
           "subjectId",
           "subjectName",
+          "subjectColor",
           "teacherName",
           "room",
           "groupLabel",
@@ -1573,61 +1587,155 @@
           "teacherComment"
         ]
       },
-      "SubjectInfo": {
+      "TermRef": {
         "type": "object",
         "properties": {
           "id": {
             "type": "string"
           },
-          "name": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "quarter",
+              "trimester",
+              "semester",
+              "other"
+            ]
+          },
+          "index": {
+            "type": "number"
+          },
+          "label": {
             "type": "string"
           },
-          "shortName": {
-            "type": [
-              "string",
-              "null"
-            ]
+          "from": {
+            "type": "string"
           },
-          "teacherName": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "groupLabel": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "level": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "levelLabel": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "lessonsPerWeek": {
-            "type": [
-              "number",
-              "null"
-            ]
+          "to": {
+            "type": "string"
           }
         },
         "required": [
           "id",
-          "name",
-          "shortName",
-          "teacherName",
-          "groupLabel",
-          "level",
-          "levelLabel",
-          "lessonsPerWeek"
+          "kind",
+          "index",
+          "label",
+          "from",
+          "to"
+        ]
+      },
+      "FinalsState": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "state": {
+                "type": "string",
+                "enum": [
+                  "running"
+                ]
+              },
+              "term": {
+                "$ref": "#/components/schemas/TermRef"
+              }
+            },
+            "required": [
+              "state",
+              "term"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "state": {
+                "type": "string",
+                "enum": [
+                  "ended"
+                ]
+              },
+              "term": {
+                "$ref": "#/components/schemas/TermRef"
+              }
+            },
+            "required": [
+              "state",
+              "term"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "state": {
+                "type": "string",
+                "enum": [
+                  "posted"
+                ]
+              },
+              "term": {
+                "$ref": "#/components/schemas/TermRef"
+              },
+              "postedOn": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "state",
+              "term",
+              "postedOn"
+            ]
+          }
+        ]
+      },
+      "FinalCell": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "final",
+              "running",
+              "none"
+            ]
+          },
+          "raw": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "value": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "postedOn": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "source": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "api",
+              "manual",
+              null
+            ]
+          }
+        },
+        "required": [
+          "kind",
+          "raw",
+          "value",
+          "postedOn",
+          "source"
         ]
       },
       "FeedItem": {
@@ -1655,11 +1763,18 @@
                   },
                   "name": {
                     "type": "string"
+                  },
+                  "color": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
                   }
                 },
                 "required": [
                   "id",
-                  "name"
+                  "name",
+                  "color"
                 ]
               },
               "mark": {
@@ -1746,11 +1861,18 @@
                   },
                   "name": {
                     "type": "string"
+                  },
+                  "color": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
                   }
                 },
                 "required": [
                   "id",
-                  "name"
+                  "name",
+                  "color"
                 ]
               },
               "text": {
@@ -1788,6 +1910,143 @@
               "type": {
                 "type": "string",
                 "enum": [
+                  "absence"
+                ]
+              },
+              "id": {
+                "type": "string"
+              },
+              "date": {
+                "type": "string"
+              },
+              "subject": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "color": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "name",
+                  "color"
+                ]
+              },
+              "code": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "excused": {
+                "type": [
+                  "boolean",
+                  "null"
+                ]
+              },
+              "lessonId": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "id",
+              "date",
+              "subject",
+              "code",
+              "excused",
+              "lessonId"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "finals"
+                ]
+              },
+              "id": {
+                "type": "string"
+              },
+              "date": {
+                "type": "string"
+              },
+              "term": {
+                "$ref": "#/components/schemas/TermRef"
+              },
+              "marks": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "subject": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "color": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "name",
+                        "color"
+                      ]
+                    },
+                    "mark": {
+                      "$ref": "#/components/schemas/MarkChip"
+                    }
+                  },
+                  "required": [
+                    "subject",
+                    "mark"
+                  ]
+                }
+              },
+              "differ": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "type",
+              "id",
+              "date",
+              "term",
+              "marks",
+              "differ"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
                   "markChanged",
                   "markRemoved"
                 ]
@@ -1806,11 +2065,18 @@
                   },
                   "name": {
                     "type": "string"
+                  },
+                  "color": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
                   }
                 },
                 "required": [
                   "id",
-                  "name"
+                  "name",
+                  "color"
                 ]
               },
               "mark": {
@@ -1912,6 +2178,257 @@
           "buckets"
         ]
       },
+      "SubjectInfo": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "shortName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "teacherName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "groupLabel": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "level": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "levelLabel": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lessonsPerWeek": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "color": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "shortName",
+          "teacherName",
+          "groupLabel",
+          "level",
+          "levelLabel",
+          "lessonsPerWeek",
+          "color"
+        ]
+      },
+      "Hint": {
+        "type": "object",
+        "properties": {
+          "rule": {
+            "type": "string"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "critical",
+              "low",
+              "ok",
+              "good"
+            ]
+          },
+          "fact": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string"
+              },
+              "params": {
+                "type": "object",
+                "additionalProperties": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            },
+            "required": [
+              "key",
+              "params"
+            ]
+          },
+          "advice": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string"
+              },
+              "params": {
+                "type": "object",
+                "additionalProperties": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            },
+            "required": [
+              "key",
+              "params"
+            ]
+          },
+          "lessonId": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "rule",
+          "severity",
+          "fact"
+        ]
+      },
+      "GoalRow": {
+        "type": "object",
+        "properties": {
+          "target": {
+            "type": "number"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "reached",
+              "short",
+              "out_of_reach",
+              "posted"
+            ]
+          },
+          "term": {
+            "$ref": "#/components/schemas/TermRef"
+          },
+          "average": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "projected": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "need": {
+            "type": "number"
+          },
+          "plan": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "number"
+                },
+                "count": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "value",
+                "count"
+              ]
+            }
+          },
+          "keep": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "final": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "raw": {
+                "type": "string"
+              },
+              "value": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "raw",
+              "value"
+            ]
+          }
+        },
+        "required": [
+          "target",
+          "state",
+          "term",
+          "average",
+          "projected",
+          "need",
+          "plan",
+          "keep",
+          "final"
+        ]
+      },
       "Health": {
         "type": "object",
         "properties": {
@@ -1929,31 +2446,32 @@
       "TermFinals": {
         "type": "object",
         "properties": {
+          "state": {
+            "$ref": "#/components/schemas/FinalsState"
+          },
           "terms": {
             "type": "array",
             "items": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "string"
-                },
-                "label": {
-                  "type": "string"
-                },
-                "from": {
-                  "type": "string"
-                },
-                "to": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "id",
-                "label",
-                "from",
-                "to"
-              ]
+              "$ref": "#/components/schemas/TermRef"
             }
+          },
+          "lastYear": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "label"
+            ]
           },
           "rows": {
             "type": "array",
@@ -1968,66 +2486,28 @@
                     },
                     "name": {
                       "type": "string"
-                    }
-                  },
-                  "required": [
-                    "id",
-                    "name"
-                  ]
-                },
-                "terms": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "kind": {
-                        "type": "string",
-                        "enum": [
-                          "final",
-                          "running",
-                          "none"
-                        ]
-                      },
-                      "raw": {
-                        "type": [
-                          "string",
-                          "null"
-                        ]
-                      },
-                      "value": {
-                        "type": [
-                          "number",
-                          "null"
-                        ]
-                      },
-                      "termId": {
-                        "type": "string"
-                      }
                     },
-                    "required": [
-                      "kind",
-                      "raw",
-                      "value",
-                      "termId"
-                    ]
-                  }
-                },
-                "year": {
-                  "type": "object",
-                  "properties": {
-                    "kind": {
-                      "type": "string",
-                      "enum": [
-                        "final",
-                        "running",
-                        "none"
-                      ]
-                    },
-                    "raw": {
+                    "color": {
                       "type": [
                         "string",
                         "null"
                       ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "color"
+                  ]
+                },
+                "lastYear": {
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "properties": {
+                    "raw": {
+                      "type": "string"
                     },
                     "value": {
                       "type": [
@@ -2037,14 +2517,38 @@
                     }
                   },
                   "required": [
-                    "kind",
                     "raw",
                     "value"
                   ]
+                },
+                "terms": {
+                  "type": "array",
+                  "items": {
+                    "allOf": [
+                      {
+                        "$ref": "#/components/schemas/FinalCell"
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "termId": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "termId"
+                        ]
+                      }
+                    ]
+                  }
+                },
+                "year": {
+                  "$ref": "#/components/schemas/FinalCell"
                 }
               },
               "required": [
                 "subject",
+                "lastYear",
                 "terms",
                 "year"
               ]
@@ -2052,7 +2556,9 @@
           }
         },
         "required": [
+          "state",
           "terms",
+          "lastYear",
           "rows"
         ]
       },
@@ -4062,13 +4568,17 @@
                         "marks",
                         "lessons"
                       ]
+                    },
+                    "finals": {
+                      "$ref": "#/components/schemas/FinalsState"
                     }
                   },
                   "required": [
                     "today",
                     "kinds",
                     "instances",
-                    "counts"
+                    "counts",
+                    "finals"
                   ]
                 }
               }
@@ -4339,11 +4849,18 @@
                                   },
                                   "name": {
                                     "type": "string"
+                                  },
+                                  "color": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
                                   }
                                 },
                                 "required": [
                                   "id",
-                                  "name"
+                                  "name",
+                                  "color"
                                 ]
                               },
                               "mark": {
@@ -4389,11 +4906,18 @@
                               },
                               "name": {
                                 "type": "string"
+                              },
+                              "color": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
                               }
                             },
                             "required": [
                               "id",
-                              "name"
+                              "name",
+                              "color"
                             ]
                           },
                           "comparison": {
@@ -4684,460 +5208,6 @@
         }
       }
     },
-    "/api/students/{id}/subjects": {
-      "get": {
-        "summary": "Предметы: every subject with its average, direction, last marks and the child’s teacher and group",
-        "tags": [
-          "students"
-        ],
-        "security": [
-          {
-            "session": []
-          }
-        ],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "required": true,
-            "name": "id",
-            "in": "path"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": [
-                "week",
-                "month",
-                "quarter",
-                "term",
-                "year"
-              ],
-              "default": "week"
-            },
-            "required": false,
-            "name": "period",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
-              "minimum": 0,
-              "maximum": 400,
-              "default": 0
-            },
-            "required": false,
-            "name": "offset",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "format": "date"
-            },
-            "required": false,
-            "name": "from",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "format": "date"
-            },
-            "required": false,
-            "name": "to",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": [
-                "alpha",
-                "weak",
-                "strong",
-                "fell",
-                "rose"
-              ],
-              "default": "alpha"
-            },
-            "required": false,
-            "name": "sort",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "period": {
-                      "$ref": "#/components/schemas/Period"
-                    },
-                    "subjects": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "subject": {
-                            "$ref": "#/components/schemas/SubjectInfo"
-                          },
-                          "comparison": {
-                            "allOf": [
-                              {
-                                "$ref": "#/components/schemas/Comparison"
-                              },
-                              {
-                                "type": [
-                                  "object",
-                                  "null"
-                                ]
-                              }
-                            ]
-                          },
-                          "count": {
-                            "type": "number"
-                          },
-                          "last": {
-                            "type": "array",
-                            "items": {
-                              "$ref": "#/components/schemas/MarkChip"
-                            }
-                          },
-                          "absences": {
-                            "type": [
-                              "number",
-                              "null"
-                            ]
-                          }
-                        },
-                        "required": [
-                          "subject",
-                          "comparison",
-                          "count",
-                          "last",
-                          "absences"
-                        ]
-                      }
-                    }
-                  },
-                  "required": [
-                    "period",
-                    "subjects"
-                  ]
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "No session",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "No such child or period",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/students/{id}/subjects/{subjectId}": {
-      "get": {
-        "summary": "Предмет: stats, terms, distribution, the timeline of marks and teacher comments, the regular week",
-        "tags": [
-          "students"
-        ],
-        "security": [
-          {
-            "session": []
-          }
-        ],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "required": true,
-            "name": "id",
-            "in": "path"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "required": true,
-            "name": "subjectId",
-            "in": "path"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": [
-                "week",
-                "month",
-                "quarter",
-                "term",
-                "year"
-              ],
-              "default": "week"
-            },
-            "required": false,
-            "name": "period",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
-              "minimum": 0,
-              "maximum": 400,
-              "default": 0
-            },
-            "required": false,
-            "name": "offset",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "format": "date"
-            },
-            "required": false,
-            "name": "from",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "format": "date"
-            },
-            "required": false,
-            "name": "to",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "subject": {
-                      "$ref": "#/components/schemas/SubjectInfo"
-                    },
-                    "period": {
-                      "$ref": "#/components/schemas/Period"
-                    },
-                    "comparison": {
-                      "allOf": [
-                        {
-                          "$ref": "#/components/schemas/Comparison"
-                        },
-                        {
-                          "type": [
-                            "object",
-                            "null"
-                          ]
-                        }
-                      ]
-                    },
-                    "bands": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/BandCount"
-                      }
-                    },
-                    "distribution": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "from": {
-                            "type": "number"
-                          },
-                          "to": {
-                            "type": "number"
-                          },
-                          "count": {
-                            "type": "number"
-                          }
-                        },
-                        "required": [
-                          "from",
-                          "to",
-                          "count"
-                        ]
-                      }
-                    },
-                    "terms": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "id": {
-                            "type": "string"
-                          },
-                          "label": {
-                            "type": "string"
-                          },
-                          "from": {
-                            "type": "string"
-                          },
-                          "to": {
-                            "type": "string"
-                          },
-                          "average": {
-                            "type": [
-                              "number",
-                              "null"
-                            ]
-                          },
-                          "final": {
-                            "type": [
-                              "object",
-                              "null"
-                            ],
-                            "properties": {
-                              "raw": {
-                                "type": "string"
-                              },
-                              "mark": {
-                                "type": [
-                                  "number",
-                                  "null"
-                                ]
-                              }
-                            },
-                            "required": [
-                              "raw",
-                              "mark"
-                            ]
-                          }
-                        },
-                        "required": [
-                          "id",
-                          "label",
-                          "from",
-                          "to",
-                          "average",
-                          "final"
-                        ]
-                      }
-                    },
-                    "timeline": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/FeedItem"
-                      }
-                    },
-                    "week": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "weekday": {
-                            "type": "number"
-                          },
-                          "slot": {
-                            "type": "number"
-                          },
-                          "start": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
-                          },
-                          "end": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
-                          },
-                          "room": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
-                          },
-                          "groupLabel": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
-                          }
-                        },
-                        "required": [
-                          "weekday",
-                          "slot",
-                          "start",
-                          "end",
-                          "room",
-                          "groupLabel"
-                        ]
-                      }
-                    }
-                  },
-                  "required": [
-                    "subject",
-                    "period",
-                    "comparison",
-                    "bands",
-                    "distribution",
-                    "terms",
-                    "timeline",
-                    "week"
-                  ]
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "No session",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "No such child, subject or period",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/students/{id}/trend": {
       "get": {
         "summary": "Динамика over all marks: the buckets of the selected period (TrendCard on Главная)",
@@ -5231,119 +5301,6 @@
           },
           "404": {
             "description": "No such child or period",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/students/{id}/subjects/{subjectId}/trend": {
-      "get": {
-        "summary": "Динамика of one subject (TrendCard on Предмет)",
-        "tags": [
-          "students"
-        ],
-        "security": [
-          {
-            "session": []
-          }
-        ],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "required": true,
-            "name": "id",
-            "in": "path"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "required": true,
-            "name": "subjectId",
-            "in": "path"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": [
-                "week",
-                "month",
-                "quarter",
-                "term",
-                "year"
-              ],
-              "default": "week"
-            },
-            "required": false,
-            "name": "period",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
-              "minimum": 0,
-              "maximum": 400,
-              "default": 0
-            },
-            "required": false,
-            "name": "offset",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "format": "date"
-            },
-            "required": false,
-            "name": "from",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "format": "date"
-            },
-            "required": false,
-            "name": "to",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Trend"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "No session",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "No such child, subject or period",
             "content": {
               "application/json": {
                 "schema": {
@@ -5473,11 +5430,18 @@
                               },
                               "name": {
                                 "type": "string"
+                              },
+                              "color": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
                               }
                             },
                             "required": [
                               "id",
-                              "name"
+                              "name",
+                              "color"
                             ]
                           },
                           "lessonId": {
@@ -5880,6 +5844,1082 @@
         }
       }
     },
+    "/api/students/{id}/subjects": {
+      "get": {
+        "summary": "Предметы: every subject with its average, direction and last marks under the mark filter",
+        "tags": [
+          "students"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "week",
+                "month",
+                "quarter",
+                "term",
+                "year"
+              ],
+              "default": "week"
+            },
+            "required": false,
+            "name": "period",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0,
+              "maximum": 400,
+              "default": 0
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "required": false,
+            "name": "from",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "required": false,
+            "name": "to",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "alpha",
+                "weak",
+                "strong",
+                "fell",
+                "rose"
+              ],
+              "default": "alpha"
+            },
+            "required": false,
+            "name": "sort",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "tags",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "any",
+                "all"
+              ],
+              "default": "any"
+            },
+            "required": false,
+            "name": "tagMode",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "all",
+                "only",
+                "none"
+              ],
+              "default": "all"
+            },
+            "required": false,
+            "name": "comments",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "period": {
+                      "$ref": "#/components/schemas/Period"
+                    },
+                    "subjects": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "subject": {
+                            "$ref": "#/components/schemas/SubjectInfo"
+                          },
+                          "comparison": {
+                            "allOf": [
+                              {
+                                "$ref": "#/components/schemas/Comparison"
+                              },
+                              {
+                                "type": [
+                                  "object",
+                                  "null"
+                                ]
+                              }
+                            ]
+                          },
+                          "count": {
+                            "type": "number"
+                          },
+                          "last": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/components/schemas/MarkChip"
+                            }
+                          },
+                          "absences": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "final": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "term": {
+                                "$ref": "#/components/schemas/TermRef"
+                              },
+                              "raw": {
+                                "type": "string"
+                              },
+                              "mark": {
+                                "$ref": "#/components/schemas/MarkChip"
+                              }
+                            },
+                            "required": [
+                              "term",
+                              "raw",
+                              "mark"
+                            ]
+                          },
+                          "lessons": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "count": {
+                                "type": "number"
+                              },
+                              "homework": {
+                                "type": "number"
+                              },
+                              "next": {
+                                "type": [
+                                  "object",
+                                  "null"
+                                ],
+                                "properties": {
+                                  "date": {
+                                    "type": "string"
+                                  },
+                                  "slot": {
+                                    "type": [
+                                      "number",
+                                      "null"
+                                    ]
+                                  },
+                                  "homework": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "lessonId": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "date",
+                                  "slot",
+                                  "homework",
+                                  "lessonId"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "count",
+                              "homework",
+                              "next"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "subject",
+                          "comparison",
+                          "count",
+                          "last",
+                          "absences",
+                          "final",
+                          "lessons"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "period",
+                    "subjects"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such child or period",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/students/{id}/subjects/{subjectId}": {
+      "get": {
+        "summary": "Предмет: settings, «О предмете», «Обратить внимание», stats under the mark filter, the timeline, the coming lessons, the terms",
+        "tags": [
+          "students"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "subjectId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "week",
+                "month",
+                "quarter",
+                "term",
+                "year"
+              ],
+              "default": "week"
+            },
+            "required": false,
+            "name": "period",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0,
+              "maximum": 400,
+              "default": 0
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "required": false,
+            "name": "from",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "required": false,
+            "name": "to",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "tags",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "any",
+                "all"
+              ],
+              "default": "any"
+            },
+            "required": false,
+            "name": "tagMode",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "all",
+                "only",
+                "none"
+              ],
+              "default": "all"
+            },
+            "required": false,
+            "name": "comments",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "subject": {
+                      "$ref": "#/components/schemas/SubjectInfo"
+                    },
+                    "period": {
+                      "$ref": "#/components/schemas/Period"
+                    },
+                    "settings": {
+                      "type": "object",
+                      "properties": {
+                        "goal": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "goalAvailable": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "goal",
+                        "goalAvailable"
+                      ]
+                    },
+                    "attention": {
+                      "type": "object",
+                      "properties": {
+                        "goal": {
+                          "allOf": [
+                            {
+                              "$ref": "#/components/schemas/GoalRow"
+                            },
+                            {
+                              "type": [
+                                "object",
+                                "null"
+                              ]
+                            }
+                          ]
+                        },
+                        "hints": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Hint"
+                          }
+                        }
+                      },
+                      "required": [
+                        "goal",
+                        "hints"
+                      ]
+                    },
+                    "comparison": {
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/Comparison"
+                        },
+                        {
+                          "type": [
+                            "object",
+                            "null"
+                          ]
+                        }
+                      ]
+                    },
+                    "count": {
+                      "type": "number"
+                    },
+                    "prevCount": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "bands": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/BandCount"
+                      }
+                    },
+                    "distribution": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "from": {
+                            "type": "number"
+                          },
+                          "to": {
+                            "type": "number"
+                          },
+                          "count": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "from",
+                          "to",
+                          "count"
+                        ]
+                      }
+                    },
+                    "timeline": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/FeedItem"
+                      }
+                    },
+                    "upcoming": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Lesson"
+                      }
+                    },
+                    "lessonTiles": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "lessons": {
+                          "type": "number"
+                        },
+                        "homework": {
+                          "type": "number"
+                        },
+                        "prevLessons": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "prevHomework": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "lessons",
+                        "homework",
+                        "prevLessons",
+                        "prevHomework"
+                      ]
+                    },
+                    "terms": {
+                      "type": "array",
+                      "items": {
+                        "allOf": [
+                          {
+                            "$ref": "#/components/schemas/TermRef"
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "cell": {
+                                "$ref": "#/components/schemas/FinalCell"
+                              },
+                              "average": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "cell",
+                              "average"
+                            ]
+                          }
+                        ]
+                      }
+                    },
+                    "year": {
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/FinalCell"
+                        },
+                        {
+                          "type": [
+                            "object",
+                            "null"
+                          ]
+                        }
+                      ]
+                    },
+                    "lastYear": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "label": {
+                          "type": "string"
+                        },
+                        "raw": {
+                          "type": "string"
+                        },
+                        "value": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "label",
+                        "raw",
+                        "value"
+                      ]
+                    },
+                    "week": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "weekday": {
+                            "type": "number"
+                          },
+                          "slot": {
+                            "type": "number"
+                          },
+                          "start": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "end": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "room": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "groupLabel": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "weekday",
+                          "slot",
+                          "start",
+                          "end",
+                          "room",
+                          "groupLabel"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "subject",
+                    "period",
+                    "settings",
+                    "attention",
+                    "comparison",
+                    "count",
+                    "prevCount",
+                    "bands",
+                    "distribution",
+                    "timeline",
+                    "upcoming",
+                    "lessonTiles",
+                    "terms",
+                    "year",
+                    "lastYear",
+                    "week"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such child, subject or period",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/students/{id}/subjects/{subjectId}/trend": {
+      "get": {
+        "summary": "Динамика of one subject under the mark filter (TrendCard on Предмет)",
+        "tags": [
+          "students"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "subjectId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "week",
+                "month",
+                "quarter",
+                "term",
+                "year"
+              ],
+              "default": "week"
+            },
+            "required": false,
+            "name": "period",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0,
+              "maximum": 400,
+              "default": 0
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "required": false,
+            "name": "from",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "required": false,
+            "name": "to",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "tags",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "any",
+                "all"
+              ],
+              "default": "any"
+            },
+            "required": false,
+            "name": "tagMode",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "all",
+                "only",
+                "none"
+              ],
+              "default": "all"
+            },
+            "required": false,
+            "name": "comments",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Trend"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such child, subject or period",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/students/{id}/subjects/{subjectId}/color": {
+      "put": {
+        "summary": "The subject’s colour for the whole family (6.6): a palette key, or null for «Авто»",
+        "tags": [
+          "students"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "subjectId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "color": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "enum": [
+                      "red",
+                      "orange",
+                      "yellow",
+                      "lime",
+                      "green",
+                      "teal",
+                      "sky",
+                      "blue",
+                      "violet",
+                      "purple",
+                      "pink",
+                      "grey",
+                      null
+                    ]
+                  }
+                },
+                "required": [
+                  "color"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "color": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "color"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such child or subject",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/students/{id}/subjects/{subjectId}/goal": {
+      "put": {
+        "summary": "The subject’s goal for the term (5.4): a whole value of the child’s scale, or null for «Без цели»",
+        "tags": [
+          "students"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "subjectId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "termGoal": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "termGoal"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "goal": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "goal"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Goals do not apply to this child, or the value is not on the scale",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such child or subject",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/students/{id}/schedule": {
       "get": {
         "summary": "Расписание: today, tomorrow, the next school day, or a week (week=0 this week, 1 next, -1 last)",
@@ -6054,7 +7094,7 @@
     },
     "/api/students/{id}/finals/years": {
       "get": {
-        "summary": "Итоги by year: each subject’s year final over the school years Marksy has",
+        "summary": "Итоги by year: each subject’s year final over the school years Marksy has, the running year in italics",
         "tags": [
           "students"
         ],
@@ -6092,11 +7132,15 @@
                           },
                           "label": {
                             "type": "string"
+                          },
+                          "current": {
+                            "type": "boolean"
                           }
                         },
                         "required": [
                           "id",
-                          "label"
+                          "label",
+                          "current"
                         ]
                       }
                     },
@@ -6108,38 +7152,55 @@
                           "subjectName": {
                             "type": "string"
                           },
+                          "subjectId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "isNew": {
+                            "type": "boolean"
+                          },
                           "cells": {
                             "type": "array",
                             "items": {
-                              "type": "object",
-                              "properties": {
-                                "yearId": {
-                                  "type": "string"
+                              "allOf": [
+                                {
+                                  "$ref": "#/components/schemas/FinalCell"
                                 },
-                                "raw": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
-                                },
-                                "value": {
-                                  "type": [
-                                    "number",
-                                    "null"
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "yearId": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "yearId"
                                   ]
                                 }
-                              },
-                              "required": [
-                                "yearId",
-                                "raw",
-                                "value"
                               ]
                             }
+                          },
+                          "trend": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "enum": [
+                              "up",
+                              "down",
+                              "flat",
+                              null
+                            ]
                           }
                         },
                         "required": [
                           "subjectName",
-                          "cells"
+                          "subjectId",
+                          "isNew",
+                          "cells",
+                          "trend"
                         ]
                       }
                     }

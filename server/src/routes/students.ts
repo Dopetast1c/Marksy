@@ -8,23 +8,17 @@ import {
   periodInstance,
   periodStats,
   previousInstance,
-  sortSubjects,
-  trendBuckets,
 } from '@marksy/core';
 import type { PeriodKind } from '@marksy/core';
-import { and, desc, eq, gte, inArray } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import { Router } from 'express';
 import { z } from 'zod';
-import { bellSchedules, finalMarks, markEvents, marks, subjects, userSeen, weekTemplates } from '../db/schema';
-import type { MarkDiff } from '../db/schema';
+import { bellSchedules, userSeen } from '../db/schema';
 import { childName } from '../family/children';
 import type { AppDeps } from '../http/context';
 import { memberOf } from '../http/context';
-import { HttpError } from '../http/errors';
 import { route } from '../http/route';
-import { registry } from '../openapi';
 import { loadChild, periodQuery, resolvePeriod } from '../students/context';
-import type { ChildContext } from '../students/context';
 import {
   absencesIn,
   chipOf,
@@ -32,12 +26,15 @@ import {
   lessonCounts,
   lessonsIn,
   marksIn,
-  remarksIn,
-  subjectInfo,
+  refOf,
+  refOrNull,
   subjectsOf,
 } from '../students/data';
 import { childEvents } from '../students/events';
+import { finalsOf, finalsState } from '../students/finals';
+import { feedItem, feedItems, lastSeen } from '../students/feed';
 import { nowLine } from '../students/now';
+import { trendOf, trendResponse } from '../students/trend';
 import { localTime } from '../sync/time';
 import { visibleStudents } from './me';
 import {
@@ -47,6 +44,7 @@ import {
   comparison,
   distributionOf,
   distributionOut,
+  finalsStateOut,
   lessonOut,
   markChip,
   nowLine as nowLineSchema,
@@ -62,205 +60,6 @@ import {
 
 const id = z.string().uuid();
 const childParams = z.object({ id });
-const subjectParams = z.object({ id, subjectId: id });
-const FEED_CHANGES_DAYS = 14;
-
-const subjectInfoSchema = registry.register(
-  'SubjectInfo',
-  z.object({
-    id: z.string(),
-    name: z.string(),
-    shortName: z.string().nullable(),
-    teacherName: z.string().nullable(),
-    groupLabel: z.string().nullable(),
-    level: z.string().nullable(),
-    levelLabel: z.string().nullable(),
-    lessonsPerWeek: z.number().nullable(),
-  }),
-);
-
-const feedItem = registry.register(
-  'FeedItem',
-  z.discriminatedUnion('type', [
-    z.object({
-      type: z.literal('mark'),
-      id: z.string(),
-      date: z.string(),
-      subject: subjectRef,
-      mark: markChip,
-      workType: z.string().nullable(),
-      workTypeRaw: z.string().nullable(),
-      topic: z.string().nullable(),
-      comment: z.string().nullable(),
-      lessonId: z.string().nullable(),
-      /** The tags of the mark's lesson (M6) */
-      tagIds: z.array(z.string()),
-      isNew: z.boolean(),
-    }),
-    /** A teacher's comment without a mark (D56): its own row after the marks of the day, never a chip */
-    z.object({
-      type: z.literal('comment'),
-      id: z.string(),
-      date: z.string(),
-      subject: subjectRef.nullable(),
-      text: z.string().nullable(),
-      lessonId: z.string().nullable(),
-      slot: z.number().nullable(),
-    }),
-    /** A mark the teacher changed or removed, shown for 14 days (design.md 8) */
-    z.object({
-      type: z.enum(['markChanged', 'markRemoved']),
-      id: z.string(),
-      date: z.string(),
-      subject: subjectRef,
-      mark: markChip,
-      before: z.string().nullable(),
-      seenAt: z.date(),
-    }),
-  ]),
-);
-
-type FeedItem = z.infer<typeof feedItem>;
-
-async function lastSeen(deps: AppDeps, ctx: ChildContext): Promise<Date | null> {
-  const [row] = await deps.db
-    .select({ at: userSeen.lastSeenAt })
-    .from(userSeen)
-    .where(and(eq(userSeen.userId, ctx.userId), eq(userSeen.studentId, ctx.student.id)));
-  return row?.at ?? null;
-}
-
-/** Marks and teacher comments of one child, newest day first; in a day the marks, then the comments, then changes */
-async function feedItems(
-  deps: AppDeps,
-  ctx: ChildContext,
-  range: { from: string; to: string },
-  opts: { subjectId?: string | undefined; comments: 'all' | 'only' | 'none'; tags?: string[] | undefined },
-): Promise<FeedItem[]> {
-  const seen = await lastSeen(deps, ctx);
-  const items: FeedItem[] = [];
-  const subjectOk = (sid: string | null) => !opts.subjectId || sid === opts.subjectId;
-  if (opts.comments !== 'only') {
-    for (const m of await marksIn(deps.db, ctx.student.id, range)) {
-      if (!subjectOk(m.subjectId)) continue;
-      // tags come with M6: a filter by tags finds no mark until lessons carry them
-      if (opts.tags?.length) continue;
-      items.push({
-        type: 'mark',
-        id: m.id,
-        date: m.date,
-        subject: { id: m.subjectId, name: m.subjectName },
-        mark: chipOf(ctx.scale, m),
-        workType: m.workType,
-        workTypeRaw: m.workTypeRaw,
-        topic: m.topic,
-        comment: m.comment,
-        lessonId: m.lessonId,
-        tagIds: [],
-        isNew: !seen || m.firstSeenAt > seen,
-      });
-    }
-  }
-  if (opts.comments !== 'none' && !opts.tags?.length) {
-    for (const r of await remarksIn(deps.db, ctx, range)) {
-      if (!subjectOk(r.subjectId)) continue;
-      items.push({
-        type: 'comment',
-        id: r.id,
-        date: r.date,
-        subject: r.subjectId && r.subjectName ? { id: r.subjectId, name: r.subjectName } : null,
-        text: r.text,
-        lessonId: r.lessonId,
-        slot: r.slot,
-      });
-    }
-  }
-  if (opts.comments !== 'only' && !opts.tags?.length) {
-    const since = new Date(ctx.now.getTime() - FEED_CHANGES_DAYS * 86_400_000);
-    const changes = await deps.db
-      .select({
-        id: markEvents.id,
-        kind: markEvents.kind,
-        diff: markEvents.diff,
-        createdAt: markEvents.createdAt,
-        mark: marks,
-        subjectName: subjects.name,
-      })
-      .from(markEvents)
-      .innerJoin(marks, eq(marks.id, markEvents.markId))
-      .innerJoin(subjects, eq(subjects.id, marks.subjectId))
-      .where(and(eq(markEvents.studentId, ctx.student.id), gte(markEvents.createdAt, since)))
-      .orderBy(desc(markEvents.createdAt));
-    for (const c of changes) {
-      if (c.kind !== 'changed' && c.kind !== 'removed') continue;
-      if (c.mark.date < range.from || c.mark.date > range.to || !subjectOk(c.mark.subjectId)) continue;
-      items.push({
-        type: c.kind === 'changed' ? 'markChanged' : 'markRemoved',
-        id: c.id,
-        date: c.mark.date,
-        subject: { id: c.mark.subjectId, name: c.subjectName },
-        mark: chipOf(ctx.scale, c.mark),
-        before: ((c.diff ?? {}) as MarkDiff).raw?.[0] ?? null,
-        seenAt: c.createdAt,
-      });
-    }
-  }
-  const rank = { mark: 0, comment: 1, markChanged: 2, markRemoved: 2 } as const;
-  return items.sort((a, b) => b.date.localeCompare(a.date) || rank[a.type] - rank[b.type]);
-}
-
-/** The subject of this child, or 404 */
-async function subjectOf(deps: AppDeps, ctx: ChildContext, subjectId: string) {
-  const [s] = await deps.db
-    .select()
-    .from(subjects)
-    .where(and(eq(subjects.id, subjectId), eq(subjects.studentId, ctx.student.id)));
-  if (!s) throw new HttpError(404, 'not_found', 'No such subject');
-  return s;
-}
-
-async function trendOf(deps: AppDeps, ctx: ChildContext, q: z.infer<typeof periodQuery>, subjectId?: string) {
-  const p = resolvePeriod(ctx, q);
-  if (!p.instance || !ctx.scale) return { period: periodOf(p), buckets: [] };
-  const scale = ctx.scale;
-  const all = (await marksIn(deps.db, ctx.student.id))
-    .filter((m) => !subjectId || m.subjectId === subjectId)
-    .map(factOf);
-  return {
-    period: periodOf(p),
-    buckets: trendBuckets(ctx.period, p.instance).map((b) => {
-      const s = periodStats(scale, all, b);
-      return {
-        from: b.from,
-        to: b.to,
-        future: b.future,
-        selected: b.selected,
-        average: s.average,
-        count: s.count,
-        bands: s.bands,
-      };
-    }),
-  };
-}
-
-const trendResponse = registry.register(
-  'Trend',
-  z.object({
-    period: periodOut,
-    buckets: z.array(
-      z.object({
-        from: z.string(),
-        to: z.string(),
-        future: z.boolean(),
-        selected: z.boolean(),
-        average: z.number().nullable(),
-        count: z.number(),
-        /** The bucket's values per band role: the stacked bar (ux-principles D26) */
-        bands: z.object({ critical: z.number(), low: z.number(), good: z.number(), top: z.number() }),
-      }),
-    ),
-  }),
-);
 
 export function studentRoutes(deps: AppDeps): Router {
   const r = Router();
@@ -374,6 +173,8 @@ export function studentRoutes(deps: AppDeps): Router {
         instances: z.record(z.string(), z.array(periodOut.extend({ count: z.number() }))),
         /** What the counts are */
         counts: z.enum(['marks', 'lessons']),
+        /** The finals entry row on Оценки and Предметы (design.md 5.3); null without terms or finals */
+        finals: finalsStateOut.nullable(),
       }),
       errors: { 404: 'No such child' },
     },
@@ -391,6 +192,7 @@ export function studentRoutes(deps: AppDeps): Router {
         today: ctx.today,
         kinds,
         counts: ctx.scale ? ('marks' as const) : ('lessons' as const),
+        finals: ctx.scale ? finalsState(ctx, await finalsOf(deps.db, ctx)) : null,
         instances: Object.fromEntries(
           kinds.map((k: PeriodKind) => [
             k,
@@ -544,7 +346,7 @@ export function studentRoutes(deps: AppDeps): Router {
               marks: upToToday
                 .filter((x) => x.date === lastDate)
                 .map((x) => ({
-                  subject: { id: x.subjectId, name: x.subjectName },
+                  subject: refOf(ctx, x.subjectId, x.subjectName),
                   mark: chipOf(scale, x),
                   workType: x.workType,
                   comment: x.comment,
@@ -554,7 +356,7 @@ export function studentRoutes(deps: AppDeps): Router {
         movers: moved.map((mv) => {
           const s = subjectRows.find((x) => x.id === mv.subjectId)!;
           const { subjectId: _s, count, ...cmp } = mv;
-          return { subject: { id: s.id, name: s.name }, comparison: cmp, count };
+          return { subject: refOf(ctx, s.id, s.name), comparison: cmp, count };
         }),
         attention: events.slice(0, 5),
         attentionTotal: events.length,
@@ -596,162 +398,11 @@ export function studentRoutes(deps: AppDeps): Router {
         subjectId: query.subject,
         comments: query.comments,
         tags: query.tags?.split(',').filter(Boolean),
+        feed: true,
       });
       const page = all.slice(query.cursor, query.cursor + query.limit);
       const next = query.cursor + query.limit < all.length ? query.cursor + query.limit : null;
       return { period: periodOf(p), items: page, next };
-    },
-  );
-
-  route(
-    r,
-    {
-      method: 'get',
-      path: '/api/students/:id/subjects',
-      summary: 'Предметы: every subject with its average, direction, last marks and the child’s teacher and group',
-      tags: ['students'],
-      access: 'member',
-      params: childParams,
-      query: periodQuery.extend({ sort: z.enum(['alpha', 'weak', 'strong', 'fell', 'rose']).default('alpha') }),
-      response: z.object({
-        period: periodOut,
-        subjects: z.array(
-          z.object({
-            subject: subjectInfoSchema,
-            comparison: comparison.nullable(),
-            count: z.number(),
-            last: z.array(markChip),
-            absences: z.number().nullable(),
-          }),
-        ),
-      }),
-      errors: { 404: 'No such child or period' },
-    },
-    async (req, { params, query }) => {
-      const ctx = await child(req, params.id);
-      const p = resolvePeriod(ctx, query);
-      const range = { from: p.from, to: p.to };
-      const rows = await subjectsOf(deps.db, ctx);
-      const all = await marksIn(deps.db, ctx.student.id);
-      const prev = p.instance ? previousInstance(ctx.period, p.instance) : null;
-      const absences = ctx.caps.attendance === 'none' ? null : await absencesIn(deps.db, ctx, range);
-      let order = rows.map((s) => s.id);
-      const cmp = ctx.scale
-        ? compareSubjects(ctx.scale, all.map(factOf), order, range, prev && { from: prev.from, to: prev.to })
-        : [];
-      if (ctx.scale && query.sort !== 'alpha') order = sortSubjects(ctx.scale, cmp, query.sort).map((c) => c.subjectId);
-      return {
-        period: periodOf(p),
-        subjects: order.map((sid) => {
-          const s = rows.find((x) => x.id === sid)!;
-          const c = cmp.find((x) => x.subjectId === sid);
-          const own = all.filter((m) => m.subjectId === sid && m.date >= p.from && m.date <= p.to);
-          return {
-            subject: subjectInfo(s),
-            comparison: c ? (({ subjectId: _s, count: _c, ...rest }) => rest)(c) : null,
-            count: c?.count ?? 0,
-            last: own.slice(0, 5).map((m) => chipOf(ctx.scale, m)),
-            absences: absences ? absences.filter((a) => a.subjectId === sid).length : null,
-          };
-        }),
-      };
-    },
-  );
-
-  route(
-    r,
-    {
-      method: 'get',
-      path: '/api/students/:id/subjects/:subjectId',
-      summary: 'Предмет: stats, terms, distribution, the timeline of marks and teacher comments, the regular week',
-      tags: ['students'],
-      access: 'member',
-      params: subjectParams,
-      query: periodQuery,
-      response: z.object({
-        subject: subjectInfoSchema,
-        period: periodOut,
-        comparison: comparison.nullable(),
-        bands: z.array(bandCount),
-        distribution: distributionOut,
-        terms: z.array(
-          z.object({
-            id: z.string(),
-            label: z.string(),
-            from: z.string(),
-            to: z.string(),
-            average: z.number().nullable(),
-            final: z.object({ raw: z.string(), mark: z.number().nullable() }).nullable(),
-          }),
-        ),
-        timeline: z.array(feedItem),
-        /** «Когда» in «О предмете» (5.4): the subject's lessons of the regular week */
-        week: z.array(
-          z.object({
-            weekday: z.number(),
-            slot: z.number(),
-            start: z.string().nullable(),
-            end: z.string().nullable(),
-            room: z.string().nullable(),
-            groupLabel: z.string().nullable(),
-          }),
-        ),
-      }),
-      errors: { 404: 'No such child, subject or period' },
-    },
-    async (req, { params, query }) => {
-      const ctx = await child(req, params.id);
-      const s = await subjectOf(deps, ctx, params.subjectId);
-      const p = resolvePeriod(ctx, query);
-      const range = { from: p.from, to: p.to };
-      const own = (await marksIn(deps.db, ctx.student.id)).filter((m) => m.subjectId === s.id);
-      const facts = own.map(factOf);
-      const prev = p.instance ? previousInstance(ctx.period, p.instance) : null;
-      const scale = ctx.scale;
-      const stats = scale ? periodStats(scale, facts, range) : null;
-      const finals = await deps.db
-        .select()
-        .from(finalMarks)
-        .where(
-          and(eq(finalMarks.studentId, ctx.student.id), eq(finalMarks.subjectId, s.id), eq(finalMarks.role, 'final')),
-        );
-      const [template] = await deps.db
-        .select()
-        .from(weekTemplates)
-        .where(eq(weekTemplates.studentId, ctx.student.id))
-        .orderBy(desc(weekTemplates.fetchedAt))
-        .limit(1);
-      const inP = own.filter((m) => m.date >= p.from && m.date <= p.to);
-      const values = inP.flatMap((m) => m.values);
-      return {
-        subject: subjectInfo(s),
-        period: periodOf(p),
-        comparison: scale && stats ? comparePeriods(scale, stats, prev && periodStats(scale, facts, prev)) : null,
-        bands: scale && stats ? bandsOf(scale, stats, prev && periodStats(scale, facts, prev)) : [],
-        distribution: scale ? distributionOf(scale, values) : [],
-        terms: ctx.termRows.map((t) => {
-          const f = finals.find((x) => x.periodId === t.id);
-          return {
-            id: t.id,
-            label: t.label,
-            from: t.startDate,
-            to: t.endDate,
-            average: scale ? periodStats(scale, facts, { from: t.startDate, to: t.endDate }).average : null,
-            final: f ? { raw: f.raw, mark: f.mark } : null,
-          };
-        }),
-        timeline: await feedItems(deps, ctx, range, { subjectId: s.id, comments: 'all' }),
-        week: (template?.entries ?? [])
-          .filter((e) => e.subject_id === s.id)
-          .map((e) => ({
-            weekday: e.weekday,
-            slot: e.slot,
-            start: e.start ?? null,
-            end: e.end ?? null,
-            room: e.room ?? null,
-            groupLabel: e.group_label ?? null,
-          })),
-      };
     },
   );
 
@@ -769,26 +420,6 @@ export function studentRoutes(deps: AppDeps): Router {
       errors: { 404: 'No such child or period' },
     },
     async (req, { params, query }) => trendOf(deps, await child(req, params.id), query),
-  );
-
-  route(
-    r,
-    {
-      method: 'get',
-      path: '/api/students/:id/subjects/:subjectId/trend',
-      summary: 'Динамика of one subject (TrendCard on Предмет)',
-      tags: ['students'],
-      access: 'member',
-      params: subjectParams,
-      query: periodQuery,
-      response: trendResponse,
-      errors: { 404: 'No such child, subject or period' },
-    },
-    async (req, { params, query }) => {
-      const ctx = await child(req, params.id);
-      const s = await subjectOf(deps, ctx, params.subjectId);
-      return trendOf(deps, ctx, query, s.id);
-    },
   );
 
   route(
@@ -829,7 +460,7 @@ export function studentRoutes(deps: AppDeps): Router {
           status: a.status,
           excused: a.excused,
           code: a.code,
-          subject: a.subjectId && a.subjectName ? { id: a.subjectId, name: a.subjectName } : null,
+          subject: refOrNull(ctx, a.subjectId, a.subjectName),
           lessonId: a.lessonId,
         })),
       };

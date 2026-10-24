@@ -13,7 +13,7 @@ The order in which Marksy is built with Claude Code, what each milestone must de
 | M3a | School details (teachers, subgroups, rooms, bells, the regular week), children across families and systems, the per-child sync window | `m3a-school` | done |
 | M4 | Accounts, families and the read API | `m4-api` | done |
 | M5a | Web: tokens, shell, login, student pick, Главная, Внимание | `m5a-shell` | done |
-| M5b | Web: Оценки, Итоги, Предметы, Предмет | `m5b-marks` | todo |
+| M5b | Web: Оценки, Итоги, Предметы, Предмет | `m5b-marks` | in progress |
 | M5c | Web: Расписание, lesson menu, ready ticks, own homework | `m5c-schedule` | todo |
 | M5d | Web: Ещё, Семья, Синхронизация, Оформление | `m5d-more` | todo |
 | M5e | Translations: the ten other interface languages | `m5e-i18n` | todo |
@@ -143,7 +143,7 @@ Local check: `pnpm install`, `pnpm db:up`, `pnpm check`, `pnpm dev`, then open h
 
 **Read:** `docs/design.md` 5.3, 5.3a, 5.3b, 5.4, 6.1, 6.6; prototype screens Оценки, Итоговые отметки, Предметы, Предмет.
 
-**Deliver:** MarkFilter (Все and Теги with any/all, one shared state), StatBlock, TrendCard, distribution, finals table, subject list with sorting, subject screen with accent colour, settings sheet (goal, colour), «Обратить внимание», «Ближайшие уроки», the class-without-marks variants. Work and lesson types are almost never set in real data (1 mark of 72, 3 lessons of 306, api-spec 7.3): a work type label appears under a mark only when the diary has one, with no placeholder; the test pencil on chips and every "is this a test" come from the tag «Контрольная» (design.md 6, D50); test with fixtures where every type is null and check that no screen has an empty slot or a dangling separator.
+**Deliver:** MarkFilter (Все and Теги with any/all, one shared state), StatBlock, TrendCard, distribution, finals table, subject list with sorting, subject screen with accent colour, settings sheet (goal, colour), «Обратить внимание», «Ближайшие уроки», the class-without-marks variants. Work and lesson types are almost never set in real data (1 mark of 72, 3 lessons of 306, api-spec 7.3): a work type label appears under a mark only when the diary has one, with no placeholder; the test pencil on chips and every "is this a test" come from the tag «Контрольная» (design.md 6, D50); test with fixtures where every type is null and check that no screen has an empty slot or a dangling separator. Once the diary posts the first term's finals (after 31 October 2026): one real `pnpm probe`, the mapping of the finals response checked against its real shape, and Итоги checked on the owner's family; if M5b is done by then, this moves to the milestone in progress.
 
 **Done when:** the whole read side of the app (login, pick, Главная, Внимание, Оценки, Итоги, Предметы, Предмет, every child, every period) runs locally on the owner's family and on the seed in a desktop browser and on a phone over the home network with `pnpm dev:lan`. This is the first milestone the owner uses day to day for testing.
 
@@ -157,7 +157,7 @@ Local check: `pnpm install`, `pnpm db:up`, `pnpm check`, `pnpm dev`, then open h
 
 **Read:** `docs/design.md` 5.6, 5.6a, 5.7; prototype screens Ещё, Семья, Синхронизация, Оформление, Аватар.
 
-**Deliver:** Ещё in the documented order (the row «Настройки уведомлений» comes with M9), Семья (members, invites, diary accounts, students), avatars, Синхронизация (status, history, manual refresh within the login limit), Оформление (theme, palette, wallpaper, font, subject colours), student mode and simple mode.
+**Deliver:** Ещё in the documented order (the row «Настройки уведомлений» comes with M9), Семья (members, invites, diary accounts, students), avatars, Синхронизация (status, history, manual refresh within the login limit), Оформление (theme, palette, wallpaper, font, subject colours), student mode and simple mode, manual entry of past years' finals (`PUT /api/students/:id/final-marks`, the button «Ввести итоги прошлого года» on Итоги → Годы for admin and parents; moved here from M5b).
 
 ## M5e. Translations
 

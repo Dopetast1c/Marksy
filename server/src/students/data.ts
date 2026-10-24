@@ -140,7 +140,18 @@ export async function subjectsOf(db: Db, ctx: ChildContext) {
     .orderBy(asc(subjects.name));
 }
 
-export const subjectInfo = (s: typeof subjects.$inferSelect) => ({
+/** A subject as rows carry it: id, name as the diary sends it, and the family's colour (null = «авто», 6.6) */
+export const refOf = (ctx: Pick<ChildContext, 'colors'>, id: string, name: string) => ({
+  id,
+  name,
+  color: ctx.colors.get(id) ?? null,
+});
+
+/** The same, for rows whose subject may be unknown */
+export const refOrNull = (ctx: Pick<ChildContext, 'colors'>, id: string | null, name: string | null) =>
+  id && name ? refOf(ctx, id, name) : null;
+
+export const subjectInfo = (ctx: Pick<ChildContext, 'colors'>, s: typeof subjects.$inferSelect) => ({
   id: s.id,
   name: s.name,
   shortName: s.shortName,
@@ -149,6 +160,7 @@ export const subjectInfo = (s: typeof subjects.$inferSelect) => ({
   level: s.level,
   levelLabel: s.levelLabel,
   lessonsPerWeek: s.lessonsPerWeek,
+  color: ctx.colors.get(s.id) ?? null,
 });
 
 /**
@@ -205,6 +217,7 @@ export async function lessonsIn(db: Db, ctx: ChildContext, range: DateRange) {
       end: l.endTime,
       subjectId: l.subjectId,
       subjectName: l.subjectName,
+      subjectColor: ctx.colors.get(l.subjectId) ?? null,
       teacherName: l.teacherName,
       room: l.room,
       groupLabel: l.groupLabel,
@@ -228,11 +241,13 @@ export async function lessonsIn(db: Db, ctx: ChildContext, range: DateRange) {
 
 /**
  * The two tiles of a year without marks (design.md 5.2, D49): lessons and homework in the selected instance and in the
- * one before. Lessons are planned ahead, so an instance counts to its end, not to today. Cancelled lessons do not count.
+ * one before, of every subject or of one. Lessons are planned ahead, so an instance counts to its end, not to today. Cancelled lessons do not count.
  */
-export async function lessonCounts(db: Db, ctx: ChildContext, p: ResolvedPeriod) {
+export async function lessonCounts(db: Db, ctx: ChildContext, p: ResolvedPeriod, subjectId?: string) {
   const count = async (range: DateRange) => {
-    const ls = (await lessonsIn(db, ctx, range)).filter((l) => !l.cancelled);
+    const ls = (await lessonsIn(db, ctx, range)).filter(
+      (l) => !l.cancelled && (!subjectId || l.subjectId === subjectId),
+    );
     return { lessons: ls.length, homework: ls.filter((l) => l.homework || l.ownHomework.length).length };
   };
   const cur = await count({ from: p.from, to: p.end });

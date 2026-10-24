@@ -71,6 +71,13 @@
       "when": 1792856776484,
       "tag": "0009_cli_login_outcome",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792866130803,
+      "tag": "0010_final_first_seen",
+      "breakpoints": true
     }
   ]
 }

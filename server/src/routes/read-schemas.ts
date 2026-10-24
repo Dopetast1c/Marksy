@@ -20,7 +20,8 @@ export const markChip = registry.register(
   }),
 );
 
-export const subjectRef = z.object({ id: z.string(), name: z.string() });
+/** A subject on a row: its family colour is a palette key of docs/tokens.json, null for «авто» (design.md 6.6) */
+export const subjectRef = z.object({ id: z.string(), name: z.string(), color: z.string().nullable() });
 
 export const periodOut = registry.register(
   'Period',
@@ -163,6 +164,7 @@ export const lessonOut = registry.register(
     end: z.string().nullable(),
     subjectId: z.string(),
     subjectName: z.string(),
+    subjectColor: z.string().nullable(),
     teacherName: z.string().nullable(),
     room: z.string().nullable(),
     groupLabel: z.string().nullable(),
@@ -190,5 +192,44 @@ export const lessonOut = registry.register(
     absent: z.boolean(),
     /** The teacher's comment without a mark (D56); null without one or without capabilities.behaviour */
     teacherComment: z.string().nullable(),
+  }),
+);
+
+/** A term as the finals show it: its kind and number name it through i18n («I четверть»), its dates under the head */
+export const termRefOut = registry.register(
+  'TermRef',
+  z.object({
+    id: z.string(),
+    kind: termKind,
+    index: z.number(),
+    label: z.string(),
+    from: z.string(),
+    to: z.string(),
+  }),
+);
+
+/** The finals entry row on Оценки and Предметы (design.md 5.3): a running term, an ended one, or posted finals */
+export const finalsStateOut = registry.register(
+  'FinalsState',
+  z.discriminatedUnion('state', [
+    z.object({ state: z.literal('running'), term: termRefOut }),
+    z.object({ state: z.literal('ended'), term: termRefOut }),
+    z.object({ state: z.literal('posted'), term: termRefOut, postedOn: z.string().nullable() }),
+  ]),
+);
+
+/**
+ * One cell of Итоги (5.3b): the teacher's final (framed), or a calculation in italics (the running term's average, the
+ * year's value by the scale's year rule over the term finals posted so far), or a dash
+ */
+export const finalCellOut = registry.register(
+  'FinalCell',
+  z.object({
+    kind: z.enum(['final', 'running', 'none']),
+    raw: z.string().nullable(),
+    value: z.number().nullable(),
+    postedOn: z.string().nullable(),
+    /** a final entered by hand from the paper report card is shown with «введено вручную» */
+    source: z.enum(['api', 'manual']).nullable(),
   }),
 );

@@ -1,26 +1,21 @@
-import { addDays, periodStats, weekStartOf } from '@marksy/core';
+import { addDays, trendOf, weekStartOf } from '@marksy/core';
 import { and, asc, eq, gt, isNull, lte } from 'drizzle-orm';
 import { Router } from 'express';
 import { z } from 'zod';
-import { finalMarks, lessons, schoolYears, subjects } from '../db/schema';
+import { finalMarks, lessons, schoolYears } from '../db/schema';
 import type { AppDeps } from '../http/context';
 import { route } from '../http/route';
 import { registry } from '../openapi';
 import { loadChild } from '../students/context';
-import { factOf, lessonsIn, marksIn } from '../students/data';
-import { lessonOut } from './read-schemas';
+import { factOf, lessonsIn, marksIn, refOf, subjectsOf } from '../students/data';
+import { finalsOf, finalsState, lastYearFinals, termCell, termRef, yearCell } from '../students/finals';
+import { finalCellOut, finalsStateOut, lessonOut, subjectRef, termRefOut } from './read-schemas';
 
 // Расписание and Итоги (docs/design.md 5.5, 5.3b, 9): lessons with homework, «готово», «урока не будет», the room, the
 // child's subgroup and the teacher's comment without a mark (D56); term and year finals with the running average where
 // a final is not posted yet.
 
 const id = z.string().uuid();
-
-const finalCell = z.object({
-  kind: z.enum(['final', 'running', 'none']),
-  raw: z.string().nullable(),
-  value: z.number().nullable(),
-});
 
 export function scheduleRoutes(deps: AppDeps): Router {
   const r = Router();
@@ -82,12 +77,18 @@ export function scheduleRoutes(deps: AppDeps): Router {
       response: registry.register(
         'TermFinals',
         z.object({
-          terms: z.array(z.object({ id: z.string(), label: z.string(), from: z.string(), to: z.string() })),
+          /** The header line («I четверть идёт, итоги после 31 окт» / «I четверть выставлена сегодня») */
+          state: finalsStateOut.nullable(),
+          terms: z.array(termRefOut),
+          /** The school year the «итог 2025/26: 8» line under a subject comes from */
+          lastYear: z.object({ id: z.string(), label: z.string() }).nullable(),
           rows: z.array(
             z.object({
-              subject: z.object({ id: z.string(), name: z.string() }),
-              terms: z.array(finalCell.extend({ termId: z.string() })),
-              year: finalCell,
+              subject: subjectRef,
+              /** Last year's year final of the subject with the same name; null: «новый предмет» (when lastYear) */
+              lastYear: z.object({ raw: z.string(), value: z.number().nullable() }).nullable(),
+              terms: z.array(finalCellOut.extend({ termId: z.string() })),
+              year: finalCellOut,
             }),
           ),
         }),
@@ -96,52 +97,27 @@ export function scheduleRoutes(deps: AppDeps): Router {
     },
     async (req, { params }) => {
       const ctx = await loadChild(deps, req, params.id);
-      if (!ctx.year) return { terms: [], rows: [] };
+      if (!ctx.year) return { state: null, terms: [], lastYear: null, rows: [] };
       const year = ctx.year;
-      const subjectRows = await deps.db
-        .select()
-        .from(subjects)
-        .where(and(eq(subjects.studentId, ctx.student.id), eq(subjects.schoolYearId, year.id)))
-        .orderBy(asc(subjects.name));
-      const finals = await deps.db
-        .select()
-        .from(finalMarks)
-        .where(
-          and(
-            eq(finalMarks.studentId, ctx.student.id),
-            eq(finalMarks.schoolYearId, year.id),
-            eq(finalMarks.role, 'final'),
-          ),
-        );
+      const [subjectRows, finals, last] = await Promise.all([
+        subjectsOf(deps.db, ctx),
+        finalsOf(deps.db, ctx),
+        lastYearFinals(deps.db, ctx),
+      ]);
       const facts = (await marksIn(deps.db, ctx.student.id, { from: year.startDate, to: year.endDate })).map(factOf);
-      const cell = (subjectId: string, termId: string | null, from: string, to: string) => {
-        const f = finals.find((x) => x.subjectId === subjectId && x.periodId === termId);
-        if (f) return { kind: 'final' as const, raw: f.raw, value: f.mark };
-        const avg = ctx.scale
-          ? periodStats(
-              ctx.scale,
-              facts.filter((m) => m.subjectId === subjectId),
-              { from, to: to < ctx.today ? to : ctx.today },
-            ).average
-          : null;
-        return avg == null
-          ? { kind: 'none' as const, raw: null, value: null }
-          : { kind: 'running' as const, raw: null, value: avg };
-      };
       return {
-        terms: ctx.termRows.map((t) => ({ id: t.id, label: t.label, from: t.startDate, to: t.endDate })),
-        rows: subjectRows.map((s) => ({
-          subject: { id: s.id, name: s.name },
-          terms: ctx.termRows
-            // a term that has not started has nothing, not a zero
-            .map((t) => ({
-              termId: t.id,
-              ...(t.startDate > ctx.today
-                ? { kind: 'none' as const, raw: null, value: null }
-                : cell(s.id, t.id, t.startDate, t.endDate)),
-            })),
-          year: cell(s.id, null, year.startDate, year.endDate),
-        })),
+        state: finalsState(ctx, finals),
+        terms: ctx.termRows.map(termRef),
+        lastYear: last?.year ?? null,
+        rows: subjectRows.map((s) => {
+          const prev = last?.byName.get(s.name);
+          return {
+            subject: refOf(ctx, s.id, s.name),
+            lastYear: prev ? { raw: prev.raw, value: prev.value } : null,
+            terms: ctx.termRows.map((t) => ({ termId: t.id, ...termCell(ctx, finals, facts, s.id, t) })),
+            year: yearCell(ctx, finals, facts, s.id),
+          };
+        }),
       };
     },
   );
@@ -151,16 +127,22 @@ export function scheduleRoutes(deps: AppDeps): Router {
     {
       method: 'get',
       path: '/api/students/:id/finals/years',
-      summary: 'Итоги by year: each subject’s year final over the school years Marksy has',
+      summary: 'Итоги by year: each subject’s year final over the school years Marksy has, the running year in italics',
       tags: ['students'],
       access: 'member',
       params: z.object({ id }),
       response: z.object({
-        years: z.array(z.object({ id: z.string(), label: z.string() })),
+        years: z.array(z.object({ id: z.string(), label: z.string(), current: z.boolean() })),
         rows: z.array(
           z.object({
             subjectName: z.string(),
-            cells: z.array(z.object({ yearId: z.string(), raw: z.string().nullable(), value: z.number().nullable() })),
+            /** The subject of the current year, for the tap; null: «в этом году нет» */
+            subjectId: z.string().nullable(),
+            /** In the current year but not in the one before it: «новый предмет» */
+            isNew: z.boolean(),
+            cells: z.array(finalCellOut.extend({ yearId: z.string() })),
+            /** The current year against the one before (D5: the arrow, no signed delta) */
+            trend: z.enum(['up', 'down', 'flat']).nullable(),
           }),
         ),
       }),
@@ -168,28 +150,55 @@ export function scheduleRoutes(deps: AppDeps): Router {
     },
     async (req, { params }) => {
       const ctx = await loadChild(deps, req, params.id);
-      const years = await deps.db
-        .select()
-        .from(schoolYears)
-        .where(and(eq(schoolYears.studentId, ctx.student.id), lte(schoolYears.startDate, ctx.today)))
-        .orderBy(asc(schoolYears.startDate));
-      const finals = await deps.db
-        .select()
-        .from(finalMarks)
-        .where(
-          and(eq(finalMarks.studentId, ctx.student.id), isNull(finalMarks.periodId), eq(finalMarks.role, 'final')),
-        );
-      // subjects are matched across years by name, as the diary names them
-      const names = [...new Set(finals.map((f) => f.subjectName))].sort((a, b) => a.localeCompare(b));
+      const current = ctx.year;
+      const years = (
+        await deps.db
+          .select()
+          .from(schoolYears)
+          .where(and(eq(schoolYears.studentId, ctx.student.id), lte(schoolYears.startDate, ctx.today)))
+          .orderBy(asc(schoolYears.startDate))
+      ).filter((y) => !current || y.startDate <= current.startDate);
+      const [yearFinals, subjectRows, finals] = await Promise.all([
+        deps.db
+          .select()
+          .from(finalMarks)
+          .where(
+            and(eq(finalMarks.studentId, ctx.student.id), isNull(finalMarks.periodId), eq(finalMarks.role, 'final')),
+          ),
+        subjectsOf(deps.db, ctx),
+        finalsOf(deps.db, ctx),
+      ]);
+      const facts = current
+        ? (await marksIn(deps.db, ctx.student.id, { from: current.startDate, to: current.endDate })).map(factOf)
+        : [];
+      const before = current && years.length > 1 ? years[years.length - 2]! : null;
+      // subjects are matched across years by the name the diary gives them (6.1)
+      const names = [...new Set([...subjectRows.map((s) => s.name), ...yearFinals.map((f) => f.subjectName)])].sort(
+        (a, b) => a.localeCompare(b),
+      );
+      const none = { kind: 'none' as const, raw: null, value: null, postedOn: null, source: null };
       return {
-        years: years.map((y) => ({ id: y.id, label: y.label })),
-        rows: names.map((name) => ({
-          subjectName: name,
-          cells: years.map((y) => {
-            const f = finals.find((x) => x.schoolYearId === y.id && x.subjectName === name);
-            return { yearId: y.id, raw: f?.raw ?? null, value: f?.mark ?? null };
-          }),
-        })),
+        years: years.map((y) => ({ id: y.id, label: y.label, current: y.id === current?.id })),
+        rows: names.map((name) => {
+          const s = subjectRows.find((x) => x.name === name);
+          const cells = years.map((y) => {
+            if (y.id === current?.id) return { yearId: y.id, ...(s ? yearCell(ctx, finals, facts, s.id) : none) };
+            const f = yearFinals.find((x) => x.schoolYearId === y.id && x.subjectName === name);
+            return {
+              yearId: y.id,
+              ...(f ? { kind: 'final' as const, raw: f.raw, value: f.mark, postedOn: f.date, source: f.source } : none),
+            };
+          });
+          const cur = cells.at(-1)?.value ?? null;
+          const prev = before ? (cells.at(-2)?.value ?? null) : null;
+          return {
+            subjectName: name,
+            subjectId: s?.id ?? null,
+            isNew: !!s && !!before && !yearFinals.some((x) => x.schoolYearId === before.id && x.subjectName === name),
+            cells,
+            trend: s && ctx.scale ? trendOf(ctx.scale, cur, prev) : null,
+          };
+        }),
       };
     },
   );

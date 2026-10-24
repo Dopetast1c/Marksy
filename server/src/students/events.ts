@@ -5,7 +5,7 @@ import type { Db } from '../db/client';
 import { markEvents, marks, subjects } from '../db/schema';
 import type { MarkDiff } from '../db/schema';
 import type { ChildContext, ResolvedPeriod } from './context';
-import { absencesIn, chipOf, factOf, marksIn, remarksIn, subjectsOf } from './data';
+import { absencesIn, chipOf, factOf, marksIn, refOf, refOrNull, remarksIn, subjectsOf } from './data';
 
 // Внимание (docs/design.md 5.2a): computed on read from what sync recorded, never stored. Facts only: what a row says
 // is data (a mark, a subject, a date), the words come from the app's i18n. Rows about the past follow the selected
@@ -26,7 +26,7 @@ export interface ChildEvent {
     | 'holidays_ahead';
   severity: EventSeverity;
   date: ISODate;
-  subject: { id: string; name: string } | null;
+  subject: { id: string; name: string; color: string | null } | null;
   /** The facts the row shows; the app words them */
   facts: Record<string, unknown>;
   /** Where a tap goes */
@@ -40,7 +40,7 @@ const HOLIDAYS_AHEAD_DAYS = 7;
 export async function childEvents(db: Db, ctx: ChildContext, p: ResolvedPeriod): Promise<ChildEvent[]> {
   const range = { from: p.from, to: p.to };
   const out: ChildEvent[] = [];
-  const subj = (id: string | null, name: string | null) => (id && name ? { id, name } : null);
+  const subj = (id: string | null, name: string | null) => refOrNull(ctx, id, name);
 
   if (ctx.scale && ctx.rules) {
     const scale = ctx.scale;
@@ -86,7 +86,7 @@ export async function childEvents(db: Db, ctx: ChildContext, p: ResolvedPeriod):
           // a drop into the lowest band is critical, any other drop low
           severity: r.trend === 'down' ? (bandOf(scale, r.average) === 'critical' ? 'critical' : 'low') : 'good',
           date: p.to,
-          subject: { id: s.id, name: s.name },
+          subject: refOf(ctx, s.id, s.name),
           facts: { average: r.average, prevAverage: r.prevAverage, delta: r.delta, count: r.count },
           link: { screen: 'subject', subjectId: s.id },
         });
@@ -120,7 +120,7 @@ export async function childEvents(db: Db, ctx: ChildContext, p: ResolvedPeriod):
       kind: c.kind === 'changed' ? 'mark_changed' : 'mark_removed',
       severity: 'neutral',
       date: c.date,
-      subject: { id: c.subjectId, name: c.subjectName },
+      subject: refOf(ctx, c.subjectId, c.subjectName),
       facts: {
         mark: chipOf(ctx.scale, { id: c.markId, values: c.values, raw: c.raw, kind: c.markKind }),
         before: diff.raw?.[0] ?? null,
