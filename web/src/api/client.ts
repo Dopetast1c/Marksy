@@ -15,6 +15,10 @@ export const api = createClient<paths>({
 
 export type Schemas = components['schemas'];
 export type ApiError = Schemas['Error']['error'];
+/** An interface language the API stores for a user */
+export type Locale = NonNullable<
+  NonNullable<paths['/api/me']['patch']['requestBody']>['content']['application/json']['locale']
+>;
 
 /** Thrown by `data()` for any answer that is not a success */
 export class ApiFailure extends Error {

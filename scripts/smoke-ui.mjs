@@ -23,6 +23,8 @@ export const DEVICES = {
 /** The prototype's states that match the app's screens: screen id and the demo child */
 export const PROTOTYPE_STATES = [
   ['login', 'login', null],
+  ['login-connect', 'login', null, { loginMode: 'connect' }],
+  ['connect-match', 'connectMatch', null],
   ['pick', 'pick', null],
   ['home-1', 'home', 'k'],
   ['events-1', 'events', 'k'],
@@ -31,6 +33,30 @@ export const PROTOTYPE_STATES = [
 
 /** The demo family is fictional and its password is published (server/src/seed/seed.ts) */
 const SEED = { key: 'seed', login: 'parent@example.com', password: 'marksy-demo' };
+
+/**
+ * Resolves once no API request has been in flight for 400 ms (10 s at most). A single-page app changes screens
+ * without loading a document, so Playwright's "networkidle" load state is reached once and never waited for again.
+ */
+function trackRequests(page) {
+  let inFlight = 0;
+  let quietSince = Date.now();
+  const isApi = (r) => new URL(r.url()).pathname.startsWith('/api/');
+  page.on('request', (r) => isApi(r) && inFlight++);
+  const done = (r) => {
+    if (!isApi(r)) return;
+    inFlight = Math.max(0, inFlight - 1);
+    if (!inFlight) quietSince = Date.now();
+  };
+  page.on('requestfinished', done);
+  page.on('requestfailed', done);
+  return async () => {
+    const until = Date.now() + 10_000;
+    // the screen may start its requests a moment after the navigation
+    await page.waitForTimeout(150);
+    while (Date.now() < until && (inFlight > 0 || Date.now() - quietSince < 400)) await page.waitForTimeout(50);
+  };
+}
 
 function prune() {
   if (!existsSync(OUT)) return;
@@ -41,13 +67,22 @@ function prune() {
 async function shootApp(browser, base, family, device, dir, log) {
   const context = await browser.newContext({ ...DEVICES[device], locale: 'ru-RU' });
   const page = await context.newPage();
+  const settle = trackRequests(page);
   const shot = async (name) => {
     const file = join(dir, `app-${family.key}-${device}-${name}.png`);
-    await page.waitForLoadState('networkidle');
+    await settle();
     await page.screenshot({ path: file, fullPage: true });
     log.push(`ok  ${family.key}/${device}/${name}`);
   };
   try {
+    // the screens before sign-in: once per device is enough, they do not depend on the family
+    if (family.key === 'seed') {
+      await page.goto(`${base}/join/NOCODE`);
+      await shot('invite');
+      await page.goto(`${base}/login`);
+      await page.getByRole('button', { name: /Подключить дневник|Connect a diary/ }).click();
+      await shot('login-connect');
+    }
     await page.goto(`${base}/login`);
     await shot('login');
     await page.getByLabel(/Логин Marksy|Marksy login/).fill(family.login);
@@ -78,17 +113,19 @@ async function shootPrototype(browser, device, dir, log) {
   const page = await context.newPage();
   try {
     await page.goto(MOCKUPS);
-    for (const [name, screen, student] of PROTOTYPE_STATES) {
+    for (const [name, screen, student, extra] of PROTOTYPE_STATES) {
       await page.evaluate(
-        ([s, k]) => {
+        ([s, k, more]) => {
           /* global state, go */
           // as the prototype's own rail does: a chosen screen counts as a picked child
           state.stack = [];
           state.unpicked = false;
+          state.loginMode = 'login';
           if (k) state.student = k;
+          Object.assign(state, more ?? {});
           go(s, false);
         },
-        [screen, student],
+        [screen, student, extra ?? null],
       );
       await page.waitForTimeout(150);
       await page.locator('#phone').screenshot({ path: join(dir, `proto-${device}-${name}.png`) });

@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createBrowserRouter, createMemoryRouter, RouterProvider } from 'react-router';
 import type { RouteObject } from 'react-router';
+import { ConnectMatchScreen } from '../features/auth/ConnectMatchScreen';
 import { LoginScreen } from '../features/auth/LoginScreen';
 import { MoreScreen } from '../features/more/MoreScreen';
 import { EventsScreen } from '../features/overview/EventsScreen';
@@ -14,10 +15,13 @@ import { RequireAuth, RequireChild, Start } from './guards';
 
 export const routes: RouteObject[] = [
   { path: '/login', element: <LoginScreen /> },
+  // an invite link (POST /api/family/invites returns /join/<code>)
+  { path: '/join/:code', element: <LoginScreen /> },
   {
     element: <RequireAuth />,
     children: [
       { path: '/', element: <Start /> },
+      { path: '/connect/matches', element: <ConnectMatchScreen /> },
       { path: '/pick', element: <PickScreen /> },
       { path: '/more', element: <MoreScreen /> },
       {

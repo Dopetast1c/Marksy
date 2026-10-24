@@ -3841,12 +3841,15 @@
                           "null"
                         ]
                       },
-                      "tomorrow": {
+                      "nextDay": {
                         "type": [
                           "object",
                           "null"
                         ],
                         "properties": {
+                          "date": {
+                            "type": "string"
+                          },
                           "lessons": {
                             "type": "number"
                           },
@@ -3855,6 +3858,7 @@
                           }
                         },
                         "required": [
+                          "date",
                           "lessons",
                           "homework"
                         ]
@@ -3877,7 +3881,7 @@
                       "newCount",
                       "week",
                       "absencesWeek",
-                      "tomorrow",
+                      "nextDay",
                       "now",
                       "nearestTag"
                     ]

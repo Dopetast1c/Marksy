@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Navigate, Outlet, useLocation, useNavigate, useParams } from 'react-router';
-import { whenSignedOut } from '../api/client';
+import { api, whenSignedOut } from '../api/client';
+import type { Locale } from '../api/client';
 import { useMe } from '../api/queries';
 import { useQueryClient } from '@tanstack/react-query';
 import { EmptyState } from '../components/EmptyState';
-import { useT } from '../i18n';
+import { i18n, setLanguage, takePendingLanguage, useT } from '../i18n';
 import { restoredChild } from '../lib/pick';
 import { useDevice } from '../state/store';
 
@@ -22,6 +23,15 @@ export function RequireAuth() {
       navigate('/login', { replace: true });
     });
   }, [navigate, queries]);
+  // the language: one chosen before sign-in becomes the user's; otherwise the user's saved one (docs/i18n.md 3)
+  const userId = me.data?.user.id;
+  const saved = me.data?.user.locale;
+  useEffect(() => {
+    if (!userId || !saved) return;
+    const pending = takePendingLanguage();
+    if (pending && pending !== saved) void api.PATCH('/api/me', { body: { locale: pending as Locale } });
+    else if (!pending && saved !== i18n.language) void setLanguage(saved);
+  }, [userId, saved]);
   if (me.isPending) return <EmptyState title={t('app.loading')} />;
   if (me.isError) return <EmptyState title={t('app.error')} />;
   if (!me.data) return <Navigate to="/login" replace />;

@@ -1,18 +1,85 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { useNavigate } from 'react-router';
-import { api, ApiFailure, data } from '../../api/client';
+import { useNavigate, useParams } from 'react-router';
+import { api, data } from '../../api/client';
 import { meKey } from '../../api/queries';
-import { useT } from '../../i18n';
+import { Button, Field } from '../../components/Field';
+import { LanguagePicker } from '../../components/LanguagePicker';
+import { SegmentedControl } from '../../components/SegmentedControl';
+import { rememberForUser, setLanguage, useT } from '../../i18n';
+import { ConnectForm } from './ConnectForm';
+import { errorText } from './errors';
+import { InviteForm } from './InviteForm';
 
-// Вход (docs/design.md 5.1). Session A: the Marksy login; «Подключить дневник», the invite code and the language
-// picker follow in session B.
+// Вход (docs/design.md 5.1): the wordmark and one line across the full width; Вход (a Marksy login, the default) and
+// Подключить дневник; «У меня есть код приглашения» under the sign-in; the language at the very bottom, remembered
+// on the device and given to the user after sign-in. /join/<code> opens the invite with its code filled in.
 
 /** The wordmark: a name, not a word to translate */
 const BRAND = 'Marksy';
 
+type Mode = 'login' | 'connect' | 'invite';
+
 export function LoginScreen() {
+  const t = useT();
+  const { code } = useParams();
+  const [mode, setMode] = useState<Mode>(code ? 'invite' : 'login');
+  return (
+    <div className="mx-auto flex min-h-dvh w-full max-w-[560px] flex-col gap-4 px-6 pt-6 pb-5">
+      <div className="flex flex-1 flex-col justify-center gap-[22px]">
+        <div>
+          <div className="font-display text-[44px] leading-none font-semibold tracking-[-0.02em]">
+            {BRAND.slice(0, -1)}
+            <span className="text-accent">{BRAND.slice(-1)}</span>
+          </div>
+          <p className="mt-2 text-ink2">{t('login.tagline')}</p>
+        </div>
+        {mode === 'invite' ? (
+          <>
+            <InviteForm initialCode={code ?? ''} />
+            <Button ghost onClick={() => setMode('login')}>
+              {t('invite.back')}
+            </Button>
+          </>
+        ) : (
+          <>
+            <SegmentedControl
+              label={t('login.mode')}
+              value={mode}
+              onChange={setMode}
+              options={[
+                { value: 'login', label: t('login.mode.login') },
+                { value: 'connect', label: t('login.mode.connect') },
+              ]}
+            />
+            {mode === 'login' ? (
+              <>
+                <SignIn />
+                <Button ghost onClick={() => setMode('invite')}>
+                  {t('invite.have')}
+                </Button>
+                <p className="text-small text-ink3">{t('login.note')}</p>
+              </>
+            ) : (
+              <ConnectForm />
+            )}
+          </>
+        )}
+      </div>
+      <div className="flex justify-center">
+        <LanguagePicker
+          onPick={(lng) => {
+            void setLanguage(lng);
+            rememberForUser(lng);
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function SignIn() {
   const t = useT();
   const navigate = useNavigate();
   const queries = useQueryClient();
@@ -31,62 +98,37 @@ export function LoginScreen() {
       queries.removeQueries({ queryKey: meKey });
       navigate('/', { replace: true });
     } catch (err) {
-      setError(
-        err instanceof ApiFailure && err.status === 429
-          ? t('login.tooMany')
-          : err instanceof ApiFailure && err.status === 401
-            ? t('login.wrong')
-            : t('app.error'),
-      );
+      setError(errorText(t, err));
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-[560px] flex-col justify-center gap-6 px-6 py-10">
-      <div>
-        <div className="font-display text-[34px] font-semibold">
-          {BRAND.slice(0, -1)}
-          <span className="text-accent">{BRAND.slice(-1)}</span>
-        </div>
-        <p className="mt-2 text-ink2">{t('login.tagline')}</p>
-      </div>
-      <form onSubmit={submit} className="flex flex-col gap-3.5">
-        <label className="flex flex-col gap-1.5">
-          <span className="text-label text-ink3 uppercase">{t('login.marksyLogin')}</span>
-          <input
-            value={login}
-            onChange={(e) => setLogin(e.target.value)}
-            autoComplete="username"
-            required
-            className="min-h-[var(--tap-min)] rounded-md border border-line bg-surface px-3.5"
-          />
-        </label>
-        <label className="flex flex-col gap-1.5">
-          <span className="text-label text-ink3 uppercase">{t('login.password')}</span>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete="current-password"
-            required
-            className="min-h-[var(--tap-min)] rounded-md border border-line bg-surface px-3.5"
-          />
-        </label>
-        {error && (
-          <p role="alert" className="text-small text-band-critical-fg">
-            {error}
-          </p>
-        )}
-        <button
-          type="submit"
-          disabled={busy}
-          className="min-h-[var(--tap-min)] rounded-pill bg-accent font-bold text-accent-ink disabled:opacity-60"
-        >
-          {t('login.submit')}
-        </button>
-      </form>
-    </div>
+    <form onSubmit={submit} className="flex flex-col gap-3.5">
+      <Field
+        label={t('login.marksyLogin')}
+        autoComplete="username"
+        required
+        value={login}
+        onChange={(e) => setLogin(e.target.value)}
+      />
+      <Field
+        label={t('login.password')}
+        type="password"
+        autoComplete="current-password"
+        required
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+      />
+      {error && (
+        <p role="alert" className="text-small text-band-critical-fg">
+          {error}
+        </p>
+      )}
+      <Button type="submit" disabled={busy}>
+        {t('login.submit')}
+      </Button>
+    </form>
   );
 }

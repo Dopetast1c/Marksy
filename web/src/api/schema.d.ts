@@ -1428,7 +1428,8 @@ export interface paths {
                             newCount: number;
                             week: components["schemas"]["Comparison"] & (Record<string, never> | null);
                             absencesWeek: number | null;
-                            tomorrow: {
+                            nextDay: {
+                                date: string;
                                 lessons: number;
                                 homework: number;
                             } | null;

@@ -265,8 +265,11 @@ export function studentRoutes(deps: AppDeps): Router {
           newCount: z.number(),
           week: comparison.nullable(),
           absencesWeek: z.number().nullable(),
-          /** A year without marks: tomorrow's lessons and homework instead */
-          tomorrow: z.object({ lessons: z.number(), homework: z.number() }).nullable(),
+          /**
+           * A year without marks: the lessons and homework of the next school day instead (the next day with lessons
+           * within two weeks, so a Saturday shows Monday); null with marks or without lessons ahead
+           */
+          nextDay: z.object({ date: z.string(), lessons: z.number(), homework: z.number() }).nullable(),
           now: nowLineSchema.nullable(),
           /** The nearest lesson with a tag (M6) */
           nearestTag: z.null(),
@@ -295,8 +298,13 @@ export function studentRoutes(deps: AppDeps): Router {
         const seen = await lastSeen(deps, ctx);
         const newCount = (await marksIn(deps.db, student.id)).filter((x) => !seen || x.firstSeenAt > seen).length;
         const today = await lessonsIn(deps.db, ctx, { from: ctx.today, to: ctx.today });
-        const tomorrowDay = addDays(ctx.today, 1);
-        const tomorrow = ctx.scale ? null : await lessonsIn(deps.db, ctx, { from: tomorrowDay, to: tomorrowDay });
+        const ahead = ctx.scale
+          ? []
+          : (await lessonsIn(deps.db, ctx, { from: addDays(ctx.today, 1), to: addDays(ctx.today, 14) })).filter(
+              (l) => !l.cancelled,
+            );
+        const nextDate = ahead.map((l) => l.date).sort()[0];
+        const next = nextDate ? ahead.filter((l) => l.date === nextDate) : [];
         cards.push({
           id: student.id,
           name: childName(student),
@@ -308,8 +316,12 @@ export function studentRoutes(deps: AppDeps): Router {
           newCount,
           week: weekCmp,
           absencesWeek: week && ctx.caps.attendance !== 'none' ? (await absencesIn(deps.db, ctx, week)).length : null,
-          tomorrow: tomorrow
-            ? { lessons: tomorrow.length, homework: tomorrow.filter((l) => l.homework || l.ownHomework.length).length }
+          nextDay: nextDate
+            ? {
+                date: nextDate,
+                lessons: next.length,
+                homework: next.filter((l) => l.homework || l.ownHomework.length).length,
+              }
             : null,
           now: nowLine(today, localTime(ctx.now, ctx.timezone).minutes),
           nearestTag: null,

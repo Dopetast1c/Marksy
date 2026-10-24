@@ -61,6 +61,30 @@ export async function setLanguage(lng: string) {
   applyDocumentLanguage(lng);
 }
 
+const PENDING_KEY = 'marksy.lang.pending';
+
+/**
+ * A language chosen before there is a user to save it on (the login screen, a connect or an invite in that
+ * language): after sign-in it becomes the user's (PATCH /api/me), otherwise the user's saved language wins.
+ */
+export function rememberForUser(lng: string) {
+  try {
+    localStorage.setItem(PENDING_KEY, lng);
+  } catch {
+    // a private window: nothing to carry over
+  }
+}
+
+export function takePendingLanguage(): string | null {
+  try {
+    const lng = localStorage.getItem(PENDING_KEY);
+    localStorage.removeItem(PENDING_KEY);
+    return lng;
+  } catch {
+    return null;
+  }
+}
+
 /** The BCP 47 tag for Intl in the current language */
 export const intlLocale = () => languageOf(i18n.language)?.intl ?? 'en-GB';
 

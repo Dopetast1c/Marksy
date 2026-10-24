@@ -55,10 +55,13 @@ describe('read API', () => {
     expect(res.status).toBe(200);
     expect(res.body).toHaveLength(2);
     const byId = Object.fromEntries(res.body.map((c: { id: string }) => [c.id, c]));
-    expect(byId[milena.id]).toMatchObject({ hasMarks: true, showSchool: true, tomorrow: null, nearestTag: null });
+    expect(byId[milena.id]).toMatchObject({ hasMarks: true, showSchool: true, nextDay: null, nearestTag: null });
     expect(byId[milena.id].week).toHaveProperty('trend');
-    // a year without marks: no comparison, tomorrow's lessons instead
-    expect(byId[mark.id]).toMatchObject({ hasMarks: false, week: null, tomorrow: expect.any(Object) });
+    // a year without marks: no comparison, the next school day's lessons instead (a weekend shows Monday)
+    expect(byId[mark.id]).toMatchObject({ hasMarks: false, week: null });
+    const next = byId[mark.id].nextDay;
+    expect(next.date > NOW.toISOString().slice(0, 10)).toBe(true);
+    expect(next.lessons).toBeGreaterThan(0);
   });
 
   it('Главная: the comparison and the bands of the child’s scale, the last day, Внимание, the next day', async () => {
