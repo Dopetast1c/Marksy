@@ -100,8 +100,8 @@ export function MarksScreen() {
           />
         );
       case 'comment':
-        // opens the subject until Расписание can open the lesson (M5c)
-        return <CommentRow key={i.id} item={i} onClick={() => toSubject(i.subject?.id)} />;
+        // a teacher's comment opens its lesson's day in Расписание (D56)
+        return <CommentRow key={i.id} item={i} onClick={() => navigate(`/s/${studentId}/schedule?day=${i.date}`)} />;
       case 'markChanged':
       case 'markRemoved':
         return (

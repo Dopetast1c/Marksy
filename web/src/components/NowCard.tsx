@@ -62,7 +62,7 @@ export function NowCard({ studentId, now, tz }: { studentId: string; now: NonNul
   return (
     <button
       type="button"
-      onClick={() => navigate(`/s/${studentId}/schedule`)}
+      onClick={() => navigate(`/s/${studentId}/schedule?day=${todayIn(tz)}`)}
       className="flex w-full items-center gap-3 rounded-lg bg-surface px-3.5 py-3 text-left shadow-card"
     >
       {subject ? <Stripe subject={subjectStyle(subject)} /> : <Stripe severity="neutral" />}

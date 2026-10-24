@@ -2535,6 +2535,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             today: string;
+                            weekStart: number;
                             days: {
                                 date: string;
                                 lessons: number;
@@ -3816,7 +3817,7 @@ export interface components {
                             lessons: number;
                             average: number | null;
                         } | null;
-                        hint: components["schemas"]["Hint"] & (Record<string, never> | null);
+                        hint: components["schemas"]["Hint"] | null;
                     } | null;
                 })[];
             }[];

@@ -2662,15 +2662,12 @@
                                 ]
                               },
                               "hint": {
-                                "allOf": [
+                                "anyOf": [
                                   {
                                     "$ref": "#/components/schemas/Hint"
                                   },
                                   {
-                                    "type": [
-                                      "object",
-                                      "null"
-                                    ]
+                                    "type": "null"
                                   }
                                 ]
                               }
@@ -7408,6 +7405,9 @@
                     "today": {
                       "type": "string"
                     },
+                    "weekStart": {
+                      "type": "number"
+                    },
                     "days": {
                       "type": "array",
                       "items": {
@@ -7433,6 +7433,7 @@
                   },
                   "required": [
                     "today",
+                    "weekStart",
                     "days"
                   ]
                 }

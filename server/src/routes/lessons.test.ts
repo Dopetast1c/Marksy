@@ -325,6 +325,7 @@ describe('Расписание: пометки, tags and the navigator’s days'
     const res = await mama.get(`/api/students/${milena.id}/schedule/days`);
     expect(res.status).toBe(200);
     expect(res.body.today).toBe(TODAY);
+    expect(res.body.weekStart).toEqual(expect.any(Number));
     const days = res.body.days as { date: string; lessons: number; held: number }[];
     expect(days.length).toBeGreaterThan(20);
     expect(days.map((d) => d.date)).toEqual([...days.map((d) => d.date)].sort());

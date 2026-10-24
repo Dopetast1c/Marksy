@@ -48,7 +48,7 @@ const scheduleLessonOut = lessonOut.extend({
         .object({ kind: z.enum(['call', 'callLow', 'push']), lessons: z.number(), average: z.number().nullable() })
         .nullable(),
       /** подсказка (6.2, guidance on) */
-      hint: hintOut.nullable(),
+      hint: z.union([hintOut, z.null()]),
     })
     .nullable(),
 });
@@ -157,6 +157,8 @@ export function scheduleRoutes(deps: AppDeps): Router {
       params: z.object({ id }),
       response: z.object({
         today: z.string(),
+        /** the first day of the school week, 0 = Sunday (manifest.calendar): where a week of Неделя starts */
+        weekStart: z.number(),
         /**
          * Every day with lessons; `held` leaves out the cancelled ones (the picker's count). A day whose lessons are
          * all cancelled stays reachable, so «Вернуть урок» is too.
@@ -167,7 +169,8 @@ export function scheduleRoutes(deps: AppDeps): Router {
     },
     async (req, { params }) => {
       const ctx = await loadChild(deps, req, params.id);
-      if (!ctx.year) return { today: ctx.today, days: [] };
+      const weekStart = ctx.manifest.calendar.weekStart;
+      if (!ctx.year) return { today: ctx.today, weekStart, days: [] };
       const rows = await deps.db
         .select({
           date: lessons.date,
@@ -186,7 +189,7 @@ export function scheduleRoutes(deps: AppDeps): Router {
         )
         .groupBy(lessons.date)
         .orderBy(asc(lessons.date));
-      return { today: ctx.today, days: rows };
+      return { today: ctx.today, weekStart, days: rows };
     },
   );
 
