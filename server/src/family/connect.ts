@@ -101,7 +101,23 @@ export async function connectDiary(deps: ConnectDeps, input: ConnectInput): Prom
   if (missing.length) throw new HttpError(400, 'invalid_request', 'Fill in every field', { missing });
   const credentials = Object.fromEntries(fields.map((k) => [k, input.credentials[k]!]));
   if (!input.newUser && !input.into) throw new HttpError(400, 'invalid_request', 'Sign in or create an account');
-  // checked before the diary is called: a taken Marksy login must not spend the hour's diary login
+  // a diary login connected already is refused before the diary is called: no login is spent on it
+  const label = credentials.login ?? credentials[fields[0]!] ?? provider.manifest.id;
+  const [byLabel] = await db
+    .select({ id: diaryAccounts.id })
+    .from(diaryAccounts)
+    .where(
+      and(
+        eq(diaryAccounts.providerId, provider.manifest.id),
+        sql`lower(${diaryAccounts.label}) = lower(${label.trim()})`,
+      ),
+    );
+  if (byLabel) throw alreadyConnected();
+
+  const opened = await readAccount(provider, credentials, deps);
+  const { info } = opened;
+  await refuseKnownAccount(db, provider.manifest.id, info, now);
+  // only someone the diary accepted learns whether a Marksy login is taken (no enumeration through this public route)
   if (input.newUser) {
     const [taken] = await db
       .select({ id: users.id })
@@ -109,96 +125,98 @@ export async function connectDiary(deps: ConnectDeps, input: ConnectInput): Prom
       .where(sql`lower(${users.login}) = lower(${input.newUser.login.trim()})`);
     if (taken) throw new HttpError(409, 'login_taken', 'This Marksy login is taken');
   }
-
-  const opened = await readAccount(provider, credentials, deps);
-  const { info } = opened;
-  await refuseKnownAccount(db, provider.manifest.id, info);
   const passwordHash = input.newUser ? await hashPassword(input.newUser.password) : null;
 
-  const done = await db.transaction(async (txn) => {
-    // the collector's helpers take the database; inside the transaction they run on it the same way
-    const tx = txn as unknown as Db;
-    let familyId: string;
-    let userId: string;
-    if (input.newUser) {
-      const nu = input.newUser;
-      const [family] = await tx
-        .insert(families)
-        .values({ name: nu.displayName, consentVersion: nu.consentVersion, consentAt: now })
-        .returning();
-      familyId = family!.id;
-      const [user] = await tx
-        .insert(users)
-        .values({ login: nu.login.trim(), displayName: nu.displayName.trim(), passwordHash: passwordHash! })
-        .returning();
-      userId = user!.id;
-      await tx.update(families).set({ consentBy: userId }).where(eq(families.id, familyId));
-      await tx.insert(memberships).values({ userId, familyId, role: 'admin' });
-    } else {
-      ({ familyId, userId } = input.into!);
-    }
-
-    const label = credentials.login ?? credentials[fields[0]!] ?? provider.manifest.id;
-    const [account] = await tx
-      .insert(diaryAccounts)
-      .values({
-        familyId,
-        providerId: provider.manifest.id,
-        role: input.role,
-        label,
-        credentialsEnc: encryptCredentials(credentials, familyId, deps.credentialsKey),
-        externalUserId: info.externalUserId,
-        status: 'ok',
-        lastOkAt: now,
-        // this login is the account's login of this hour (design.md 7.2 step 2)
-        lastLoginAt: now,
-        lastAttemptAt: now,
-      })
-      .returning();
-    const ref = { id: account!.id, familyId, providerId: provider.manifest.id };
-
-    const children: ConnectResult['children'] = [];
-    for (const s of info.students) {
-      const student = await upsertListedStudent(tx, ref, s, now);
-      const [own] = await tx
-        .select({ status: familyStudents.status })
-        .from(familyStudents)
-        .where(and(eq(familyStudents.familyId, familyId), eq(familyStudents.studentId, student.id)));
-      const [other] = await tx
-        .select({ familyId: familyStudents.familyId })
-        .from(familyStudents)
-        .where(
-          and(
-            eq(familyStudents.studentId, student.id),
-            ne(familyStudents.familyId, familyId),
-            eq(familyStudents.status, 'active'),
-          ),
-        );
-      // a child another family follows waits for the parent's choice (design.md 7.2 step 3)
-      if (!own && other) {
-        children.push({ studentId: student.id, outcome: 'match' });
-        continue;
+  const done = await db
+    .transaction(async (txn) => {
+      // two connects of one login at once: the unique index on (provider_id, external_user_id) refuses the second
+      // the collector's helpers take the database; inside the transaction they run on it the same way
+      const tx = txn as unknown as Db;
+      let familyId: string;
+      let userId: string;
+      if (input.newUser) {
+        const nu = input.newUser;
+        const [family] = await tx
+          .insert(families)
+          .values({ name: nu.displayName, consentVersion: nu.consentVersion, consentAt: now })
+          .returning();
+        familyId = family!.id;
+        const [user] = await tx
+          .insert(users)
+          .values({ login: nu.login.trim(), displayName: nu.displayName.trim(), passwordHash: passwordHash! })
+          .returning();
+        userId = user!.id;
+        await tx.update(families).set({ consentBy: userId }).where(eq(families.id, familyId));
+        await tx.insert(memberships).values({ userId, familyId, role: 'admin' });
+      } else {
+        ({ familyId, userId } = input.into!);
       }
-      await linkFamily(tx, familyId, student.id, now);
-      await rebalance(tx, student.id, now);
-      children.push({ studentId: student.id, outcome: 'linked' });
-    }
-    // the admin of a new family sees every child and gets their rules (linkFamily did it for children it linked)
-    if (input.newUser) await rulesForMember(tx, userId, familyId, 'admin');
-    const [run] = await tx
-      .insert(syncRuns)
-      .values({
-        familyId,
-        diaryAccountId: account!.id,
-        providerId: provider.manifest.id,
-        kind: 'connect',
-        trigger: `user:${userId}`,
-        startedAt: now,
-        status: 'running',
-      })
-      .returning({ id: syncRuns.id });
-    return { familyId, userId, accountId: account!.id, children, runId: run!.id };
-  });
+
+      const [account] = await tx
+        .insert(diaryAccounts)
+        .values({
+          familyId,
+          providerId: provider.manifest.id,
+          role: input.role,
+          label,
+          credentialsEnc: encryptCredentials(credentials, familyId, deps.credentialsKey),
+          externalUserId: info.externalUserId,
+          status: 'ok',
+          lastOkAt: now,
+          // this login is the account's login of this hour (design.md 7.2 step 2)
+          lastLoginAt: now,
+          lastAttemptAt: now,
+        })
+        .returning();
+      const ref = { id: account!.id, familyId, providerId: provider.manifest.id };
+
+      const children: ConnectResult['children'] = [];
+      for (const s of info.students) {
+        const student = await upsertListedStudent(tx, ref, s, now);
+        const [own] = await tx
+          .select({ status: familyStudents.status })
+          .from(familyStudents)
+          .where(and(eq(familyStudents.familyId, familyId), eq(familyStudents.studentId, student.id)));
+        const [other] = await tx
+          .select({ familyId: familyStudents.familyId })
+          .from(familyStudents)
+          .where(
+            and(
+              eq(familyStudents.studentId, student.id),
+              ne(familyStudents.familyId, familyId),
+              eq(familyStudents.status, 'active'),
+            ),
+          );
+        // a child another family follows waits for the parent's choice (design.md 7.2 step 3)
+        if (!own && other) {
+          children.push({ studentId: student.id, outcome: 'match' });
+          continue;
+        }
+        await linkFamily(tx, familyId, student.id, now);
+        await rebalance(tx, student.id, now);
+        children.push({ studentId: student.id, outcome: 'linked' });
+      }
+      // the admin of a new family sees every child and gets their rules (linkFamily did it for children it linked)
+      if (input.newUser) await rulesForMember(tx, userId, familyId, 'admin');
+      const [run] = await tx
+        .insert(syncRuns)
+        .values({
+          familyId,
+          diaryAccountId: account!.id,
+          providerId: provider.manifest.id,
+          kind: 'connect',
+          trigger: `user:${userId}`,
+          startedAt: now,
+          status: 'running',
+        })
+        .returning({ id: syncRuns.id });
+      return { familyId, userId, accountId: account!.id, children, runId: run!.id };
+    })
+    .catch((err: unknown) => {
+      if ((err as { code?: string }).code === '23505' || (err as { cause?: { code?: string } }).cause?.code === '23505')
+        throw alreadyConnected();
+      throw err;
+    });
   const firstSync = runSync({
     db,
     accountId: done.accountId,
@@ -220,16 +238,20 @@ export async function connectDiary(deps: ConnectDeps, input: ConnectInput): Prom
   };
 }
 
-/** design.md 7.2 step 3: a diary login connected anywhere already is refused */
-async function refuseKnownAccount(db: Db, providerId: string, info: AccountInfo) {
+const alreadyConnected = () =>
+  new HttpError(409, 'already_connected', 'This diary is already connected; ask the family admin for an invite');
+
+/**
+ * design.md 7.2 step 3: a diary login connected anywhere already is refused. Found only after the login (another
+ * label for the same diary user), that login was the account's login of this hour: it is recorded there, so the
+ * account's next run keeps the interval
+ */
+async function refuseKnownAccount(db: Db, providerId: string, info: AccountInfo, now: Date) {
   const [known] = await db
     .select({ id: diaryAccounts.id })
     .from(diaryAccounts)
     .where(and(eq(diaryAccounts.providerId, providerId), eq(diaryAccounts.externalUserId, info.externalUserId)));
-  if (known)
-    throw new HttpError(
-      409,
-      'already_connected',
-      'This diary is already connected; ask the family admin for an invite',
-    );
+  if (!known) return;
+  await db.update(diaryAccounts).set({ lastLoginAt: now }).where(eq(diaryAccounts.id, known.id));
+  throw alreadyConnected();
 }

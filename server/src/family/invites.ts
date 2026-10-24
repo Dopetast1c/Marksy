@@ -1,4 +1,4 @@
-import { createHash, randomInt } from 'node:crypto';
+import { createHmac, randomInt } from 'node:crypto';
 import { and, eq, gt, inArray, isNull, sql } from 'drizzle-orm';
 import { hashPassword } from '../auth/password';
 import type { Db } from '../db/client';
@@ -10,13 +10,15 @@ import type { MemberRole } from './rules';
 
 // Invites (docs/design.md 7.3): a 6-character code and a link, valid 48 hours, single use. Only the code's SHA-256 is
 // stored (build-plan M3 notes), so a database dump holds no usable invite. Someone who already has a Marksy login
-// signs in and gets a second membership: one person never needs two logins.
+// signs in and gets a second membership: one person never needs two logins. The code is stored as its HMAC under
+// SESSION_SECRET: a six-character code hashed without a key could be found again from a dump in seconds.
 
 const TTL_MS = 48 * 3_600_000;
 /** No 0/O, 1/I/L: a code read aloud or typed from a screen */
 const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 
-export const hashCode = (code: string) => createHash('sha256').update(code.trim().toUpperCase()).digest('hex');
+export const hashCode = (code: string, secret: string) =>
+  createHmac('sha256', secret).update(code.trim().toUpperCase()).digest('hex');
 
 export async function createInvite(
   db: Db,
@@ -24,6 +26,7 @@ export async function createInvite(
   role: MemberRole,
   studentIds: string[],
   now: Date,
+  secret: string,
 ): Promise<{ code: string; url: string; expiresAt: Date }> {
   // a student invite is for exactly one child, the student themselves (design.md 7.1)
   if (role === 'student' && studentIds.length !== 1)
@@ -37,7 +40,7 @@ export async function createInvite(
   const code = Array.from({ length: 6 }, () => ALPHABET[randomInt(ALPHABET.length)]).join('');
   const expiresAt = new Date(now.getTime() + TTL_MS);
   await db.insert(invites).values({
-    code: hashCode(code),
+    code: hashCode(code, secret),
     familyId: by.familyId,
     createdBy: by.userId,
     role,
@@ -47,18 +50,18 @@ export async function createInvite(
   return { code, url: `/join/${code}`, expiresAt };
 }
 
-async function openInvite(db: Db, code: string, now: Date) {
+async function openInvite(db: Db, code: string, now: Date, secret: string) {
   const [invite] = await db
     .select()
     .from(invites)
-    .where(and(eq(invites.code, hashCode(code)), gt(invites.expiresAt, now), isNull(invites.usedAt)));
+    .where(and(eq(invites.code, hashCode(code, secret)), gt(invites.expiresAt, now), isNull(invites.usedAt)));
   if (!invite) throw new HttpError(410, 'invite_gone', 'This invite is used, expired or unknown');
   return invite;
 }
 
 /** What the invite page shows before anyone signs in: the family, the role, the children's names */
-export async function describeInvite(db: Db, code: string, now: Date) {
-  const invite = await openInvite(db, code, now);
+export async function describeInvite(db: Db, code: string, now: Date, secret: string) {
+  const invite = await openInvite(db, code, now, secret);
   const [family] = await db.select({ name: families.name }).from(families).where(eq(families.id, invite.familyId));
   const kids = invite.studentIds.length
     ? await db.select().from(students).where(inArray(students.id, invite.studentIds))
@@ -80,8 +83,9 @@ export async function acceptInvite(
   code: string,
   who: { userId: string } | { login: string; password: string; displayName: string },
   now: Date,
+  secret: string,
 ): Promise<{ userId: string; familyId: string }> {
-  const invite = await openInvite(db, code, now);
+  const invite = await openInvite(db, code, now, secret);
   const passwordHash = 'login' in who ? await hashPassword(who.password) : null;
   return db.transaction(async (txn) => {
     const tx = txn as unknown as Db;

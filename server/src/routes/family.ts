@@ -24,7 +24,10 @@ import { changeMember, removeMember } from '../family/members';
 import type { AppDeps } from '../http/context';
 import { connectDepsOf, inBackground, memberOf } from '../http/context';
 import { HttpError } from '../http/errors';
+import { underLimit } from '../http/rate-limit';
+import type { Limiters } from '../http/rate-limit';
 import { route } from '../http/route';
+import { diaryKey } from './auth';
 import { registry } from '../openapi';
 import { studentScale } from '../students/scale';
 
@@ -186,7 +189,7 @@ async function mayInvite(db: Db, familyId: string, myRole: string) {
     throw new HttpError(403, 'forbidden', 'Your role does not allow inviting');
 }
 
-export function familyRoutes(deps: AppDeps): Router {
+export function familyRoutes(deps: AppDeps, limiters: Limiters): Router {
   const r = Router();
   const now = () => deps.now?.() ?? new Date();
 
@@ -230,10 +233,12 @@ export function familyRoutes(deps: AppDeps): Router {
     },
     async (req, { body }) => {
       const m = memberOf(req);
-      const result = await connectDiary(connectDepsOf(deps, body.providerId), {
-        ...body,
-        into: { familyId: m.familyId, userId: m.userId },
-      });
+      const result = await underLimit(limiters.connect, req.ip ?? 'unknown', diaryKey(body), () =>
+        connectDiary(connectDepsOf(deps, body.providerId), {
+          ...body,
+          into: { familyId: m.familyId, userId: m.userId },
+        }),
+      );
       inBackground(deps, result.firstSync);
       return viewFamily(deps.db, m.familyId, m.role);
     },
@@ -427,7 +432,7 @@ export function familyRoutes(deps: AppDeps): Router {
       await mayInvite(deps.db, m.familyId, m.role);
       if (m.role !== 'admin' && body.role === 'admin')
         throw new HttpError(403, 'forbidden', 'Only an admin invites an admin');
-      return createInvite(deps.db, m, body.role, body.studentIds, now());
+      return createInvite(deps.db, m, body.role, body.studentIds, now(), deps.secret);
     },
   );
 

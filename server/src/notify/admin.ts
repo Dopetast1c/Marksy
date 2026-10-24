@@ -31,6 +31,7 @@ export async function notifyAdmins(db: Db, familyId: string, notice: AdminNotice
     if (dup) continue;
     await db.insert(notifications).values({
       userId: admin.id,
+      familyId,
       eventKey: notice.eventKey,
       severity: notice.severity,
       title: notice.title,

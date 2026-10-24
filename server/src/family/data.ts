@@ -11,9 +11,11 @@ import {
   finalMarks,
   holidays,
   homeworkItems,
+  lessonOverrides,
   lessonPrep,
   lessons,
   lessonTags,
+  markEvents,
   markHistory,
   marks,
   memberships,
@@ -48,7 +50,11 @@ export async function exportFamily(db: Db, familyId: string) {
     .select({ providerId: diaryAccounts.providerId, label: diaryAccounts.label, status: diaryAccounts.status })
     .from(diaryAccounts)
     .where(eq(diaryAccounts.familyId, familyId));
-  const links = await db.select().from(familyStudents).where(eq(familyStudents.familyId, familyId));
+  // a suspended child's data is not served to the family (7.1, D54): only followed and stopped children go out
+  const links = await db
+    .select()
+    .from(familyStudents)
+    .where(and(eq(familyStudents.familyId, familyId), inArray(familyStudents.status, ['active', 'stopped'])));
 
   const children = [];
   for (const link of links) {
@@ -95,8 +101,20 @@ export async function exportFamily(db: Db, familyId: string) {
         ...s,
         createdBy: author(s.createdBy),
       })),
-      subjectColors: await db.select().from(subjectColors).where(eq(subjectColors.studentId, id)),
-      subjectGoals: await db.select().from(subjectGoals).where(eq(subjectGoals.studentId, id)),
+      subjectColors: (await db.select().from(subjectColors).where(eq(subjectColors.studentId, id))).map((c) => ({
+        ...c,
+        setBy: author(c.setBy),
+      })),
+      subjectGoals: (await db.select().from(subjectGoals).where(eq(subjectGoals.studentId, id))).map((g) => ({
+        ...g,
+        setBy: author(g.setBy),
+      })),
+      // «Урока не будет» is the child's own work too
+      lessonOverrides: (await db.select().from(lessonOverrides).where(eq(lessonOverrides.studentId, id))).map((o) => ({
+        ...o,
+        setBy: author(o.setBy),
+      })),
+      markEvents: await db.select().from(markEvents).where(eq(markEvents.studentId, id)),
       bells: await db.select().from(bellSchedules).where(eq(bellSchedules.studentId, id)),
       regularWeek: await db.select().from(weekTemplates).where(eq(weekTemplates.studentId, id)),
     });
@@ -115,17 +133,8 @@ export async function exportFamily(db: Db, familyId: string) {
     children,
     tags: await db.select().from(lessonTags).where(eq(lessonTags.familyId, familyId)),
     alertRules: await db.select().from(alertRules).where(eq(alertRules.familyId, familyId)),
-    notifications: members.length
-      ? await db
-          .select()
-          .from(notifications)
-          .where(
-            inArray(
-              notifications.userId,
-              members.map((m) => m.userId),
-            ),
-          )
-      : [],
+    // this family's notices only: a member's notices from another family are that family's
+    notifications: await db.select().from(notifications).where(eq(notifications.familyId, familyId)),
   };
 }
 

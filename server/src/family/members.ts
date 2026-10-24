@@ -1,6 +1,6 @@
 import { and, eq, inArray, ne, notInArray } from 'drizzle-orm';
 import type { Db } from '../db/client';
-import { alertRules, familyStudents, memberships, sessions, userStudentAccess } from '../db/schema';
+import { alertRules, familyStudents, memberships, notifications, sessions, userStudentAccess } from '../db/schema';
 import { HttpError } from '../http/errors';
 import { ensureDefaultRules } from './rules';
 import type { MemberRole } from './rules';
@@ -25,6 +25,11 @@ async function otherAdmins(db: Db, familyId: string, userId: string): Promise<nu
   return rows.length;
 }
 
+/**
+ * A member's role and the children they see (admin). A student sees exactly one child, themselves (design.md 7.1):
+ * becoming a student needs that one child. Rules follow: about a child no longer seen they go, and after a role change
+ * the defaults are made again for the new role.
+ */
 export async function changeMember(
   db: Db,
   familyId: string,
@@ -35,6 +40,9 @@ export async function changeMember(
   if (change.role && change.role !== 'admin' && m.role === 'admin' && !(await otherAdmins(db, familyId, userId)))
     throw new HttpError(409, 'last_admin', 'The family needs another admin first');
   const role = change.role ?? m.role;
+  const roleChanged = !!change.role && change.role !== m.role;
+  if (role === 'student' && (change.studentIds?.length ?? (roleChanged ? 0 : 1)) !== 1)
+    throw new HttpError(400, 'student_needs_one_child', 'A student sees exactly one child: name them');
   await db.transaction(async (txn) => {
     const tx = txn as unknown as Db;
     if (change.role)
@@ -49,22 +57,26 @@ export async function changeMember(
         .where(and(eq(familyStudents.familyId, familyId), inArray(familyStudents.status, ['active', 'stopped'])));
       const ids = new Set(followed.map((f) => f.studentId));
       if (change.studentIds.some((id) => !ids.has(id))) throw new HttpError(404, 'not_found', 'No such child');
-      const keep = change.studentIds;
       await tx
         .delete(userStudentAccess)
         .where(and(eq(userStudentAccess.familyId, familyId), eq(userStudentAccess.userId, userId)));
-      for (const studentId of keep)
+      for (const studentId of change.studentIds)
         await tx.insert(userStudentAccess).values({ userId, familyId, studentId }).onConflictDoNothing();
-      // rules follow access: about a child no longer seen they go, about a new one the defaults come
-      await tx
-        .delete(alertRules)
-        .where(
-          and(
-            eq(alertRules.familyId, familyId),
-            eq(alertRules.userId, userId),
-            keep.length ? notInArray(alertRules.studentId, keep) : undefined,
-          ),
-        );
+    }
+    if (change.studentIds || roleChanged) {
+      const seen = await tx
+        .select({ studentId: userStudentAccess.studentId })
+        .from(userStudentAccess)
+        .where(and(eq(userStudentAccess.familyId, familyId), eq(userStudentAccess.userId, userId)));
+      const keep = seen.map((x) => x.studentId);
+      await tx.delete(alertRules).where(
+        and(
+          eq(alertRules.familyId, familyId),
+          eq(alertRules.userId, userId),
+          // a new role starts from its own defaults; otherwise only rules about children no longer seen go
+          roleChanged || !keep.length ? undefined : notInArray(alertRules.studentId, keep),
+        ),
+      );
       for (const studentId of keep) await ensureDefaultRules(tx, { userId, familyId, studentId, role });
     }
   });
@@ -78,6 +90,8 @@ export async function removeMember(db: Db, familyId: string, userId: string): Pr
   await db.transaction(async (txn) => {
     const tx = txn as unknown as Db;
     await tx.delete(alertRules).where(and(eq(alertRules.familyId, familyId), eq(alertRules.userId, userId)));
+    // the family's notices in their inbox go with them (14.1)
+    await tx.delete(notifications).where(and(eq(notifications.familyId, familyId), eq(notifications.userId, userId)));
     await tx
       .delete(userStudentAccess)
       .where(and(eq(userStudentAccess.familyId, familyId), eq(userStudentAccess.userId, userId)));

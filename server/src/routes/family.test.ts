@@ -15,6 +15,7 @@ import {
   notifications,
   students,
   studentSources,
+  syncRuns,
   users,
 } from '../db/schema';
 import { storeStudents } from '../sync/store-school';
@@ -103,10 +104,11 @@ describe('family', () => {
     const first = await connectFamily(mama);
     const { agent: papa, body } = await secondFamily();
     const shared = body.connect.matches[0]!.studentId;
-    expect(
-      (await papa.post(`/api/family/accounts/${body.connect.accountId}/matches/${shared}`).send({ action: 'join' }))
-        .body,
-    ).toEqual({ outcome: 'requested' });
+    const ask = () =>
+      papa.post(`/api/family/accounts/${body.connect.accountId}/matches/${shared}`).send({ action: 'join' });
+    expect((await ask()).body).toEqual({ outcome: 'requested' });
+    // asking twice is asking once
+    expect((await ask()).body).toEqual({ outcome: 'requested' });
     const pending = (await mama.get('/api/family')).body.joinRequests;
     expect(pending).toEqual([expect.objectContaining({ displayName: 'Папа' })]);
     expect((await mama.patch(`/api/family/join-requests/${pending[0].id}`).send({ approve: true })).status).toBe(204);
@@ -115,6 +117,67 @@ describe('family', () => {
     const after = (await mama.get('/api/family')).body;
     expect(after.members.map((m: { displayName: string }) => m.displayName).sort()).toEqual(['Мама', 'Папа']);
     expect((await db.select().from(joinRequests))[0]!.status).toBe('approved');
+    // the login's sync log went with it
+    const runs = await db.select().from(syncRuns).where(eq(syncRuns.diaryAccountId, body.connect.accountId));
+    expect(runs.length).toBeGreaterThan(0);
+    expect(runs.every((r) => r.familyId === first.family.id)).toBe(true);
+  });
+
+  it('only the admin hands a diary login to another family; an approval after the asker left moves nothing', async () => {
+    const mama = agentWith();
+    await connectFamily(mama);
+    const { agent: papa, body } = await secondFamily();
+    const shared = body.connect.matches[0]!.studentId;
+    // a parent of Папа's family may not ask to join
+    const code = await invite(papa, 'parent');
+    const helper = agentWith();
+    await helper
+      .post(`/api/invites/${code}/accept`)
+      .send({ login: 'helper@example.com', password: 'correct horse battery', displayName: 'Помощник' });
+    const byParent = await helper
+      .post(`/api/family/accounts/${body.connect.accountId}/matches/${shared}`)
+      .send({ action: 'join' });
+    expect(byParent.status).toBe(403);
+    // the admin asks, hands the family to the helper and leaves: the request is stale
+    await papa.post(`/api/family/accounts/${body.connect.accountId}/matches/${shared}`).send({ action: 'join' });
+    const [helperUser] = await db.select().from(users).where(eq(users.login, 'helper@example.com'));
+    const [papaUser] = await db.select().from(users).where(eq(users.login, 'papa@example.com'));
+    expect((await papa.patch(`/api/family/members/${helperUser!.id}`).send({ role: 'admin' })).status).toBe(204);
+    expect((await papa.delete(`/api/family/members/${papaUser!.id}`)).status).toBe(204);
+    const pending = (await mama.get('/api/family')).body.joinRequests;
+    const stale = await mama.patch(`/api/family/join-requests/${pending[0].id}`).send({ approve: true });
+    expect(stale.body.error.code).toBe('request_stale');
+    const [account] = await db.select().from(diaryAccounts).where(eq(diaryAccounts.id, body.connect.accountId));
+    expect(account!.familyId).toBe(body.family.id);
+  });
+
+  it('a student sees exactly one child: becoming a student needs that one child', async () => {
+    const mama = agentWith();
+    const first = await connectFamily(mama);
+    const code = await invite(mama, 'parent');
+    await agentWith()
+      .post(`/api/invites/${code}/accept`)
+      .send({ login: 'kid2@example.com', password: 'correct horse battery', displayName: 'Ребёнок' });
+    const [kid] = await db.select().from(users).where(eq(users.login, 'kid2@example.com'));
+    expect((await mama.patch(`/api/family/members/${kid!.id}`).send({ role: 'student' })).body.error.code).toBe(
+      'student_needs_one_child',
+    );
+    const one = first.students[0]!.id;
+    expect(
+      (await mama.patch(`/api/family/members/${kid!.id}`).send({ role: 'student', studentIds: [one] })).status,
+    ).toBe(204);
+    const rules = await db.select().from(alertRules).where(eq(alertRules.userId, kid!.id));
+    expect(new Set(rules.map((r) => r.studentId))).toEqual(new Set([one]));
+    // the student defaults now: a new mark on, the comment off where it exists
+    expect(rules.find((r) => r.presetKey === 'mark.any')?.enabled).toBe(true);
+  });
+
+  it('invite codes cannot be tried one after another', async () => {
+    const app = testApp();
+    const codes = [];
+    for (let i = 0; i < 6; i++) codes.push((await request(app).get(`/api/invites/WRONG${i}`)).status);
+    expect(codes.slice(0, 5).every((c) => c === 410)).toBe(true);
+    expect(codes[5]).toBe(429);
   });
 
   it('«Перестать следить» while a login shows the child: stopped, not served, not re-linked; «Следить снова» brings the history back', async () => {
@@ -231,6 +294,13 @@ describe('family', () => {
     expect(exported.status).toBe(200);
     expect(exported.body.children).toHaveLength(2);
     expect(JSON.stringify(exported.body)).not.toMatch(/credentials|password|diary-pw-123|Папа|papa@example\.com/i);
+    // only this family's notices; a suspended child is not exported
+    expect(exported.body.notifications.every((n: { familyId: string }) => n.familyId === first.family.id)).toBe(true);
+    await db
+      .update(familyStudents)
+      .set({ status: 'suspended' })
+      .where(and(eq(familyStudents.familyId, first.family.id), eq(familyStudents.studentId, first.students[1]!.id)));
+    expect((await mama.get('/api/family/export')).body.children).toHaveLength(1);
     expect((await mama.delete('/api/family').send({ confirm: 'wrong' })).status).toBe(400);
     expect((await mama.delete('/api/family').send({ confirm: 'Мама' })).status).toBe(204);
     expect((await db.select().from(families)).map((f) => f.id)).not.toContain(first.family.id);

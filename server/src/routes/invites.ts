@@ -6,6 +6,8 @@ import { sessions } from '../db/schema';
 import { acceptInvite, describeInvite } from '../family/invites';
 import type { AppDeps } from '../http/context';
 import { HttpError } from '../http/errors';
+import { underLimit } from '../http/rate-limit';
+import type { Limiters } from '../http/rate-limit';
 import { route } from '../http/route';
 import { startSession } from '../http/session';
 import { registry } from '../openapi';
@@ -32,7 +34,7 @@ const providerInfo = registry.register(
   }),
 );
 
-export function inviteRoutes(deps: AppDeps): Router {
+export function inviteRoutes(deps: AppDeps, limiters: Limiters): Router {
   const r = Router();
   const now = () => deps.now?.() ?? new Date();
 
@@ -74,7 +76,11 @@ export function inviteRoutes(deps: AppDeps): Router {
       }),
       errors: { 410: 'Used, expired or unknown' },
     },
-    async (_req, { params }) => describeInvite(deps.db, params.code, now()),
+    // a code is short: lookups are limited per address, so codes cannot be tried one after another
+    async (req, { params }) =>
+      underLimit(limiters.invite, req.ip ?? 'unknown', params.code, () =>
+        describeInvite(deps.db, params.code, now(), deps.secret),
+      ),
   );
 
   route(
@@ -102,17 +108,18 @@ export function inviteRoutes(deps: AppDeps): Router {
     },
     async (req, { params, body }, res) => {
       if (req.auth) {
-        const done = await acceptInvite(deps.db, params.code, { userId: req.auth.userId }, now());
+        const userId = req.auth.userId;
+        const done = await underLimit(limiters.invite, req.ip ?? 'unknown', params.code, () =>
+          acceptInvite(deps.db, params.code, { userId }, now(), deps.secret),
+        );
         await deps.db.update(sessions).set({ familyId: done.familyId }).where(eq(sessions.id, req.auth.sessionId));
         return buildMe(deps.db, done);
       }
       if (!body.login || !body.password || !body.displayName)
         throw new HttpError(400, 'invalid_request', 'A login, a password and a name, or sign in first');
-      const done = await acceptInvite(
-        deps.db,
-        params.code,
-        { login: body.login, password: body.password, displayName: body.displayName },
-        now(),
+      const who = { login: body.login, password: body.password, displayName: body.displayName };
+      const done = await underLimit(limiters.invite, req.ip ?? 'unknown', params.code, () =>
+        acceptInvite(deps.db, params.code, who, now(), deps.secret),
       );
       await startSession(deps, res, { ...done, userAgent: req.get('user-agent') });
       return buildMe(deps.db, done);

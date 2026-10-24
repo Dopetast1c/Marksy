@@ -23,6 +23,8 @@ export const notifications = pgTable(
     userId: uuid('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
+    /** The family the notice belongs to (family-owned, design.md 7.1): an export or an erasure takes only its own */
+    familyId: uuid('family_id').references(() => families.id, { onDelete: 'cascade' }),
     /** null = family-wide */
     studentId: uuid('student_id').references(() => students.id, { onDelete: 'cascade' }),
     ruleId: uuid('rule_id'),
@@ -42,6 +44,7 @@ export const notifications = pgTable(
   (t) => [
     index('notifications_user_created_idx').on(t.userId, t.createdAt),
     index('notifications_event_idx').on(t.userId, t.eventKey),
+    index('notifications_family_idx').on(t.familyId),
   ],
 );
 

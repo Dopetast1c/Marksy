@@ -153,7 +153,11 @@ export const diaryAccounts = pgTable(
     alertedAt: ts('alerted_at'),
     createdAt: createdAt(),
   },
-  (t) => [index('diary_accounts_family_idx').on(t.familyId)],
+  (t) => [
+    index('diary_accounts_family_idx').on(t.familyId),
+    // one row per diary login: a login connected twice (a double tap, two parents at once) is refused by the database
+    uniqueIndex('diary_accounts_external_user_key').on(t.providerId, t.externalUserId),
+  ],
 );
 
 export const students = pgTable(

@@ -14,6 +14,8 @@ export interface AppDeps {
   db: Db;
   /** CREDENTIALS_KEY: encrypts diary credentials at rest (design.md 7.2 step 4) */
   credentialsKey: Buffer;
+  /** SESSION_SECRET: the key invite codes are stored under (HMAC) */
+  secret: string;
   /** Session cookies are Secure only when PUBLIC_URL is https (CLAUDE.md, local and phone testing) */
   secureCookies: boolean;
   now?: () => Date;

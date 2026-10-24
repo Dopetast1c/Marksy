@@ -8,7 +8,8 @@ import { connectDiary } from '../family/connect';
 import type { AppDeps } from '../http/context';
 import { authOf, connectDepsOf, inBackground } from '../http/context';
 import { HttpError } from '../http/errors';
-import type { LoginLimiter } from '../http/rate-limit';
+import { underLimit } from '../http/rate-limit';
+import type { Limiters } from '../http/rate-limit';
 import { route } from '../http/route';
 import { endSession, startSession } from '../http/session';
 import { buildMe, meResponse } from './me';
@@ -28,7 +29,7 @@ const connectResponse = meResponse.extend({
   }),
 });
 
-export function authRoutes(deps: AppDeps, limiter: LoginLimiter): Router {
+export function authRoutes(deps: AppDeps, limiters: Limiters): Router {
   const r = Router();
   const now = () => deps.now?.() ?? new Date();
 
@@ -46,7 +47,8 @@ export function authRoutes(deps: AppDeps, limiter: LoginLimiter): Router {
     },
     async (req, { body }, res) => {
       const ip = req.ip ?? 'unknown';
-      const wait = limiter.retryAfter(ip, body.login);
+      // counted before the password is checked: tries sent at once cannot all pass
+      const wait = limiters.login.take(ip, body.login);
       if (wait) throw new HttpError(429, 'too_many_tries', 'Too many tries; wait a little', { retryAfter: wait });
       const [user] = await deps.db
         .select()
@@ -56,11 +58,8 @@ export function authRoutes(deps: AppDeps, limiter: LoginLimiter): Router {
       const ok = user
         ? await verifyPassword(user.passwordHash, body.password)
         : await verifyPassword(await dummyHash, body.password).then(() => false);
-      if (!user || !ok) {
-        limiter.fail(ip, body.login);
-        throw new HttpError(401, 'wrong_login', 'Wrong login or password');
-      }
-      limiter.succeed(body.login);
+      if (!user || !ok) throw new HttpError(401, 'wrong_login', 'Wrong login or password');
+      limiters.login.succeed(ip, body.login);
       const [first] = await deps.db
         .select({ familyId: memberships.familyId })
         .from(memberships)
@@ -189,12 +188,15 @@ export function authRoutes(deps: AppDeps, limiter: LoginLimiter): Router {
       },
     },
     async (req, { body }, res) => {
-      const result = await connectDiary(connectDepsOf(deps, body.providerId), {
-        providerId: body.providerId,
-        credentials: body.credentials,
-        role: body.role,
-        newUser: { ...body.user, consentVersion: body.consentVersion },
-      });
+      // every connect is a login to the diary: limited per address and per diary login
+      const result = await underLimit(limiters.connect, req.ip ?? 'unknown', diaryKey(body), () =>
+        connectDiary(connectDepsOf(deps, body.providerId), {
+          providerId: body.providerId,
+          credentials: body.credentials,
+          role: body.role,
+          newUser: { ...body.user, consentVersion: body.consentVersion },
+        }),
+      );
       inBackground(deps, result.firstSync);
       await startSession(deps, res, {
         userId: result.userId,
@@ -213,6 +215,10 @@ export function authRoutes(deps: AppDeps, limiter: LoginLimiter): Router {
 
   return r;
 }
+
+/** The limiter's key of a diary login: the system and the login, never the password */
+export const diaryKey = (body: { providerId: string; credentials: Record<string, string> }) =>
+  `${body.providerId}:${Object.entries(body.credentials).find(([k]) => !/pass|token|secret/i.test(k))?.[1] ?? ''}`;
 
 /** A real hash of a random password, so a login that does not exist costs the same time as a wrong password */
 const dummyHash = hashPassword(randomBytes(16).toString('hex'));

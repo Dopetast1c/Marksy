@@ -1,9 +1,11 @@
 import request from 'supertest';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { settle, testApp } from '../../test/app';
-import { agentWith, connectFamily, CONSENT } from '../../test/connect';
+import { agentWith, connectFamily, CONSENT, otherParentTransport } from '../../test/connect';
 import { resetDb, testDb } from '../../test/db';
 import { diaryAccounts, families, sessions, syncRuns } from '../db/schema';
+import type { TransportRequest } from '@marksy/core';
+import { demoFullTransport } from '@marksy/registry';
 import { SESSION_COOKIE } from '../http/session';
 
 const db = testDb();
@@ -63,7 +65,7 @@ describe('auth: connect, login, logout, me', () => {
     expect(cookieOf(res)).toMatch(/Secure/);
   });
 
-  it('refuses a student diary login, a taken Marksy login, a diary connected already, and a refused diary login', async () => {
+  it('refuses a student diary login, a diary connected already (before any diary login), a refused diary login', async () => {
     const agent = agentWith();
     await connectFamily(agent);
     const body = {
@@ -73,7 +75,8 @@ describe('auth: connect, login, logout, me', () => {
       user: { login: 'other@example.com', password: 'correct horse battery', displayName: 'Папа' },
       consentVersion: CONSENT,
     };
-    const app = testApp();
+    const log: TransportRequest[] = [];
+    const app = testApp({ transportFor: () => demoFullTransport({ log }) });
     expect(
       (
         await request(app)
@@ -81,21 +84,63 @@ describe('auth: connect, login, logout, me', () => {
           .send({ ...body, role: 'student' })
       ).body.error.code,
     ).toBe('student_login_not_supported');
-    expect(
-      (
-        await request(app)
-          .post('/api/auth/connect')
-          .send({ ...body, user: { ...body.user, login: 'PARENT@example.com' } })
-      ).body.error.code,
-    ).toBe('login_taken');
-    expect((await request(app).post('/api/auth/connect').send(body)).body.error.code).toBe('already_connected');
+    // the same diary login (any case) is refused without a login to the diary
+    const again = await request(app)
+      .post('/api/auth/connect')
+      .send({ ...body, credentials: { login: 'DIARY-USER', password: 'x' } });
+    expect(again.body.error.code).toBe('already_connected');
+    expect(log).toEqual([]);
     const refusing = testApp({
       transportFor: () => async () => ({ status: 401, headers: {}, text: '{}' }),
     });
-    const refused = await request(refusing).post('/api/auth/connect').send(body);
+    const refused = await request(refusing)
+      .post('/api/auth/connect')
+      .send({ ...body, credentials: { login: 'someone-else', password: 'x' } });
     expect(refused.status).toBe(401);
     expect(refused.body.error.code).toBe('diary_auth_failed');
     expect(await db.select().from(families)).toHaveLength(1);
+  });
+
+  it('a taken Marksy login is told only to someone the diary accepted; the same diary user under another label is refused', async () => {
+    await connectFamily(agentWith());
+    const taken = {
+      providerId: 'demo-full',
+      credentials: { login: 'second-parent', password: 'x' },
+      role: 'parent',
+      user: { login: 'PARENT@example.com', password: 'correct horse battery', displayName: 'Папа' },
+      consentVersion: CONSENT,
+    };
+    // the diary refuses: the answer is about the diary, never about the Marksy login
+    const refusing = testApp({ transportFor: () => async () => ({ status: 401, headers: {}, text: '{}' }) });
+    expect((await request(refusing).post('/api/auth/connect').send(taken)).body.error.code).toBe('diary_auth_failed');
+    // the diary accepts another parent's login: now the taken Marksy login is said
+    const other = testApp({ transportFor: () => otherParentTransport(['p-1']) });
+    expect((await request(other).post('/api/auth/connect').send(taken)).body.error.code).toBe('login_taken');
+    // a second label of the first diary user: refused after the login, which counts as that account's login
+    const before = (await db.select().from(diaryAccounts))[0]!.lastLoginAt!;
+    const sameUser = await request(testApp({ now: () => new Date(before.getTime() + 60_000) }))
+      .post('/api/auth/connect')
+      .send({
+        ...taken,
+        credentials: { login: 'alias-of-diary-user', password: 'x' },
+        user: { ...taken.user, login: 'new@example.com' },
+      });
+    expect(sameUser.body.error.code).toBe('already_connected');
+    expect((await db.select().from(diaryAccounts))[0]!.lastLoginAt!.getTime()).toBe(before.getTime() + 60_000);
+  });
+
+  it('connecting is limited per address and per diary login: every try is a diary login', async () => {
+    const app = testApp({ transportFor: () => async () => ({ status: 401, headers: {}, text: '{}' }) });
+    const body = {
+      providerId: 'demo-full',
+      credentials: { login: 'guessing', password: 'x' },
+      role: 'parent',
+      user: { login: 'g@example.com', password: 'correct horse battery', displayName: 'Г' },
+      consentVersion: CONSENT,
+    };
+    const codes = [];
+    for (let i = 0; i < 6; i++) codes.push((await request(app).post('/api/auth/connect').send(body)).status);
+    expect(codes).toEqual([401, 401, 401, 401, 401, 429]);
   });
 
   it('login: the same answer for an unknown login and a wrong password; five failures then a pause', async () => {
@@ -117,6 +162,18 @@ describe('auth: connect, login, logout, me', () => {
       .send({ login: 'PARENT@example.com', password: 'correct horse battery' });
     expect(ok.status).toBe(200);
     expect(cookieOf(ok)).toMatch(new RegExp(`^${SESSION_COOKIE}=`));
+  });
+
+  it('ten wrong tries sent at once: only five are checked', async () => {
+    await connectFamily(agentWith());
+    const app = testApp();
+    const all = await Promise.all(
+      Array.from({ length: 10 }, () =>
+        request(app).post('/api/auth/login').send({ login: 'parent@example.com', password: 'nope' }),
+      ),
+    );
+    expect(all.filter((r) => r.status === 401)).toHaveLength(5);
+    expect(all.filter((r) => r.status === 429)).toHaveLength(5);
   });
 
   it('logout ends the session; without a session nothing is served', async () => {

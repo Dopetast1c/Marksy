@@ -559,7 +559,8 @@ Marksy login and password only; verified against `users.password_hash`. e-school
 - `POST /api/sync/run`, `POST /api/sync/rescan`: `admin` and `parent`. Family management, invites, diary accounts: `admin` (parents may invite if the admin enables it; default on).
 - All API routes except `/api/auth/login`, `/api/auth/connect`, `/api/invites/:code`, `/api/health` and `/api/docs` require a session.
 - Rate limits: login 5 failed tries per 15 minutes per IP and per login (in memory: one process); sync and rescan share the login budget of the diary account (manifest `minLoginIntervalMinutes`) (section 10).
-- Sessions: a random token in an httpOnly, SameSite=Lax cookie (`Secure` behind https), only its SHA-256 in `sessions.token_hash`, 30 days sliding, the current family on the session; invite codes are stored as their SHA-256 too. An unknown login and a wrong password get the same answer.
+- Sessions: a random token in an httpOnly, SameSite=Lax cookie (`Secure` behind https), only its SHA-256 in `sessions.token_hash`, 30 days sliding, the current family on the session; invite codes as their HMAC under `SESSION_SECRET`. An unknown login and a wrong password get the same answer; an attempt is counted before the password is checked.
+- Connecting a diary is a login to the diary: 5 tries per 15 minutes per address and per diary login; a diary login connected already is refused before the diary is called, and whether a Marksy login is taken is said only to someone the diary accepted. Invite codes: 5 lookups per 15 minutes per address. «Присоединиться» (handing the family's diary login to another family) is the admin's, and an approval moves nothing once the asker is no longer that family's admin.
 
 ## 8. Data model (PostgreSQL 16, Drizzle)
 
@@ -925,6 +926,7 @@ The schedule above describes the ideal day. Section 10.4 describes what happens 
 
 | Data | Keep | Why |
 |---|---|---|
+| `join_requests` | a decided request 180 days (`RETENTION_MARK_EVENTS_DAYS`); a pending one until the admin decides | the decision is in the family's members and accounts; the request itself is only history |
 | `cli_logins` | 90 days (`RETENTION_SYNC_RUNS_DAYS`) | the login guard of `pnpm probe` and `pnpm sync:once` needs a day; the rest is for diagnosis. Only a hash of the login is stored |
 | `sync_runs` | 90 days, then one row per day is compacted into `sync_daily` (date, runs, failures, requests) | the log is for diagnosing recent problems; the daily line is enough for "how often did this break" |
 | `sync_coverage` | current and previous school year; older rows deleted with the year's compaction | the planner never looks further back |

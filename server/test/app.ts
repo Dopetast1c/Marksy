@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import { demoFullTransport, demoLiteTransport, demoTransport } from '@marksy/registry';
 import { createApp } from '../src/app';
 import type { AppDeps } from '../src/http/context';
@@ -10,6 +11,8 @@ import { TEST_CREDENTIALS_KEY } from './factories';
 // test (settle), so nothing writes to the database while the next test empties it.
 
 const inFlight: Promise<unknown>[] = [];
+/** A random key per test run, like the credentials key */
+const TEST_SESSION_SECRET = randomBytes(32).toString('hex');
 
 export const settle = () => Promise.allSettled(inFlight.splice(0));
 
@@ -17,6 +20,7 @@ export function testDeps(over: Partial<AppDeps> = {}): AppDeps {
   return {
     db: testDb(),
     credentialsKey: TEST_CREDENTIALS_KEY,
+    secret: TEST_SESSION_SECRET,
     secureCookies: false,
     allowDemoProviders: true,
     syncConfig: readSyncConfig({}),

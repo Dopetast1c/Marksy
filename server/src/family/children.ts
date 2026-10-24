@@ -10,6 +10,7 @@ import {
   memberships,
   students,
   studentSources,
+  syncRuns,
   userStudentAccess,
 } from '../db/schema';
 import { HttpError } from '../http/errors';
@@ -68,7 +69,7 @@ async function otherFamilyFollows(db: Db, familyId: string, studentId: string): 
  */
 export async function chooseMatch(
   db: Db,
-  who: { familyId: string; userId: string },
+  who: { familyId: string; userId: string; role: 'admin' | 'parent' | 'student' },
   accountId: string,
   studentId: string,
   action: 'follow' | 'join',
@@ -87,6 +88,9 @@ export async function chooseMatch(
     );
   if (!source || (await linkOf(db, who.familyId, studentId)))
     throw new HttpError(404, 'not_found', 'No such choice to make');
+  // handing the family's diary login to another family is the admin's (design.md 7.6: diary accounts are the admin's)
+  if (action === 'join' && who.role !== 'admin')
+    throw new HttpError(403, 'forbidden', 'Only the admin moves a diary login to another family');
   if (action === 'follow') {
     await linkFamily(db, who.familyId, studentId, now);
     await rebalance(db, studentId, now);
@@ -103,9 +107,21 @@ export async function chooseMatch(
       ),
     );
   if (!other) throw new HttpError(409, 'nobody_to_join', 'No other family follows this child now');
-  await db
-    .insert(joinRequests)
-    .values({ familyId: other.familyId, fromUserId: who.userId, diaryAccountId: accountId, createdAt: now });
+  const [pending] = await db
+    .select({ id: joinRequests.id })
+    .from(joinRequests)
+    .where(
+      and(
+        eq(joinRequests.familyId, other.familyId),
+        eq(joinRequests.diaryAccountId, accountId),
+        eq(joinRequests.status, 'pending'),
+      ),
+    );
+  // asking twice is asking once
+  if (!pending)
+    await db
+      .insert(joinRequests)
+      .values({ familyId: other.familyId, fromUserId: who.userId, diaryAccountId: accountId, createdAt: now });
   return { outcome: 'requested' };
 }
 
@@ -127,6 +143,26 @@ export async function decideJoin(
     .from(joinRequests)
     .where(and(eq(joinRequests.id, requestId), eq(joinRequests.familyId, admin.familyId)));
   if (!request || request.status !== 'pending') throw new HttpError(404, 'not_found', 'No such request');
+  if (approve && request.diaryAccountId && request.fromUserId) {
+    // the person who asked must still be an admin of the family that owns the login, or nothing moves
+    const [owner] = await db
+      .select({ familyId: diaryAccounts.familyId })
+      .from(diaryAccounts)
+      .where(eq(diaryAccounts.id, request.diaryAccountId));
+    const [asker] = owner
+      ? await db
+          .select({ role: memberships.role })
+          .from(memberships)
+          .where(and(eq(memberships.userId, request.fromUserId), eq(memberships.familyId, owner.familyId)))
+      : [];
+    if (asker?.role !== 'admin') {
+      await db
+        .update(joinRequests)
+        .set({ status: 'declined', decidedBy: admin.userId })
+        .where(eq(joinRequests.id, requestId));
+      throw new HttpError(409, 'request_stale', 'The person who asked no longer manages this diary login');
+    }
+  }
   await db.transaction(async (txn) => {
     const tx = txn as unknown as Db;
     await tx
@@ -137,6 +173,17 @@ export async function decideJoin(
     const [account] = await tx.select().from(diaryAccounts).where(eq(diaryAccounts.id, request.diaryAccountId));
     if (!account) return;
     const from = account.familyId;
+    // other requests for the same login are answered by this one
+    await tx
+      .update(joinRequests)
+      .set({ status: 'declined', decidedBy: admin.userId })
+      .where(
+        and(
+          eq(joinRequests.diaryAccountId, account.id),
+          eq(joinRequests.status, 'pending'),
+          ne(joinRequests.id, requestId),
+        ),
+      );
     const credentials = account.credentialsEnc
       ? encryptCredentials(
           decryptCredentials(account.credentialsEnc, from, credentialsKey),
@@ -148,6 +195,8 @@ export async function decideJoin(
       .update(diaryAccounts)
       .set({ familyId: admin.familyId, credentialsEnc: credentials })
       .where(eq(diaryAccounts.id, account.id));
+    // the login's sync log goes with it (and the raw bodies with the runs)
+    await tx.update(syncRuns).set({ familyId: admin.familyId }).where(eq(syncRuns.diaryAccountId, account.id));
     await tx
       .insert(memberships)
       .values({ userId: request.fromUserId, familyId: admin.familyId, role: 'parent', createdAt: now })
