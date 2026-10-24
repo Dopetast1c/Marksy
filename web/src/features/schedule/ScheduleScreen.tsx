@@ -160,7 +160,11 @@ export function ScheduleScreen() {
   const schoolDays = days.data?.schoolDays ?? [];
   const holidays = school.data?.holidays;
   const lessonDays = useMemo(() => days.data?.days ?? [], [days.data]);
-  const day = view.day ?? today;
+  // День opens on today; on a day without lessons (a weekend, the holidays) on the next day with lessons, like
+  // «Всё расписание» on Главная (5.5)
+  const day =
+    view.day ??
+    (lessonDays.some((d) => d.date === today) ? today : (lessonDays.find((d) => d.date > today)?.date ?? today));
   const monday = (w: number) => addDays(weekStartOf(today, weekStart), 7 * w);
   /** the holidays a whole week sits in: every school day of it (manifest.calendar) is a holiday */
   const holidayWeek = (w: number) => {

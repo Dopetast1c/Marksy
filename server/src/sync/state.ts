@@ -1,6 +1,6 @@
 import type { Calendar, ISODate, ProviderManifest } from '@marksy/core';
 import { weekStartOf, weekdayOf } from '@marksy/core';
-import { and, desc, eq, isNull, lte } from 'drizzle-orm';
+import { and, desc, eq, isNull, lte, ne } from 'drizzle-orm';
 import type { Db } from '../db/client';
 import {
   bellSchedules,
@@ -8,13 +8,14 @@ import {
   lessons,
   schoolYears,
   syncCoverage,
+  syncRuns,
   termRescans,
   terms,
   weekTemplates,
 } from '../db/schema';
 import type { FamilySettings } from '../db/schema';
 import type { PlanSet } from './collector';
-import { hasBacklog, hasPostTerm, isSchoolDay, selectWeeks } from './plan';
+import { aheadDue, hasBacklog, hasPostTerm, isSchoolDay, selectWeeks } from './plan';
 import type { CalendarRules, EffectiveLimits, PlanCalendar, StudentPlanState, WeekContext } from './plan';
 import { boundWindows, childWindow, unionWindows } from './window';
 import type { ChildDay, ChildWindow, Window } from './window';
@@ -148,6 +149,23 @@ export interface AccountToday {
   /** An unverified week waits: a catch-up may run */
   backlog: boolean;
   postTerm: boolean;
+  /** A day without school: a child's nearest school week waits and this stretch has had no run of kind ahead yet */
+  ahead: boolean;
+  /** Some child has school today by their calendar (a weekday of the manifest, not a holiday or a family day off) */
+  schoolDay: boolean;
+}
+
+/** The start of the account's last run of kind ahead that reached the diary (an offline attempt is not one) */
+export async function lastAheadOf(db: Db, accountId: string): Promise<Date | null> {
+  const [row] = await db
+    .select({ startedAt: syncRuns.startedAt })
+    .from(syncRuns)
+    .where(
+      and(eq(syncRuns.diaryAccountId, accountId), eq(syncRuns.kind, 'ahead'), ne(syncRuns.status, 'skipped_offline')),
+    )
+    .orderBy(desc(syncRuns.startedAt))
+    .limit(1);
+  return row?.startedAt ?? null;
 }
 
 /**
@@ -159,10 +177,14 @@ export async function accountToday(
   studentIds: readonly string[],
   ctx: WeekContext,
   limits: Pick<EffectiveLimits, 'envWindow' | 'standIn'>,
+  /** The last run of kind ahead of the account that reached the diary (offline attempts do not count) */
+  lastAheadAt: Date | null = null,
 ): Promise<AccountToday> {
   const children: ChildToday[] = [];
   let backlog = false;
   let postTerm = false;
+  let ahead = false;
+  const aheadOn = lastAheadAt ? ctx.localDate(lastAheadAt) : null;
   for (const studentId of studentIds) {
     const cal = await storedPlanCalendar(db, studentId, ctx.today);
     const window = childWindow(await childDayOf(db, studentId, ctx.today, cal, ctx), limits.standIn);
@@ -170,10 +192,14 @@ export async function accountToday(
     if (!cal)
       backlog = true; // nothing stored yet: the first run reads everything
     else {
-      const weeks = selectWeeks(await planState(db, studentId, cal), ctx);
+      const state = await planState(db, studentId, cal);
+      const weeks = selectWeeks(state, ctx);
       for (const w of weeks) sets[w.set] = (sets[w.set] ?? 0) + 1;
       if (hasBacklog(weeks)) backlog = true;
       if (hasPostTerm(weeks)) postTerm = true;
+      // one run per stretch without school: none since the child's last school day
+      const due = aheadDue(state, ctx);
+      if (due && !(aheadOn && (!due.lastSchoolDay || aheadOn > due.lastSchoolDay))) ahead = true;
     }
     children.push({ studentId, window, sets });
   }
@@ -181,5 +207,7 @@ export async function accountToday(
     unionWindows(children.flatMap((c) => (c.window.window ? [c.window.window] : []))),
     limits.envWindow,
   );
-  return { children, windows, backlog, postTerm };
+  // no child stored yet (just connected): count it as a school day, the backlog runs anyway
+  const schoolDay = children.length === 0 || children.some((c) => c.window.source !== 'no_school');
+  return { children, windows, backlog, postTerm, ahead, schoolDay };
 }

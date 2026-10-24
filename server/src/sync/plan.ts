@@ -13,6 +13,8 @@ const DAY_MS = 86_400_000;
 export const RESCAN_AGE_DAYS = 6;
 /** Finished terms are fetched once more this long after their end (late finals and edits) */
 export const POST_TERM_DAYS = 14;
+/** How far the next school week is looked for past holidays */
+export const AHEAD_WEEKS = 3;
 
 export interface PlanCalendar {
   year: DateRange;
@@ -42,7 +44,7 @@ export interface WeekContext extends CalendarRules {
   /** Local date of a moment, in the school's time zone */
   localDate(at: Date): ISODate;
   lastSuccessAt: Date | null;
-  /** The provider shows lessons ahead (capabilities.futureTimetable): the next week is a standing week too */
+  /** The provider shows lessons ahead (capabilities.futureTimetable): the next school week is a standing week too */
   readsAhead?: boolean;
 }
 
@@ -57,6 +59,55 @@ export function isSchoolDay(d: ISODate, cal: PlanCalendar, rules: CalendarRules)
 function isSchoolWeek(w: ISODate, cal: PlanCalendar, rules: CalendarRules): boolean {
   for (let i = 0; i < 7; i++) if (isSchoolDay(addDays(w, i), cal, rules)) return true;
   return false;
+}
+
+/**
+ * The week of the child's first school day after the current week: holiday weeks are skipped, at most AHEAD_WEEKS
+ * ahead, never past the school year (30 October with the holidays of 2 to 8 November: the week of 9 November)
+ */
+export function nextSchoolWeek(cal: PlanCalendar, ctx: WeekContext): ISODate | null {
+  const current = weekStartOf(ctx.today, ctx.weekStart);
+  for (let k = 1; k <= AHEAD_WEEKS; k++) {
+    const w = addDays(current, 7 * k);
+    if (w > cal.year.to) return null;
+    if (isSchoolWeek(w, cal, ctx)) return w;
+  }
+  return null;
+}
+
+/**
+ * On a day without school for the child (weekend, holidays): the week of their nearest school day, when it was not
+ * read on their last school day or since (the Friday runs failed: machine off, diary down). That allows one run in the
+ * manifest's window during the stretch without school (D55); null when nothing is waiting.
+ */
+export function aheadDue(
+  state: StudentPlanState,
+  ctx: WeekContext,
+): { week: ISODate; lastSchoolDay: ISODate | null } | null {
+  const cal = state.calendar;
+  if (!ctx.readsAhead || isSchoolDay(ctx.today, cal, ctx)) return null;
+  const until = addDays(weekStartOf(ctx.today, ctx.weekStart), 7 * (AHEAD_WEEKS + 1) - 1);
+  let next: ISODate | null = null;
+  for (let d = addDays(ctx.today, 1); d <= until && d <= cal.year.to; d = addDays(d, 1))
+    if (isSchoolDay(d, cal, ctx)) {
+      next = d;
+      break;
+    }
+  if (!next) return null;
+  let last: ISODate | null = null;
+  for (
+    let d = addDays(ctx.today, -1);
+    d >= cal.year.from && daysBetween(d, ctx.today) <= 7 * (AHEAD_WEEKS + 1);
+    d = addDays(d, -1)
+  )
+    if (isSchoolDay(d, cal, ctx)) {
+      last = d;
+      break;
+    }
+  const week = weekStartOf(next, ctx.weekStart);
+  const at = state.coverage.get(week);
+  if (at && (!last || ctx.localDate(at) >= last)) return null;
+  return { week, lastSchoolDay: last };
 }
 
 /** School weeks of the year up to today, newest first */
@@ -102,8 +153,8 @@ function postTermWeeks(state: StudentPlanState, weeks: ISODate[], ctx: WeekConte
 }
 
 /**
- * The weeks of one student in fetch order: standing (the current week, the next one where the diary shows lessons
- * ahead, and the previous one), the gap since the last success
+ * The weeks of one student in fetch order: standing (the current week, the next school week where the diary shows
+ * lessons ahead, and the previous one), the gap since the last success
  * (newest first), the re-scan of the current term's stale weeks, the once-more of finished terms, then the backfill of
  * never-verified weeks. The re-scan has no slot of its own: it fills the school-day runs (design.md 10.2, D55).
  */
@@ -119,10 +170,11 @@ export function selectWeeks(state: StudentPlanState, ctx: WeekContext): WeekRequ
     out.push({ weekStart: w, set });
   };
 
-  // every run reads the next week too: teachers set Monday's homework on Friday, and no run reads at the weekend (D55)
-  const next = addDays(current, 7);
+  // every run reads the next school week too: teachers set Monday's homework on Friday, and no run reads at the
+  // weekend or in the holidays but the one of aheadDue (D55)
+  const next = ctx.readsAhead ? nextSchoolWeek(cal, ctx) : null;
   if (weeks.includes(current)) add(current, 'standing');
-  if (ctx.readsAhead && next <= cal.year.to && isSchoolWeek(next, cal, ctx)) add(next, 'standing');
+  if (next) add(next, 'standing');
   if (weeks.includes(addDays(current, -7))) add(addDays(current, -7), 'standing');
 
   // a week is caught up once it was fetched after it ended
@@ -220,6 +272,13 @@ export interface GateInput {
   backlog: boolean;
   /** A finished term's once-more is due */
   postTerm: boolean;
+  /**
+   * A child's nearest school week was not read since their last school day, and no run of kind ahead has started in
+   * this stretch without school (aheadDue, state.ts)
+   */
+  ahead?: boolean;
+  /** Some child has school today by the calendar; on a day without school a long gap since the last read is normal */
+  schoolDay?: boolean;
   /** The last run that ended skipped_offline */
   lastOfflineAt: Date | null;
   /** Seeds the run's jitter: the account id */
@@ -227,7 +286,7 @@ export interface GateInput {
 }
 
 export type GateDecision =
-  | { start: true; kind: 'scheduled' | 'catchup' | 'rescan' | 'manual' | 'backfill' }
+  | { start: true; kind: 'scheduled' | 'catchup' | 'ahead' | 'rescan' | 'manual' | 'backfill' }
   | {
       start: false;
       reason:
@@ -301,6 +360,14 @@ export function decideStart(input: GateInput): GateDecision {
   if (now_)
     return afterJitter(now_) ? { start: true, kind: 'scheduled' } : { start: false, reason: 'jitter', record: null };
 
+  // a day without school for every child (weekend, holidays): one run in the manifest's window when a child's nearest
+  // school week was not read since their last school day (Friday failed), once per stretch without school (D55)
+  if (input.ahead && input.schoolDay === false && inside(limits.standIn)) {
+    return afterJitter(limits.standIn!)
+      ? { start: true, kind: 'ahead' }
+      : { start: false, reason: 'jitter', record: null };
+  }
+
   // a finished term's once-more that falls into the holidays (no child has a window): one run in the manifest's window
   // on a weekday, or the year's finals would wait for September
   if (input.postTerm && input.windows.length === 0 && input.weekday && inside(limits.standIn)) {
@@ -309,8 +376,9 @@ export function decideStart(input: GateInput): GateDecision {
       : { start: false, reason: 'jitter', record: null };
   }
 
-  // outside the window only a catch-up: the data it fetches already exists
-  const stale = now.getTime() - account.lastSuccessAt.getTime() > limits.catchupAfterMs;
+  // outside the window only a catch-up: the data it fetches already exists. A day without school for every child does
+  // not make the last read stale (nothing new appears in the diary then, D55): there only a real backlog may run
+  const stale = input.schoolDay !== false && now.getTime() - account.lastSuccessAt.getTime() > limits.catchupAfterMs;
   if (stale || input.backlog) return { start: true, kind: 'catchup' };
   return { start: false, reason: 'outside_window', record: null };
 }

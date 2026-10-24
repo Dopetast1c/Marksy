@@ -8,7 +8,7 @@ import { diaryAccounts, families, syncRuns } from '../db/schema';
 import { effectiveLimits } from './config';
 import type { SyncConfig } from './config';
 import { decideStart } from './plan';
-import { accountToday, weekContext } from './state';
+import { accountToday, lastAheadOf, weekContext } from './state';
 import { readableStudents, sourcedStudents } from './readers';
 import { localTime } from './time';
 import { formatWindow } from './window';
@@ -54,7 +54,13 @@ export async function planReport(
     const readable = (await readableStudents(db, account.id)).map((s) => s.id);
     const sourced = readable.length ? [] : await sourcedStudents(db, account.id);
     const sourceCheck = sourced.length > 0;
-    const today = await accountToday(db, sourceCheck ? sourced : readable, ctx, limits);
+    const today = await accountToday(
+      db,
+      sourceCheck ? sourced : readable,
+      ctx,
+      limits,
+      await lastAheadOf(db, account.id),
+    );
     const [lastOffline] = await db
       .select({ startedAt: syncRuns.startedAt })
       .from(syncRuns)
@@ -72,6 +78,8 @@ export async function planReport(
       weekday: manifest.calendar.schoolDays.includes(local.weekday),
       backlog: sourceCheck ? false : today.backlog || readable.length === 0,
       postTerm: sourceCheck ? false : today.postTerm,
+      ahead: sourceCheck ? false : today.ahead,
+      schoolDay: today.schoolDay,
       lastOfflineAt: lastOffline?.startedAt ?? null,
       seed: account.id,
     });

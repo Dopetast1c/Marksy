@@ -125,6 +125,14 @@ describe('Расписание', () => {
     expect(screen.getAllByText('Пятница').length).toBeGreaterThan(0);
   });
 
+  it('on a day without lessons День opens on the next day with lessons', async () => {
+    // the school's today is Sunday 18 October: the next day with lessons in the fixtures is Wednesday 21 October
+    const api = fakeApi({ signedIn: true, scheduleToday: '2026-10-18' });
+    render(<App at={`/s/${milena.id}/schedule`} />);
+    expect(await screen.findByText('Учитель: «Нет домашнего задания»')).toBeTruthy();
+    expect(api.urls).toContain('GET /api/students/kid-milena/schedule?day=2026-10-21');
+  });
+
   it('a diary without a timetable: an empty state, the tab stays for the other child', async () => {
     fakeApi({ signedIn: true });
     render(<App at={`/s/${mark.id}/schedule`} />);

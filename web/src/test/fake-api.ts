@@ -23,6 +23,8 @@ export interface FakeState {
   subject?: unknown;
   /** the lesson menu's actions answer 409 with this code (lesson_passed, diary_has_lesson) */
   lessonRefuses?: string;
+  /** the school's today for Расписание's days (a weekend, to see where День opens) */
+  scheduleToday?: string;
 }
 
 const CARDS = [
@@ -768,7 +770,7 @@ export function fakeApi(start: Partial<FakeState> = {}) {
     // Расписание and the lesson menu: ticks, cancellations and own homework are kept for the next read
     if (/^GET \/api\/students\/[^/]+\/schedule\/days$/.test(route))
       return json({
-        today: '2026-10-21',
+        today: state.scheduleToday ?? '2026-10-21',
         weekStart: 1,
         schoolDays: [1, 2, 3, 4, 5],
         days: Object.entries(SCHEDULE_DAYS).map(([date, ls]) => ({ date, lessons: ls.length, held: ls.length })),

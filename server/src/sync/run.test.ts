@@ -178,6 +178,32 @@ describe('runSync', () => {
     expect(monday.some((l) => l.homework)).toBe(true);
   });
 
+  it('the autumn holidays: the week school starts again is read before it, in one run of the holidays', async () => {
+    const a = await setup();
+    // Thursday 23 October: the last read before the holidays (26 October to 2 November); Saturday's runs never came
+    await sync(a.id, '2025-10-23 22:00');
+    for (let d = 26; d <= 33; d++) {
+      const day = d <= 31 ? `2025-10-${d}` : `2025-11-0${d - 31}`;
+      for (const t of ['07:00', '10:00', '12:30', '23:00']) await sync(a.id, `${day} ${t}`);
+    }
+    const ahead = (await runs()).filter((r) => r.kind === 'ahead');
+    expect(ahead).toHaveLength(1);
+    expect(ahead[0]).toMatchObject({ status: 'success', startedAt: at('2025-10-26 10:00') });
+    const nov3 = (await db.select().from(syncCoverage)).filter((c) => c.weekStart === '2025-11-03');
+    expect(nov3.length).toBeGreaterThan(0);
+    expect(nov3.every((c) => c.verifiedAt >= at('2025-10-26 10:00') && c.verifiedAt < at('2025-11-03 00:00'))).toBe(
+      true,
+    );
+  });
+
+  it('a failed run of the holidays is not tried again until school starts', async () => {
+    const a = await setup();
+    await sync(a.id, '2025-10-23 22:00');
+    expect(await sync(a.id, '2025-10-26 10:00', { transport: unavailable })).toMatchObject({ status: 'failed' });
+    for (const day of ['2025-10-27', '2025-10-29', '2025-11-01']) await sync(a.id, `${day} 10:00`);
+    expect((await runs()).filter((r) => r.kind === 'ahead')).toHaveLength(1);
+  });
+
   it('two ticks never run one account at once', async () => {
     const a = await setup();
     const [x, y] = await Promise.all([sync(a.id, '2025-09-17 10:00'), sync(a.id, '2025-09-17 10:00')]);
