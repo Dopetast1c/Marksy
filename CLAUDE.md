@@ -114,6 +114,7 @@ pnpm probe [--weeks N]  one real read of the diary (login guard first), raw resp
 pnpm probe --offline [run]  the same on the saved raw responses, without a login
 pnpm sync:once          one real collector run of the account in .env (login guard first)
 pnpm dev:connect        the owner's family from .env through the connect service (a real diary run when the diary is not connected yet)
+pnpm env:dev            adds MARKSY_ENV=development and DEV_MIN_LOGIN_INTERVAL_MINUTES=10 to .env when missing; never changes a set value, prints keys only
 pnpm smoke:lan          with pnpm dev:lan running: signs in over the LAN address with MARKSY_DEV_* and walks the read API (statuses, counts, shapes only)
 ```
 

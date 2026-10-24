@@ -22,6 +22,7 @@
     "prepare": "node scripts/install-hooks.mjs",
     "privacy": "node scripts/privacy-check.mjs",
     "setup:env": "node scripts/init-env.mjs",
+    "env:dev": "node scripts/env-dev.mjs",
     "db:up": "docker compose up -d --wait",
     "db:down": "docker compose down",
     "db:reset": "docker compose down -v && docker compose up -d --wait",
