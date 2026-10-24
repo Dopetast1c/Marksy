@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router';
 import { usePeriods } from '../api/queries';
-import { useCapabilities, useSchoolTz } from '../hooks/useStudent';
+import { useCapabilities, useScale, useSchoolTz } from '../hooks/useStudent';
 import { dateStyle, useT } from '../i18n';
 import { finalsStateText } from '../lib/finals';
 import { todayIn } from '../lib/time';
@@ -9,15 +9,17 @@ import { ChevIcon, SchoolIcon } from './icons';
 // The finals entry row on Оценки and Предметы (docs/design.md 5.3): «Итоговые отметки · по четвертям и годам · I четверть
 // идёт, итоги после 31 окт», opening Итоги. While a term's finals are news (posted, the next term not started) the line
 // says so in the good-news colour; the finals stay on their own screen, never mixed into the current marks. Only where
-// the diary has final marks.
+// the diary has final marks and the child gets marks.
 
 export function FinalsEntry({ studentId }: { studentId: string }) {
   const t = useT();
   const navigate = useNavigate();
   const caps = useCapabilities(studentId);
+  const scale = useScale(studentId);
   const tz = useSchoolTz(studentId);
   const periods = usePeriods(studentId);
-  if (!caps?.finalMarks) return null;
+  // a year without marks has no finals (D49)
+  if (!caps?.finalMarks || !scale) return null;
   const state = periods.data?.finals ?? null;
   const hot = state?.state === 'posted';
   const scope = caps.terms && caps.terms !== 'none' ? t(`finals.scope.${caps.terms}`) : t('finals.scope.years');

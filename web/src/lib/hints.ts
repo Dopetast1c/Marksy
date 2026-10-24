@@ -38,6 +38,13 @@ export function goalText(t: TFunction, g: GoalRow, scale: GradingScale) {
   const target = v(g.target);
   switch (g.state) {
     case 'reached':
+      // the worst mark of the scale still keeps it: say so, not «не ниже 1»
+      if (g.keep === (scale.higherIsBetter ? scale.min : scale.max))
+        return {
+          tone: 'good' as GoalTone,
+          title: t('goal.reached', { target }),
+          sub: t(`goal.reachedAny.${kind}`, { average: a(g.average) }),
+        };
       return {
         tone: 'good' as GoalTone,
         title: t('goal.reached', { target }),

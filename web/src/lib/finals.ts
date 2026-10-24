@@ -12,7 +12,8 @@ import { roman } from './period';
 export const termName = (t: TFunction, term: Pick<TermRef, 'kind' | 'index'>) =>
   t(`period.termN.${term.kind}`, { roman: roman(term.index) });
 
-const longDay = (iso: string, locale: string) =>
+/** «15 октября» */
+export const longDay = (iso: string, locale: string) =>
   new Intl.DateTimeFormat(locale, { timeZone: 'UTC', day: 'numeric', month: 'long' }).format(
     new Date(`${iso}T12:00:00Z`),
   );

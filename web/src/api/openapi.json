@@ -6031,6 +6031,12 @@
                               "null"
                             ]
                           },
+                          "comments": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
                           "final": {
                             "type": [
                               "object",
@@ -6111,6 +6117,7 @@
                           "count",
                           "last",
                           "absences",
+                          "comments",
                           "final",
                           "lessons"
                         ]

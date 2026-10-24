@@ -2085,6 +2085,7 @@ export interface paths {
                                 count: number;
                                 last: components["schemas"]["MarkChip"][];
                                 absences: number | null;
+                                comments: number | null;
                                 final: {
                                     term: components["schemas"]["TermRef"];
                                     raw: string;

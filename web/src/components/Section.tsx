@@ -80,6 +80,11 @@ export function Row({
   );
 }
 
+/** A quiet note on the page background: what a table's notation means, what an arrow compares */
+export function Note({ children }: { children: ReactNode }) {
+  return <p className="m-0 rounded-md bg-surface2 px-3 py-2.5 text-[13px] text-ink2">{children}</p>;
+}
+
 /** The quiet button under a list ("Все оценки · 6", "Показать все · 12", "Всё расписание") */
 export function MoreButton({ children, onClick }: { children: ReactNode; onClick: () => void }) {
   return (

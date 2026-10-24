@@ -146,6 +146,22 @@ describe('Предметы and Предмет', () => {
     expect((await papa.put(url.replace('/color', '/goal')).send({ termGoal: 8 })).status).toBe(404);
   });
 
+  it('a child followed by two families: one colour for the child, no word about who set it', async () => {
+    const { mark, signIn } = await setUp(IN_TERM);
+    const papa = await signIn(DEMO_LOGINS.otherParent);
+    const mama = await signIn(DEMO_LOGINS.parent);
+    const subject = (await db.select().from(subjects).where(eq(subjects.studentId, mark.id)))[0]!;
+    const url = `/api/students/${mark.id}/subjects/${subject.id}`;
+    expect((await papa.put(`${url}/color`).send({ color: 'teal' })).status).toBe(200);
+    for (const agent of [mama, papa]) {
+      const list = await agent.get(`/api/students/${mark.id}/subjects?period=week`);
+      const row = (list.body.subjects as Row[]).find((r) => r.subject.id === subject.id)!;
+      expect(row.subject.color).toBe('teal');
+      const one = JSON.stringify((await agent.get(url)).body);
+      expect(one).not.toMatch(/setBy|set_by|Мама|Папа/);
+    }
+  });
+
   it('«Ближайшие уроки»: the next three lessons of the subject still ahead', async () => {
     const { milena, signIn } = await setUp(IN_TERM);
     const mama = await signIn(DEMO_LOGINS.parent);

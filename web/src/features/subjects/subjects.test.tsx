@@ -37,6 +37,15 @@ describe('Предметы', () => {
     await waitFor(() => expect(api.urls.some((u) => u.includes('/subjects?') && u.includes('sort=weak'))).toBe(true));
   });
 
+  it('with Комментарии a row counts the teacher’s comments, never says there are no marks', async () => {
+    useMarkFilter.setState({ comments: true });
+    fakeApi({ signedIn: true });
+    render(<App at={`/s/${milena.id}/subjects`} />);
+    expect(await screen.findByText('2 комментария учителя за неделю')).toBeTruthy();
+    expect(screen.getByText('комментариев учителя за неделю нет')).toBeTruthy();
+    expect(screen.queryByText('нет оценок за неделю')).toBeNull();
+  });
+
   it('a class without marks: lessons and homework, the next lesson, no filter and no order', async () => {
     fakeApi({ signedIn: true });
     render(<App at={`/s/${mark.id}/subjects`} />);
@@ -60,13 +69,26 @@ describe('Предмет', () => {
     expect(screen.getByText('Цель итог 8: ещё 1 × 10 или 2 × 9')).toBeTruthy();
     expect(screen.getByText('сейчас выходит 7, средний за четверть 7,1, нужен 7,5')).toBeTruthy();
     // a low mark without a work type: no empty slot before the date
-    expect(screen.getByText(/^3, вт, 13 окт$/)).toBeTruthy();
+    expect(screen.getByText('Оценка 3, вт, 13 окт')).toBeTruthy();
     expect(screen.getByText('Разобрать работу на 3')).toBeTruthy();
     expect(screen.getByText('Квадратные уравнения', { exact: false })).toBeTruthy();
-    expect(screen.getByRole('heading', { name: 'Ближайшие уроки' })).toBeTruthy();
+    expect(screen.getByText('Ближайшие уроки')).toBeTruthy();
     // Marksy has last year and the subject was not in it
     expect(screen.getByText('новый предмет в этом году')).toBeTruthy();
     expect(screen.getByText('7,1').className).toContain('italic');
+  });
+
+  it('switching the child opens their subject of the same name, else their subjects', async () => {
+    fakeApi({ signedIn: true });
+    render(<App at={`/s/${mark.id}/subjects/sub-ma`} />);
+    await screen.findByRole('heading', { name: 'Алгебра' });
+    // Milena has an «Алгебра»: her own subject opens
+    await userEvent.click(screen.getByRole('tab', { name: milena.name }));
+    await waitFor(() => expect(screen.getByText('цель: итог 8 · цвет: синий')).toBeTruthy());
+    expect(screen.getByRole('tab', { name: milena.name, selected: true })).toBeTruthy();
+    // Марк has none: his list opens
+    await userEvent.click(screen.getByRole('tab', { name: mark.name }));
+    expect(await screen.findByText('5 уроков · 3 задания')).toBeTruthy();
   });
 
   it('guidance off: no «Обратить внимание», the goal still shown in the settings', async () => {

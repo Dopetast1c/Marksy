@@ -9,6 +9,7 @@ import { DistCard } from '../../components/DistCard';
 import { EmptyState } from '../../components/EmptyState';
 import { FinalCellView } from '../../components/FinalCell';
 import { AttentionCard, HintRow } from '../../components/HintRow';
+import { CommentRow } from '../../components/CommentRow';
 import { CommentIcon } from '../../components/icons';
 import { LessonRow } from '../../components/LessonRow';
 import { MarkChip } from '../../components/MarkChip';
@@ -20,7 +21,7 @@ import { BandCard, LessonTiles, StatTiles } from '../../components/StatBlock';
 import { TrendCard } from '../../components/TrendCard';
 import { useCapabilities, useScale, useSchoolTz } from '../../hooks/useStudent';
 import { dateStyle, intlLocale, useT } from '../../i18n';
-import { schoolYearLabel } from '../../lib/finals';
+import { longDay, schoolYearLabel } from '../../lib/finals';
 import { goalText, hintText } from '../../lib/hints';
 import { forPeriod, roman } from '../../lib/period';
 import { subjectStyle } from '../../lib/subject-color';
@@ -116,7 +117,7 @@ export function SubjectScreen() {
     const hints = scale ? d.attention.hints : [];
     const upcoming = d.upcoming.length ? (
       <section className="flex flex-col gap-2">
-        <SectionHeader title={t('subject.upcoming')} />
+        <Divider>{t('subject.upcoming')}</Divider>
         {d.upcoming.map((l) => {
           const day = shortDate(l.date, ds, { weekday: true });
           return (
@@ -206,17 +207,7 @@ export function SubjectScreen() {
                     </span>
                   </div>
                 ) : i.type === 'comment' ? (
-                  <div key={i.id} className="flex items-start gap-3 border-t border-line py-3 first:border-t-0">
-                    <span className="grid size-[30px] flex-none place-items-center rounded-[9px] bg-surface2 text-ink2">
-                      <CommentIcon size={16} />
-                    </span>
-                    <span className="flex min-w-0 flex-1 flex-col gap-[3px]">
-                      <span className="font-bold">{t('marks.comment')}</span>
-                      <span className="text-small text-ink2">
-                        {shortDate(i.date, ds, { weekday: true })} · {t('event.quote', { text: i.text ?? '' })}
-                      </span>
-                    </span>
-                  </div>
+                  <CommentRow key={i.id} item={i} inSubject />
                 ) : null,
               )
             ) : (
@@ -270,6 +261,12 @@ export function SubjectScreen() {
                       ? t(`subject.termPosted.${termKind}`, {
                           roman: roman(term.index),
                           mark: termFinal.raw ?? '',
+                          when:
+                            termFinal.postedOn === periods.data?.today
+                              ? t('subject.postedToday')
+                              : termFinal.postedOn
+                                ? longDay(termFinal.postedOn, locale)
+                                : '',
                           average: term.average != null ? numbers(scale).average(term.average) : '—',
                         })
                       : t(`subject.termRunning.${termKind}`, { date: shortDate(term.to, ds) })}
@@ -290,7 +287,7 @@ export function SubjectScreen() {
         {scale && <MarkFilter studentId={studentId} />}
       </ScreenHeader>
       <Body>
-        <PeriodNav studentId={studentId} accent={accent} compare={!!scale} />
+        <PeriodNav studentId={studentId} accent={accent} compare />
         <div className={`flex flex-col gap-3.5 transition-opacity ${subject.isPlaceholderData ? 'opacity-50' : ''}`}>
           {body}
         </div>

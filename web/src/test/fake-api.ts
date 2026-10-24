@@ -526,6 +526,7 @@ export const SUBJECTS = {
       count: 2,
       last: [chip('s1', '7', 'good'), chip('s2', '8', 'good')],
       absences: 0,
+      comments: 2,
       final: null,
       lessons: null,
     },

@@ -3,6 +3,7 @@ import type { FeedItem } from '../../api/queries';
 import { useMarksFeed } from '../../api/queries';
 import { Body, Frame } from '../../app/Frame';
 import { EmptyState } from '../../components/EmptyState';
+import { CommentRow } from '../../components/CommentRow';
 import { FinalsEntry } from '../../components/FinalsEntry';
 import { CommentIcon } from '../../components/icons';
 import { AbsenceChip, MarkChip } from '../../components/MarkChip';
@@ -99,28 +100,15 @@ export function MarksScreen() {
           />
         );
       case 'comment':
-        return (
-          <Row
-            key={i.id}
-            stripe={<Stripe severity="neutral" />}
-            lead={
-              <span className="grid size-[30px] flex-none place-items-center rounded-[9px] bg-surface2 text-ink2">
-                <CommentIcon size={16} />
-              </span>
-            }
-            title={i.subject?.name ?? t('marks.comment')}
-            sub={i.text ? t('event.quote', { text: i.text }) : null}
-            wrap
-            onClick={() => toSubject(i.subject?.id)}
-          />
-        );
+        // opens the subject until Расписание can open the lesson (M5c)
+        return <CommentRow key={i.id} item={i} onClick={() => toSubject(i.subject?.id)} />;
       case 'markChanged':
       case 'markRemoved':
         return (
           <Row
             key={i.id}
             stripe={<Stripe subject={subjectStyle(i.subject.name, i.subject.color)} />}
-            lead={<MarkChip mark={i.mark} />}
+            lead={<MarkChip mark={i.mark} change={i.type === 'markRemoved' ? 'removed' : 'changed'} />}
             title={i.subject.name}
             sub={
               i.type === 'markRemoved'
@@ -143,7 +131,7 @@ export function MarksScreen() {
         <b className="text-[15px]">{t(`finals.card.${i.term.kind}`, { roman: roman(i.term.index) })}</b>
         <button
           type="button"
-          className="text-[13px] font-bold whitespace-nowrap text-accent"
+          className="relative text-[13px] font-bold whitespace-nowrap text-accent after:absolute after:-inset-x-2 after:-inset-y-3"
           onClick={() => navigate(`/s/${studentId}/finals`)}
         >
           {t('finals.all')}
@@ -155,7 +143,7 @@ export function MarksScreen() {
             key={m.mark.id}
             type="button"
             onClick={() => toSubject(m.subject.id)}
-            className="flex items-center gap-1.5 rounded-pill bg-surface2 py-1 pr-2 pl-1 text-[12.5px] font-semibold"
+            className="relative flex items-center gap-1.5 rounded-pill bg-surface2 py-1 pr-2 pl-1 text-[12.5px] font-semibold after:absolute after:inset-x-0 after:-inset-y-1.5"
           >
             <MarkChip mark={m.mark} small />
             {m.subject.name}
@@ -187,7 +175,7 @@ export function MarksScreen() {
       </>
     ) : (
       <EmptyState
-        title={t('marks.empty.title')}
+        title={scale ? t('marks.empty.title') : t('marks.empty.noMarksTitle')}
         text={scale ? t('marks.empty.period') : t('marks.empty.noMarksYear')}
       />
     );

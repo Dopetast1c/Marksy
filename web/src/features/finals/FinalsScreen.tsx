@@ -5,7 +5,7 @@ import { ChangeArrow } from '../../components/ChangeArrow';
 import { EmptyState } from '../../components/EmptyState';
 import { FinalCellView } from '../../components/FinalCell';
 import { ScreenHeader } from '../../components/ScreenHeader';
-import { ListCard } from '../../components/Section';
+import { ListCard, Note } from '../../components/Section';
 import { SegmentedControl } from '../../components/SegmentedControl';
 import { useCapabilities, useScale, useSchoolTz, useStudent } from '../../hooks/useStudent';
 import { dateStyle, intlLocale, useT } from '../../i18n';
@@ -19,14 +19,15 @@ import { todayIn } from '../../lib/time';
 // finals posted so far) is an italic decimal with no fill, so nobody reads it as the teacher's mark; a dash where there
 // is nothing yet. The legend sits above the table: without it the mix cannot be read. A row opens the subject.
 
+/** A term's edge under the column head: «1.09», «31.10» (the day without a leading zero, the order the language's) */
 const shortDay = (iso: string, locale: string) =>
-  new Intl.DateTimeFormat(locale, { timeZone: 'UTC', day: 'numeric', month: 'numeric' }).format(
-    new Date(`${iso}T12:00:00Z`),
-  );
+  new Intl.DateTimeFormat(locale, { timeZone: 'UTC', day: 'numeric', month: 'numeric' })
+    .formatToParts(new Date(`${iso}T12:00:00Z`))
+    .map((p) => (p.type === 'day' ? String(Number(p.value)) : p.value))
+    .join('');
 
-function Note({ children }: { children: React.ReactNode }) {
-  return <p className="m-0 rounded-md bg-surface2 px-3 py-2.5 text-[13px] text-ink2">{children}</p>;
-}
+/** Годы shows the last three school years: more would leave no room for the names at 360 px */
+const YEARS_SHOWN = 3;
 
 function TermsView({ studentId, termKind }: { studentId: string; termKind: string }) {
   const t = useT();
@@ -103,11 +104,14 @@ function YearsView({ studentId, termKind }: { studentId: string; termKind: strin
   const scale = useScale(studentId);
   const q = useYearFinals(studentId);
   if (!q.data) return <EmptyState title={q.isError ? t('app.error') : t('app.loading')} />;
-  const { years, rows } = q.data;
+  const years = q.data.years.slice(-YEARS_SHOWN);
+  const rows = q.data.rows.map((r) => ({ ...r, cells: r.cells.slice(-YEARS_SHOWN) }));
   const cols = { gridTemplateColumns: `minmax(0,1fr) repeat(${years.length}, 60px) 28px` };
   return (
     <>
-      <Note>{t(`finals.legend.years.${termKind}`)}</Note>
+      <Note>
+        {t(`finals.legend.years.${termKind}`)} {t(`finals.legend.yearsPast.${termKind}`)}
+      </Note>
       <ListCard>
         <div
           className="grid items-center gap-1 pt-2.5 pb-1.5 text-center text-[11px] font-bold tracking-[.04em] text-ink3"

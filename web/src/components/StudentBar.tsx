@@ -1,5 +1,8 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router';
+import { useQueryClient } from '@tanstack/react-query';
+import { api, data } from '../api/client';
+import type { SubjectDetail } from '../api/queries';
 import { useMe, useStudentCards } from '../api/queries';
 import { useT } from '../i18n';
 import { AVATAR_SLOT_PX, fitAvatars, TITLE_MIN_PX } from '../lib/fit-bar';
@@ -14,11 +17,34 @@ import { BottomSheet, SheetOption } from './BottomSheet';
 export function useSwitchStudent() {
   const navigate = useNavigate();
   const location = useLocation();
+  const client = useQueryClient();
   const choose = useDevice((s) => s.choose);
-  return (fromId: string, toId: string) => {
+  return async (fromId: string, toId: string) => {
     choose(toId);
     // the same place for the other child, without a history step: Back still leads where it led (principle 9)
-    navigate(location.pathname.replace(`/s/${fromId}`, `/s/${toId}`) + location.search, { replace: true });
+    const go = (path: string) => navigate(path + location.search, { replace: true });
+    const subject = location.pathname.match(/^\/s\/[^/]+\/subjects\/([^/]+)$/);
+    if (!subject) return go(location.pathname.replace(`/s/${fromId}`, `/s/${toId}`));
+    // a subject is one child's: the other child's subject of the same name, else their list (design.md 4)
+    const name = client
+      .getQueriesData<SubjectDetail>({ queryKey: ['subject', fromId, subject[1]] })
+      .find(([, d]) => d)?.[1]?.subject.name;
+    const theirs = name
+      ? await client
+          .fetchQuery({
+            queryKey: ['subject-names', toId],
+            queryFn: () =>
+              data(
+                api.GET('/api/students/{id}/subjects', {
+                  params: { path: { id: toId }, query: { period: 'week', offset: 0 } },
+                }),
+              ),
+            staleTime: 5 * 60_000,
+          })
+          .then((r) => r.subjects.find((s) => s.subject.name === name)?.subject.id)
+          .catch(() => undefined)
+      : undefined;
+    return go(theirs ? `/s/${toId}/subjects/${theirs}` : `/s/${toId}/subjects`);
   };
 }
 

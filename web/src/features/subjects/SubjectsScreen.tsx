@@ -13,7 +13,7 @@ import { MarkChip } from '../../components/MarkChip';
 import { MarkFilter, useMarkFilterFor } from '../../components/MarkFilter';
 import { PeriodBar, PeriodNav } from '../../components/PeriodControls';
 import { ScreenHeader } from '../../components/ScreenHeader';
-import { ListCard } from '../../components/Section';
+import { ListCard, Note } from '../../components/Section';
 import { SubjectRow } from '../../components/SubjectRow';
 import { useScale, useSchoolTz } from '../../hooks/useStudent';
 import { dateStyle, intlLocale, useT } from '../../i18n';
@@ -72,7 +72,7 @@ export function SubjectsScreen() {
         subject={r.subject}
         onClick={() => open(r.subject.id)}
         lines={
-          r.last.length ? (
+          r.last.length && !filter.comments ? (
             <span className="flex gap-1">
               {[...r.last].reverse().map((m) => (
                 <MarkChip key={m.id} mark={m} small />
@@ -80,8 +80,11 @@ export function SubjectsScreen() {
             </span>
           ) : (
             <span className="text-small text-ink3">
+              {/* the filter Комментарии shows the teacher's comments, so the row counts them (D56) */}
               {filter.comments
-                ? t('subjects.noneFiltered', { filter: t('filter.comments.words'), span })
+                ? r.comments
+                  ? t('subjects.comments', { count: r.comments, span })
+                  : t('subjects.noComments', { span })
                 : t('subjects.noMarks', { span })}
             </span>
           )
@@ -151,9 +154,7 @@ export function SubjectsScreen() {
   else if (!scale)
     body = (
       <>
-        <p className="m-0 rounded-md bg-surface2 px-3 py-2.5 text-[13px] text-ink2">
-          {t(offset === 0 ? 'subjects.noMarksNote' : 'subjects.noMarksNotePast')}
-        </p>
+        <Note>{t(offset === 0 ? 'subjects.noMarksNote' : 'subjects.noMarksNotePast')}</Note>
         <ListCard>{rows.map(lessonsRow)}</ListCard>
       </>
     );
@@ -166,16 +167,14 @@ export function SubjectsScreen() {
             aria-haspopup="dialog"
             aria-label={t('subjects.sort.label')}
             onClick={() => setSheet(true)}
-            className="flex min-h-9 items-center gap-1 px-0.5 text-[13px] font-bold text-accent"
+            className="relative flex min-h-9 items-center gap-1 px-0.5 text-[13px] font-bold text-accent after:absolute after:inset-x-0 after:-inset-y-1"
           >
             {t(`subjects.sort.${sort}`)}
             <DownIcon size={14} />
           </button>
         </div>
         <ListCard>{rows.map(marksRow)}</ListCard>
-        <p className="m-0 rounded-md bg-surface2 px-3 py-2.5 text-[13px] text-ink2">
-          {t(`subjects.arrowNote.${termKind ?? 'other'}`)}
-        </p>
+        <Note>{t(`subjects.arrowNote.${termKind ?? 'other'}`)}</Note>
         <BottomSheet open={sheet} onClose={() => setSheet(false)} label={t('subjects.sort.label')}>
           <span className="text-label text-ink3 uppercase">{t('subjects.sort.label')}</span>
           {SORTS.map((s) => (
@@ -202,8 +201,8 @@ export function SubjectsScreen() {
         {scale && <MarkFilter studentId={studentId} />}
       </ScreenHeader>
       <Body>
-        <PeriodNav studentId={studentId} compare={!!scale} />
-        {scale && <FinalsEntry studentId={studentId} />}
+        <PeriodNav studentId={studentId} compare />
+        <FinalsEntry studentId={studentId} />
         <div className={`flex flex-col gap-3 transition-opacity ${list.isPlaceholderData ? 'opacity-50' : ''}`}>
           {body}
         </div>

@@ -29,6 +29,7 @@ import {
   lessonCounts,
   lessonsIn,
   marksIn,
+  remarksIn,
   subjectInfo,
   subjectsOf,
 } from '../students/data';
@@ -131,6 +132,8 @@ const subjectRowOut = z.object({
   count: z.number(),
   last: z.array(markChip),
   absences: z.number().nullable(),
+  /** The teacher's comments without a mark in the period (D56): what the row says while the filter is Комментарии */
+  comments: z.number().nullable(),
   /** «итог I: 8» in place of «было» while the term's finals are news (the next term has not started) */
   final: z.object({ term: termRefOut, raw: z.string(), mark: markChip }).nullable(),
   /** A year without marks (5.3a): lessons and homework in the period and the next lesson with its homework */
@@ -213,6 +216,7 @@ export function subjectRoutes(deps: AppDeps): Router {
       const all = marksPass(query) ? await marksIn(deps.db, ctx.student.id) : [];
       const prev = p.instance ? previousInstance(ctx.period, p.instance) : null;
       const absences = ctx.caps.attendance === 'none' ? null : await absencesIn(deps.db, ctx, range);
+      const remarks = ctx.caps.behaviour === 'none' ? null : await remarksIn(deps.db, ctx, range);
       const finals = ctx.scale ? await finalsOf(deps.db, ctx) : [];
       const state = ctx.scale ? finalsState(ctx, finals) : null;
       // a year without marks: lessons of the instance (to its end, they are planned ahead) and the lessons from today on
@@ -250,6 +254,7 @@ export function subjectRoutes(deps: AppDeps): Router {
             count: c?.count ?? 0,
             last: own.slice(0, 5).map((m) => chipOf(ctx.scale, m)),
             absences: absences ? absences.filter((a) => a.subjectId === sid).length : null,
+            comments: remarks ? remarks.filter((r) => r.subjectId === sid).length : null,
             final:
               f && state
                 ? {
