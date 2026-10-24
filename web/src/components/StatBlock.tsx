@@ -17,7 +17,8 @@ import { numbers } from '../lib/numbers';
 type Comparison = Schemas['Comparison'];
 type Band = Schemas['BandCount'];
 
-const BAND_TEXT = {
+/** A value in its band colour on a plain background (the average of a tile, a lesson's «Средняя оценка») */
+export const BAND_TEXT = {
   critical: 'text-band-critical-fg',
   low: 'text-band-low-fg',
   good: 'text-band-good-fg',

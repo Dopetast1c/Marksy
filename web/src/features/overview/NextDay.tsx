@@ -36,9 +36,9 @@ export function NextDay({
   // «ко 2-му», «к 3-му»: the second lesson takes its own form in some languages
   const late =
     first && first.slot! > 1
-      ? t('home.startsLater', {
+      ? t(first.start ? 'home.startsLater' : 'home.startsLaterNoTime', {
           slot: first.slot,
-          at: first.start ?? '',
+          at: first.start,
           context: first.slot === 2 ? 'second' : undefined,
         })
       : null;

@@ -1,4 +1,4 @@
-import { addDays, daysBetween, lessonPassed, shortDate, shortRange, weekStartOf } from '@marksy/core';
+import { addDays, daysBetween, lessonPassed, shortDate, shortRange, weekdayOf, weekStartOf } from '@marksy/core';
 import { useEffect, useMemo } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import type { Schedule, ScheduleLesson } from '../../api/queries';
@@ -7,7 +7,7 @@ import { Body, Frame } from '../../app/Frame';
 import { EmptyState } from '../../components/EmptyState';
 import { AttentionCard, HintRow } from '../../components/HintRow';
 import { SchoolIcon, SunIcon } from '../../components/icons';
-import { DayLessons } from '../../components/LessonRow';
+import { DayLessons, TagNoteIcon } from '../../components/LessonRow';
 import { PeriodBar, PeriodNav } from '../../components/PeriodControls';
 import type { NavModel } from '../../components/PeriodControls';
 import { ScreenHeader } from '../../components/ScreenHeader';
@@ -22,9 +22,11 @@ import type { ScheduleKind } from '../../state/store';
 
 // Расписание (docs/design.md 5.5, ux-principles D2, D33 to D41): the same two period controls as everywhere, with the
 // kinds День / Неделя and a navigator that also goes forward: a day steps over days without lessons, a week by
-// calendar weeks while the diary has lessons in them (or holidays). Both open with «Обратить внимание» for exactly the
-// selected range (the lessons still ahead that carry a tag; hidden without one), then the day's counts, «Ко 2-му
-// уроку», and the lessons as one two-bar list with gaps (DayLessons). A day in the child's holidays is a holiday card.
+// calendar weeks while the diary has lessons in them (or holidays). «Обратить внимание» covers exactly the selected
+// range (the lessons still ahead that carry a tag; hidden without one): in День under the line of counts, in Неделя
+// above the days. Then «Ко 2-му уроку» and the lessons as one two-bar list with gaps (DayLessons). Неделя shows every
+// school day of the manifest's calendar (and any other day with lessons); a day in the child's holidays is a holiday
+// card, a week whose school days are all holidays is one card.
 
 type Holiday = { from: string; to: string; note: string | null };
 const holidayOn = (hs: readonly Holiday[] | undefined, d: string) => hs?.find((h) => h.from <= d && d <= h.to) ?? null;
@@ -121,6 +123,7 @@ function Attention({ studentId, items, today }: { studentId: string; items: Sche
           >
             <HintRow
               severity={a.tag.tone === 'important' ? 'low' : 'neutral'}
+              icon={<TagNoteIcon name={a.tag.icon} size={15} />}
               title={`${a.tag.name} · ${a.subject.name}`}
               sub={when}
               note={words}
@@ -154,10 +157,19 @@ export function ScheduleScreen() {
   const school = useSchool(studentId);
   const today = days.data?.today ?? todayIn(tz);
   const weekStart = days.data?.weekStart ?? 1;
+  const schoolDays = days.data?.schoolDays ?? [];
   const holidays = school.data?.holidays;
   const lessonDays = useMemo(() => days.data?.days ?? [], [days.data]);
   const day = view.day ?? today;
   const monday = (w: number) => addDays(weekStartOf(today, weekStart), 7 * w);
+  /** the holidays a whole week sits in: every school day of it (manifest.calendar) is a holiday */
+  const holidayWeek = (w: number) => {
+    const week = Array.from({ length: 7 }, (_, i) => addDays(monday(w), i)).filter((d) =>
+      schoolDays.includes(weekdayOf(d)),
+    );
+    const hs = week.map((d) => holidayOn(holidays, d));
+    return week.length && hs.every(Boolean) ? hs[0]! : null;
+  };
   const schedule = useSchedule(studentId, view.kind === 'day' ? { day } : { week: view.week });
 
   const kindModel = {
@@ -226,9 +238,7 @@ export function ScheduleScreen() {
           .filter((d) => d.date >= monday(w) && d.date <= addDays(monday(w), 6))
           .reduce((n, d) => n + d.held, 0);
       const reachable = (w: number) =>
-        lessonDays.some((d) => d.date >= monday(w) && d.date <= addDays(monday(w), 6)) ||
-        !!holidayOn(holidays, monday(w)) ||
-        !!holidayOn(holidays, addDays(monday(w), 4));
+        lessonDays.some((d) => d.date >= monday(w) && d.date <= addDays(monday(w), 6)) || !!holidayWeek(w);
       const range: number[] = [];
       for (let w = -3; w <= 2; w++) if (count(w) > 0 || w === view.week) range.push(w);
       nav = {
@@ -253,8 +263,9 @@ export function ScheduleScreen() {
     }
   }
 
+  const timetable = !caps || caps.lessons;
   let body: React.ReactNode;
-  if (caps && !caps.lessons)
+  if (!timetable)
     body = (
       <EmptyState
         icon={<SchoolIcon size={26} />}
@@ -266,8 +277,7 @@ export function ScheduleScreen() {
   else {
     const data = schedule.data;
     const isDay = view.kind === 'day';
-    const from = isDay ? day : monday(view.week);
-    const weekHoliday = !isDay && holidayOn(holidays, from) && holidayOn(holidays, addDays(from, 4));
+    const weekHoliday = !isDay ? holidayWeek(view.week) : null;
     const dayBlock = (date: string) => {
       const lessons = data.days.find((d) => d.date === date)?.lessons ?? [];
       const hol = holidayOn(holidays, date);
@@ -276,7 +286,7 @@ export function ScheduleScreen() {
         <div className="flex flex-wrap items-baseline gap-x-2 pt-1 text-[12.5px] text-ink3">
           {!isDay && <b className="text-[14px] text-ink">{caption.label}</b>}
           <span>
-            {!isDay && `${caption.date} · `}
+            {!isDay && (counts ? `${caption.date} · ` : caption.date)}
             {counts}
           </span>
         </div>
@@ -285,22 +295,19 @@ export function ScheduleScreen() {
         return (
           <section key={date} className="flex flex-col gap-2">
             {!isDay && head(null)}
-            {hol ? (
-              <HolidayCard h={hol} />
-            ) : (
-              <EmptyState title={t('schedule.noLessons')} text={t('schedule.noLessonsText')} />
-            )}
+            {hol ? <HolidayCard h={hol} /> : <EmptyState title={t('schedule.noLessons')} />}
           </section>
         );
       const first = lessons.filter((l) => !l.cancelled && l.slot != null).sort((a, b) => a.slot! - b.slot!)[0];
       return (
         <section key={date} className="flex flex-col gap-2">
           {head(dayCounts(t, lessons, now, tz))}
+          {isDay && <Attention studentId={studentId} items={data.attention} today={today} />}
           {first && first.slot! > 1 && (
             <b className="text-[13.5px] text-accent">
-              {t('schedule.startsLater', {
+              {t(first.start ? 'schedule.startsLater' : 'schedule.startsLaterNoTime', {
                 slot: first.slot,
-                at: first.start ?? '',
+                at: first.start,
                 context: first.slot === 2 ? 'second' : undefined,
               })}
             </b>
@@ -313,11 +320,8 @@ export function ScheduleScreen() {
       <HolidayCard h={weekHoliday} />
     ) : (
       <>
-        <Attention studentId={studentId} items={data.attention} today={today} />
+        {!isDay && <Attention studentId={studentId} items={data.attention} today={today} />}
         {isDay ? dayBlock(day) : data.days.map((d) => dayBlock(d.date))}
-        {!isDay && !data.days.length && (
-          <EmptyState title={t('schedule.noLessons')} text={t('schedule.noLessonsText')} />
-        )}
       </>
     );
   }
@@ -325,10 +329,10 @@ export function ScheduleScreen() {
   return (
     <Frame studentId={studentId}>
       <ScreenHeader title={t('screen.schedule')} studentId={studentId}>
-        <PeriodBar model={kindModel} />
+        {timetable && <PeriodBar model={kindModel} />}
       </ScreenHeader>
       <Body>
-        <PeriodNav model={nav} />
+        {timetable && <PeriodNav model={nav} />}
         <div
           lang={locale}
           className={`flex flex-col gap-3.5 transition-opacity ${schedule.isPlaceholderData ? 'opacity-50' : ''}`}

@@ -157,7 +157,9 @@ export async function seedDemo(db: Db, opts: { reset?: boolean; now?: Date } = {
       await tx
         .insert(familyStudents)
         .values({ familyId: fid, studentId: id.studentId, linkedBy: parent!.id, linkedAt: now });
-      await insertDiary(tx, id, kid, calendars[kid.key], manifests[kid.key], now, tz, count, child!.id);
+      // a child ticks and times only their own lessons (6.5): Милена has her own login, Марк's are Мама's
+      const actor = kid.key === 'k' ? child!.id : parent!.id;
+      await insertDiary(tx, id, kid, calendars[kid.key], manifests[kid.key], now, tz, count, actor);
     }
     await tx.insert(userStudentAccess).values([
       { userId: parent!.id, familyId: fid, studentId: studentIds.k! },
@@ -357,7 +359,7 @@ async function insertDiary(
   now: Date,
   tz: string,
   count: (k: string, n: number) => void,
-  studentUserId: string,
+  actorUserId: string,
 ) {
   const { studentId } = ids;
   // the diary "saw" a lesson the evening before and a mark at 12:17 on its day
@@ -482,7 +484,7 @@ async function insertDiary(
           startedAt,
           endedAt: new Date(startedAt.getTime() + s.minutes * 60_000),
           activeSec: s.minutes * 60,
-          createdBy: s.source === 'timer' ? studentUserId : null,
+          createdBy: s.source === 'timer' ? actorUserId : null,
         };
       }),
     );
@@ -492,13 +494,13 @@ async function insertDiary(
       studentId,
       lessonId: lessonIds.get(key)!,
       doneAt: at,
-      doneBy: studentUserId,
+      doneBy: actorUserId,
     }));
     await db.insert(lessonPrep).values(prep);
     await db
       .insert(lessonPrepEvents)
       .values(
-        prep.map((p) => ({ studentId, lessonId: p.lessonId, kind: 'done' as const, by: studentUserId, at: p.doneAt })),
+        prep.map((p) => ({ studentId, lessonId: p.lessonId, kind: 'done' as const, by: actorUserId, at: p.doneAt })),
       );
     count('study_sessions', sessions.length);
     count('lesson_prep', prep.length);

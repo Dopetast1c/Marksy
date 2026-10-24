@@ -3,8 +3,8 @@ import { Stripe } from './Section';
 import type { Severity } from './Section';
 
 // «Обратить внимание» (docs/design.md 5.4, 5.5): a tinted card with a small caps title and rows of a severity stripe, a
-// bold line and a quiet line. One component for the subject screen's block now and the timetable's later (M5c). A
-// hint is a HintRow; so is the goal row and, with M6, a lesson that carries a tag.
+// bold line and a quiet line. One component for the subject screen's block and the timetable's. A hint is a HintRow;
+// so is the goal row and a lesson that carries a tag (with the tag's icon before its bold line).
 
 export function AttentionCard({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -20,6 +20,7 @@ export function HintRow({
   title,
   sub,
   note,
+  icon,
 }: {
   severity: Severity;
   title: string;
@@ -27,6 +28,8 @@ export function HintRow({
   sub?: string | null;
   /** a third, quieter line */
   note?: string | null;
+  /** a line icon before the bold line (a tag's icon in Расписание's «Обратить внимание», 5.5) */
+  icon?: ReactNode;
 }) {
   return (
     <div className="flex items-start gap-2.5 text-left text-[13px] leading-[1.35]">
@@ -34,7 +37,10 @@ export function HintRow({
         <Stripe severity={severity} />
       </span>
       <span className="flex min-w-0 flex-col gap-px">
-        <b className="text-[14px]">{title}</b>
+        <b className="flex items-center gap-1.5 text-[14px]">
+          {icon && <span className="flex-none text-ink3">{icon}</span>}
+          {title}
+        </b>
         {sub && <span className="text-[12.5px] text-ink2">{sub}</span>}
         {note && <span className="text-[12.5px] text-ink3">{note}</span>}
       </span>

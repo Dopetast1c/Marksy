@@ -1,4 +1,4 @@
-import { addDays, lessonPassed, trendOf, weekStartOf } from '@marksy/core';
+import { addDays, lessonPassed, trendOf, weekdayOf, weekStartOf } from '@marksy/core';
 import { and, asc, eq, gt, gte, isNull, lte, sql } from 'drizzle-orm';
 import { Router } from 'express';
 import { z } from 'zod';
@@ -124,7 +124,12 @@ export function scheduleRoutes(deps: AppDeps): Router {
         rows,
         (id) => !!rows.find((l) => l.id === id)?.isTest,
       );
-      const dates = [...new Set(rows.map((l) => l.date))];
+      // every school day of the range (manifest.calendar, never a fixed week), and any other day that has lessons, so
+      // a holiday or an empty school day is a day of its own (5.5); a single day is always itself
+      const withLessons = new Set(rows.map((l) => l.date));
+      const dates: string[] = [];
+      for (let d = from; d <= to; d = addDays(d, 1))
+        if (from === to || withLessons.has(d) || ctx.manifest.calendar.schoolDays.includes(weekdayOf(d))) dates.push(d);
       const ahead = rows.filter((l) => !l.cancelled && !lessonPassed(l, ctx.now, ctx.timezone));
       return {
         from,
@@ -159,6 +164,8 @@ export function scheduleRoutes(deps: AppDeps): Router {
         today: z.string(),
         /** the first day of the school week, 0 = Sunday (manifest.calendar): where a week of Неделя starts */
         weekStart: z.number(),
+        /** the school days of the week, 0 = Sunday (manifest.calendar): a week is a holiday week when all of them are */
+        schoolDays: z.array(z.number()),
         /**
          * Every day with lessons; `held` leaves out the cancelled ones (the picker's count). A day whose lessons are
          * all cancelled stays reachable, so «Вернуть урок» is too.
@@ -169,8 +176,8 @@ export function scheduleRoutes(deps: AppDeps): Router {
     },
     async (req, { params }) => {
       const ctx = await loadChild(deps, req, params.id);
-      const weekStart = ctx.manifest.calendar.weekStart;
-      if (!ctx.year) return { today: ctx.today, weekStart, days: [] };
+      const { weekStart, schoolDays } = ctx.manifest.calendar;
+      if (!ctx.year) return { today: ctx.today, weekStart, schoolDays, days: [] };
       const rows = await deps.db
         .select({
           date: lessons.date,
@@ -189,7 +196,7 @@ export function scheduleRoutes(deps: AppDeps): Router {
         )
         .groupBy(lessons.date)
         .orderBy(asc(lessons.date));
-      return { today: ctx.today, weekStart, days: rows };
+      return { today: ctx.today, weekStart, schoolDays, days: rows };
     },
   );
 

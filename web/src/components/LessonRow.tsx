@@ -1,4 +1,4 @@
-import { lessonNow, lessonPassed, shortDate, weekdayOf } from '@marksy/core';
+import { bandOf, lessonNow, lessonPassed, shortDate, weekdayOf } from '@marksy/core';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
@@ -8,6 +8,7 @@ import { useScale } from '../hooks/useStudent';
 import { dateStyle, intlLocale, useT } from '../i18n';
 import { hintText } from '../lib/hints';
 import { numbers } from '../lib/numbers';
+import { roomLabel } from '../lib/room';
 import { subjectStyle } from '../lib/subject-color';
 import { formatTime } from '../lib/time';
 import {
@@ -30,6 +31,7 @@ import {
 } from './icons';
 import { LessonMenu } from './LessonMenu';
 import { MarkChip } from './MarkChip';
+import { BAND_TEXT } from './StatBlock';
 
 // A lesson (docs/design.md 5.5, ux-principles D33, D34, D38, D39, D41): the two-bar row. Time on a left axis (number,
 // start, end with bells), a 3 px square bar in the subject colour, subject bold, the room and subgroup, topic muted,
@@ -137,10 +139,21 @@ export function LessonRow({
       <DotsIcon size={20} />
     </button>
   );
-  // the whole row opens the menu, but not the subject name (it opens the subject) nor a swipe (useSwipe eats that click)
-  const rowProps = passed
-    ? {}
-    : { onClick: () => setMenu(true), role: 'button' as const, 'aria-haspopup': 'dialog' as const };
+  // a tap anywhere on the row opens the menu (a pointer convenience; the ⋯ button is the accessible entry, so the row
+  // is no button with buttons inside), but not the subject name (it opens the subject) nor a swipe (useSwipe eats it)
+  const rowProps = passed ? {} : { onClick: () => setMenu(true) };
+  const subjectLink = (struck: boolean) => (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        openSubject();
+      }}
+      className={`-my-2.5 self-start py-2.5 text-left text-[15.5px] font-extrabold ${struck ? 'text-ink3 line-through' : ''}`}
+    >
+      {lesson.subjectName}
+    </button>
+  );
 
   // the sheet sits beside the row, not inside it: a click in a portal still bubbles through the React tree
   if (lesson.cancelled)
@@ -155,7 +168,7 @@ export function LessonRow({
           <div className="grid grid-cols-[3px_1fr_auto] gap-2.5">
             <i className="bg-subject self-stretch opacity-30" />
             <div className="flex flex-col gap-[3px]">
-              <span className="font-extrabold text-ink3 line-through">{lesson.subjectName}</span>
+              {subjectLink(true)}
               <span className="text-small text-ink3">{t('lesson.cancelled')}</span>
             </div>
             {dots}
@@ -283,9 +296,11 @@ export function LessonRow({
     }
     if (n.facts) {
       const f = n.facts;
+      // the average in its band colour (5.5): a judgement colour, so the number is always there too
+      const band = f.average != null ? bandOf(scale, f.average) : null;
       notes.push(
         <LessonNote key="avg" tone="info" icon={<AvgNoteIcon size={16} />}>
-          {t('lesson.facts.average')} <b className={f.average != null ? 'text-ink' : ''}>{fmt.average(f.average)}</b>
+          {t('lesson.facts.average')} <b className={band ? BAND_TEXT[band] : ''}>{fmt.average(f.average)}</b>
         </LessonNote>,
         <LessonNote key="last" tone="info" icon={<MarksNoteIcon size={16} />}>
           <span className="inline-flex flex-wrap items-center gap-1">
@@ -310,9 +325,7 @@ export function LessonRow({
       );
   }
 
-  const where = [lesson.room ? t('lesson.room', { room: lesson.room }) : null, lesson.groupLabel]
-    .filter(Boolean)
-    .join(' · ');
+  const where = [roomLabel(t, lesson.room), lesson.groupLabel].filter(Boolean).join(' · ');
   const own = lesson.ownHomework[0]?.text ?? null;
   return (
     <>
@@ -320,7 +333,7 @@ export function LessonRow({
         {...rowProps}
         data-ready={(!!lesson.ready && !passed) || undefined}
         className={`grid grid-cols-[46px_1fr] gap-2.5 border-t border-line py-3 first:border-t-0 ${
-          current ? '-mx-3.5 bg-accent-soft px-3.5 first:rounded-t-lg last:rounded-b-lg' : ''
+          current ? '-mr-3.5 -ml-2 bg-accent-soft pr-3.5 pl-2 first:rounded-t-lg last:rounded-b-lg' : ''
         } ${passed ? '' : 'cursor-pointer'}`}
         style={subject}
       >
@@ -331,16 +344,7 @@ export function LessonRow({
             {/* a lesson marked ready fades its texts a step (5.5) */}
             <div className={`flex min-w-0 flex-col gap-[3px] ${lesson.ready && !passed ? 'opacity-75' : ''}`}>
               <span className="flex flex-wrap items-baseline gap-2">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    openSubject();
-                  }}
-                  className="-my-2.5 self-start py-2.5 text-left text-[15.5px] font-extrabold"
-                >
-                  {lesson.subjectName}
-                </button>
+                {subjectLink(false)}
                 {current && (
                   <span className="rounded-pill bg-accent px-1.5 text-[11px] font-bold text-accent-ink">
                     {t('lesson.now')}

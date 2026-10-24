@@ -2586,7 +2586,7 @@ function renderLessonFlat(l) {
           ${where ? `<div class="fmeta">${esc(where)}</div>` : ''}
           ${l.topic ? `<div class="topic">${esc(l.topic)}</div>` : ''}
           ${l.homework ? `<div class="fhw">${esc(l.homework)}</div>` : ''}
-          ${!l.homework && P.manual ? `<div class="fhw manual"><span>${esc(P.manual.text)}</span></div>` : ''}
+          ${P.manual ? `<div class="fhw manual"><span>${esc(P.manual.text)}</span></div>` : ''}
           ${P.doneLine}</div><div class="tcol">${tick}</div></div>
         ${P.notice}${P.addHw}</div>
     </div>`;

@@ -770,6 +770,7 @@ export function fakeApi(start: Partial<FakeState> = {}) {
       return json({
         today: '2026-10-21',
         weekStart: 1,
+        schoolDays: [1, 2, 3, 4, 5],
         days: Object.entries(SCHEDULE_DAYS).map(([date, ls]) => ({ date, lessons: ls.length, held: ls.length })),
       });
     if (/^GET \/api\/students\/[^/]+\/schedule$/.test(route)) {

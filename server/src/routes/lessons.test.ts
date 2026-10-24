@@ -326,6 +326,10 @@ describe('Расписание: пометки, tags and the navigator’s days'
     expect(res.status).toBe(200);
     expect(res.body.today).toBe(TODAY);
     expect(res.body.weekStart).toEqual(expect.any(Number));
+    // Неделя: every school day of the manifest's calendar is a day of its own, with lessons or without
+    const week = await mama.get(`/api/students/${milena.id}/schedule?week=0`);
+    const shown = (week.body.days as { date: string }[]).map((d) => new Date(`${d.date}T12:00:00Z`).getUTCDay());
+    for (const wd of res.body.schoolDays as number[]) expect(shown).toContain(wd);
     const days = res.body.days as { date: string; lessons: number; held: number }[];
     expect(days.length).toBeGreaterThan(20);
     expect(days.map((d) => d.date)).toEqual([...days.map((d) => d.date)].sort());

@@ -2,6 +2,7 @@ import { addDays } from '@marksy/core';
 import { useNavigate } from 'react-router';
 import type { Overview } from '../api/queries';
 import { intlLocale, useT } from '../i18n';
+import { roomLabel } from '../lib/room';
 import { subjectStyle } from '../lib/subject-color';
 import { todayIn } from '../lib/time';
 import { ChevIcon } from './icons';
@@ -14,7 +15,7 @@ import { Stripe } from './Section';
 export function NowCard({ studentId, now, tz }: { studentId: string; now: NonNullable<Overview['now']>; tz: string }) {
   const t = useT();
   const navigate = useNavigate();
-  const where = (room: string | null) => (room ? t('lesson.room', { room }) : null);
+  const where = (room: string | null) => roomLabel(t, room);
   let head: string;
   let main: string;
   let sub: string | null;

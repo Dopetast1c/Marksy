@@ -7408,6 +7408,12 @@
                     "weekStart": {
                       "type": "number"
                     },
+                    "schoolDays": {
+                      "type": "array",
+                      "items": {
+                        "type": "number"
+                      }
+                    },
                     "days": {
                       "type": "array",
                       "items": {
@@ -7434,6 +7440,7 @@
                   "required": [
                     "today",
                     "weekStart",
+                    "schoolDays",
                     "days"
                   ]
                 }

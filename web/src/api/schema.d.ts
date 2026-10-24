@@ -2536,6 +2536,7 @@ export interface paths {
                         "application/json": {
                             today: string;
                             weekStart: number;
+                            schoolDays: number[];
                             days: {
                                 date: string;
                                 lessons: number;

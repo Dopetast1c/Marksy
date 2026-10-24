@@ -129,6 +129,9 @@ describe('Расписание', () => {
     fakeApi({ signedIn: true });
     render(<App at={`/s/${mark.id}/schedule`} />);
     expect(await screen.findByText('В дневнике нет расписания')).toBeTruthy();
+    // the title only: no День / Неделя and no navigator with dead arrows
+    expect(screen.queryByRole('button', { name: 'День' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Следующий период' })).toBeNull();
     expect(screen.getByRole('link', { name: 'Расписание' })).toBeTruthy();
   });
 });

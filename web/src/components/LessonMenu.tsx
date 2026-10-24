@@ -22,12 +22,15 @@ function Option({
   title,
   sub,
   onClick,
+  clamp = false,
 }: {
   icon: ReactNode;
   tone?: 'ok' | 'plain' | 'quiet';
   title: string;
   sub?: string | null;
   onClick: () => void;
+  /** the family's own text (the homework): at most two lines; the app's own lines are always whole */
+  clamp?: boolean;
 }) {
   const tile =
     tone === 'ok'
@@ -40,7 +43,7 @@ function Option({
       <span className={`grid size-10 flex-none place-items-center rounded-md ${tile}`}>{icon}</span>
       <span className="flex min-w-0 flex-col">
         <b>{title}</b>
-        {sub && <span className="line-clamp-2 text-small text-ink3">{sub}</span>}
+        {sub && <span className={`text-small text-ink3 ${clamp ? 'line-clamp-2' : ''}`}>{sub}</span>}
       </span>
     </button>
   );
@@ -82,6 +85,7 @@ export function LessonMenu({
       : t('lessonMenu.titleNoSlot', { subject: lesson.subjectName, when });
 
   const close = () => {
+    setError(null);
     onOpenChange(false);
     setMode('menu');
   };
@@ -192,6 +196,7 @@ export function LessonMenu({
             icon={<PenNoteIcon size={20} />}
             title={t(own ? 'lessonMenu.editHomework' : 'lessonMenu.addHomework')}
             sub={own ? own.text : t('lessonMenu.addHomeworkSub')}
+            clamp={!!own}
             onClick={() => {
               setError(null);
               setText(own?.text ?? '');
