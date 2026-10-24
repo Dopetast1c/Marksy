@@ -128,6 +128,8 @@ export const cliLogins = pgTable(
     command: text('command').$type<'probe' | 'sync:once' | 'dev:connect'>().notNull(),
     runner: text('runner').$type<'owner' | 'claude'>().notNull(),
     at: ts('at').notNull(),
+    /** Set when the diary refused this login: Claude Code's next run waits for the owner (login-guard.ts) */
+    outcome: text('outcome', { enum: ['auth', 'blocked', 'needs_2fa'] }),
   },
   (t) => [index('cli_logins_login_at_idx').on(t.providerId, t.loginHash, t.at)],
 );

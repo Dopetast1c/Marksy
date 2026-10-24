@@ -1,8 +1,9 @@
 import type { Logger, Transport } from '@marksy/core';
 import { and, asc, eq, sql } from 'drizzle-orm';
 import { hashPassword } from '../auth/password';
-import { claimLogin, refusalText } from '../cli/login-guard';
-import type { Runner } from '../cli/login-guard';
+import { claimLogin, recordRefusedLogin, refusalText } from '../cli/login-guard';
+import type { RefusedLogin, Runner } from '../cli/login-guard';
+import { HttpError } from '../http/errors';
 import { manualLoginPolicy } from '../cli/mode';
 import type { Db } from '../db/client';
 import type { SyncConfig } from '../sync/config';
@@ -35,6 +36,12 @@ export type DevConnectResult =
   | { outcome: 'adopted' | 'unchanged'; familyId: string; children: number }
   | { outcome: 'connected'; familyId: string; children: number; firstSync: string }
   | { outcome: 'refused'; message: string };
+
+const REFUSED: Partial<Record<string, RefusedLogin>> = {
+  diary_auth_failed: 'auth',
+  diary_blocked: 'blocked',
+  needs_2fa: 'needs_2fa',
+};
 
 async function ensureUser(db: Db, login: string, password: string): Promise<string> {
   const [user] = await db
@@ -117,15 +124,15 @@ export async function devConnect(db: Db, input: DevConnectInput): Promise<DevCon
     ...(input.allowDemoProviders && { allowDemoProviders: true }),
   };
   const credentials = { login: input.diary.login, password: input.diary.password };
-  const result =
+  const connecting =
     existing && family
-      ? await connectDiary(deps, {
+      ? connectDiary(deps, {
           providerId: provider.manifest.id,
           credentials,
           role: 'parent',
           into: { familyId: family.familyId, userId: existing.id },
         })
-      : await connectDiary(deps, {
+      : connectDiary(deps, {
           providerId: provider.manifest.id,
           credentials,
           role: 'parent',
@@ -136,6 +143,12 @@ export async function devConnect(db: Db, input: DevConnectInput): Promise<DevCon
             consentVersion: 'dev',
           },
         });
+  const result = await connecting.catch(async (err: unknown) => {
+    // a login the diary refused: Claude Code does not try it again (cli/login-guard.ts)
+    const refused = err instanceof HttpError ? REFUSED[err.code] : undefined;
+    if (refused) await recordRefusedLogin(db, { providerId: provider.manifest.id, login: input.diary.login, refused });
+    throw err;
+  });
   // the command waits for the first sync it started in the same login
   const first = await result.firstSync;
   return {

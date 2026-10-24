@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { resetDb, testDb } from '../../test/db';
 import { createAccount, DEMO_CREDENTIALS } from '../../test/factories';
 import { cliLogins, diaryAccounts } from '../db/schema';
-import { claimLogin, refusalText, runnerOf } from './login-guard';
+import { claimLogin, recordRefusedLogin, refusalText, runnerOf } from './login-guard';
 import type { LoginClaim } from './login-guard';
 import { manualLoginPolicy } from './mode';
 import type { ProviderManifest } from '@marksy/core';
@@ -102,6 +102,34 @@ describe('login guard of probe and sync:once', () => {
     for (const t of ['22:05', '22:15', '22:25', '22:35', '22:45'])
       expect(await claimLogin(db, claim({ policy: dev, now: at(t) }))).toEqual({ ok: true });
     expect(await claimLogin(db, claim({ policy: dev, now: at('05:00', '2026-10-14') }))).toEqual({ ok: true });
+  });
+
+  it('Claude Code never tries a login the diary refused, nor runs while the account is paused; the owner may', async () => {
+    const dev = manualLoginPolicy({ limits: { minLoginIntervalMinutes: 60 } } as ProviderManifest, {
+      MARKSY_ENV: 'development',
+    });
+    // a probe before any account: the diary refused it, the next run is Claude Code's
+    expect(await claimLogin(db, claim({ policy: dev }))).toEqual({ ok: true });
+    await recordRefusedLogin(db, { providerId: 'demo-full', login: DEMO_CREDENTIALS.login, refused: 'auth' });
+    const again = await claimLogin(db, claim({ policy: dev, now: at('11:00') }));
+    expect(again).toEqual({ ok: false, reason: 'refused_login', refused: 'auth' });
+    expect(refusalText(again as Exclude<typeof again, { ok: true }>, TZ)).toMatch(/only the owner may try it again/);
+    // the owner checks a corrected password; once it passes, Claude Code may run again
+    expect(await claimLogin(db, claim({ policy: dev, runner: 'owner', now: at('11:00') }))).toEqual({ ok: true });
+    expect(await claimLogin(db, claim({ policy: dev, now: at('11:20') }))).toEqual({ ok: true });
+    // the account itself waits for new credentials, or is paused
+    const { account } = await createAccount(db, 'demo-full', { requiresAction: 'needs_2fa' });
+    expect(await claimLogin(db, claim({ policy: dev, now: at('12:00') }))).toMatchObject({ refused: 'needs_2fa' });
+    await db
+      .update(diaryAccounts)
+      .set({ requiresAction: null, pausedUntil: at('18:00') })
+      .where(eq(diaryAccounts.id, account.id));
+    expect(await claimLogin(db, claim({ policy: dev, now: at('12:00') }))).toEqual({
+      ok: false,
+      reason: 'paused',
+      nextAllowedAt: at('18:00'),
+    });
+    expect(await claimLogin(db, claim({ policy: dev, runner: 'owner', now: at('12:00') }))).toEqual({ ok: true });
   });
 
   it('two runs started together: one passes, the other waits for the interval', async () => {

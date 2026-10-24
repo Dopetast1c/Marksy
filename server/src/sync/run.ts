@@ -47,8 +47,9 @@ export interface RunSyncOptions {
    */
   opened?: { login: OpenedLogin; runId: string };
   /**
-   * A manual run's login interval in this mode (cli/mode.ts: 10 minutes in development), checked by the login guard
-   * already; ignored for the scheduler's triggers, which keep the manifest's
+   * A command-line run's login interval in this mode (cli/mode.ts: 10 minutes in development), checked by the login
+   * guard already; SYNC_MIN_LOGIN_INTERVAL still tightens it. Ignored for every other trigger (the scheduler, the
+   * app's refresh), which keep the manifest's
    */
   manualLoginIntervalMinutes?: number;
 }
@@ -115,8 +116,8 @@ async function runLocked(opts: RunSyncOptions): Promise<RunSyncResult> {
   const settings = family?.settings ?? {};
   const manifest = provider.manifest;
   const limits = effectiveLimits(manifest, config);
-  if (opts.manualLoginIntervalMinutes !== undefined && isManual(opts.trigger))
-    limits.minLoginIntervalMinutes = opts.manualLoginIntervalMinutes;
+  if (opts.manualLoginIntervalMinutes !== undefined && (opts.trigger === 'cli' || opts.trigger === 'cli-claude'))
+    limits.minLoginIntervalMinutes = Math.max(opts.manualLoginIntervalMinutes, config.minLoginIntervalMinutes ?? 0);
   const started = now();
   const local = localTime(started, manifest.timezone);
   const ctx = weekContext(manifest, settings, started, account.lastSuccessAt);

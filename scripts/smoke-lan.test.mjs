@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { countsOf, lanAddress, secretHits, sessionCookie, shapeOf } from './smoke-lan.mjs';
+import { countsOf, lanAddress, ownAddresses, secretHits, sessionCookie, shapeOf } from './smoke-lan.mjs';
 
 describe('smoke:lan', () => {
   it('finds the home-network address of a real adapter, never a virtual one or the loopback', () => {
@@ -14,6 +14,11 @@ describe('smoke:lan', () => {
     ).toBe('192.168.1.20');
     expect(lanAddress({ 'vEthernet (WSL)': [v4('172.20.16.1')] })).toBe('172.20.16.1');
     expect(lanAddress({ lo: [v4('127.0.0.1', true)], link: [v4('169.254.10.1')] })).toBeNull();
+    // --host is checked against this machine's own addresses
+    expect(ownAddresses({ 'Wi-Fi': [v4('192.168.1.20')], lo: [v4('127.0.0.1', true)] })).toEqual([
+      '192.168.1.20',
+      '127.0.0.1',
+    ]);
   });
 
   it('a shape shows keys and types, never a value', () => {
@@ -22,6 +27,9 @@ describe('smoke:lan', () => {
     expect(shape).toBe('[1× {id: string, name: string, grade: number, school: {label: string}, marks: []}]');
     expect(shape).not.toMatch(/Иванова|Гимназия/);
     expect(countsOf(body)).toBe('1 items');
+    // a map keyed by data never shows its keys
+    const keyed = shapeOf({ byStudent: { '00aa11bb-2222-4333-8444-555566667777': 1, Иванова: 2, w20261019: 3 } });
+    expect(keyed).toBe('{byStudent: {<key>: number, <key>: number, <key>: number}}');
     expect(countsOf({ period: {}, subjects: [1, 2], events: [] })).toBe('subjects 2, events 0');
   });
 
@@ -33,6 +41,15 @@ describe('smoke:lan', () => {
     expect(secretHits('{"a":[{"token":"tok-abcdef"}]}', secrets)).toEqual([
       'contains the session token',
       'key $.a[0].token',
+    ]);
+    // escaped by JSON, and keys that only contain a secret word
+    expect(secretHits(JSON.stringify({ a: 'say "hi"\\' }), { password: 'say "hi"\\' })).toEqual([
+      'contains the password',
+    ]);
+    expect(secretHits('{"x":{"diaryPassword":1,"accessToken":2,"credentialsEnc":3}}', {})).toEqual([
+      'key $.x.diaryPassword',
+      'key $.x.accessToken',
+      'key $.x.credentialsEnc',
     ]);
     // an empty or very short secret never matches everything
     expect(secretHits('{"x":1}', { 'diary password': '' })).toEqual([]);

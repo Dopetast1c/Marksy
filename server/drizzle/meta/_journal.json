@@ -64,6 +64,13 @@
       "when": 1792855235959,
       "tag": "0008_account_unique_notice_family",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792856776484,
+      "tag": "0009_cli_login_outcome",
+      "breakpoints": true
     }
   ]
 }

@@ -9,10 +9,21 @@ import { pathToFileURL } from 'node:url';
 
 const PORT = 5173;
 const COOKIE = 'marksy_session';
-const SECRET_KEYS = /^(password|passwordHash|token|tokenHash|credentials|secret|cookie)$/i;
+const SECRET_KEYS = /pass(word|wd)|token|secret|credential|cookie|cipher|api_?key|private_?key/i;
+
+/** A key as printed: a key the code defines stays, one that could be data (a name, an id, a date) never shows */
+const safeKey = (k) => (/^[A-Za-z_][A-Za-z0-9_]{0,39}$/.test(k) && !/\d{3}/.test(k) ? k : '<key>');
 
 const PRIVATE = [/^10\./, /^192\.168\./, /^172\.(1[6-9]|2\d|3[01])\./];
 const VIRTUAL = /vethernet|wsl|docker|virtualbox|vmware|hyper-v|loopback|tailscale|zerotier|vpn|utun|vbox|br-|veth/i;
+
+/** Every IPv4 address of this machine: the password is sent over plain http, so never to another device */
+export function ownAddresses(interfaces = networkInterfaces()) {
+  return Object.values(interfaces)
+    .flatMap((list) => list ?? [])
+    .filter((a) => a.family === 'IPv4' || a.family === 4)
+    .map((a) => a.address);
+}
 
 /** The computer's address on the home network: a private IPv4 of a real adapter, physical ones first */
 export function lanAddress(interfaces = networkInterfaces()) {
@@ -35,20 +46,23 @@ export function shapeOf(value, depth = 0) {
   if (typeof value !== 'object') return typeof value;
   if (depth >= 3) return '{…}';
   const keys = Object.keys(value);
-  return `{${keys.map((k) => `${k}: ${shapeOf(value[k], depth + 1)}`).join(', ')}}`;
+  return `{${keys.map((k) => `${safeKey(k)}: ${shapeOf(value[k], depth + 1)}`).join(', ')}}`;
 }
 
 /** What a response must never carry: the given secrets anywhere in the text, or a secret-looking key */
 export function secretHits(text, secrets) {
   const hits = [];
-  for (const [label, value] of Object.entries(secrets))
-    if (value && value.length >= 4 && text.includes(value)) hits.push(`contains the ${label}`);
+  for (const [label, value] of Object.entries(secrets)) {
+    if (!value || value.length < 4) continue;
+    // as typed, and as JSON writes it (a quote or a backslash in a password comes back escaped)
+    if (text.includes(value) || text.includes(JSON.stringify(value).slice(1, -1))) hits.push(`contains the ${label}`);
+  }
   const walk = (v, path) => {
     if (Array.isArray(v)) v.forEach((x, i) => walk(x, `${path}[${i}]`));
     else if (v && typeof v === 'object')
       for (const [k, x] of Object.entries(v)) {
-        if (SECRET_KEYS.test(k)) hits.push(`key ${path}.${k}`);
-        walk(x, `${path}.${k}`);
+        if (SECRET_KEYS.test(k)) hits.push(`key ${path}.${safeKey(k)}`);
+        walk(x, `${path}.${safeKey(k)}`);
       }
   };
   try {
@@ -102,6 +116,10 @@ async function main() {
   }
   if (!host) {
     console.error('no home-network address found; pass one with --host <ip>');
+    return 2;
+  }
+  if (!ownAddresses().includes(host)) {
+    console.error('--host must be an address of this computer: the password goes over plain http');
     return 2;
   }
   const base = `http://${host}:${PORT}`;
@@ -195,6 +213,8 @@ async function main() {
       'events?period=quarter',
       'schedule',
       'schedule?day=today',
+      // last week has lessons even on a weekend or in the holidays
+      'schedule?week=-1',
       'finals/quarters',
       'finals/years',
       'school',

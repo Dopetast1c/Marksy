@@ -10,7 +10,9 @@ import { fromLocal, localTime } from '../sync/time';
 // login per account and interval, shared with the scheduler through diary_accounts.last_login_at, for whoever runs
 // them. The interval and, for Claude Code (MARKSY_RUNNER=claude), a daily cap and school hours come from the mode
 // (cli/mode.ts: development 10 minutes, any hour, no cap; production the manifest's interval, three runs, 07:00 to
-// 20:00). A refusal names the next allowed time; nothing is retried here.
+// 20:00). A refusal names the next allowed time; nothing is retried here. Claude Code never tries a login the diary
+// refused (the account's requires_action, or the last run's outcome here) and never runs while the account is paused;
+// the owner may, which is how a corrected password is checked.
 
 export type Runner = 'owner' | 'claude';
 export type CliCommand = 'probe' | 'sync:once' | 'dev:connect';
@@ -48,7 +50,14 @@ export interface LoginPolicy {
   claudeHours: readonly [number, number] | null;
 }
 
-export type ClaimResult = { ok: true } | { ok: false; reason: 'interval' | 'daily_cap' | 'hours'; nextAllowedAt: Date };
+/** What the diary answered to a refused login */
+export type RefusedLogin = 'auth' | 'blocked' | 'needs_2fa';
+
+export type ClaimResult =
+  | { ok: true }
+  | { ok: false; reason: 'interval' | 'daily_cap' | 'hours' | 'paused'; nextAllowedAt: Date }
+  /** Claude Code only: the diary refused this login, and only the owner may try it again */
+  | { ok: false; reason: 'refused_login'; refused: RefusedLogin };
 
 const nextDay = (date: ISODate) => new Date(Date.parse(`${date}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10);
 
@@ -66,13 +75,18 @@ export async function claimLogin(db: Db, c: LoginClaim): Promise<ClaimResult> {
 async function claimIn(db: Tx, c: LoginClaim): Promise<ClaimResult> {
   const hash = loginHash(c.login);
   const [account] = await db
-    .select({ id: diaryAccounts.id, lastLoginAt: diaryAccounts.lastLoginAt })
+    .select({
+      id: diaryAccounts.id,
+      lastLoginAt: diaryAccounts.lastLoginAt,
+      requiresAction: diaryAccounts.requiresAction,
+      pausedUntil: diaryAccounts.pausedUntil,
+    })
     .from(diaryAccounts)
     .where(
       and(eq(diaryAccounts.providerId, c.providerId), sql`lower(${diaryAccounts.label}) = lower(${c.login.trim()})`),
     );
   const [lastCli] = await db
-    .select({ at: cliLogins.at })
+    .select({ at: cliLogins.at, outcome: cliLogins.outcome })
     .from(cliLogins)
     .where(and(eq(cliLogins.providerId, c.providerId), eq(cliLogins.loginHash, hash)))
     .orderBy(desc(cliLogins.at))
@@ -80,6 +94,13 @@ async function claimIn(db: Tx, c: LoginClaim): Promise<ClaimResult> {
   const last = Math.max(account?.lastLoginAt?.getTime() ?? 0, lastCli?.at.getTime() ?? 0);
   const intervalEnd = new Date(last + c.policy.intervalMinutes * 60_000);
   const { claudeRunsPerDay: cap, claudeHours: hours } = c.policy;
+
+  if (c.runner === 'claude') {
+    const refused = account?.requiresAction ?? lastCli?.outcome;
+    if (refused) return { ok: false, reason: 'refused_login', refused };
+    if (account?.pausedUntil && account.pausedUntil > c.now)
+      return { ok: false, reason: 'paused', nextAllowedAt: account.pausedUntil };
+  }
 
   const local = localTime(c.now, c.timezone);
   const opensAt = (date: ISODate) => fromLocal(date, hours?.[0] ?? 0, c.timezone);
@@ -115,13 +136,30 @@ async function claimIn(db: Tx, c: LoginClaim): Promise<ClaimResult> {
 }
 
 /** One line for the terminal: what was refused and when the next run is allowed, never the login */
+/** The diary refused the login a run claimed: kept on that run's row, so Claude Code's next claim waits for the owner */
+export async function recordRefusedLogin(
+  db: Db,
+  r: { providerId: string; login: string; refused: RefusedLogin },
+): Promise<void> {
+  const [last] = await db
+    .select({ id: cliLogins.id })
+    .from(cliLogins)
+    .where(and(eq(cliLogins.providerId, r.providerId), eq(cliLogins.loginHash, loginHash(r.login))))
+    .orderBy(desc(cliLogins.at))
+    .limit(1);
+  if (last) await db.update(cliLogins).set({ outcome: r.refused }).where(eq(cliLogins.id, last.id));
+}
+
 export function refusalText(r: Exclude<ClaimResult, { ok: true }>, timezone: string, policy?: LoginPolicy): string {
+  if (r.reason === 'refused_login')
+    return `not run: the diary refused this login (${r.refused}) at its last run; only the owner may try it again, after checking it. Tell the owner; do not retry.`;
   const at = localTime(r.nextAllowedAt, timezone);
   const when = `${at.date} ${String(Math.floor(at.minutes / 60)).padStart(2, '0')}:${String(at.minutes % 60).padStart(2, '0')} (${timezone})`;
   const why = {
     interval: 'this account logged in to the diary less than the login interval ago',
     daily_cap: `Claude Code already started ${policy?.claudeRunsPerDay ?? CLAUDE_RUNS_PER_DAY} real runs today`,
     hours: 'Claude Code runs real logins only between 07:00 and 20:00 school time',
+    paused: 'the account is paused after repeated diary failures',
   }[r.reason];
   return `not run: ${why}; next allowed at ${when}. Do not retry in a loop.`;
 }
