@@ -1,19 +1,19 @@
 [
   {
-    "uuid": "00000000-0000-4000-8000-2ee38f6dd495",
+    "uuid": "00000000-0000-4000-8000-4adb571df335",
     "dt_create": 0,
     "dt_update": 0,
     "partition_type": "CLASS",
     "special_students": null,
     "school_subject": {
-      "uuid": "00000000-0000-4000-8000-19bfe215fc76",
+      "uuid": "00000000-0000-4000-8000-04f3cfd2741b",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
-        "uuid": "00000000-0000-4000-8000-19bfe215fc76",
-        "school": "00000000-0000-4000-8000-40fdadd51e16",
+        "uuid": "00000000-0000-4000-8000-04f3cfd2741b",
+        "school": "00000000-0000-4000-8000-60d258f5044b",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
@@ -22,20 +22,20 @@
     },
     "templates": [
       {
-        "uuid": "00000000-0000-4000-8000-4d96d9e89ce4",
+        "uuid": "00000000-0000-4000-8000-a765b87374ce",
         "study_hours": 1,
         "study_group": {
           "name": null,
-          "uuid": "00000000-0000-4000-8000-98f8e3b3d103"
+          "uuid": "00000000-0000-4000-8000-1fab1f966a53"
         },
         "teacher": {
-          "id": "00000000-0000-4000-8000-4bc323d924d1",
+          "id": "00000000-0000-4000-8000-ee7e5a34736b",
           "name": "[text]",
           "surname": "[text]",
           "patronymic": "[text]"
         },
         "level_of_study": {
-          "uuid": "00000000-0000-4000-8000-0c97360eb9c3",
+          "uuid": "00000000-0000-4000-8000-40f6c533a8f5",
           "value": "Базовый"
         },
         "description": null
@@ -46,20 +46,20 @@
     "additional_characteristic": null
   },
   {
-    "uuid": "00000000-0000-4000-8000-8e52ba0862b4",
+    "uuid": "00000000-0000-4000-8000-47a34e4695f4",
     "dt_create": 0,
     "dt_update": 0,
     "partition_type": "CLASS",
     "special_students": null,
     "school_subject": {
-      "uuid": "00000000-0000-4000-8000-b9fc37f0b8a7",
+      "uuid": "00000000-0000-4000-8000-2ab55e898e3b",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
-        "uuid": "00000000-0000-4000-8000-b9fc37f0b8a7",
-        "school": "00000000-0000-4000-8000-40fdadd51e16",
+        "uuid": "00000000-0000-4000-8000-2ab55e898e3b",
+        "school": "00000000-0000-4000-8000-60d258f5044b",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
@@ -68,20 +68,20 @@
     },
     "templates": [
       {
-        "uuid": "00000000-0000-4000-8000-e0dd0f9ed68e",
+        "uuid": "00000000-0000-4000-8000-9e3bf21fab18",
         "study_hours": 2,
         "study_group": {
           "name": null,
-          "uuid": "00000000-0000-4000-8000-98f8e3b3d103"
+          "uuid": "00000000-0000-4000-8000-1fab1f966a53"
         },
         "teacher": {
-          "id": "00000000-0000-4000-8000-4bc323d924d1",
+          "id": "00000000-0000-4000-8000-ee7e5a34736b",
           "name": "[text]",
           "surname": "[text]",
           "patronymic": "[text]"
         },
         "level_of_study": {
-          "uuid": "00000000-0000-4000-8000-0c97360eb9c3",
+          "uuid": "00000000-0000-4000-8000-40f6c533a8f5",
           "value": "Базовый"
         },
         "description": null
@@ -92,20 +92,20 @@
     "additional_characteristic": null
   },
   {
-    "uuid": "00000000-0000-4000-8000-33479ce446fe",
+    "uuid": "00000000-0000-4000-8000-fb1b78187442",
     "dt_create": 0,
     "dt_update": 0,
     "partition_type": "CLASS",
     "special_students": null,
     "school_subject": {
-      "uuid": "00000000-0000-4000-8000-d0f28d97e00d",
+      "uuid": "00000000-0000-4000-8000-77ab466e18df",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
-        "uuid": "00000000-0000-4000-8000-d0f28d97e00d",
-        "school": "00000000-0000-4000-8000-40fdadd51e16",
+        "uuid": "00000000-0000-4000-8000-77ab466e18df",
+        "school": "00000000-0000-4000-8000-60d258f5044b",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
@@ -114,20 +114,20 @@
     },
     "templates": [
       {
-        "uuid": "00000000-0000-4000-8000-9d7749304c55",
+        "uuid": "00000000-0000-4000-8000-99e5e8faf99f",
         "study_hours": 1,
         "study_group": {
           "name": null,
-          "uuid": "00000000-0000-4000-8000-98f8e3b3d103"
+          "uuid": "00000000-0000-4000-8000-1fab1f966a53"
         },
         "teacher": {
-          "id": "00000000-0000-4000-8000-4bc323d924d1",
+          "id": "00000000-0000-4000-8000-ee7e5a34736b",
           "name": "[text]",
           "surname": "[text]",
           "patronymic": "[text]"
         },
         "level_of_study": {
-          "uuid": "00000000-0000-4000-8000-0c97360eb9c3",
+          "uuid": "00000000-0000-4000-8000-40f6c533a8f5",
           "value": "Базовый"
         },
         "description": null
@@ -138,20 +138,20 @@
     "additional_characteristic": null
   },
   {
-    "uuid": "00000000-0000-4000-8000-5a594c1f0b05",
+    "uuid": "00000000-0000-4000-8000-e9225ca0f8b7",
     "dt_create": 0,
     "dt_update": 0,
     "partition_type": "CLASS",
     "special_students": null,
     "school_subject": {
-      "uuid": "00000000-0000-4000-8000-ff35e1aff185",
+      "uuid": "00000000-0000-4000-8000-2603c176293d",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
-        "uuid": "00000000-0000-4000-8000-ff35e1aff185",
-        "school": "00000000-0000-4000-8000-40fdadd51e16",
+        "uuid": "00000000-0000-4000-8000-2603c176293d",
+        "school": "00000000-0000-4000-8000-60d258f5044b",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
@@ -160,20 +160,20 @@
     },
     "templates": [
       {
-        "uuid": "00000000-0000-4000-8000-9e58068a1c39",
+        "uuid": "00000000-0000-4000-8000-dc243064b30d",
         "study_hours": 1,
         "study_group": {
           "name": null,
-          "uuid": "00000000-0000-4000-8000-98f8e3b3d103"
+          "uuid": "00000000-0000-4000-8000-1fab1f966a53"
         },
         "teacher": {
-          "id": "00000000-0000-4000-8000-4bc323d924d1",
+          "id": "00000000-0000-4000-8000-ee7e5a34736b",
           "name": "[text]",
           "surname": "[text]",
           "patronymic": "[text]"
         },
         "level_of_study": {
-          "uuid": "00000000-0000-4000-8000-0c97360eb9c3",
+          "uuid": "00000000-0000-4000-8000-40f6c533a8f5",
           "value": "Базовый"
         },
         "description": null
@@ -184,20 +184,20 @@
     "additional_characteristic": null
   },
   {
-    "uuid": "00000000-0000-4000-8000-0523b0587756",
+    "uuid": "00000000-0000-4000-8000-7bd1d82534f4",
     "dt_create": 0,
     "dt_update": 0,
     "partition_type": "CLASS",
     "special_students": null,
     "school_subject": {
-      "uuid": "00000000-0000-4000-8000-0d2f997d9906",
+      "uuid": "00000000-0000-4000-8000-2b1f97b7967e",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
-        "uuid": "00000000-0000-4000-8000-0d2f997d9906",
-        "school": "00000000-0000-4000-8000-40fdadd51e16",
+        "uuid": "00000000-0000-4000-8000-2b1f97b7967e",
+        "school": "00000000-0000-4000-8000-60d258f5044b",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
@@ -206,20 +206,20 @@
     },
     "templates": [
       {
-        "uuid": "00000000-0000-4000-8000-69a0e9d15dfb",
+        "uuid": "00000000-0000-4000-8000-0b0338d8db48",
         "study_hours": 4,
         "study_group": {
           "name": null,
-          "uuid": "00000000-0000-4000-8000-98f8e3b3d103"
+          "uuid": "00000000-0000-4000-8000-1fab1f966a53"
         },
         "teacher": {
-          "id": "00000000-0000-4000-8000-4bc323d924d1",
+          "id": "00000000-0000-4000-8000-ee7e5a34736b",
           "name": "[text]",
           "surname": "[text]",
           "patronymic": "[text]"
         },
         "level_of_study": {
-          "uuid": "00000000-0000-4000-8000-0c97360eb9c3",
+          "uuid": "00000000-0000-4000-8000-40f6c533a8f5",
           "value": "Базовый"
         },
         "description": null
@@ -230,20 +230,20 @@
     "additional_characteristic": null
   },
   {
-    "uuid": "00000000-0000-4000-8000-82099867885e",
+    "uuid": "00000000-0000-4000-8000-a839c569df04",
     "dt_create": 0,
     "dt_update": 0,
     "partition_type": "CLASS",
     "special_students": null,
     "school_subject": {
-      "uuid": "00000000-0000-4000-8000-7a3dd3b21c9f",
+      "uuid": "00000000-0000-4000-8000-b7f464b1a761",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
-        "uuid": "00000000-0000-4000-8000-7a3dd3b21c9f",
-        "school": "00000000-0000-4000-8000-40fdadd51e16",
+        "uuid": "00000000-0000-4000-8000-b7f464b1a761",
+        "school": "00000000-0000-4000-8000-60d258f5044b",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
@@ -252,20 +252,20 @@
     },
     "templates": [
       {
-        "uuid": "00000000-0000-4000-8000-546b5e384732",
+        "uuid": "00000000-0000-4000-8000-6b130d099626",
         "study_hours": 1,
         "study_group": {
           "name": null,
-          "uuid": "00000000-0000-4000-8000-98f8e3b3d103"
+          "uuid": "00000000-0000-4000-8000-1fab1f966a53"
         },
         "teacher": {
-          "id": "00000000-0000-4000-8000-554771f9d3bd",
+          "id": "00000000-0000-4000-8000-a1227e89af70",
           "name": "[text]",
           "surname": "[text]",
           "patronymic": "[text]"
         },
         "level_of_study": {
-          "uuid": "00000000-0000-4000-8000-0c97360eb9c3",
+          "uuid": "00000000-0000-4000-8000-40f6c533a8f5",
           "value": "Базовый"
         },
         "description": null
@@ -276,20 +276,20 @@
     "additional_characteristic": null
   },
   {
-    "uuid": "00000000-0000-4000-8000-c5a23178007f",
+    "uuid": "00000000-0000-4000-8000-43578ec63b85",
     "dt_create": 0,
     "dt_update": 0,
     "partition_type": "CLASS",
     "special_students": null,
     "school_subject": {
-      "uuid": "00000000-0000-4000-8000-982d94a68258",
+      "uuid": "00000000-0000-4000-8000-28e5b0b02bc7",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
-        "uuid": "00000000-0000-4000-8000-982d94a68258",
-        "school": "00000000-0000-4000-8000-40fdadd51e16",
+        "uuid": "00000000-0000-4000-8000-28e5b0b02bc7",
+        "school": "00000000-0000-4000-8000-60d258f5044b",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
@@ -298,20 +298,20 @@
     },
     "templates": [
       {
-        "uuid": "00000000-0000-4000-8000-b9f570409d4a",
+        "uuid": "00000000-0000-4000-8000-e728b5519126",
         "study_hours": 3,
         "study_group": {
           "name": null,
-          "uuid": "00000000-0000-4000-8000-98f8e3b3d103"
+          "uuid": "00000000-0000-4000-8000-1fab1f966a53"
         },
         "teacher": {
-          "id": "00000000-0000-4000-8000-4bc323d924d1",
+          "id": "00000000-0000-4000-8000-ee7e5a34736b",
           "name": "[text]",
           "surname": "[text]",
           "patronymic": "[text]"
         },
         "level_of_study": {
-          "uuid": "00000000-0000-4000-8000-0c97360eb9c3",
+          "uuid": "00000000-0000-4000-8000-40f6c533a8f5",
           "value": "Базовый"
         },
         "description": null
@@ -322,20 +322,20 @@
     "additional_characteristic": null
   },
   {
-    "uuid": "00000000-0000-4000-8000-19e65c7eb2c2",
+    "uuid": "00000000-0000-4000-8000-be75f758dae8",
     "dt_create": 0,
     "dt_update": 0,
     "partition_type": "CLASS",
     "special_students": null,
     "school_subject": {
-      "uuid": "00000000-0000-4000-8000-c501df905321",
+      "uuid": "00000000-0000-4000-8000-45bc2344c7b1",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
-        "uuid": "00000000-0000-4000-8000-c501df905321",
-        "school": "00000000-0000-4000-8000-40fdadd51e16",
+        "uuid": "00000000-0000-4000-8000-45bc2344c7b1",
+        "school": "00000000-0000-4000-8000-60d258f5044b",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
@@ -344,20 +344,20 @@
     },
     "templates": [
       {
-        "uuid": "00000000-0000-4000-8000-ed2ec7dcff17",
+        "uuid": "00000000-0000-4000-8000-954d852a37d6",
         "study_hours": 3,
         "study_group": {
           "name": null,
-          "uuid": "00000000-0000-4000-8000-98f8e3b3d103"
+          "uuid": "00000000-0000-4000-8000-1fab1f966a53"
         },
         "teacher": {
-          "id": "00000000-0000-4000-8000-4bc323d924d1",
+          "id": "00000000-0000-4000-8000-ee7e5a34736b",
           "name": "[text]",
           "surname": "[text]",
           "patronymic": "[text]"
         },
         "level_of_study": {
-          "uuid": "00000000-0000-4000-8000-0c97360eb9c3",
+          "uuid": "00000000-0000-4000-8000-40f6c533a8f5",
           "value": "Базовый"
         },
         "description": null
@@ -368,20 +368,20 @@
     "additional_characteristic": null
   },
   {
-    "uuid": "00000000-0000-4000-8000-f3b30880a8c9",
+    "uuid": "00000000-0000-4000-8000-d9a456686c27",
     "dt_create": 0,
     "dt_update": 0,
     "partition_type": "CLASS",
     "special_students": null,
     "school_subject": {
-      "uuid": "00000000-0000-4000-8000-4896212a5849",
+      "uuid": "00000000-0000-4000-8000-f8464a3ee8f8",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
-        "uuid": "00000000-0000-4000-8000-4896212a5849",
-        "school": "00000000-0000-4000-8000-40fdadd51e16",
+        "uuid": "00000000-0000-4000-8000-f8464a3ee8f8",
+        "school": "00000000-0000-4000-8000-60d258f5044b",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
@@ -390,20 +390,20 @@
     },
     "templates": [
       {
-        "uuid": "00000000-0000-4000-8000-b63aa66d1285",
+        "uuid": "00000000-0000-4000-8000-0c6268730f6a",
         "study_hours": 1,
         "study_group": {
           "name": null,
-          "uuid": "00000000-0000-4000-8000-98f8e3b3d103"
+          "uuid": "00000000-0000-4000-8000-1fab1f966a53"
         },
         "teacher": {
-          "id": "00000000-0000-4000-8000-4bc323d924d1",
+          "id": "00000000-0000-4000-8000-ee7e5a34736b",
           "name": "[text]",
           "surname": "[text]",
           "patronymic": "[text]"
         },
         "level_of_study": {
-          "uuid": "00000000-0000-4000-8000-0c97360eb9c3",
+          "uuid": "00000000-0000-4000-8000-40f6c533a8f5",
           "value": "Базовый"
         },
         "description": null
@@ -414,20 +414,20 @@
     "additional_characteristic": null
   },
   {
-    "uuid": "00000000-0000-4000-8000-126755fb0775",
+    "uuid": "00000000-0000-4000-8000-1a56aea41d77",
     "dt_create": 0,
     "dt_update": 0,
     "partition_type": "CLASS",
     "special_students": null,
     "school_subject": {
-      "uuid": "00000000-0000-4000-8000-8919d7482dbc",
+      "uuid": "00000000-0000-4000-8000-a3f259fa807f",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
-        "uuid": "00000000-0000-4000-8000-8919d7482dbc",
-        "school": "00000000-0000-4000-8000-40fdadd51e16",
+        "uuid": "00000000-0000-4000-8000-a3f259fa807f",
+        "school": "00000000-0000-4000-8000-60d258f5044b",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
@@ -436,20 +436,20 @@
     },
     "templates": [
       {
-        "uuid": "00000000-0000-4000-8000-977a89cddcbc",
+        "uuid": "00000000-0000-4000-8000-50c908620da4",
         "study_hours": 3,
         "study_group": {
           "name": null,
-          "uuid": "00000000-0000-4000-8000-98f8e3b3d103"
+          "uuid": "00000000-0000-4000-8000-1fab1f966a53"
         },
         "teacher": {
-          "id": "00000000-0000-4000-8000-f8350b468dee",
+          "id": "00000000-0000-4000-8000-817c4cb5111a",
           "name": "[text]",
           "surname": "[text]",
           "patronymic": "[text]"
         },
         "level_of_study": {
-          "uuid": "00000000-0000-4000-8000-0c97360eb9c3",
+          "uuid": "00000000-0000-4000-8000-40f6c533a8f5",
           "value": "Базовый"
         },
         "description": null
@@ -460,20 +460,20 @@
     "additional_characteristic": null
   },
   {
-    "uuid": "00000000-0000-4000-8000-a8a8595fabc6",
+    "uuid": "00000000-0000-4000-8000-2d171ade2600",
     "dt_create": 0,
     "dt_update": 0,
     "partition_type": "CLASS",
     "special_students": null,
     "school_subject": {
-      "uuid": "00000000-0000-4000-8000-3ae9dfa160f2",
+      "uuid": "00000000-0000-4000-8000-60ed8bd7517c",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
-        "uuid": "00000000-0000-4000-8000-3ae9dfa160f2",
-        "school": "00000000-0000-4000-8000-40fdadd51e16",
+        "uuid": "00000000-0000-4000-8000-60ed8bd7517c",
+        "school": "00000000-0000-4000-8000-60d258f5044b",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,
@@ -482,20 +482,20 @@
     },
     "templates": [
       {
-        "uuid": "00000000-0000-4000-8000-3cd0da01b124",
+        "uuid": "00000000-0000-4000-8000-4680cd6902c6",
         "study_hours": 1,
         "study_group": {
           "name": null,
-          "uuid": "00000000-0000-4000-8000-98f8e3b3d103"
+          "uuid": "00000000-0000-4000-8000-1fab1f966a53"
         },
         "teacher": {
-          "id": "00000000-0000-4000-8000-4bc323d924d1",
+          "id": "00000000-0000-4000-8000-ee7e5a34736b",
           "name": "[text]",
           "surname": "[text]",
           "patronymic": "[text]"
         },
         "level_of_study": {
-          "uuid": "00000000-0000-4000-8000-0c97360eb9c3",
+          "uuid": "00000000-0000-4000-8000-40f6c533a8f5",
           "value": "Базовый"
         },
         "description": null
@@ -506,20 +506,20 @@
     "additional_characteristic": null
   },
   {
-    "uuid": "00000000-0000-4000-8000-91793d179258",
+    "uuid": "00000000-0000-4000-8000-5ae55ca05d65",
     "dt_create": 0,
     "dt_update": 0,
     "partition_type": "CLASS",
     "special_students": null,
     "school_subject": {
-      "uuid": "00000000-0000-4000-8000-7f88197e78a3",
+      "uuid": "00000000-0000-4000-8000-1774d1737429",
       "status": "REFRESHED",
       "ic_code": null,
       "kind": "[text]",
       "version": 0,
       "as_json": {
-        "uuid": "00000000-0000-4000-8000-7f88197e78a3",
-        "school": "00000000-0000-4000-8000-40fdadd51e16",
+        "uuid": "00000000-0000-4000-8000-1774d1737429",
+        "school": "00000000-0000-4000-8000-60d258f5044b",
         "dt_create": 0,
         "dt_delete": null,
         "dt_update": 0,

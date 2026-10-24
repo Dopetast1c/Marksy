@@ -1,4 +1,5 @@
-// pnpm probe [--provider <id>] [--weeks <1-8>]: runs a provider's own probe script (docs/providers.md 8). It logs in to
+// pnpm probe [--provider <id>] [--weeks <1-8>] [--next]: runs a provider's own probe script (docs/providers.md 8);
+// --next reads the next school week too. It logs in to
 // the real diary with the logins in .env, after the login guard allowed it (the provider's probe asks it itself,
 // server/src/cli/login-guard.ts and mode.ts: one login per account per interval, 10 minutes in development and the
 // manifest's in production, where Claude Code also has three runs a day, 07:00 to 20:00).
@@ -30,11 +31,23 @@ if (!/^[a-z0-9_-]+$/.test(id) || !withProbe.includes(id)) {
 // the rest goes to the provider's probe; it ends up in a shell command too, so only known options are passed on
 const rest = flag >= 0 ? args.filter((_, i) => i !== flag && i !== flag + 1) : args;
 const offline = rest[0] === '--offline';
+/** --weeks N and --next, each at most once, in any order */
+function onlineOptions(xs) {
+  const seen = new Set();
+  for (let i = 0; i < xs.length; i++) {
+    if (seen.has(xs[i])) return false;
+    seen.add(xs[i]);
+    if (xs[i] === '--next') continue;
+    if (xs[i] === '--weeks' && /^\d{1,2}$/.test(xs[i + 1] ?? '')) i++;
+    else return false;
+  }
+  return true;
+}
 const known = offline
   ? rest.length === 1 || (rest.length === 2 && /^\d{4}-\d{2}-\d{2}T[\d-]+Z$/.test(rest[1]))
-  : rest.length === 0 || (rest.length === 2 && rest[0] === '--weeks' && /^\d{1,2}$/.test(rest[1]));
+  : onlineOptions(rest);
 if (!known) {
-  console.error('options: --provider <id>, --weeks <1-8>, or --offline [the run folder in data/probe/]');
+  console.error('options: --provider <id>, --weeks <1-8>, --next, or --offline [the run folder in data/probe/]');
   process.exit(2);
 }
 const command = offline

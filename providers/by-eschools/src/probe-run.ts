@@ -26,6 +26,8 @@ export interface ProbeRunOptions {
   sleep?: (ms: number) => Promise<void>;
   /** How many of the most recent school weeks to read */
   weeks: number;
+  /** How many school weeks after today's to read as well (--next) */
+  ahead?: number;
   /** The repository root (data/ lives there) */
   root: string;
   fixturesDir: string;
@@ -76,7 +78,7 @@ export async function runProbe(o: ProbeRunOptions): Promise<number> {
   const session = await run.login(o.credentials);
   const account = await byEschools.getAccount(session, ctx);
   const today = toISODate(o.clock().getTime(), manifest.timezone);
-  const recentWeeks = await recentWeekRanges(session, ctx, today, o.weeks);
+  const recentWeeks = await recentWeekRanges(session, ctx, today, o.weeks, o.ahead ?? 0);
   // calendar (2, once), then per student: subjects, one request per week, finals, and the school details (6.7a, the
   // class timetable and teaching plan), plus bells and rooms once per school
   const schoolIds = [...new Set(account.students.map((s) => s.schoolId).filter((x): x is string => !!x))];
@@ -134,7 +136,10 @@ export async function runProbe(o: ProbeRunOptions): Promise<number> {
 
   if (o.saveRaw) {
     writeFileSync(join(rawDir, 'index.json'), JSON.stringify(index, null, 2));
-    writeFileSync(join(rawDir, 'run.json'), JSON.stringify({ startedAt: o.clock().toISOString(), weeks: o.weeks }));
+    writeFileSync(
+      join(rawDir, 'run.json'),
+      JSON.stringify({ startedAt: o.clock().toISOString(), weeks: o.weeks, ahead: o.ahead ?? 0 }),
+    );
     keepLatestRuns(join(o.root, 'data', 'probe'), KEPT_RUNS);
   }
   // the local deny-list of the pre-commit guard (CLAUDE.md): names and ids from these responses, never committed

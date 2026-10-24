@@ -15,6 +15,8 @@ export interface SavedRun {
   /** The time of the original run: what "today" was */
   startedAt: Date;
   weeks: number;
+  /** weeks after today's that the run read too (--next) */
+  ahead: number;
   files: Map<string, { text: string; status: number }>;
 }
 
@@ -48,7 +50,7 @@ export function loadRun(dir: string): SavedRun {
   }
   const runFile = join(dir, 'run.json');
   const meta = existsSync(runFile)
-    ? (JSON.parse(readFileSync(runFile, 'utf8')) as { startedAt: string; weeks: number })
+    ? (JSON.parse(readFileSync(runFile, 'utf8')) as { startedAt: string; weeks: number; ahead?: number })
     : undefined;
   const folder = dir.split(/[\\/]/).at(-1)!;
   // the most recent weeks were read, one file each: as many as the first student has
@@ -57,6 +59,7 @@ export function loadRun(dir: string): SavedRun {
     dir,
     startedAt: meta ? new Date(meta.startedAt) : timeOfRun(folder),
     weeks: meta?.weeks ?? weeksSeen,
+    ahead: meta?.ahead ?? 0,
     files,
   };
 }

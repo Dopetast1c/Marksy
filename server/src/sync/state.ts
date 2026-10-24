@@ -85,6 +85,7 @@ export function weekContext(
     today: localTime(now, tz).date,
     localDate: (d) => localTime(d, tz).date,
     lastSuccessAt,
+    readsAhead: manifest.capabilities.futureTimetable,
   };
 }
 

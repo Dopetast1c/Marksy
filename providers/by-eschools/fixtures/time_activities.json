@@ -1,6 +1,6 @@
 [
   {
-    "uuid": "00000000-0000-4000-8000-529ddd7f41b1",
+    "uuid": "00000000-0000-4000-8000-4a24de30897d",
     "summary": null,
     "school_year": "2026-2027",
     "title": "ADDITIONAL_HOLIDAYS",
@@ -10,7 +10,7 @@
     "end_date": 1803157200000
   },
   {
-    "uuid": "00000000-0000-4000-8000-eefd163b7401",
+    "uuid": "00000000-0000-4000-8000-96ee42fb1894",
     "summary": null,
     "school_year": "2026-2027",
     "title": "SPRING_HOLIDAYS",
@@ -20,7 +20,7 @@
     "end_date": 1806181200000
   },
   {
-    "uuid": "00000000-0000-4000-8000-84c2c719035a",
+    "uuid": "00000000-0000-4000-8000-039f4505ee8d",
     "summary": null,
     "school_year": "2026-2027",
     "title": "FOURTH_QUARTER",
@@ -30,7 +30,7 @@
     "end_date": 1811710800000
   },
   {
-    "uuid": "00000000-0000-4000-8000-f93bbfef717b",
+    "uuid": "00000000-0000-4000-8000-256f40f23e9d",
     "summary": null,
     "school_year": "2026-2027",
     "title": "FIRST_QUARTER",
@@ -40,7 +40,7 @@
     "end_date": 1793394000000
   },
   {
-    "uuid": "00000000-0000-4000-8000-90827e9da3f8",
+    "uuid": "00000000-0000-4000-8000-bebe7d0d394b",
     "summary": null,
     "school_year": "2026-2027",
     "title": "SUMMER_HOLIDAYS",
@@ -50,7 +50,7 @@
     "end_date": 1819659600000
   },
   {
-    "uuid": "00000000-0000-4000-8000-7b3ba67c53cb",
+    "uuid": "00000000-0000-4000-8000-cda01bdedf29",
     "summary": null,
     "school_year": "2026-2027",
     "title": "WINTER_HOLIDAYS",
@@ -60,7 +60,7 @@
     "end_date": 1799528400000
   },
   {
-    "uuid": "00000000-0000-4000-8000-e32a5e07299e",
+    "uuid": "00000000-0000-4000-8000-489e5ed3eb24",
     "summary": null,
     "school_year": "2026-2027",
     "title": "THIRD_QUARTER",
@@ -70,7 +70,7 @@
     "end_date": 1805490000000
   },
   {
-    "uuid": "00000000-0000-4000-8000-be10d931286f",
+    "uuid": "00000000-0000-4000-8000-3c01cf8752b7",
     "summary": null,
     "school_year": "2026-2027",
     "title": "AUTUMN_HOLIDAYS",
@@ -80,7 +80,7 @@
     "end_date": 1794085200000
   },
   {
-    "uuid": "00000000-0000-4000-8000-229eac6f86fc",
+    "uuid": "00000000-0000-4000-8000-fbeed3510d01",
     "summary": null,
     "school_year": "2026-2027",
     "title": "SECOND_QUARTER",

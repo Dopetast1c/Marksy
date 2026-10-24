@@ -28,6 +28,7 @@ async function main(): Promise<number> {
       clock: () => run.startedAt,
       sleep: async () => undefined,
       weeks: run.weeks,
+      ahead: run.ahead,
       root,
       fixturesDir,
       saveRaw: false,

@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { resetDb, testDb } from '../../test/db';
 import { createAccount, TEST_CREDENTIALS_KEY } from '../../test/factories';
-import { diaryAccounts, memberships, notifications, syncCoverage, syncRuns, users } from '../db/schema';
+import { diaryAccounts, lessons, memberships, notifications, syncCoverage, syncRuns, users } from '../db/schema';
 import { readSyncConfig } from './config';
 import type { SyncConfig } from './config';
 import { runSync } from './run';
@@ -57,7 +57,7 @@ describe('runSync', () => {
     expect(r).toMatchObject({ outcome: 'ran', status: 'success' });
     const [run] = await runs();
     expect(run).toMatchObject({ kind: 'backfill', trigger: 'schedule', status: 'success' });
-    expect(run!.scope.sets).toMatchObject({ standing: 4, backfill: 2 });
+    expect(run!.scope.sets).toMatchObject({ standing: 6, backfill: 2 });
     expect(await account(a.id)).toMatchObject({ lastSuccessAt: at('2025-09-17 22:00'), consecutiveFailures: 0 });
   });
 
@@ -142,23 +142,40 @@ describe('runSync', () => {
 
   it('catches up a long backlog over several runs, freshest weeks first', async () => {
     const a = await setup();
-    const cap = { config: { maxRequestsPerRun: 14 } };
-    // login, profile, year and subjects per pupil = 6; 4 standing weeks; 2 finals; the school details of the day take
-    // 3 requests per pupil (bells, regular week, subjects) and fit into what is left over the first two runs
+    const cap = { config: { maxRequestsPerRun: 16 } };
+    // login, profile, year and subjects per pupil = 6; 6 standing weeks (the previous, the current and the next one,
+    // the demo diary shows lessons ahead); 2 finals; the school details of the day take 3 requests per pupil (bells,
+    // regular week, subjects) and fit into what is left over the first runs
     await sync(a.id, '2025-10-15 15:00', cap);
     const weeks = async () => (await db.select().from(syncCoverage)).map((c) => c.weekStart);
-    expect(new Set(await weeks())).toEqual(new Set(['2025-10-13', '2025-10-06']));
+    expect(new Set(await weeks())).toEqual(new Set(['2025-10-13', '2025-10-20', '2025-10-06']));
     // an hour later, outside the window: a catch-up takes the newest missing weeks
     expect(await sync(a.id, '2025-10-15 16:01', cap)).toMatchObject({ status: 'success' });
     expect((await runs())[1]!.kind).toBe('catchup');
     const after2 = new Set(await weeks());
     expect(after2.has('2025-09-29')).toBe(true);
     expect(after2.has('2025-09-01')).toBe(false);
-    // every run takes the standing weeks again, so 14 requests leave room for 4 older weeks per run
+    // every run takes the standing weeks again, so 16 requests leave room for 2 older weeks per run
     for (const t of ['2025-10-15 17:02', '2025-10-15 18:03', '2025-10-15 19:04']) await sync(a.id, t, cap);
-    expect(new Set(await weeks()).size).toBe(7);
+    // the seven school weeks so far and the next one
+    expect(new Set(await weeks()).size).toBe(8);
     // nothing left: the next evening tick does nothing
     expect(await sync(a.id, '2025-10-15 21:06', cap)).toMatchObject({ decision: { reason: 'outside_window' } });
+  });
+
+  it('a Friday run stores the next week: Monday’s lessons and homework are there for the weekend', async () => {
+    const a = await setup();
+    // Thursday evening: the first run reads the year so far
+    await sync(a.id, '2025-09-11 22:00');
+    // Friday, in the school day: a scheduled run, the next week (15 September) among its standing weeks
+    expect(await sync(a.id, '2025-09-12 10:30')).toMatchObject({ outcome: 'ran', status: 'success' });
+    const friday = (await runs())[1]!;
+    expect(friday.kind).toBe('scheduled');
+    const covered = (await db.select().from(syncCoverage)).map((c) => c.weekStart);
+    expect(covered).toContain('2025-09-15');
+    const monday = await db.select().from(lessons).where(eq(lessons.date, '2025-09-15'));
+    expect(monday.length).toBeGreaterThan(0);
+    expect(monday.some((l) => l.homework)).toBe(true);
   });
 
   it('two ticks never run one account at once', async () => {

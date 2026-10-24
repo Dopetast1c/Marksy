@@ -61,6 +61,33 @@ describe('selectWeeks', () => {
     expect(sets(r)).toEqual(['standing 2025-10-13', 'standing 2025-10-06']);
   });
 
+  it('where the diary shows lessons ahead, the next week is standing too: a Friday run reads Monday', () => {
+    const cov = verifiedThrough('2025-10-06').map(([w]) => [w, '2025-10-10 21:00'] as [string, string]);
+    const friday = ctx('2025-10-17 12:00', { lastSuccessAt: at('2025-10-17 11:10'), readsAhead: true });
+    // current, next, previous, before any gap or re-scan
+    expect(sets(selectWeeks(state(cov), friday)).slice(0, 3)).toEqual([
+      'standing 2025-10-13',
+      'standing 2025-10-20',
+      'standing 2025-10-06',
+    ]);
+    // without lessons ahead in the diary there is nothing to read there
+    expect(sets(selectWeeks(state(cov), { ...friday, readsAhead: false }))).not.toContain('standing 2025-10-20');
+  });
+
+  it('the next week is not read when it is all holiday or after the school year', () => {
+    // the week of 27 October is the autumn holidays
+    const r = selectWeeks(
+      state(verifiedThrough('2025-10-13')),
+      ctx('2025-10-24 12:00', { lastSuccessAt: at('2025-10-24 11:00'), readsAhead: true }),
+    );
+    expect(r.map((x) => x.weekStart)).not.toContain('2025-10-27');
+    const late = selectWeeks(
+      state(),
+      ctx('2026-05-29 12:00', { lastSuccessAt: at('2026-05-29 11:00'), readsAhead: true }),
+    );
+    expect(late.map((x) => x.weekStart)).not.toContain('2026-06-01');
+  });
+
   it('after weeks off: standing first, the gap newest first, then the overdue re-scan', () => {
     const r = selectWeeks(
       state(verifiedThrough('2025-09-08').concat([['2025-09-15', '2025-09-17 10:00']])),

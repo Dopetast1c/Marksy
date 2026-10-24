@@ -42,6 +42,8 @@ export interface WeekContext extends CalendarRules {
   /** Local date of a moment, in the school's time zone */
   localDate(at: Date): ISODate;
   lastSuccessAt: Date | null;
+  /** The provider shows lessons ahead (capabilities.futureTimetable): the next week is a standing week too */
+  readsAhead?: boolean;
 }
 
 /** Is d a school day: a school weekday of the manifest, inside the year, not a holiday, not a family day off? */
@@ -100,7 +102,8 @@ function postTermWeeks(state: StudentPlanState, weeks: ISODate[], ctx: WeekConte
 }
 
 /**
- * The weeks of one student in fetch order: standing (current and previous week), the gap since the last success
+ * The weeks of one student in fetch order: standing (the current week, the next one where the diary shows lessons
+ * ahead, and the previous one), the gap since the last success
  * (newest first), the re-scan of the current term's stale weeks, the once-more of finished terms, then the backfill of
  * never-verified weeks. The re-scan has no slot of its own: it fills the school-day runs (design.md 10.2, D55).
  */
@@ -116,7 +119,11 @@ export function selectWeeks(state: StudentPlanState, ctx: WeekContext): WeekRequ
     out.push({ weekStart: w, set });
   };
 
-  for (const w of weeks) if (w === current || w === addDays(current, -7)) add(w, 'standing');
+  // every run reads the next week too: teachers set Monday's homework on Friday, and no run reads at the weekend (D55)
+  const next = addDays(current, 7);
+  if (weeks.includes(current)) add(current, 'standing');
+  if (ctx.readsAhead && next <= cal.year.to && isSchoolWeek(next, cal, ctx)) add(next, 'standing');
+  if (weeks.includes(addDays(current, -7))) add(addDays(current, -7), 'standing');
 
   // a week is caught up once it was fetched after it ended
   if (ctx.lastSuccessAt) {

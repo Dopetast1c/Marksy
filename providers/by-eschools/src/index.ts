@@ -289,12 +289,18 @@ async function weeksOf(session: Session, ctx: ProviderContext): Promise<WeekActi
  * The last `count` school weeks that have started by `today`, oldest first: the current week (or during holidays
  * the last one) and the ones before it. Empty before the school year.
  */
-export async function recentWeekRanges(session: Session, ctx: ProviderContext, today: string, count: number) {
-  return (await weeksOf(session, ctx))
+/** For the probe: the `count` most recent weeks up to today, then `ahead` weeks after it (the next school week) */
+export async function recentWeekRanges(
+  session: Session,
+  ctx: ProviderContext,
+  today: string,
+  count: number,
+  ahead = 0,
+) {
+  const all = (await weeksOf(session, ctx))
     .map((w) => dayRange({ start: w.start_ts, end: w.end_ts }, manifest.timezone))
-    .filter((r) => r.from <= today)
-    .sort((a, b) => a.from.localeCompare(b.from))
-    .slice(-count);
+    .sort((a, b) => a.from.localeCompare(b.from));
+  return [...all.filter((r) => r.from <= today).slice(-count), ...all.filter((r) => r.from > today).slice(0, ahead)];
 }
 
 /** For the probe: counts of the rooms in the student's own slots (after getWeekTemplate, from the session's cache) */

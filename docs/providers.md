@@ -509,7 +509,7 @@ A snapshot test in `packages/core` locks this table for `by-10`: if a change to 
 
 The scheduler is generic and reads the provider's `limits`:
 
-- hourly runs only during each child's school day (an hour before the first lesson to two hours after the last, from the child's timetable and bells; `syncWindow` only when the day's times are unknown), with a random offset; scope: the current and the previous week, then whatever was missed since the last success, plus final marks once a day (`design.md` 10.4);
+- hourly runs only during each child's school day (an hour before the first lesson to two hours after the last, from the child's timetable and bells; `syncWindow` only when the day's times are unknown), with a random offset; scope: the current week, the next week when the provider has `futureTimetable` (the homework set ahead, read before the weekend) and the previous week, then whatever was missed since the last success, plus final marks once a day (`design.md` 10.4);
 - inside those school-day runs, every week of the current term that was not fetched for six days, for change detection (no evening slot: a provider has nothing to configure for it);
 - the collector asks for one `fetchUnit` at a time (a week, or the whole term for `term` providers) and counts each as verified only when it was stored completely; the run stops at `maxRequestsPerRun` and the rest waits for the next run;
 - never more than one `login()` per `minLoginIntervalMinutes` per account, shared by scheduled, manual and re-scan runs;
