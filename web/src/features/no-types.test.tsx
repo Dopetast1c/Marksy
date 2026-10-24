@@ -37,6 +37,7 @@ describe('a diary without types', () => {
     ['Оценки', '/marks'],
     ['Предметы', '/subjects'],
     ['Предмет', '/subjects/sub-al'],
+    ['Расписание', '/schedule?day=2026-10-22'],
   ])('%s has no empty slot or dangling separator', async (_name, path) => {
     fakeApi({ signedIn: true, noTypes: true });
     const { container } = render(<App at={`/s/${milena.id}${path}`} />);

@@ -2448,7 +2448,7 @@ function openLessonMenu(l) {
   sheet.innerHTML = head + (isCancelled(l)
     ? opt('restore', 'undo', 'Вернуть урок', 'урок снова в расписании и в подсчётах')
     : ((studyRunning() && studyRunning().lessonId === l.id) ? opt('study', 'stop', 'Закончить занятие', `идёт ${fmtClockSec(studyElapsedSec())} · время запишется, «готово» отдельно`) : done ? '' : opt('study', 'timer', 'Заниматься', 'включить таймер к этому уроку'))
-      + (done ? opt('done', 'uncheck', 'Снять отметку «готово»', done.other ? `отмечено в другой семье, ${done.at}` : `отметил${done.by === 'папа' ? '' : 'а'} ${esc(done.by)} в ${done.at}`) : opt('done', 'check', 'Отметить «готово»', 'к уроку подготовились', ' ok'))
+      + (done ? opt('done', 'uncheck', 'Снять отметку «готово»', done.other ? `отмечено в другой семье, ${done.at}` : `отметка: ${esc(done.by)}, ${done.at}`) : opt('done', 'check', 'Отметить «готово»', 'к уроку подготовились', ' ok'))
       + (m ? opt('hw', 'pen', 'Изменить задание', esc(m.text)) : !l.homework ? opt('hw', 'pen', 'Добавить задание', 'в дневнике задания нет') : '')
       + opt('cancel', 'off', 'Урока не будет', 'уберём из подсчётов и напоминаний, можно вернуть', ' quiet'));
   document.getElementById('sheetBg').classList.add('open');
@@ -2557,7 +2557,7 @@ function lessonParts(l) {
   const full = !LESSON_COMPACT; // one view: the facts are always shown (D38), except where the screen already shows them
   const f = full ? subjectFacts(l) : null;
   const lowAvg = f && ['critical', 'low'].includes(band(f.avg));
-  if (f && state.guidance && l.date >= TODAY && f.since >= CALL_AFTER) lines.push({ sev: lowAvg ? 'low' : 'call', icon: 'hand', html: `<b>${lowAvg ? 'Могут спросить, стоит подготовиться' : 'Давно без оценки, могут спросить'}</b> · ${f.since} ${plural(f.since, 'урок', 'урока', 'уроков')} без оценки${lowAvg ? '' : '; можно вызваться самой'}` });
+  if (f && state.guidance && l.date >= TODAY && f.since >= CALL_AFTER) lines.push({ sev: lowAvg ? 'low' : 'call', icon: 'hand', html: `<b>${lowAvg ? 'Могут спросить, стоит подготовиться' : 'Давно без оценки, могут спросить'}</b> · ${f.since} ${plural(f.since, 'урок', 'урока', 'уроков')} без оценки${lowAvg ? '' : '; можно вызваться'}` });
   else if (f && state.guidance && l.date >= TODAY && lowAvg && !lines.some(x => x.sev === 'low' || x.sev === 'critical')) lines.push({ sev: 'low', icon: 'up', html: `<b>Нужно поднажать</b> · средний ${fmtAvg(f.avg)}` });
   if (full && f) {
     const ago = f.since === 0 ? 'на прошлом уроке' : `${f.since} ${plural(f.since, 'урок', 'урока', 'уроков')} назад`;
@@ -2586,7 +2586,7 @@ function renderLessonFlat(l) {
           ${where ? `<div class="fmeta">${esc(where)}</div>` : ''}
           ${l.topic ? `<div class="topic">${esc(l.topic)}</div>` : ''}
           ${l.homework ? `<div class="fhw">${esc(l.homework)}</div>` : ''}
-          ${!l.homework && P.manual ? `<div class="fhw manual"><span>${esc(P.manual.text)}</span></div>` : ''}
+          ${P.manual ? `<div class="fhw manual"><span>${esc(P.manual.text)}</span></div>` : ''}
           ${P.doneLine}</div><div class="tcol">${tick}</div></div>
         ${P.notice}${P.addHw}</div>
     </div>`;

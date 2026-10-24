@@ -21,6 +21,10 @@ export interface FakeState {
   locale?: string;
   /** the subject screen's answer, when a test needs another one */
   subject?: unknown;
+  /** the lesson menu's actions answer 409 with this code (lesson_passed, diary_has_lesson) */
+  lessonRefuses?: string;
+  /** the school's today for Расписание's days (a weekend, to see where День opens) */
+  scheduleToday?: string;
 }
 
 const CARDS = [
@@ -150,6 +154,9 @@ const lesson = (id: string, slot: number, start: string, end: string, subjectNam
   marks: [],
   absent: false,
   teacherComment: null,
+  tags: [],
+  setHere: [],
+  isTest: false,
   ...extra,
 });
 const bands = (counts: [number, number, number, number], prev: [number, number, number, number] | null) =>
@@ -595,6 +602,73 @@ export const SUBJECT = {
   week: [{ weekday: 1, slot: 2, start: '08:55', end: '09:40', room: '305', groupLabel: null }],
 };
 
+/** Расписание: today (Wed 21 Oct) is over at 19:12; tomorrow starts with the second lesson and has a window */
+const facts = (since: number) => ({
+  average: 7.6,
+  last: [chip('h1', '8', 'good'), chip('h2', '6', 'low'), chip('h3', '9', 'top')],
+  lastDate: '2026-10-14',
+  since,
+});
+const TEST_TAG = { id: 'tag-test', name: 'Контрольная', icon: 'test', tone: 'important', presetKey: 'test' };
+export const SCHEDULE_DAYS: Record<string, ReturnType<typeof lesson>[]> = {
+  '2026-10-21': [
+    lesson('t1', 1, '08:30', '09:15', 'Математика', {
+      date: '2026-10-21',
+      marks: [{ ...chip('tm1', '9', 'top'), workType: null, comment: 'Аккуратная работа' }],
+    }),
+    lesson('t2', 2, '09:25', '10:10', 'Английский язык', {
+      date: '2026-10-21',
+      absent: true,
+      teacherComment: 'Нет домашнего задания',
+      notes: null,
+    }),
+  ],
+  '2026-10-22': [
+    lesson('l2', 2, '09:25', '10:10', 'Алгебра', {
+      homework: '№ 214, 215',
+      groupLabel: '2-я подгруппа',
+      notes: {
+        facts: facts(5),
+        signal: { kind: 'call', lessons: 5, average: 7.6 },
+        hint: null,
+      },
+    }),
+    lesson('l4', 4, '11:25', '12:10', 'Физика', {
+      lessonType: 'lab',
+      isTest: true,
+      tags: [{ tag: TEST_TAG, field: 'topic', snippet: 'К/р №2 по теме «Сила тока»', setOn: null }],
+      notes: {
+        facts: null,
+        signal: null,
+        hint: {
+          rule: 'lessonTest',
+          severity: 'low',
+          fact: { key: 'guidance.lessonTest.fact', params: { termAverage: 5.5, lastMark: '3' } },
+          advice: { key: 'guidance.lessonTest.advice', params: {} },
+        },
+      },
+    }),
+  ],
+  '2026-10-23': [
+    lesson('f1', 1, '08:30', '09:15', 'Химия', {
+      date: '2026-10-23',
+      notes: { facts: null, signal: null, hint: null },
+    }),
+  ],
+};
+const SCHEDULE_ATTENTION = [
+  {
+    tag: TEST_TAG,
+    field: 'topic',
+    snippet: 'К/р №2 по теме «Сила тока»',
+    setOn: null,
+    lessonId: 'l4',
+    date: '2026-10-22',
+    slot: 4,
+    subject: { id: 'sub-l4', name: 'Физика', color: null },
+  },
+];
+
 const TYPE_KEYS = new Set(['workType', 'workTypeRaw', 'lessonType']);
 const untyped = (key: string, value: unknown) => (TYPE_KEYS.has(key) ? null : value);
 
@@ -602,6 +676,7 @@ export function fakeApi(start: Partial<FakeState> = {}) {
   const state: FakeState = { signedIn: false, calls: [], urls: [], bodies: {}, ...start };
   const error = (status: number, code: string) => json({ error: { code, message: code } }, status);
   let matchesPending = false;
+  const lessonState = { ready: new Set<string>(), cancelled: new Set<string>(), homework: new Map<string, string>() };
   const json = (body: unknown, status = 200) =>
     new Response(status === 204 ? null : JSON.stringify(body, state.noTypes ? untyped : undefined), {
       status,
@@ -691,6 +766,68 @@ export function fakeApi(start: Partial<FakeState> = {}) {
         return json({ period: PERIOD, items: id === 'kid-milena' ? FEED : [], next: state.feedPages ? 100 : null });
       }
       return json(what === 'finals/quarters' ? TERM_FINALS : YEAR_FINALS);
+    }
+    // Расписание and the lesson menu: ticks, cancellations and own homework are kept for the next read
+    if (/^GET \/api\/students\/[^/]+\/schedule\/days$/.test(route))
+      return json({
+        today: state.scheduleToday ?? '2026-10-21',
+        weekStart: 1,
+        schoolDays: [1, 2, 3, 4, 5],
+        days: Object.entries(SCHEDULE_DAYS).map(([date, ls]) => ({ date, lessons: ls.length, held: ls.length })),
+      });
+    if (/^GET \/api\/students\/[^/]+\/schedule$/.test(route)) {
+      const day = url.searchParams.get('day');
+      const week = url.searchParams.get('week');
+      const dates = day ? [day] : week === '0' ? Object.keys(SCHEDULE_DAYS) : [];
+      const days = dates
+        .filter((d) => SCHEDULE_DAYS[d])
+        .map((date) => ({
+          date,
+          lessons: SCHEDULE_DAYS[date]!.map((l) => ({
+            ...l,
+            notes: 'notes' in l ? l.notes : null,
+            ready: lessonState.ready.has(l.id)
+              ? { at: '2026-10-21T16:12:00Z', by: { name: 'Родитель', otherFamily: false } }
+              : null,
+            cancelled: lessonState.cancelled.has(l.id),
+            ownHomework: lessonState.homework.has(l.id)
+              ? [{ id: `hw-${l.id}`, text: lessonState.homework.get(l.id)!, by: null }]
+              : [],
+          })),
+        }));
+      return json({
+        from: dates[0] ?? '2026-10-19',
+        to: dates.at(-1) ?? '2026-10-25',
+        days,
+        attention: dates.includes('2026-10-22') && !lessonState.cancelled.has('l4') ? SCHEDULE_ATTENTION : [],
+      });
+    }
+    const act = route.match(/^(PUT|DELETE|POST) \/api\/students\/[^/]+\/lessons\/([^/]+)\/(prep|cancel|homework)$/);
+    if (act) {
+      const [, method, lessonId, what] = act;
+      if (state.lessonRefuses) return error(409, state.lessonRefuses);
+      if (what === 'prep') {
+        if (method === 'PUT') lessonState.ready.add(lessonId!);
+        else lessonState.ready.delete(lessonId!);
+        return json({ done: method === 'PUT', doneAt: null, doneBy: null });
+      }
+      if (what === 'cancel') {
+        if (method === 'PUT') lessonState.cancelled.add(lessonId!);
+        else lessonState.cancelled.delete(lessonId!);
+        return json({ cancelled: method === 'PUT', setAt: null });
+      }
+      const text = (state.bodies[route] as { text: string }).text;
+      lessonState.homework.set(lessonId!, text);
+      return json({ id: `hw-${lessonId}`, text });
+    }
+    const item = route.match(/^(PATCH|DELETE) \/api\/students\/[^/]+\/homework\/hw-([^/]+)$/);
+    if (item) {
+      const [, method, lessonId] = item;
+      if (method === 'PATCH') lessonState.homework.set(lessonId!, (state.bodies[route] as { text: string }).text);
+      else lessonState.homework.delete(lessonId!);
+      return json(
+        method === 'PATCH' ? { id: `hw-${lessonId}`, text: lessonState.homework.get(lessonId!) } : { removed: true },
+      );
     }
     const kid = route.match(/^GET \/api\/students\/([^/]+)\/(overview|trend|events|school)$/);
     if (kid) {

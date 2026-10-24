@@ -17,7 +17,7 @@ import { applyOutcome } from './failures';
 import type { Alert } from './failures';
 import { decideStart, isManual, selectWeeks, termBookkeeping } from './plan';
 import type { GateDecision, Trigger } from './plan';
-import { accountToday, planCalendarOf, planState, storedPlanCalendar, weekContext } from './state';
+import { accountToday, lastAheadOf, planCalendarOf, planState, storedPlanCalendar, weekContext } from './state';
 import { readableStudents, sourcedStudents } from './readers';
 import { rebalanceAccount } from './sources';
 import type { OpenedLogin } from './opened';
@@ -132,7 +132,13 @@ async function runLocked(opts: RunSyncOptions): Promise<RunSyncResult> {
   // still shows them (design.md 10.4, "Source checks")
   const sourced = pupils.length ? [] : await sourcedStudents(db, account.id);
   const sourceCheck = sourced.length > 0;
-  const today = await accountToday(db, sourceCheck ? sourced : pupils.map((p) => p.id), ctx, limits);
+  const today = await accountToday(
+    db,
+    sourceCheck ? sourced : pupils.map((p) => p.id),
+    ctx,
+    limits,
+    await lastAheadOf(db, account.id),
+  );
   const [lastOffline] = await db
     .select({ startedAt: syncRuns.startedAt })
     .from(syncRuns)
@@ -158,6 +164,8 @@ async function runLocked(opts: RunSyncOptions): Promise<RunSyncResult> {
     // an account that reads no child yet (just connected) has everything waiting; a source check has nothing
     backlog: sourceCheck ? false : today.backlog || pupils.length === 0,
     postTerm: sourceCheck ? false : today.postTerm,
+    ahead: sourceCheck ? false : today.ahead,
+    schoolDay: today.schoolDay,
     lastOfflineAt: lastOffline?.startedAt ?? null,
     seed: account.id,
   });

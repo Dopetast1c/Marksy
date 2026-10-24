@@ -9,6 +9,8 @@ import { terms } from './school';
 export type SyncRunKind =
   | 'scheduled'
   | 'catchup'
+  /** a day without school: the nearest school week was not read since the last school day (design.md 10.4, D55) */
+  | 'ahead'
   | 'manual'
   | 'rescan'
   | 'backfill'

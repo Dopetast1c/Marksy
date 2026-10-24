@@ -222,3 +222,90 @@ export function useSubjectSettings(id: string, subjectId: string) {
   });
   return { color, goal };
 }
+
+export type Schedule = Schemas['Schedule'];
+export type ScheduleLesson = Schedule['days'][number]['lessons'][number];
+export type ScheduleQuery = { day: string } | { week: number };
+
+/** Расписание: one day or one week of lessons with their пометки and «Обратить внимание» (design.md 5.5) */
+export const useSchedule = (id: string, q: ScheduleQuery) =>
+  useQuery({
+    queryKey: ['schedule', id, 'day' in q ? q.day : `week:${q.week}`],
+    queryFn: () => data(api.GET('/api/students/{id}/schedule', { params: { path: { id }, query: q } })),
+    placeholderData: sameChild(id),
+  });
+
+/** The days of the school year with lessons: where the navigator can step and what its picker counts */
+export const useScheduleDays = (id: string) =>
+  useQuery({
+    queryKey: ['schedule-days', id],
+    queryFn: () => data(api.GET('/api/students/{id}/schedule/days', { params: { path: { id } } })),
+    staleTime: 5 * 60_000,
+  });
+
+/**
+ * The lesson menu (design.md 5.5, 6.5, D41): «готово», «Урока не будет» and own homework. The tick and the
+ * cancellation show at once in every cached day and week of the child (the sheet closes, nothing scrolls), then
+ * everything of the child is read again: Главная's next day, the subject's coming lessons, the picker card.
+ */
+export function useLessonActions(id: string) {
+  const client = useQueryClient();
+  const me = useMe();
+  const patch = (lessonId: string, fn: (l: ScheduleLesson) => ScheduleLesson) =>
+    client.setQueriesData<Schedule>({ queryKey: ['schedule', id] }, (d) =>
+      d
+        ? {
+            ...d,
+            days: d.days.map((day) => ({ ...day, lessons: day.lessons.map((l) => (l.id === lessonId ? fn(l) : l)) })),
+          }
+        : d,
+    );
+  const refresh = () =>
+    client.invalidateQueries({ predicate: (q) => q.queryKey[1] === id || q.queryKey[0] === 'students' });
+  const path = (lessonId: string) => ({ params: { path: { id, lessonId } } });
+  const prep = useMutation({
+    mutationFn: ({ lessonId, done }: { lessonId: string; done: boolean }) =>
+      data(
+        done
+          ? api.PUT('/api/students/{id}/lessons/{lessonId}/prep', path(lessonId))
+          : api.DELETE('/api/students/{id}/lessons/{lessonId}/prep', path(lessonId)),
+      ),
+    onMutate: ({ lessonId, done }) =>
+      patch(lessonId, (l) => ({
+        ...l,
+        ready: done
+          ? { at: new Date().toISOString(), by: { name: me.data?.user.displayName ?? null, otherFamily: false } }
+          : null,
+      })),
+    onSettled: refresh,
+  });
+  const cancel = useMutation({
+    mutationFn: ({ lessonId, cancelled }: { lessonId: string; cancelled: boolean }) =>
+      data(
+        cancelled
+          ? api.PUT('/api/students/{id}/lessons/{lessonId}/cancel', path(lessonId))
+          : api.DELETE('/api/students/{id}/lessons/{lessonId}/cancel', path(lessonId)),
+      ),
+    onMutate: ({ lessonId, cancelled }) => patch(lessonId, (l) => ({ ...l, cancelled })),
+    onSettled: refresh,
+  });
+  const homework = useMutation({
+    mutationFn: (
+      a:
+        | { op: 'add'; lessonId: string; text: string }
+        | { op: 'edit'; itemId: string; text: string }
+        | { op: 'remove'; itemId: string },
+    ): Promise<unknown> => {
+      if (a.op === 'add')
+        return data(
+          api.POST('/api/students/{id}/lessons/{lessonId}/homework', { ...path(a.lessonId), body: { text: a.text } }),
+        );
+      const item = { params: { path: { id, itemId: a.itemId } } };
+      return a.op === 'edit'
+        ? data(api.PATCH('/api/students/{id}/homework/{itemId}', { ...item, body: { text: a.text } }))
+        : data(api.DELETE('/api/students/{id}/homework/{itemId}', item));
+    },
+    onSettled: refresh,
+  });
+  return { prep, cancel, homework };
+}

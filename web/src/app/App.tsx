@@ -11,7 +11,7 @@ import { MoreScreen } from '../features/more/MoreScreen';
 import { EventsScreen } from '../features/overview/EventsScreen';
 import { HomeScreen } from '../features/overview/HomeScreen';
 import { PickScreen } from '../features/pick/PickScreen';
-import { SoonScreen } from '../features/placeholder/Soon';
+import { ScheduleScreen } from '../features/schedule/ScheduleScreen';
 import { RequireAuth, RequireChild, Start } from './guards';
 
 // Routes (docs/design.md 4). Everything but the login needs a session; every /s/:studentId screen needs a child this
@@ -38,7 +38,7 @@ export const routes: RouteObject[] = [
           { path: 'finals', element: <FinalsScreen /> },
           { path: 'subjects', element: <SubjectsScreen /> },
           { path: 'subjects/:subjectId', element: <SubjectScreen /> },
-          { path: 'schedule', element: <SoonScreen screen="schedule" /> },
+          { path: 'schedule', element: <ScheduleScreen /> },
         ],
       },
       { path: '*', element: <Start /> },

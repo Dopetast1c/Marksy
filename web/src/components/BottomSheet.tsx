@@ -18,17 +18,23 @@ export function BottomSheet({
   children: ReactNode;
 }) {
   const panel = useRef<HTMLDivElement>(null);
+  // the latest onClose without re-running the effect: a re-render must not move the focus back to the panel (a field
+  // inside the sheet would lose it after every key)
+  const close = useRef(onClose);
+  useEffect(() => {
+    close.current = onClose;
+  });
   useEffect(() => {
     if (!open) return;
     document.body.dataset.sheetOpen = 'true';
-    panel.current?.focus();
-    const key = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    if (!panel.current?.contains(document.activeElement)) panel.current?.focus();
+    const key = (e: KeyboardEvent) => e.key === 'Escape' && close.current();
     window.addEventListener('keydown', key);
     return () => {
       delete document.body.dataset.sheetOpen;
       window.removeEventListener('keydown', key);
     };
-  }, [open, onClose]);
+  }, [open]);
   if (!open) return null;
   // rendered at the end of <body>: a sticky parent (the period navigator) must not trap it under the tab bar
   return createPortal(

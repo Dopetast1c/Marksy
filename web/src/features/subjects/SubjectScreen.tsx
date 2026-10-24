@@ -24,6 +24,7 @@ import { dateStyle, intlLocale, useT } from '../../i18n';
 import { longDay, schoolYearLabel } from '../../lib/finals';
 import { goalText, hintText } from '../../lib/hints';
 import { forPeriod, roman } from '../../lib/period';
+import { roomLabel } from '../../lib/room';
 import { subjectStyle } from '../../lib/subject-color';
 import { usePeriod } from '../../state/store';
 import { SubjectSettings } from './SubjectSettings';
@@ -66,10 +67,7 @@ function About({ d, hasMarks }: { d: SubjectDetail; hasMarks: boolean }) {
       <span key="when" className="flex flex-col">
         {d.week.map((w) => (
           <span key={`${w.weekday}-${w.slot}`}>
-            {[
-              `${day(w.weekday)} ${t('subject.about.slot', { slot: w.slot })}`,
-              w.room ? t('lesson.room', { room: w.room }) : null,
-            ]
+            {[`${day(w.weekday)} ${t('subject.about.slot', { slot: w.slot })}`, roomLabel(t, w.room)]
               .filter(Boolean)
               .join(' · ')}
           </span>

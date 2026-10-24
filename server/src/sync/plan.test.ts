@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { decideStart, hasBacklog, hasPostTerm, jitterMinutes, narrowWindow, selectWeeks } from './plan';
+import {
+  aheadDue,
+  decideStart,
+  hasBacklog,
+  hasPostTerm,
+  jitterMinutes,
+  narrowWindow,
+  nextSchoolWeek,
+  selectWeeks,
+} from './plan';
 import type { EffectiveLimits, GateInput, PlanCalendar, StudentPlanState, WeekContext } from './plan';
 import { localTime } from './time';
 
@@ -59,6 +68,63 @@ describe('selectWeeks', () => {
     const cov = verifiedThrough('2025-10-06').map(([w]) => [w, '2025-10-10 21:00'] as [string, string]);
     const r = selectWeeks(state(cov), ctx('2025-10-15 10:00', { lastSuccessAt: at('2025-10-15 09:10') }));
     expect(sets(r)).toEqual(['standing 2025-10-13', 'standing 2025-10-06']);
+  });
+
+  it('where the diary shows lessons ahead, the next week is standing too: a Friday run reads Monday', () => {
+    const cov = verifiedThrough('2025-10-06').map(([w]) => [w, '2025-10-10 21:00'] as [string, string]);
+    const friday = ctx('2025-10-17 12:00', { lastSuccessAt: at('2025-10-17 11:10'), readsAhead: true });
+    // current, next, previous, before any gap or re-scan
+    expect(sets(selectWeeks(state(cov), friday)).slice(0, 3)).toEqual([
+      'standing 2025-10-13',
+      'standing 2025-10-20',
+      'standing 2025-10-06',
+    ]);
+    // without lessons ahead in the diary there is nothing to read there
+    expect(sets(selectWeeks(state(cov), { ...friday, readsAhead: false }))).not.toContain('standing 2025-10-20');
+  });
+
+  it('the next week is the week of the next school day: holiday weeks are skipped, three weeks at most', () => {
+    // Friday 24 October: the week of 27 October is the autumn holidays, school starts again on 3 November
+    const friday = ctx('2025-10-24 12:00', { lastSuccessAt: at('2025-10-24 11:00'), readsAhead: true });
+    expect(nextSchoolWeek(CAL, friday)).toBe('2025-11-03');
+    const r = selectWeeks(state(verifiedThrough('2025-10-13')), friday);
+    expect(sets(r).slice(0, 3)).toEqual(['standing 2025-10-20', 'standing 2025-11-03', 'standing 2025-10-13']);
+    expect(r.map((x) => x.weekStart)).not.toContain('2025-10-27');
+    // holidays longer than three weeks: nothing ahead to read yet
+    const long = { ...CAL, holidays: [{ from: '2025-10-26', to: '2025-11-23' }] };
+    expect(nextSchoolWeek(long, friday)).toBeNull();
+    // after the school year there is no next week
+    expect(nextSchoolWeek(CAL, ctx('2026-05-29 12:00', { readsAhead: true }))).toBeNull();
+  });
+
+  it('a day without school: the nearest school week is due when it was not read on the last school day or since', () => {
+    // a five-day week: Friday 17 October is the last school day, Monday 20 October the next
+    const five = { schoolDays: [1, 2, 3, 4, 5], readsAhead: true };
+    const readThursday = state([['2025-10-20', '2025-10-16 12:00']]);
+    expect(aheadDue(readThursday, ctx('2025-10-18 10:00', five))).toEqual({
+      week: '2025-10-20',
+      lastSchoolDay: '2025-10-17',
+      since: '2025-10-17',
+    });
+    // read on Friday: nothing waits over the weekend
+    expect(aheadDue(state([['2025-10-20', '2025-10-17 12:00']]), ctx('2025-10-18 10:00', five))).toBeNull();
+    // a school day never has it, nor a provider without lessons ahead
+    expect(aheadDue(readThursday, ctx('2025-10-17 18:00', five))).toBeNull();
+    expect(aheadDue(readThursday, ctx('2025-10-18 10:00', { ...five, readsAhead: false }))).toBeNull();
+    // the holidays: the week of 3 November, due until it has been read since Saturday 25 October
+    expect(
+      aheadDue(state([['2025-11-03', '2025-10-23 12:00']]), ctx('2025-10-29 10:00', { readsAhead: true })),
+    ).toEqual({
+      week: '2025-11-03',
+      lastSchoolDay: '2025-10-25',
+      since: '2025-10-25',
+    });
+    // late August: no school day in sight behind, the stretch starts at the horizon, so last spring's run does not count
+    expect(aheadDue(state(), ctx('2025-08-30 10:00', { readsAhead: true }))).toEqual({
+      week: '2025-09-01',
+      lastSchoolDay: null,
+      since: '2025-08-02',
+    });
   });
 
   it('after weeks off: standing first, the gap newest first, then the overdue re-scan', () => {
@@ -191,6 +257,25 @@ describe('decideStart', () => {
 
   it('treats a clock that went backwards as an elapsed interval', () => {
     expect(gate('2025-10-15 12:00', {}, { lastAttemptAt: at('2025-10-16 12:00') }).start).toBe(true);
+  });
+
+  it('Friday missed: one run on Saturday in the manifest window, none on Sunday', () => {
+    const friday = at('2025-10-16 12:00'); // the last read, Thursday
+    const weekend = { windows: [], weekday: false, schoolDay: false };
+    const acct = { lastSuccessAt: friday, lastAttemptAt: friday };
+    // Saturday: the nearest school week waits (aheadDue): one run, in the manifest's window only
+    expect(gate('2025-10-18 07:30', { ...weekend, ahead: true }, acct)).toMatchObject({ start: false });
+    expect(gate('2025-10-18 10:00', { ...weekend, ahead: true }, acct)).toEqual({ start: true, kind: 'ahead' });
+    expect(gate('2025-10-18 15:00', { ...weekend, ahead: true }, acct)).toMatchObject({ start: false });
+    // Sunday after it: nothing waits, and two days since the last read are no reason on a day without school
+    const saturday = at('2025-10-18 10:05');
+    expect(gate('2025-10-19 12:00', weekend, { lastSuccessAt: saturday, lastAttemptAt: saturday })).toMatchObject({
+      start: false,
+      reason: 'outside_window',
+    });
+    expect(gate('2025-10-19 23:00', weekend, acct)).toMatchObject({ start: false, reason: 'outside_window' });
+    // a real backlog still catches up at any hour
+    expect(gate('2025-10-19 23:00', { ...weekend, backlog: true }, acct)).toEqual({ start: true, kind: 'catchup' });
   });
 
   it('stays outside the window unless it is a catch-up', () => {

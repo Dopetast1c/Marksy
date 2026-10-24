@@ -13,9 +13,28 @@ import { SegmentedControl } from './SegmentedControl';
 // The period control of every period screen (docs/design.md 6, ux-principles D2): PeriodBar picks the kind
 // (Неделя / Месяц / Четверть / Год, the term word from the child's term kind), PeriodNav steps through instances. The
 // navigator is the first line of the body and the only sticky element; it owns the swipe over the body
-// ([data-swipe-body]). The kind and offset are shared by every screen and survive a child switch.
+// ([data-swipe-body]). The kind and offset are shared by every screen and survive a child switch. Расписание uses the
+// same two controls with its own kinds and instances (days and weeks that also go forward, D2).
 
-export function PeriodBar({ studentId }: { studentId: string }) {
+/** The kind control: the marks screens pass the child, Расписание its own kinds (День / Неделя) */
+export function PeriodBar(props: { studentId: string } | { model: KindModel }) {
+  if ('model' in props) {
+    const { model } = props;
+    return (
+      <SegmentedControl label={model.label} value={model.value} onChange={model.onChange} options={model.options} />
+    );
+  }
+  return <MarksPeriodBar studentId={props.studentId} />;
+}
+
+export interface KindModel {
+  label: string;
+  value: string;
+  options: { value: string; label: string }[];
+  onChange: (value: string) => void;
+}
+
+function MarksPeriodBar({ studentId }: { studentId: string }) {
   const t = useT();
   const periods = usePeriods(studentId);
   const kind = usePeriod((s) => s.kind);
@@ -48,45 +67,107 @@ function slide(el: HTMLElement | null, from: 'older' | 'newer') {
   el.dataset.slideTimer = String(window.setTimeout(() => delete el.dataset.slide, 400));
 }
 
-export function PeriodNav({
-  studentId,
-  compare = false,
-  accent,
-}: {
+/** One instance in the navigator's picker */
+export interface NavOption {
+  key: string;
+  title: string;
+  sub?: string;
+  value?: string;
+  selected: boolean;
+  onSelect: () => void;
+}
+
+/**
+ * What a navigator shows and does, whoever owns the period: the marks screens (the shared period store) or Расписание
+ * (days and weeks that also go forward, D2)
+ */
+export interface NavModel {
+  title: string;
+  sub: string;
+  olderOk: boolean;
+  newerOk: boolean;
+  /** +1 older (finger to the right), -1 newer */
+  step: (delta: 1 | -1) => void;
+  sheet: { label: string; options: NavOption[]; note?: string };
+}
+
+type MarksNavProps = {
   studentId: string;
   compare?: boolean;
   /** the subject screen (D45): the row continues the tinted header, rounded below, tinted while sticky */
   accent?: CSSProperties;
-}) {
+};
+
+/** The navigator of a period screen: the marks screens pass the child, Расписание passes its own model */
+export function PeriodNav(props: MarksNavProps | { model: NavModel | null }) {
+  return 'model' in props ? <NavRow model={props.model} /> : <MarksPeriodNav {...props} />;
+}
+
+function MarksPeriodNav({ studentId, compare = false, accent }: MarksNavProps) {
   const t = useT();
   const ds = dateStyle();
   const periods = usePeriods(studentId);
   const { kind, offset, step, setOffset } = usePeriod();
-  const [sheet, setSheet] = useState(false);
-  const nav = useRef<HTMLDivElement>(null);
-  const body = useRef<HTMLElement | null>(null);
-  useLayoutEffect(() => {
-    body.current = nav.current?.closest<HTMLElement>('[data-swipe-body]') ?? null;
-  });
-
   const list = useMemo(() => periods.data?.instances[kind] ?? [], [periods.data, kind]);
   const current = list.find((i) => i.offset === offset) ?? list[0];
-  const olderOk = list.some((i) => i.offset === offset + 1);
-  const newerOk = offset > 0;
-  const go = (delta: 1 | -1) => {
-    if (!((delta === 1 && olderOk) || (delta === -1 && newerOk))) return;
-    step(delta);
-    slide(body.current, delta === 1 ? 'older' : 'newer');
-  };
-  useSwipe(body, go);
 
   // an offset the new kind or child does not have: the oldest one it has
   useEffect(() => {
     if (list.length && !list.some((i) => i.offset === offset)) setOffset(list[list.length - 1]!.offset);
   }, [list, offset, setOffset]);
 
-  if (!current) return <div ref={nav} className="h-[50px]" />;
+  if (!current) return <NavRow model={null} />;
   const sub = instanceSub(t, current, ds);
+  const label = t('period.pick', { kind: kindLabel(t, kind as Kind, current.termKind) });
+  const model: NavModel = {
+    title: instanceTitle(t, current, ds),
+    sub: compare ? t('period.withCompare', { what: sub, compare: comparedWith(t, list, current, ds) }) : sub,
+    olderOk: list.some((i) => i.offset === offset + 1),
+    newerOk: offset > 0,
+    step,
+    sheet: {
+      label,
+      note: t('period.pickNote'),
+      options: list.map((i) => ({
+        key: String(i.offset),
+        title: instanceTitle(t, i, ds),
+        sub: instanceSub(t, i, ds),
+        value:
+          periods.data?.counts === 'lessons'
+            ? i.count
+              ? t('lessons.count', { count: i.count })
+              : t('period.noLessons')
+            : i.count
+              ? t('marks.count', { count: i.count })
+              : t('period.noMarks'),
+        selected: i.offset === offset,
+        onSelect: () => setOffset(i.offset),
+      })),
+    },
+  };
+  return <NavRow model={model} accent={accent} />;
+}
+
+/**
+ * The row itself: ‹ label › with the picker behind the label; the first line of the body and the only sticky element.
+ * It owns the swipe over the body ([data-swipe-body]) and the short slide on a step.
+ */
+function NavRow({ model, accent }: { model: NavModel | null; accent?: CSSProperties }) {
+  const t = useT();
+  const [sheet, setSheet] = useState(false);
+  const nav = useRef<HTMLDivElement>(null);
+  const body = useRef<HTMLElement | null>(null);
+  useLayoutEffect(() => {
+    body.current = nav.current?.closest<HTMLElement>('[data-swipe-body]') ?? null;
+  });
+  const go = (delta: 1 | -1) => {
+    if (!model || !((delta === 1 && model.olderOk) || (delta === -1 && model.newerOk))) return;
+    model.step(delta);
+    slide(body.current, delta === 1 ? 'older' : 'newer');
+  };
+  useSwipe(body, go);
+
+  if (!model) return <div ref={nav} className="h-[50px]" />;
   return (
     <div
       ref={nav}
@@ -101,7 +182,7 @@ export function PeriodNav({
       <button
         type="button"
         aria-label={t('period.older')}
-        disabled={!olderOk}
+        disabled={!model.olderOk}
         onClick={() => go(1)}
         className={`${accent ? 'text-accent' : 'text-ink2'} relative grid size-[34px] flex-none place-items-center rounded-pill bg-surface shadow-card after:absolute after:-inset-[5px] disabled:opacity-30`}
       >
@@ -113,50 +194,34 @@ export function PeriodNav({
         onClick={() => setSheet(true)}
         className="flex flex-1 flex-col items-center rounded-md px-1.5 py-0.5 leading-[1.2]"
       >
-        <b className="text-[15px]">{instanceTitle(t, current, ds)}</b>
-        <span className="text-[12px] text-ink3">
-          {compare ? t('period.withCompare', { what: sub, compare: comparedWith(t, list, current, ds) }) : sub}
-        </span>
+        <b className="text-[15px]">{model.title}</b>
+        <span className="text-[12px] text-ink3">{model.sub}</span>
       </button>
       <button
         type="button"
         aria-label={t('period.newer')}
-        disabled={!newerOk}
+        disabled={!model.newerOk}
         onClick={() => go(-1)}
         className={`${accent ? 'text-accent' : 'text-ink2'} relative grid size-[34px] flex-none place-items-center rounded-pill bg-surface shadow-card after:absolute after:-inset-[5px] disabled:opacity-30`}
       >
         <BackIcon size={18} className="rotate-180" />
       </button>
-      <BottomSheet
-        open={sheet}
-        onClose={() => setSheet(false)}
-        label={t('period.pick', { kind: kindLabel(t, kind as Kind, current.termKind) })}
-      >
-        <span className="text-label text-ink3 uppercase">
-          {t('period.pick', { kind: kindLabel(t, kind as Kind, current.termKind) })}
-        </span>
-        {list.map((i) => (
+      <BottomSheet open={sheet} onClose={() => setSheet(false)} label={model.sheet.label}>
+        <span className="text-label text-ink3 uppercase">{model.sheet.label}</span>
+        {model.sheet.options.map((o) => (
           <SheetOption
-            key={i.offset}
-            title={instanceTitle(t, i, ds)}
-            sub={instanceSub(t, i, ds)}
-            value={
-              periods.data?.counts === 'lessons'
-                ? i.count
-                  ? t('lessons.count', { count: i.count })
-                  : t('period.noLessons')
-                : i.count
-                  ? t('marks.count', { count: i.count })
-                  : t('period.noMarks')
-            }
-            selected={i.offset === offset}
+            key={o.key}
+            title={o.title}
+            sub={o.sub}
+            value={o.value}
+            selected={o.selected}
             onSelect={() => {
-              setOffset(i.offset);
+              o.onSelect();
               setSheet(false);
             }}
           />
         ))}
-        <span className="text-small text-ink3">{t('period.pickNote')}</span>
+        {model.sheet.note && <span className="text-small text-ink3">{model.sheet.note}</span>}
       </BottomSheet>
     </div>
   );

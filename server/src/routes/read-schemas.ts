@@ -154,6 +154,18 @@ export function distributionOf(scale: GradingScale, values: readonly number[]) {
   }));
 }
 
+/** A family tag as a lesson shows it (6.3): its name, line icon and tone (important: orange) */
+export const tagRefOut = registry.register(
+  'TagRef',
+  z.object({
+    id: z.string(),
+    name: z.string(),
+    icon: z.string().nullable(),
+    tone: z.enum(['normal', 'important']),
+    presetKey: z.string().nullable(),
+  }),
+);
+
 export const lessonOut = registry.register(
   'Lesson',
   z.object({
@@ -188,10 +200,24 @@ export const lessonOut = registry.register(
         by: z.object({ name: z.string().nullable(), otherFamily: z.boolean() }).nullable(),
       }),
     ),
-    marks: z.array(markChip),
+    /** The marks of the lesson; the kind of work and the teacher's comment only when the diary set them (D50) */
+    marks: z.array(markChip.extend({ workType: z.string().nullable(), comment: z.string().nullable() })),
     absent: z.boolean(),
     /** The teacher's comment without a mark (D56); null without one or without capabilities.behaviour */
     teacherComment: z.string().nullable(),
+    /** The family's tags due at this lesson (the тег note, 6.3); a homework hit carries the text and the day it was set */
+    tags: z.array(
+      z.object({
+        tag: tagRefOut,
+        field: z.enum(['topic', 'homework', 'type']),
+        snippet: z.string().nullable(),
+        setOn: z.string().nullable(),
+      }),
+    ),
+    /** Tagged homework set at this lesson for a later one («Задали: стихотворение, к вт, 20 октября») */
+    setHere: z.array(z.object({ tag: tagRefOut, dueDate: z.string() })),
+    /** Carries the tag «Контрольная»: what every "is this a test" asks (CLAUDE.md), never the diary's type alone */
+    isTest: z.boolean(),
   }),
 );
 
@@ -231,5 +257,23 @@ export const finalCellOut = registry.register(
     postedOn: z.string().nullable(),
     /** a final entered by hand from the paper report card is shown with «введено вручную» */
     source: z.enum(['api', 'manual']).nullable(),
+  }),
+);
+
+const hintText = z.object({
+  key: z.string(),
+  params: z.record(z.string(), z.union([z.string(), z.number(), z.array(z.string()), z.null()])),
+});
+
+/** A guidance hint (6.2): the fact and the advice as i18n keys with raw scale values the app formats */
+export const hintOut = registry.register(
+  'Hint',
+  z.object({
+    rule: z.string(),
+    severity: z.enum(['critical', 'low', 'ok', 'good']),
+    fact: hintText,
+    advice: hintText.optional(),
+    lessonId: z.string().optional(),
+    date: z.string().optional(),
   }),
 );

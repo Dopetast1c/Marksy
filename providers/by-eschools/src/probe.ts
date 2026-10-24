@@ -17,6 +17,9 @@ const D = '/api/v1/education/diary';
 
 export const MAX_WEEKS = 8;
 
+/** --next: read the next school week too (what the diary already has ahead: lessons, topics, homework) */
+export const aheadArg = (argv: readonly string[]): number => (argv.includes('--next') ? 1 : 0);
+
 /** --weeks N: how many of the most recent school weeks to read; 1 by default, at most MAX_WEEKS; null if invalid. */
 export function weeksArg(argv: readonly string[]): number | null {
   const i = argv.indexOf('--weeks');

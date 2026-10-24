@@ -9,7 +9,7 @@
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { fetchTransport, ProviderError } from '@marksy/core';
-import { MAX_WEEKS, weeksArg } from '../src/probe';
+import { aheadArg, MAX_WEEKS, weeksArg } from '../src/probe';
 import { runProbe } from '../src/probe-run';
 
 const root = fileURLToPath(new URL('../../..', import.meta.url));
@@ -49,6 +49,7 @@ async function main(): Promise<number> {
     credentials: { login, password },
     clock: () => new Date(),
     weeks,
+    ahead: aheadArg(process.argv.slice(2)),
     root,
     fixturesDir,
     saveRaw: true,

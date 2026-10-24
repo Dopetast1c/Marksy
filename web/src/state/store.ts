@@ -103,3 +103,27 @@ export const useSubjectSort = create<{ sort: SubjectSort; setSort: (s: SubjectSo
   sort: 'alpha',
   setSort: (sort) => set({ sort }),
 }));
+
+export type ScheduleKind = 'day' | 'week';
+
+interface ScheduleViewState {
+  kind: ScheduleKind;
+  /** the day shown in День; null: today */
+  day: string | null;
+  /** the week shown in Неделя: 0 this week, 1 next, -1 last */
+  week: number;
+  showDay: (day: string | null) => void;
+  showWeek: (week: number) => void;
+}
+
+/**
+ * What Расписание shows (docs/design.md 5.5): День or Неделя and which one. Like the period of the marks screens it
+ * survives a child switch and moving between tabs; «Всё расписание» and «Сейчас» set it before opening the screen.
+ */
+export const useScheduleView = create<ScheduleViewState>()((set) => ({
+  kind: 'day',
+  day: null,
+  week: 0,
+  showDay: (day) => set({ kind: 'day', day }),
+  showWeek: (week) => set({ kind: 'week', week }),
+}));

@@ -45,7 +45,7 @@ Each subject has its own page, tinted in the subject's colour: the goal for the 
 
 ### Timetable and homework
 
-Today, tomorrow or the whole week, one row per lesson with the time, topic, homework and the mark from that lesson. Lessons a child has prepared for get a **ready** tick that the whole family sees. Families can add homework of their own and mark a lesson as cancelled. Gaps in the day are shown as gaps, so a late start is visible at once.
+One day or a whole week, back and ahead, one row per lesson with the time, room, topic, homework and the mark from that lesson; before a lesson, the subject's average and last marks right under it. Lessons a child has prepared for get a **ready** tick that the whole family sees. Families can add homework of their own and mark a lesson as cancelled. Gaps in the day are shown as gaps, so a late start is visible at once.
 
 ### Tags
 

@@ -1,7 +1,16 @@
 import type { Attendance, BehaviourEvent, DateRange, Lesson, Mark } from '@marksy/core';
-import { and, eq, gte, inArray, lte, or } from 'drizzle-orm';
+import { and, eq, gte, inArray, lte, or, sql } from 'drizzle-orm';
 import type { Db } from '../db/client';
-import { attendance, behaviourEvents, lessons, markEvents, markHistory, marks, subjects } from '../db/schema';
+import {
+  attendance,
+  behaviourEvents,
+  lessonOverrides,
+  lessons,
+  markEvents,
+  markHistory,
+  marks,
+  subjects,
+} from '../db/schema';
 import type { MarkDiff } from '../db/schema';
 
 // The upsert rules of docs/design.md 8, applied to one fetched range of one student, whatever the run kind. A range is
@@ -361,6 +370,26 @@ async function upsertBehaviour(tx: Tx, scope: UpsertScope, fetched: FetchedRange
   if (gone.length) await tx.update(behaviourEvents).set({ removedAt: now }).where(inArray(behaviourEvents.id, gone));
 }
 
+/**
+ * «Урока не будет» gives way to the diary (docs/design.md 5.5): once the diary records a mark or an attendance record
+ * for a lesson the family cancelled, the lesson took place, so the override goes, silently. A planned topic does not
+ * count: the diary shows topics ahead.
+ */
+async function dropOverriddenByDiary(tx: Tx, { studentId }: UpsertScope, fetched: FetchedRange) {
+  await tx.delete(lessonOverrides).where(
+    and(
+      eq(lessonOverrides.studentId, studentId),
+      inArray(
+        lessonOverrides.lessonId,
+        sql`(select l.id from ${lessons} l where l.student_id = ${studentId}
+          and l.date between ${fetched.range.from} and ${fetched.range.to}
+          and (exists (select 1 from ${marks} m where m.lesson_id = l.id and m.removed_at is null)
+            or exists (select 1 from ${attendance} a where a.lesson_id = l.id and a.removed_at is null)))`,
+      ),
+    ),
+  );
+}
+
 /** Store one fetched range of one student: lessons, then marks, absences and remarks pointing at them. */
 export async function upsertRange(db: Db, scope: UpsertScope, fetched: FetchedRange): Promise<UpsertStats> {
   const stats: UpsertStats = { lessons: 0, new: 0, changed: 0, removed: 0, restored: 0 };
@@ -372,6 +401,7 @@ export async function upsertRange(db: Db, scope: UpsertScope, fetched: FetchedRa
     await upsertMarks(tx, txScope, fetched, lessonIds, stats);
     await upsertAttendance(tx, txScope, fetched, lessonIds);
     await upsertBehaviour(tx, txScope, fetched, lessonIds);
+    await dropOverriddenByDiary(tx, txScope, fetched);
   });
   for (const [k, v] of subjectIds) scope.subjectIds.set(k, v);
   return stats;

@@ -1,5 +1,5 @@
 import { markBand, previousInstance } from '@marksy/core';
-import type { DateRange, GradingScale, MarkFact } from '@marksy/core';
+import type { DateRange, GradingScale, GuidanceMark, MarkFact, WorkType } from '@marksy/core';
 import { and, asc, desc, eq, gte, inArray, isNull, lte } from 'drizzle-orm';
 import type { Db } from '../db/client';
 import {
@@ -15,6 +15,7 @@ import {
   users,
 } from '../db/schema';
 import type { ChildContext, ResolvedPeriod } from './context';
+import { tagHitsIn } from './tags';
 
 // What a read route needs of one child, always as the diary has it now: removed rows are left out (their history is
 // the feed's business), facts a capability does not promise are empty. Every query is by the child (child-owned rows,
@@ -65,6 +66,14 @@ export const factOf = (m: MarkRow): MarkFact => ({
 });
 
 /** A mark as a chip: the values, the text the diary shows, its kind and band on the child's scale */
+/** A mark as the guidance rules read it (design.md 6.2) */
+export const guidanceMark = (m: MarkRow): GuidanceMark => ({
+  ...factOf(m),
+  raw: m.raw,
+  ...(m.workType && { workType: m.workType as WorkType }),
+  ...(m.comment && { comment: m.comment }),
+});
+
 export function chipOf(scale: GradingScale | null, m: Pick<MarkRow, 'id' | 'values' | 'raw' | 'kind'>) {
   return { id: m.id, values: m.values, raw: m.raw, kind: m.kind, band: scale ? markBand(scale, m.values) : null };
 }
@@ -182,7 +191,7 @@ export async function lessonsIn(db: Db, ctx: ChildContext, range: DateRange) {
     .orderBy(asc(lessons.date), asc(lessons.slot), asc(lessons.startTime));
   const ids = rows.map((l) => l.id);
   if (!ids.length) return [];
-  const [prep, overrides, own, people] = await Promise.all([
+  const [prep, overrides, own, who] = await Promise.all([
     db.select().from(lessonPrep).where(inArray(lessonPrep.lessonId, ids)),
     db.select().from(lessonOverrides).where(inArray(lessonOverrides.lessonId, ids)),
     db
@@ -191,24 +200,17 @@ export async function lessonsIn(db: Db, ctx: ChildContext, range: DateRange) {
       .where(
         and(inArray(homeworkItems.lessonId, ids), eq(homeworkItems.source, 'manual'), isNull(homeworkItems.removedAt)),
       ),
-    db
-      .select({ userId: users.id, displayName: users.displayName, role: memberships.role })
-      .from(memberships)
-      .innerJoin(users, eq(users.id, memberships.userId))
-      .where(eq(memberships.familyId, ctx.familyId)),
+    actorsOf(db, ctx),
   ]);
+  const hits = await tagHitsIn(db, ctx, range, ids);
   const remarks = await remarksIn(db, ctx, range);
   const lessonMarks = (await marksIn(db, ctx.student.id, range)).filter((m) => m.lessonId);
   const absences = await absencesIn(db, ctx, range);
-  // an act of this family's member shows their name; the child's own and the other family's do not name anyone
-  const who = (userId: string | null) => {
-    if (!userId) return null;
-    const p = people.find((x) => x.userId === userId);
-    return p ? { name: p.displayName, otherFamily: false } : { name: null, otherFamily: true };
-  };
   return rows.map((l) => {
     const p = prep.find((x) => x.lessonId === l.id);
     const o = overrides.find((x) => x.lessonId === l.id);
+    const lm = lessonMarks.filter((m) => m.lessonId === l.id);
+    const absent = absences.some((a) => a.lessonId === l.id);
     return {
       id: l.id,
       date: l.date,
@@ -226,17 +228,44 @@ export async function lessonsIn(db: Db, ctx: ChildContext, range: DateRange) {
       homework: l.homework,
       homeworkDueDate: l.homeworkDueDate,
       hasAttachments: l.hasAttachments,
-      // the diary's own cancellation, or «Урока не будет» set in the family
-      cancelled: l.cancelled || !!o?.cancelled,
+      // the diary's own cancellation, or «Урока не будет» set in the family, which gives way as soon as the diary
+      // records the lesson (the collector drops the override too)
+      cancelled: l.cancelled || (!!o?.cancelled && !lm.length && !absent),
       ready: p ? { at: p.doneAt, by: who(p.doneBy) } : null,
       ownHomework: own
         .filter((h) => h.lessonId === l.id)
         .map((h) => ({ id: h.id, text: h.title, by: who(h.createdBy) })),
-      marks: lessonMarks.filter((m) => m.lessonId === l.id).map((m) => chipOf(ctx.scale, m)),
-      absent: absences.some((a) => a.lessonId === l.id),
+      // the пометки «оценка»: the kind of work and the teacher's comment only when the diary has them (D50)
+      marks: lm.map((m) => ({ ...chipOf(ctx.scale, m), workType: m.workType, comment: m.comment })),
+      absent,
       teacherComment: remarks.find((r) => r.lessonId === l.id)?.text ?? null,
+      // the family's tags (6.3): due here (the тег note; «Контрольная» makes it a test), set here («задали»)
+      tags: hits
+        .filter((h) => h.dueLessonId === l.id)
+        .map((h) => ({ tag: h.tag, field: h.field, snippet: h.snippet, setOn: h.sourceDate })),
+      setHere: hits
+        .filter((h) => h.sourceLessonId === l.id && h.dueLessonId !== l.id)
+        .map((h) => ({ tag: h.tag, dueDate: h.dueDate })),
+      isTest: hits.some((h) => h.dueLessonId === l.id && h.tag.presetKey === 'test'),
     };
   });
+}
+
+/**
+ * Who did something in the family's shared state (a tick, own homework): this family's members by name; the other
+ * family's act names nobody (design.md 7.1, D54)
+ */
+export async function actorsOf(db: Db, ctx: ChildContext) {
+  const people = await db
+    .select({ userId: users.id, displayName: users.displayName })
+    .from(memberships)
+    .innerJoin(users, eq(users.id, memberships.userId))
+    .where(eq(memberships.familyId, ctx.familyId));
+  return (userId: string | null) => {
+    if (!userId) return null;
+    const p = people.find((x) => x.userId === userId);
+    return p ? { name: p.displayName, otherFamily: false } : { name: null, otherFamily: true };
+  };
 }
 
 /**
