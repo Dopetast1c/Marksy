@@ -21,3 +21,29 @@
     cursor: pointer;
   }
 }
+
+/* The period stepped (PeriodNav, ux-principles D2): the content under the navigator slides in a short way from the side
+   the new period lies on, older from the left, newer from the right; the navigator and what is above it (Сейчас) stay. */
+@keyframes period-from-older {
+  from {
+    transform: translateX(calc(-1 * var(--slide-distance)));
+    opacity: 0.4;
+  }
+}
+@keyframes period-from-newer {
+  from {
+    transform: translateX(var(--slide-distance));
+    opacity: 0.4;
+  }
+}
+[data-swipe-body][data-slide='older'] > [data-period-nav] ~ * {
+  animation: period-from-older var(--slide-duration) ease-out;
+}
+[data-swipe-body][data-slide='newer'] > [data-period-nav] ~ * {
+  animation: period-from-newer var(--slide-duration) ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-swipe-body][data-slide] > [data-period-nav] ~ * {
+    animation: none;
+  }
+}

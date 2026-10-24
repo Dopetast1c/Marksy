@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { calendar } from '../model/schemas';
 import { sampleManifest } from '../testing/samples';
 import { formatAverage, formatBandRange, formatValue } from './format';
-import { estimateYear, keepMark, marksNeeded, neededAverage, projectFinal, targetPlan } from './goal';
+import { defaultGoal, estimateYear, keepMark, marksNeeded, neededAverage, projectFinal, targetPlan } from './goal';
 import { getScale, studentYearScale, yearHasMarks } from './resolve';
 import {
   activeBands,
@@ -88,6 +88,13 @@ describe('final rules', () => {
     expect(marksNeeded(pct100, 160, 2, 85)).toBeNull();
     expect(estimateYear(pct100, [], [{ values: [80, 90] }])).toBe(85);
     expect(estimateYear(ua12, [9], [])).toBeNull();
+  });
+
+  it('a new subject starts with the scale’s middle goal', () => {
+    expect(defaultGoal(getScale('by-10'))).toBe(8);
+    expect(defaultGoal(ru5)).toBe(5);
+    expect(defaultGoal(de16)).toBe(2);
+    expect(defaultGoal({ ...ru5, goalTargets: [] })).toBeNull();
   });
 });
 

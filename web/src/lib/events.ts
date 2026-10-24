@@ -1,8 +1,9 @@
-import { daysBetween, formatAverage, shortDate } from '@marksy/core';
+import { daysBetween, shortDate } from '@marksy/core';
 import type { GradingScale, ShortDateStyle } from '@marksy/core';
 import type { TFunction } from 'i18next';
 import type { ChildEvent } from '../api/queries';
 import type { Kind } from './period';
+import { numbers } from './numbers';
 
 // The words of a Внимание row (docs/design.md 5.2a, ux-principles D43, D56): the API sends facts only (a mark, a
 // subject, a date, two averages), this turns them into the row's two lines in the interface language. No advice:
@@ -18,7 +19,7 @@ export function eventText(
   const f = e.facts as Record<string, unknown>;
   const subject = e.subject?.name ?? '';
   const day = shortDate(e.date, ctx.ds, { weekday: true });
-  const avg = (v: unknown) => (ctx.scale && typeof v === 'number' ? formatAverage(ctx.scale, v, ctx.ds.locale) : '—');
+  const avg = (v: unknown) => (ctx.scale && typeof v === 'number' ? numbers(ctx.scale).average(v) : '—');
   const forPeriod = t(`period.for.${ctx.kind}`, { name: ctx.termWord.toLocaleLowerCase(ctx.ds.locale) });
   switch (e.kind) {
     case 'low_mark': {

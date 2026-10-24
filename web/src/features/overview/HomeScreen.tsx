@@ -74,7 +74,7 @@ export function HomeScreen() {
               {lastRows.map((m) => (
                 <Row
                   key={m.mark.id}
-                  stripe={<Stripe subject={subjectStyle(m.subject.name)} />}
+                  stripe={<Stripe subject={subjectStyle(m.subject.name, m.subject.color)} />}
                   lead={<MarkChip mark={m.mark} />}
                   title={m.subject.name}
                   sub={[m.workType ? t(`workType.${m.workType}`) : null, m.comment].filter(Boolean).join(' · ') || null}

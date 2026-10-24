@@ -15,7 +15,17 @@ import { and, asc, desc, eq, inArray } from 'drizzle-orm';
 import type { Request } from 'express';
 import { z } from 'zod';
 import type { Db } from '../db/client';
-import { familyStudents, holidays, schoolYears, students, terms, userStudentAccess } from '../db/schema';
+import {
+  families,
+  familyStudents,
+  holidays,
+  schoolYears,
+  students,
+  subjectColors,
+  terms,
+  users,
+  userStudentAccess,
+} from '../db/schema';
 import type { AppDeps } from '../http/context';
 import { memberOf } from '../http/context';
 import { HttpError } from '../http/errors';
@@ -48,6 +58,10 @@ export interface ChildContext {
   termRows: TermRow[];
   holidayRows: { start: ISODate; end: ISODate; note: string | null }[];
   period: PeriodContext;
+  /** The family's subject colours (6.6): a palette key per subject; a subject not in the map is «авто» */
+  colors: Map<string, string | null>;
+  /** Advice on (families.settings.guidance and the person's own switch, both on unless turned off): goals and hints */
+  guidance: boolean;
 }
 
 /** The child of a /api/students/:id/* route, or 404 (never telling whether the child exists elsewhere) */
@@ -87,7 +101,18 @@ export async function loadChild(deps: AppDeps, req: Request, studentId: string):
     ...(s.drop_step != null && { dropStep: s.drop_step }),
     ...(s.call_after != null && { callAfter: s.call_after }),
   };
-  const { year, past, termRows, holidayRows } = await calendarOf(db, studentId, today);
+  const [{ year, past, termRows, holidayRows }, colorRows, [prefs]] = await Promise.all([
+    calendarOf(db, studentId, today),
+    db
+      .select({ subjectId: subjectColors.subjectId, color: subjectColors.color })
+      .from(subjectColors)
+      .where(eq(subjectColors.studentId, studentId)),
+    db
+      .select({ family: families.settings, user: users.settings })
+      .from(families)
+      .innerJoin(users, eq(users.id, m.userId))
+      .where(eq(families.id, m.familyId)),
+  ]);
   return {
     student: row.student,
     familyId: m.familyId,
@@ -110,6 +135,8 @@ export async function loadChild(deps: AppDeps, req: Request, studentId: string):
       terms: termRows.map(termOf),
       pastYears: past.map((y) => ({ from: y.startDate, to: y.endDate })),
     },
+    colors: new Map(colorRows.map((r) => [r.subjectId, r.color])),
+    guidance: prefs?.family.guidance !== false && prefs?.user.guidance !== false,
   };
 }
 

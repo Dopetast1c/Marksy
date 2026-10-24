@@ -20,7 +20,8 @@ export function SegmentedControl<T extends string>({
           type="button"
           aria-pressed={o.value === value}
           onClick={() => onChange(o.value)}
-          className="flex-1 rounded-pill px-1 py-[7px] text-[13px] font-bold whitespace-nowrap text-ink2 aria-pressed:bg-surface aria-pressed:text-ink aria-pressed:shadow-card"
+          // a 44 px touch target (tap.min) around a 33 px segment: the hit area reaches into the gaps above and below
+          className="relative flex-1 rounded-pill px-1 py-[7px] text-[13px] font-bold whitespace-nowrap text-ink2 after:absolute after:inset-x-0 after:-inset-y-[6px] aria-pressed:bg-surface aria-pressed:text-ink aria-pressed:shadow-card"
         >
           {o.label}
         </button>

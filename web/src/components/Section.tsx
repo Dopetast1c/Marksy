@@ -44,17 +44,23 @@ export function Row({
   title,
   sub,
   extra,
+  trail,
   onClick,
   wrap = false,
+  quiet = false,
 }: {
   stripe: ReactNode;
   lead?: ReactNode;
   title: ReactNode;
   sub?: ReactNode;
   extra?: ReactNode;
+  /** what sits at the right edge instead of the chevron (the comment icon of a mark with a comment) */
+  trail?: ReactNode;
   onClick?: () => void;
   /** the second line is the fact itself (a teacher's comment, D56): wrap it, never cut it */
   wrap?: boolean;
+  /** a row that is context, not news (an absence in Оценки): muted title */
+  quiet?: boolean;
 }) {
   return (
     <button
@@ -65,13 +71,18 @@ export function Row({
       {stripe}
       {lead}
       <span className="flex min-w-0 flex-1 flex-col gap-[3px]">
-        <span className="truncate font-bold">{title}</span>
+        <span className={`truncate ${quiet ? 'font-semibold text-ink2' : 'font-bold'}`}>{title}</span>
         {sub && <span className={`text-small ${wrap ? 'text-ink2' : 'truncate text-ink3'}`}>{sub}</span>}
         {extra}
       </span>
-      <ChevIcon className="flex-none text-ink3" />
+      {trail ?? <ChevIcon className="flex-none text-ink3" />}
     </button>
   );
+}
+
+/** A quiet note on the page background: what a table's notation means, what an arrow compares */
+export function Note({ children }: { children: ReactNode }) {
+  return <p className="m-0 rounded-md bg-surface2 px-3 py-2.5 text-[13px] text-ink2">{children}</p>;
 }
 
 /** The quiet button under a list ("Все оценки · 6", "Показать все · 12", "Всё расписание") */

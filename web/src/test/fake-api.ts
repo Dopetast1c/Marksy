@@ -7,10 +7,20 @@ import { vi } from 'vitest';
 export interface FakeState {
   signedIn: boolean;
   calls: string[];
+  /** every request with its query string */
+  urls: string[];
   /** request bodies by route, last one wins */
   bodies: Record<string, unknown>;
   /** the connected diary refuses the login */
   diaryRefuses?: boolean;
+  /** a diary without work and lesson types (the usual real case, api-spec 7.3): every type is null */
+  noTypes?: boolean;
+  /** Оценки answers in two pages */
+  feedPages?: boolean;
+  /** the signed-in person's interface language */
+  locale?: string;
+  /** the subject screen's answer, when a test needs another one */
+  subject?: unknown;
 }
 
 const CARDS = [
@@ -74,7 +84,15 @@ export const KIDS = [
     schoolLabel: null,
     timezone: 'Europe/Minsk',
     providerId: 'demo-full',
-    capabilities: { lessons: true, futureTimetable: true, bellSchedule: true, attendance: 'derived' },
+    capabilities: {
+      lessons: true,
+      futureTimetable: true,
+      bellSchedule: true,
+      attendance: 'derived',
+      terms: 'quarter',
+      finalMarks: true,
+      behaviour: 'separate',
+    },
     gradingScale: scale,
   },
   {
@@ -109,6 +127,7 @@ const chip = (id: string, raw: string, band: string | null) => ({
   kind: 'SINGLE',
   band,
 });
+const Q1 = { id: 'q1', kind: 'quarter', index: 1, label: '1', from: '2026-09-01', to: '2026-10-31' };
 const lesson = (id: string, slot: number, start: string, end: string, subjectName: string, extra: object = {}) => ({
   id,
   date: '2026-10-22',
@@ -320,14 +339,271 @@ const periods = {
     ],
     year: [{ ...week(0, '2026-09-01', '2026-10-21', '2027-05-31'), kind: 'year' }],
   },
+  finals: { state: 'running', term: Q1 },
 };
 
+// Оценки: two days; marks with and without a work type and a topic, an absence, a teacher's comment, a corrected mark,
+// the first term's finals card
+const subj = (id: string, name: string) => ({ id, name, color: null });
+export const FEED = [
+  {
+    type: 'mark',
+    id: 'f1',
+    date: '2026-10-14',
+    subject: { ...subj('sub-al', 'Алгебра'), color: 'violet' },
+    mark: chip('fm1', '9', 'top'),
+    workType: null,
+    workTypeRaw: null,
+    topic: 'Квадратные уравнения',
+    comment: null,
+    lessonId: null,
+    tagIds: [],
+    isNew: false,
+  },
+  {
+    type: 'mark',
+    id: 'f2',
+    date: '2026-10-14',
+    subject: subj('sub-ph', 'Физика'),
+    mark: chip('fm2', '4', 'critical'),
+    workType: 'test',
+    workTypeRaw: 'КР',
+    topic: null,
+    comment: 'Не решены задачи 2 и 3',
+    lessonId: null,
+    tagIds: [],
+    isNew: false,
+  },
+  {
+    type: 'absence',
+    id: 'f3',
+    date: '2026-10-14',
+    subject: subj('sub-by', 'Беларуская мова'),
+    code: 'н',
+    excused: null,
+    lessonId: null,
+  },
+  {
+    type: 'comment',
+    id: 'f4',
+    date: '2026-10-14',
+    subject: subj('sub-en', 'Английский язык'),
+    text: 'Нет домашнего задания',
+    lessonId: null,
+    slot: 3,
+  },
+  {
+    type: 'markChanged',
+    id: 'f5',
+    date: '2026-10-14',
+    subject: subj('sub-hi', 'История'),
+    mark: chip('fm5', '7', 'good'),
+    before: '6',
+    seenAt: '2026-10-15T09:00:00Z',
+  },
+  {
+    type: 'finals',
+    id: 'finals-q1',
+    date: '2026-10-13',
+    term: Q1,
+    marks: [{ subject: subj('sub-al', 'Алгебра'), mark: chip('fq1', '8', 'good') }],
+    differ: 1,
+  },
+  {
+    type: 'mark',
+    id: 'f6',
+    date: '2026-10-13',
+    subject: subj('sub-ge', 'Геометрия'),
+    mark: chip('fm6', '6', 'low'),
+    workType: null,
+    workTypeRaw: null,
+    topic: null,
+    comment: null,
+    lessonId: null,
+    tagIds: [],
+    isNew: false,
+  },
+];
+
+const cell = (kind: 'final' | 'running' | 'none', value: number | null) => ({
+  kind,
+  raw: kind === 'final' ? String(value) : null,
+  value,
+  postedOn: kind === 'final' ? '2026-10-31' : null,
+  source: kind === 'final' ? 'api' : null,
+});
+export const TERM_FINALS = {
+  state: { state: 'running', term: Q1 },
+  year: { id: 'y1', label: '2026-2027' },
+  terms: [Q1, { ...Q1, id: 'q2', index: 2, from: '2026-11-09', to: '2026-12-24' }],
+  lastYear: { id: 'y0', label: '2025-2026' },
+  rows: [
+    {
+      subject: subj('sub-al', 'Алгебра'),
+      lastYear: { raw: '7', value: 7 },
+      terms: [
+        { termId: 'q1', ...cell('final', 8) },
+        { termId: 'q2', ...cell('none', null) },
+      ],
+      year: cell('running', 8),
+    },
+    {
+      subject: subj('sub-ge', 'Геометрия'),
+      lastYear: null,
+      terms: [
+        { termId: 'q1', ...cell('running', 6.4) },
+        { termId: 'q2', ...cell('none', null) },
+      ],
+      year: cell('none', null),
+    },
+  ],
+};
+export const YEAR_FINALS = {
+  years: [
+    { id: 'y0', label: '2025-2026', current: false },
+    { id: 'y1', label: '2026-2027', current: true },
+  ],
+  rows: [
+    {
+      subjectName: 'Алгебра',
+      subjectId: 'sub-al',
+      isNew: false,
+      cells: [
+        { yearId: 'y0', ...cell('final', 7), source: 'manual' },
+        { yearId: 'y1', ...cell('running', 8) },
+      ],
+      trend: 'up',
+    },
+    {
+      subjectName: 'Природоведение',
+      subjectId: null,
+      isNew: false,
+      cells: [
+        { yearId: 'y0', ...cell('final', 9) },
+        { yearId: 'y1', ...cell('none', null) },
+      ],
+      trend: null,
+    },
+    {
+      subjectName: 'Геометрия',
+      subjectId: 'sub-ge',
+      isNew: true,
+      cells: [
+        { yearId: 'y0', ...cell('none', null) },
+        { yearId: 'y1', ...cell('none', null) },
+      ],
+      trend: null,
+    },
+  ],
+};
+
+// Предметы and Предмет
+const info = (id: string, name: string, extra: object = {}) => ({
+  id,
+  name,
+  shortName: null,
+  teacherName: null,
+  groupLabel: null,
+  level: null,
+  levelLabel: null,
+  lessonsPerWeek: null,
+  color: null,
+  ...extra,
+});
+const cmp = (average: number | null, prevAverage: number | null, trend: string | null, delta: number | null) => ({
+  current: average == null ? 'empty' : 'marks',
+  previous: prevAverage == null ? 'empty' : 'marks',
+  average,
+  prevAverage,
+  delta,
+  trend,
+});
+export const SUBJECTS = {
+  'kid-milena': [
+    {
+      subject: info('sub-al', 'Алгебра', { color: 'blue' }),
+      comparison: cmp(7.5, 8.5, 'down', -1),
+      count: 2,
+      last: [chip('s1', '7', 'good'), chip('s2', '8', 'good')],
+      absences: 0,
+      comments: 2,
+      final: null,
+      lessons: null,
+    },
+    {
+      subject: info('sub-en', 'Английский язык', { level: 'advanced' }),
+      comparison: cmp(null, 9, null, null),
+      count: 0,
+      last: [],
+      absences: 0,
+      final: null,
+      lessons: null,
+    },
+  ],
+  'kid-mark': [
+    {
+      subject: info('sub-ma', 'Математика'),
+      comparison: null,
+      count: 0,
+      last: [],
+      absences: null,
+      final: null,
+      lessons: { count: 5, homework: 3, next: { date: '2026-10-28', slot: 2, homework: 'с. 14, № 3', lessonId: 'l9' } },
+    },
+  ],
+};
+export const SUBJECT = {
+  subject: info('sub-al', 'Алгебра', { color: 'blue', teacherName: 'Учитель Алгебры', lessonsPerWeek: 3 }),
+  period: PERIOD,
+  settings: { goal: 8, goalAvailable: true },
+  attention: {
+    goal: {
+      target: 8,
+      state: 'short',
+      term: Q1,
+      average: 7.1,
+      projected: 7,
+      need: 7.5,
+      plan: [
+        { value: 10, count: 1 },
+        { value: 9, count: 2 },
+      ],
+      keep: null,
+      final: null,
+    },
+    hints: [
+      {
+        rule: 'lowMark',
+        severity: 'critical',
+        fact: { key: 'guidance.lowMark.fact', params: { raw: '3', workType: null, date: '2026-10-13' } },
+        advice: { key: 'guidance.lowMark.advice', params: { raw: '3' } },
+        date: '2026-10-13',
+      },
+    ],
+  },
+  comparison: cmp(7.5, 8.5, 'down', -1),
+  count: 2,
+  prevCount: 3,
+  bands: bands([0, 0, 2, 0], [0, 0, 2, 1]),
+  distribution: [],
+  timeline: [FEED[0]],
+  upcoming: [{ ...lesson('u1', 2, '08:55', '09:40', 'Алгебра'), subjectId: 'sub-al', date: '2026-10-26' }],
+  lessonTiles: null,
+  terms: [{ ...Q1, cell: cell('running', 7.1), average: 7.1 }],
+  year: cell('none', null),
+  lastYear: { label: '2025-2026', raw: null, value: null },
+  week: [{ weekday: 1, slot: 2, start: '08:55', end: '09:40', room: '305', groupLabel: null }],
+};
+
+const TYPE_KEYS = new Set(['workType', 'workTypeRaw', 'lessonType']);
+const untyped = (key: string, value: unknown) => (TYPE_KEYS.has(key) ? null : value);
+
 export function fakeApi(start: Partial<FakeState> = {}) {
-  const state: FakeState = { signedIn: false, calls: [], bodies: {}, ...start };
+  const state: FakeState = { signedIn: false, calls: [], urls: [], bodies: {}, ...start };
   const error = (status: number, code: string) => json({ error: { code, message: code } }, status);
   let matchesPending = false;
   const json = (body: unknown, status = 200) =>
-    new Response(status === 204 ? null : JSON.stringify(body), {
+    new Response(status === 204 ? null : JSON.stringify(body, state.noTypes ? untyped : undefined), {
       status,
       headers: { 'content-type': 'application/json' },
     });
@@ -335,6 +611,7 @@ export function fakeApi(start: Partial<FakeState> = {}) {
     const url = new URL(input.url);
     const route = `${input.method} ${url.pathname}`;
     state.calls.push(route);
+    state.urls.push(route + url.search);
     if (input.method !== 'GET' && input.headers.get('content-type')?.includes('json'))
       state.bodies[route] = await input.clone().json();
     if (route === 'POST /api/auth/login') {
@@ -370,7 +647,7 @@ export function fakeApi(start: Partial<FakeState> = {}) {
           id: 'u1',
           login: 'parent@example.com',
           displayName: 'Родитель',
-          locale: 'ru',
+          locale: state.locale ?? 'ru',
           timezone: null,
           uiMode: 'full',
         },
@@ -394,6 +671,27 @@ export function fakeApi(start: Partial<FakeState> = {}) {
       return json({ outcome: 'followed' });
     }
     if (/^GET \/api\/students\/[^/]+\/periods$/.test(route)) return json(periods);
+    const subj = route.match(/^(GET|PUT) \/api\/students\/([^/]+)\/subjects(?:\/([^/]+))?(?:\/(trend|color|goal))?$/);
+    if (subj) {
+      const [, method, id, sid, what] = subj;
+      if (!sid) return json({ period: PERIOD, subjects: SUBJECTS[id as keyof typeof SUBJECTS] ?? [] });
+      if (what === 'trend') return json({ period: PERIOD, buckets: [] });
+      if (method === 'PUT' && what === 'color') return json(state.bodies[route]);
+      if (method === 'PUT' && what === 'goal')
+        return json({ goal: (state.bodies[route] as { termGoal: number | null }).termGoal });
+      return json(state.subject ?? SUBJECT);
+    }
+    const more = route.match(/^GET \/api\/students\/([^/]+)\/(marks|finals\/quarters|finals\/years)$/);
+    if (more) {
+      const [, id, what] = more;
+      if (what === 'marks') {
+        // with feedPages, a second page of one older mark follows the first
+        if (state.feedPages && url.searchParams.get('cursor') !== '0')
+          return json({ period: PERIOD, items: [{ ...FEED[6], id: 'f-old', date: '2026-10-05' }], next: null });
+        return json({ period: PERIOD, items: id === 'kid-milena' ? FEED : [], next: state.feedPages ? 100 : null });
+      }
+      return json(what === 'finals/quarters' ? TERM_FINALS : YEAR_FINALS);
+    }
     const kid = route.match(/^GET \/api\/students\/([^/]+)\/(overview|trend|events|school)$/);
     if (kid) {
       const [, id, what] = kid;

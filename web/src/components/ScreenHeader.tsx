@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { useNavigate } from 'react-router';
 import { useMe } from '../api/queries';
 import { useStudent } from '../hooks/useStudent';
@@ -16,11 +16,14 @@ export function ScreenHeader({
   title,
   studentId,
   back = false,
+  accent,
   children,
 }: {
   title: string;
   studentId: string;
   back?: boolean;
+  /** the subject screen (D45): the header on a tint of the subject colour, the title in its shade, the controls in it */
+  accent?: CSSProperties;
   children?: ReactNode;
 }) {
   const t = useT();
@@ -29,7 +32,10 @@ export function ScreenHeader({
   const student = useStudent(studentId);
   const parent = me.data?.family?.role !== 'student';
   return (
-    <header className="flex flex-col gap-2.5 px-5 pt-1.5 pb-3">
+    <header
+      style={accent}
+      className={`flex flex-col gap-2.5 px-5 pt-1.5 pb-3 ${accent ? 'subject-accent bg-subject-tint' : ''}`}
+    >
       <div data-header-row className="flex min-h-9 items-center justify-between gap-2.5">
         {back && (
           <button
@@ -45,7 +51,7 @@ export function ScreenHeader({
           </button>
         )}
         <div data-header-title className="flex min-w-[140px] flex-1 flex-col gap-px">
-          <h1 className="truncate text-h1 tracking-[-0.01em]">{title}</h1>
+          <h1 className={`truncate text-h1 tracking-[-0.01em] ${accent ? 'text-subject-title' : ''}`}>{title}</h1>
           {parent && student && (
             <span className="truncate text-[12px] font-semibold text-ink3">
               {student.classLabel ? `${student.name} · ${student.classLabel}` : student.name}

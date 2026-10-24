@@ -1,4 +1,4 @@
-import { addDays, bandOf, formatAverage } from '@marksy/core';
+import { addDays, bandOf } from '@marksy/core';
 import type { ReactNode } from 'react';
 import type { StudentSummary, useStudentCards } from '../api/queries';
 import { intlLocale, useT } from '../i18n';
@@ -7,6 +7,7 @@ import { todayIn } from '../lib/time';
 import { Avatar, defaultTraits } from './Avatar';
 import { ChangeArrow } from './ChangeArrow';
 import { ClockIcon } from './icons';
+import { numbers } from '../lib/numbers';
 
 // One card of «С кого начнём?» (docs/design.md 4, ux-principles D10): avatar, name and class (and the school when
 // the children's schools differ), two or three small stat cells, and during school hours the child's own line. The
@@ -71,13 +72,13 @@ export function StudentPickerCard({
           label={t('pick.week')}
           value={
             <>
-              {formatAverage(scale, avg, locale)}
+              {numbers(scale).average(avg)}
               {w?.previous === 'marks' && avg != null && <ChangeArrow delta={w.delta} trend={w.trend} />}
             </>
           }
           tone={band ? BAND_TEXT[band] : 'text-ink3'}
           {...(w?.previous === 'marks' && w.prevAverage != null
-            ? { hint: t('stat.was', { value: formatAverage(scale, w.prevAverage, locale) }) }
+            ? { hint: t('stat.was', { value: numbers(scale).average(w.prevAverage) }) }
             : {})}
         />
         {attendance && (

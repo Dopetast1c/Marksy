@@ -293,6 +293,24 @@ export async function storeFinals(
         target: [finalMarksRaw.studentId, finalMarksRaw.schoolYearId],
         set: { rawJson: list, fetchedAt: now },
       });
+    // the API rows are replaced on every read; a final already seen with the same value keeps when it was first seen
+    const before = await tx
+      .select({
+        subjectName: finalMarks.subjectName,
+        periodId: finalMarks.periodId,
+        raw: finalMarks.raw,
+        firstSeenAt: finalMarks.firstSeenAt,
+      })
+      .from(finalMarks)
+      .where(
+        and(
+          eq(finalMarks.studentId, student.id),
+          eq(finalMarks.schoolYearId, calendar.schoolYearId),
+          eq(finalMarks.source, 'api'),
+        ),
+      );
+    const seenAt = (subjectName: string, periodId: string | null, raw: string) =>
+      before.find((b) => b.subjectName === subjectName && b.periodId === periodId && b.raw === raw)?.firstSeenAt ?? now;
     await tx
       .delete(finalMarks)
       .where(
@@ -304,21 +322,25 @@ export async function storeFinals(
       );
     // a final for a term this calendar does not know would land on the year row: skipped until the calendar has it
     const known = list.filter((f) => f.termExternalId === null || calendar.termIds.has(f.termExternalId));
-    const rows = known.map((f) => ({
-      studentId: student.id,
-      schoolYearId: calendar.schoolYearId,
-      subjectId: (f.subjectExternalId && subjectIds.get(f.subjectExternalId)) || null,
-      subjectName: f.subjectName,
-      periodId: (f.termExternalId && calendar.termIds.get(f.termExternalId)) || null,
-      role: f.role ?? 'final',
-      label: f.label ?? null,
-      date: f.date ?? null,
-      raw: f.raw,
-      mark: f.value,
-      kind: f.kind,
-      source: 'api' as const,
-      updatedAt: now,
-    }));
+    const rows = known.map((f) => {
+      const periodId = (f.termExternalId && calendar.termIds.get(f.termExternalId)) || null;
+      return {
+        studentId: student.id,
+        schoolYearId: calendar.schoolYearId,
+        subjectId: (f.subjectExternalId && subjectIds.get(f.subjectExternalId)) || null,
+        subjectName: f.subjectName,
+        periodId,
+        role: f.role ?? 'final',
+        label: f.label ?? null,
+        date: f.date ?? null,
+        raw: f.raw,
+        mark: f.value,
+        kind: f.kind,
+        source: 'api' as const,
+        updatedAt: now,
+        firstSeenAt: seenAt(f.subjectName, periodId, f.raw),
+      };
+    });
     // a manual row for the same subject and period wins; the API row is dropped
     if (rows.length) await tx.insert(finalMarks).values(rows).onConflictDoNothing();
   });

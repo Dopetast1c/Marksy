@@ -80,6 +80,19 @@ export const UsersIcon = line(
     <path d="M16 15.5a5 5 0 0 1 5.5 4.5" />
   </>,
 );
+export const TagIcon = line(
+  <>
+    <path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9z" />
+    <circle cx="8" cy="8" r="1.6" />
+  </>,
+);
+export const SchoolIcon = line(
+  <>
+    <path d="M3 10l9-5 9 5-9 5z" />
+    <path d="M7 12.5V17c0 1 2.5 2.5 5 2.5s5-1.5 5-2.5v-4.5" />
+    <path d="M21 10v5" />
+  </>,
+);
 export const CommentIcon = line(<path d="M4 5h16v11H9l-5 4z" />, { width: 2.2 });
 export const SunIcon = line(
   <>

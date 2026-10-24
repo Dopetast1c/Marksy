@@ -460,6 +460,8 @@ async function insertDiary(
         mark: f.value,
         kind: 'numeric',
         source: 'api' as const,
+        // posted on the term's last day, seen in the afternoon read
+        firstSeenAt: seenAt(cal.terms.find((t) => t.index === f.term)!.end, 15 * 60),
       })),
     );
     count('final_marks', kid.finals.length);

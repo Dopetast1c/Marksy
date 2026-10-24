@@ -123,6 +123,19 @@ describe('collector', () => {
     expect(result.stats).toMatchObject({ weeks_verified: 4, new: 9, lessons: 13 });
   });
 
+  it('a final read again keeps when it was first seen', async () => {
+    const { account } = await createAccount(db, 'demo-full');
+    await collect(account);
+    const later = new Date(NOW.getTime() + 86_400_000);
+    await collect(account, { now: () => later });
+    const rows = await db.select().from(finalMarks);
+    expect(rows.length).toBeGreaterThan(0);
+    for (const r of rows) {
+      expect(r.firstSeenAt).toEqual(NOW);
+      expect(r.updatedAt).toEqual(later);
+    }
+  });
+
   it('keeps raw read responses, tagged by week, and never the login', async () => {
     const { account } = await createAccount(db, 'demo-full');
     await collect(account);

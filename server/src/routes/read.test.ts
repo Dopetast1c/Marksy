@@ -376,6 +376,9 @@ describe('teacher comments without a mark (D56)', () => {
       .flatMap((d: { lessons: { id: string }[] }) => d.lessons)
       .find((x: { id: string }) => x.id === kid.lessonId);
     expect(l.teacherComment).toBe('Нет домашнего задания');
+    // Предметы with the filter Комментарии says how many each subject has, never "no marks"
+    const list = (await mama.get(`/api/students/${kid.id}/subjects?period=month&comments=only`)).body.subjects;
+    expect(list.map((r: { comments: number | null }) => r.comments).reduce((a: number, b: number) => a + b, 0)).toBe(1);
   });
 
   it('after 7 days it leaves Внимание and stays in Оценки', async () => {

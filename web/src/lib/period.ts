@@ -93,3 +93,8 @@ export function roman(n: number): string {
   for (const [v, s] of table) for (; n >= v; n -= v) out += s;
   return out;
 }
+
+/** «за неделю», «за четверть»: the period's span in a phrase («нет оценок за неделю») */
+export function forPeriod(t: TFunction, kind: Kind, termKind: Instance['termKind'], locale: string): string {
+  return t(`period.for.${kind}`, { name: t(`term.${termKind ?? 'other'}`).toLocaleLowerCase(locale) });
+}

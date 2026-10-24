@@ -111,6 +111,12 @@ export interface GoalStatus {
   keep: number | null;
 }
 
+/** The goal a subject starts with until the family picks one (design.md 5.4): the scale's middle goal, 8 on by-10 */
+export function defaultGoal(scale: GradingScale): number | null {
+  const t = scale.goalTargets;
+  return t.length ? t[Math.min(1, t.length - 1)]! : null;
+}
+
 /** The goal card's numbers for a subject's term (docs/design.md 6.2); null when the scale's final rule is not arithmetic. */
 export function marksNeeded(scale: GradingScale, sum: number, count: number, target: number): GoalStatus | null {
   const need = neededAverage(scale, target);

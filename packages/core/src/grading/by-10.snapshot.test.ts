@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { defaultFamilyRules, isLowMark } from './family-rules';
-import { formatAverage, formatBandRange, formatFinal } from './format';
 import { estimateYear, keepMark, marksNeeded, neededAverage, projectFinal, targetPlan } from './goal';
 import {
   activeBands,
@@ -45,15 +44,18 @@ describe('by-10 snapshot (docs/providers.md 5.4)', () => {
     expect(average(s, [{ values: [7, 9] }, { values: [6] }])).toBe(7.3);
     expect(average(s, [{ values: [7] }, { values: [8] }])).toBe(7.5);
     expect(average(s, [])).toBeNull();
-    expect(formatAverage(s, 8.3, 'en')).toBe('8.3');
-    expect(formatAverage(s, 8, 'en')).toBe('8.0');
-    expect(formatAverage(s, 8.3, 'ru')).toBe('8,3');
-    expect(formatAverage(s, null, 'ru')).toBe('—');
+    // the decimals are the scale's; how they are written is the language's (format.test.ts)
+    expect(s.averaging.decimals).toBe(1);
     expect([4.5, 6.5, 8.5, 8.9, 9].map((a) => bandOf(s, a))).toEqual(['critical', 'low', 'good', 'good', 'top']);
   });
 
   it('overview distribution card: one column per band', () => {
-    expect(activeBands(s).map((r) => formatBandRange(s, r, 'ru'))).toEqual(['1–4', '5–6', '7–8', '9–10']);
+    expect(activeBands(s).map((r) => [s.bands[r]!.from, s.bands[r]!.to])).toEqual([
+      [1, 4],
+      [5, 6],
+      [7, 8],
+      [9, 10],
+    ]);
   });
 
   it('feed filter chips and the "below" notification rule', () => {
@@ -76,7 +78,7 @@ describe('by-10 snapshot (docs/providers.md 5.4)', () => {
   });
 
   it('quarter goal picker', () => {
-    expect(s.goalTargets.map((g) => formatFinal(s, g, 'ru'))).toEqual(['7', '8', '9']);
+    expect(s.goalTargets).toEqual([7, 8, 9]);
   });
 
   it('projected final: rounded average, 7.5 gives 8', () => {

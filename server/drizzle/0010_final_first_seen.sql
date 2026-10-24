@@ -1,0 +1,1 @@
+ALTER TABLE "final_marks" ADD COLUMN "first_seen_at" timestamp with time zone;

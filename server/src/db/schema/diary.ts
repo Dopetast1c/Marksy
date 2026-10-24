@@ -266,6 +266,8 @@ export const finalMarks = pgTable(
     source: text('source', { enum: ['api', 'manual'] }).notNull(),
     enteredBy: uuid('entered_by').references(() => users.id, { onDelete: 'set null' }),
     updatedAt: ts('updated_at').notNull().defaultNow(),
+    /** When Marksy first saw this final with this value: «выставлена 15 октября» when the diary sends no date */
+    firstSeenAt: ts('first_seen_at'),
   },
   (t) => [
     unique('final_marks_student_year_subject_period_key')

@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import type { CSSProperties } from 'react';
 import { usePeriods } from '../api/queries';
 import { useSwipe } from '../hooks/useSwipe';
 import { dateStyle, useT } from '../i18n';
@@ -37,7 +38,26 @@ export function PeriodBar({ studentId }: { studentId: string }) {
   );
 }
 
-export function PeriodNav({ studentId, compare = false }: { studentId: string; compare?: boolean }) {
+/** The short slide of the content when the period steps (base.css); restarted on every step */
+function slide(el: HTMLElement | null, from: 'older' | 'newer') {
+  if (!el) return;
+  delete el.dataset.slide;
+  void el.offsetWidth;
+  el.dataset.slide = from;
+  window.clearTimeout(Number(el.dataset.slideTimer));
+  el.dataset.slideTimer = String(window.setTimeout(() => delete el.dataset.slide, 400));
+}
+
+export function PeriodNav({
+  studentId,
+  compare = false,
+  accent,
+}: {
+  studentId: string;
+  compare?: boolean;
+  /** the subject screen (D45): the row continues the tinted header, rounded below, tinted while sticky */
+  accent?: CSSProperties;
+}) {
   const t = useT();
   const ds = dateStyle();
   const periods = usePeriods(studentId);
@@ -54,7 +74,9 @@ export function PeriodNav({ studentId, compare = false }: { studentId: string; c
   const olderOk = list.some((i) => i.offset === offset + 1);
   const newerOk = offset > 0;
   const go = (delta: 1 | -1) => {
-    if ((delta === 1 && olderOk) || (delta === -1 && newerOk)) step(delta);
+    if (!((delta === 1 && olderOk) || (delta === -1 && newerOk))) return;
+    step(delta);
+    slide(body.current, delta === 1 ? 'older' : 'newer');
   };
   useSwipe(body, go);
 
@@ -68,14 +90,20 @@ export function PeriodNav({ studentId, compare = false }: { studentId: string; c
   return (
     <div
       ref={nav}
-      className="sticky top-0 z-[5] -mx-5 flex items-center gap-1.5 bg-bg px-5 pt-1.5 pb-2 after:pointer-events-none after:absolute after:inset-x-0 after:-bottom-2.5 after:h-2.5 after:bg-linear-to-b after:from-bg after:to-transparent"
+      data-period-nav
+      style={accent}
+      className={`sticky top-0 z-[5] -mx-5 flex items-center gap-1.5 px-5 ${
+        accent
+          ? 'subject-accent mb-1 rounded-b-[24px] bg-subject-tint pt-0 pb-3'
+          : 'bg-bg pt-1.5 pb-2 after:pointer-events-none after:absolute after:inset-x-0 after:-bottom-2.5 after:h-2.5 after:bg-linear-to-b after:from-bg after:to-transparent'
+      }`}
     >
       <button
         type="button"
         aria-label={t('period.older')}
         disabled={!olderOk}
         onClick={() => go(1)}
-        className="relative grid size-[34px] flex-none place-items-center rounded-pill bg-surface text-ink2 shadow-card after:absolute after:-inset-[5px] disabled:opacity-30"
+        className={`${accent ? 'text-accent' : 'text-ink2'} relative grid size-[34px] flex-none place-items-center rounded-pill bg-surface shadow-card after:absolute after:-inset-[5px] disabled:opacity-30`}
       >
         <BackIcon size={18} />
       </button>
@@ -95,7 +123,7 @@ export function PeriodNav({ studentId, compare = false }: { studentId: string; c
         aria-label={t('period.newer')}
         disabled={!newerOk}
         onClick={() => go(-1)}
-        className="relative grid size-[34px] flex-none place-items-center rounded-pill bg-surface text-ink2 shadow-card after:absolute after:-inset-[5px] disabled:opacity-30"
+        className={`${accent ? 'text-accent' : 'text-ink2'} relative grid size-[34px] flex-none place-items-center rounded-pill bg-surface shadow-card after:absolute after:-inset-[5px] disabled:opacity-30`}
       >
         <BackIcon size={18} className="rotate-180" />
       </button>

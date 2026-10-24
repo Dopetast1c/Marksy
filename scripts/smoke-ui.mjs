@@ -29,6 +29,14 @@ export const PROTOTYPE_STATES = [
   ['home-1', 'home', 'k'],
   ['events-1', 'events', 'k'],
   ['home-2', 'home', 'm'],
+  ['marks-1', 'marks', 'k'],
+  ['marks-2', 'marks', 'm'],
+  ['subjects-1', 'subjects', 'k'],
+  ['subjects-2', 'subjects', 'm'],
+  ['subject-1', 'subject', 'k', { subjectId: null }],
+  ['subject-2', 'subject', 'm', { subjectId: null }],
+  ['finals', 'finals', 'k', { finalsMode: 'quarters' }],
+  ['finals-years', 'finals', 'k', { finalsMode: 'years' }],
 ];
 
 /** The demo family is fictional and its password is published (server/src/seed/seed.ts) */
@@ -96,9 +104,37 @@ async function shootApp(browser, base, family, device, dir, log) {
     for (const [i, kid] of kids.entries()) {
       await page.goto(`${base}/s/${kid.id}`);
       await shot(`home-${i + 1}`);
+      await page.goto(`${base}/s/${kid.id}/marks`);
+      await shot(`marks-${i + 1}`);
+      await page.goto(`${base}/s/${kid.id}/subjects`);
+      await shot(`subjects-${i + 1}`);
+      // the first subject of the list, as the prototype opens its first one
+      const first = await (await page.request.get(`${base}/api/students/${kid.id}/subjects?period=week`)).json();
+      const firstId = [...(first.subjects ?? [])].sort((a, b) => a.subject.name.localeCompare(b.subject.name))[0]
+        ?.subject.id;
+      if (firstId) {
+        await page.goto(`${base}/s/${kid.id}/subjects/${firstId}`);
+        await shot(`subject-${i + 1}`);
+        // the sheet of a child with marks: the goal grid and the colours
+        if (kid.gradingScale && kid === kids.find((k) => k.gradingScale)) {
+          await page.getByRole('button', { name: /Настройки предмета|Subject settings/ }).click();
+          await shot('subject-settings');
+          await page.keyboard.press('Escape');
+        }
+      }
       if (i === 0) {
         await page.goto(`${base}/s/${kid.id}/events`);
         await shot(`events-${i + 1}`);
+      }
+      // Итоги of the first child with marks (a year without marks has none)
+      if (kid.gradingScale && kid === kids.find((k) => k.gradingScale)) {
+        await page.goto(`${base}/s/${kid.id}/finals`);
+        await shot('finals');
+        const years = page.getByRole('button', { name: /^(Годы|Years)$/ });
+        if (await years.count()) {
+          await years.click();
+          await shot('finals-years');
+        }
       }
     }
   } catch (err) {

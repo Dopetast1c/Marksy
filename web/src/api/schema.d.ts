@@ -1494,6 +1494,7 @@ export interface paths {
                             };
                             /** @enum {string} */
                             counts: "marks" | "lessons";
+                            finals: components["schemas"]["FinalsState"];
                         };
                     };
                 };
@@ -1627,6 +1628,7 @@ export interface paths {
                                     subject: {
                                         id: string;
                                         name: string;
+                                        color: string | null;
                                     };
                                     mark: components["schemas"]["MarkChip"];
                                     workType: string | null;
@@ -1637,6 +1639,7 @@ export interface paths {
                                 subject: {
                                     id: string;
                                     name: string;
+                                    color: string | null;
                                 };
                                 comparison: components["schemas"]["Comparison"];
                                 count: number;
@@ -1750,169 +1753,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/students/{id}/subjects": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Предметы: every subject with its average, direction, last marks and the child’s teacher and group */
-        get: {
-            parameters: {
-                query?: {
-                    period?: "week" | "month" | "quarter" | "term" | "year";
-                    offset?: number | null;
-                    from?: string;
-                    to?: string;
-                    sort?: "alpha" | "weak" | "strong" | "fell" | "rose";
-                };
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            period: components["schemas"]["Period"];
-                            subjects: {
-                                subject: components["schemas"]["SubjectInfo"];
-                                comparison: components["schemas"]["Comparison"] & (Record<string, never> | null);
-                                count: number;
-                                last: components["schemas"]["MarkChip"][];
-                                absences: number | null;
-                            }[];
-                        };
-                    };
-                };
-                /** @description No session */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description No such child or period */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/students/{id}/subjects/{subjectId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Предмет: stats, terms, distribution, the timeline of marks and teacher comments, the regular week */
-        get: {
-            parameters: {
-                query?: {
-                    period?: "week" | "month" | "quarter" | "term" | "year";
-                    offset?: number | null;
-                    from?: string;
-                    to?: string;
-                };
-                header?: never;
-                path: {
-                    id: string;
-                    subjectId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            subject: components["schemas"]["SubjectInfo"];
-                            period: components["schemas"]["Period"];
-                            comparison: components["schemas"]["Comparison"] & (Record<string, never> | null);
-                            bands: components["schemas"]["BandCount"][];
-                            distribution: {
-                                from: number;
-                                to: number;
-                                count: number;
-                            }[];
-                            terms: {
-                                id: string;
-                                label: string;
-                                from: string;
-                                to: string;
-                                average: number | null;
-                                final: {
-                                    raw: string;
-                                    mark: number | null;
-                                } | null;
-                            }[];
-                            timeline: components["schemas"]["FeedItem"][];
-                            week: {
-                                weekday: number;
-                                slot: number;
-                                start: string | null;
-                                end: string | null;
-                                room: string | null;
-                                groupLabel: string | null;
-                            }[];
-                        };
-                    };
-                };
-                /** @description No session */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description No such child, subject or period */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/students/{id}/trend": {
         parameters: {
             query?: never;
@@ -1974,68 +1814,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/students/{id}/subjects/{subjectId}/trend": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Динамика of one subject (TrendCard on Предмет) */
-        get: {
-            parameters: {
-                query?: {
-                    period?: "week" | "month" | "quarter" | "term" | "year";
-                    offset?: number | null;
-                    from?: string;
-                    to?: string;
-                };
-                header?: never;
-                path: {
-                    id: string;
-                    subjectId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Trend"];
-                    };
-                };
-                /** @description No session */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description No such child, subject or period */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/students/{id}/absences": {
         parameters: {
             query?: never;
@@ -2077,6 +1855,7 @@ export interface paths {
                                 subject: {
                                     id: string;
                                     name: string;
+                                    color: string | null;
                                 } | null;
                                 lessonId: string | null;
                             }[];
@@ -2264,6 +2043,412 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/students/{id}/subjects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Предметы: every subject with its average, direction and last marks under the mark filter */
+        get: {
+            parameters: {
+                query?: {
+                    period?: "week" | "month" | "quarter" | "term" | "year";
+                    offset?: number | null;
+                    from?: string;
+                    to?: string;
+                    sort?: "alpha" | "weak" | "strong" | "fell" | "rose";
+                    tags?: string;
+                    tagMode?: "any" | "all";
+                    comments?: "all" | "only" | "none";
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            period: components["schemas"]["Period"];
+                            subjects: {
+                                subject: components["schemas"]["SubjectInfo"];
+                                comparison: components["schemas"]["Comparison"] & (Record<string, never> | null);
+                                count: number;
+                                last: components["schemas"]["MarkChip"][];
+                                absences: number | null;
+                                comments: number | null;
+                                final: {
+                                    term: components["schemas"]["TermRef"];
+                                    raw: string;
+                                    mark: components["schemas"]["MarkChip"];
+                                } | null;
+                                lessons: {
+                                    count: number;
+                                    homework: number;
+                                    next: {
+                                        date: string;
+                                        slot: number | null;
+                                        homework: string | null;
+                                        lessonId: string;
+                                    } | null;
+                                } | null;
+                            }[];
+                        };
+                    };
+                };
+                /** @description No session */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such child or period */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/students/{id}/subjects/{subjectId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Предмет: settings, «О предмете», «Обратить внимание», stats under the mark filter, the timeline, the coming lessons, the terms */
+        get: {
+            parameters: {
+                query?: {
+                    period?: "week" | "month" | "quarter" | "term" | "year";
+                    offset?: number | null;
+                    from?: string;
+                    to?: string;
+                    tags?: string;
+                    tagMode?: "any" | "all";
+                    comments?: "all" | "only" | "none";
+                };
+                header?: never;
+                path: {
+                    id: string;
+                    subjectId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            subject: components["schemas"]["SubjectInfo"];
+                            period: components["schemas"]["Period"];
+                            settings: {
+                                goal: number | null;
+                                goalAvailable: boolean;
+                            };
+                            attention: {
+                                goal: components["schemas"]["GoalRow"] & (Record<string, never> | null);
+                                hints: components["schemas"]["Hint"][];
+                            };
+                            comparison: components["schemas"]["Comparison"] & (Record<string, never> | null);
+                            count: number;
+                            prevCount: number | null;
+                            bands: components["schemas"]["BandCount"][];
+                            distribution: {
+                                from: number;
+                                to: number;
+                                count: number;
+                            }[];
+                            timeline: components["schemas"]["FeedItem"][];
+                            upcoming: components["schemas"]["Lesson"][];
+                            lessonTiles: {
+                                lessons: number;
+                                homework: number;
+                                prevLessons: number | null;
+                                prevHomework: number | null;
+                            } | null;
+                            terms: (components["schemas"]["TermRef"] & {
+                                cell: components["schemas"]["FinalCell"];
+                                average: number | null;
+                            })[];
+                            year: components["schemas"]["FinalCell"] & (Record<string, never> | null);
+                            lastYear: {
+                                label: string;
+                                raw: string | null;
+                                value: number | null;
+                            } | null;
+                            week: {
+                                weekday: number;
+                                slot: number;
+                                start: string | null;
+                                end: string | null;
+                                room: string | null;
+                                groupLabel: string | null;
+                            }[];
+                        };
+                    };
+                };
+                /** @description No session */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such child, subject or period */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/students/{id}/subjects/{subjectId}/trend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Динамика of one subject under the mark filter (TrendCard on Предмет) */
+        get: {
+            parameters: {
+                query?: {
+                    period?: "week" | "month" | "quarter" | "term" | "year";
+                    offset?: number | null;
+                    from?: string;
+                    to?: string;
+                    tags?: string;
+                    tagMode?: "any" | "all";
+                    comments?: "all" | "only" | "none";
+                };
+                header?: never;
+                path: {
+                    id: string;
+                    subjectId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Trend"];
+                    };
+                };
+                /** @description No session */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such child, subject or period */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/students/{id}/subjects/{subjectId}/color": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** The subject’s colour for the whole family (6.6): a palette key, or null for «Авто» */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    subjectId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @enum {string|null} */
+                        color: "red" | "orange" | "yellow" | "lime" | "green" | "teal" | "sky" | "blue" | "violet" | "purple" | "pink" | "grey" | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            color: string | null;
+                        };
+                    };
+                };
+                /** @description No session */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such child or subject */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/students/{id}/subjects/{subjectId}/goal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** The subject’s goal for the term (5.4): a whole value of the child’s scale, or null for «Без цели» */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    subjectId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        termGoal: number | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            goal: number | null;
+                        };
+                    };
+                };
+                /** @description Goals do not apply to this child, or the value is not on the scale */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No session */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such child or subject */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/students/{id}/schedule": {
         parameters: {
             query?: never;
@@ -2393,7 +2578,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Итоги by year: each subject’s year final over the school years Marksy has */
+        /** Итоги by year: each subject’s year final over the school years Marksy has, the running year in italics */
         get: {
             parameters: {
                 query?: never;
@@ -2415,14 +2600,17 @@ export interface paths {
                             years: {
                                 id: string;
                                 label: string;
+                                current: boolean;
                             }[];
                             rows: {
                                 subjectName: string;
-                                cells: {
+                                subjectId: string | null;
+                                isNew: boolean;
+                                cells: (components["schemas"]["FinalCell"] & {
                                     yearId: string;
-                                    raw: string | null;
-                                    value: number | null;
-                                }[];
+                                })[];
+                                /** @enum {string|null} */
+                                trend: "up" | "down" | "flat" | null;
                             }[];
                         };
                     };
@@ -2816,6 +3004,7 @@ export interface components {
             subject: {
                 id: string;
                 name: string;
+                color: string | null;
             } | null;
             facts: {
                 [key: string]: unknown;
@@ -2866,6 +3055,7 @@ export interface components {
             end: string | null;
             subjectId: string;
             subjectName: string;
+            subjectColor: string | null;
             teacherName: string | null;
             room: string | null;
             groupLabel: string | null;
@@ -2895,15 +3085,37 @@ export interface components {
             absent: boolean;
             teacherComment: string | null;
         };
-        SubjectInfo: {
+        TermRef: {
             id: string;
-            name: string;
-            shortName: string | null;
-            teacherName: string | null;
-            groupLabel: string | null;
-            level: string | null;
-            levelLabel: string | null;
-            lessonsPerWeek: number | null;
+            /** @enum {string} */
+            kind: "quarter" | "trimester" | "semester" | "other";
+            index: number;
+            label: string;
+            from: string;
+            to: string;
+        };
+        FinalsState: {
+            /** @enum {string} */
+            state: "running";
+            term: components["schemas"]["TermRef"];
+        } | {
+            /** @enum {string} */
+            state: "ended";
+            term: components["schemas"]["TermRef"];
+        } | {
+            /** @enum {string} */
+            state: "posted";
+            term: components["schemas"]["TermRef"];
+            postedOn: string | null;
+        };
+        FinalCell: {
+            /** @enum {string} */
+            kind: "final" | "running" | "none";
+            raw: string | null;
+            value: number | null;
+            postedOn: string | null;
+            /** @enum {string|null} */
+            source: "api" | "manual" | null;
         };
         FeedItem: {
             /** @enum {string} */
@@ -2913,6 +3125,7 @@ export interface components {
             subject: {
                 id: string;
                 name: string;
+                color: string | null;
             };
             mark: components["schemas"]["MarkChip"];
             workType: string | null;
@@ -2930,10 +3143,39 @@ export interface components {
             subject: {
                 id: string;
                 name: string;
+                color: string | null;
             } | null;
             text: string | null;
             lessonId: string | null;
             slot: number | null;
+        } | {
+            /** @enum {string} */
+            type: "absence";
+            id: string;
+            date: string;
+            subject: {
+                id: string;
+                name: string;
+                color: string | null;
+            } | null;
+            code: string | null;
+            excused: boolean | null;
+            lessonId: string | null;
+        } | {
+            /** @enum {string} */
+            type: "finals";
+            id: string;
+            date: string;
+            term: components["schemas"]["TermRef"];
+            marks: {
+                subject: {
+                    id: string;
+                    name: string;
+                    color: string | null;
+                };
+                mark: components["schemas"]["MarkChip"];
+            }[];
+            differ: number;
         } | {
             /** @enum {string} */
             type: "markChanged" | "markRemoved";
@@ -2942,6 +3184,7 @@ export interface components {
             subject: {
                 id: string;
                 name: string;
+                color: string | null;
             };
             mark: components["schemas"]["MarkChip"];
             before: string | null;
@@ -2965,35 +3208,83 @@ export interface components {
                 };
             }[];
         };
+        SubjectInfo: {
+            id: string;
+            name: string;
+            shortName: string | null;
+            teacherName: string | null;
+            groupLabel: string | null;
+            level: string | null;
+            levelLabel: string | null;
+            lessonsPerWeek: number | null;
+            color: string | null;
+        };
+        Hint: {
+            rule: string;
+            /** @enum {string} */
+            severity: "critical" | "low" | "ok" | "good";
+            fact: {
+                key: string;
+                params: {
+                    [key: string]: string | number | string[] | null;
+                };
+            };
+            advice?: {
+                key: string;
+                params: {
+                    [key: string]: string | number | string[] | null;
+                };
+            };
+            lessonId?: string;
+            date?: string;
+        };
+        GoalRow: {
+            target: number;
+            /** @enum {string} */
+            state: "reached" | "short" | "out_of_reach" | "posted";
+            term: components["schemas"]["TermRef"];
+            average: number | null;
+            projected: number | null;
+            need: number;
+            plan: {
+                value: number;
+                count: number;
+            }[];
+            keep: number | null;
+            final: {
+                raw: string;
+                value: number | null;
+            } | null;
+        };
         Health: {
             /** @enum {string} */
             status: "ok";
         };
         TermFinals: {
-            terms: {
+            state: components["schemas"]["FinalsState"];
+            terms: components["schemas"]["TermRef"][];
+            year: {
                 id: string;
                 label: string;
-                from: string;
-                to: string;
-            }[];
+            } | null;
+            lastYear: {
+                id: string;
+                label: string;
+            } | null;
             rows: {
                 subject: {
                     id: string;
                     name: string;
+                    color: string | null;
                 };
-                terms: {
-                    /** @enum {string} */
-                    kind: "final" | "running" | "none";
-                    raw: string | null;
+                lastYear: {
+                    raw: string;
                     value: number | null;
+                } | null;
+                terms: (components["schemas"]["FinalCell"] & {
                     termId: string;
-                }[];
-                year: {
-                    /** @enum {string} */
-                    kind: "final" | "running" | "none";
-                    raw: string | null;
-                    value: number | null;
-                };
+                })[];
+                year: components["schemas"]["FinalCell"];
             }[];
         };
         SyncStatus: {

@@ -11,6 +11,7 @@ import { familyRoutes } from './routes/family';
 import { inviteRoutes } from './routes/invites';
 import { scheduleRoutes } from './routes/schedule';
 import { studentRoutes } from './routes/students';
+import { subjectRoutes } from './routes/subjects';
 import { syncRoutes } from './routes/sync';
 
 // The Express app without listening, so Supertest can drive it in tests. Every route is described with Zod and appears
@@ -41,6 +42,7 @@ export function createApp(deps: AppDeps) {
   app.use(familyRoutes(deps, limiters));
   app.use(inviteRoutes(deps, limiters));
   app.use(studentRoutes(deps));
+  app.use(subjectRoutes(deps));
   app.use(scheduleRoutes(deps));
   app.use(syncRoutes(deps));
 

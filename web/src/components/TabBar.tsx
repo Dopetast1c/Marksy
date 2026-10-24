@@ -8,7 +8,8 @@ import { HomeTabIcon, MarksTabIcon, MoreTabIcon, ScheduleTabIcon, SubjectsTabIco
 const TABS = [
   // Внимание is reached from Главная and belongs to its tab (the prototype's TAB_OF)
   { key: 'home', path: '', icon: HomeTabIcon, also: /^\/s\/[^/]+(\/events)?$/ },
-  { key: 'marks', path: '/marks', icon: MarksTabIcon, also: null },
+  // Итоги is reached from Оценки (and Предметы) and belongs to Оценки
+  { key: 'marks', path: '/marks', icon: MarksTabIcon, also: /^\/s\/[^/]+\/(marks|finals)$/ },
   { key: 'subjects', path: '/subjects', icon: SubjectsTabIcon, also: null },
   { key: 'schedule', path: '/schedule', icon: ScheduleTabIcon, also: null },
 ] as const;
