@@ -1,5 +1,5 @@
-import { activeBands } from '@marksy/core';
-import type { BandRole, GradingScale, PeriodStats } from '@marksy/core';
+import { activeBands, distributionBuckets, termKind } from '@marksy/core';
+import type { BandRole, GradingScale, PeriodStats, Term } from '@marksy/core';
 import { z } from 'zod';
 import { registry } from '../openapi';
 import type { ResolvedPeriod } from '../students/context';
@@ -30,17 +30,34 @@ export const periodOut = registry.register(
     from: z.string(),
     to: z.string(),
     end: z.string(),
+    /** The diary's own name of the term, shown as it is */
     termLabel: z.string().nullable(),
+    /** What a term is called comes from its kind through the app's words (CLAUDE.md, "четверть"), never typed */
+    termKind: termKind.nullable(),
+    termIndex: z.number().nullable(),
   }),
 );
 
-export const periodOf = (p: ResolvedPeriod) => ({
-  kind: p.kind,
-  offset: p.offset,
-  from: p.from,
-  to: p.to,
-  end: p.end,
-  termLabel: p.instance?.term?.label ?? null,
+export const periodOf = (p: ResolvedPeriod) =>
+  instanceOut({ ...p, ...(p.instance?.term && { term: p.instance.term }) });
+
+/** One instance of the navigator, as every read route sends it (with the term's kind and number for its label) */
+export const instanceOut = (i: {
+  kind: string;
+  offset: number;
+  from: string;
+  to: string;
+  end: string;
+  term?: Term;
+}) => ({
+  kind: i.kind as z.infer<typeof periodOut>['kind'],
+  offset: i.offset,
+  from: i.from,
+  to: i.to,
+  end: i.end,
+  termLabel: i.term?.label ?? null,
+  termKind: i.term?.kind ?? null,
+  termIndex: i.term?.index ?? null,
 });
 
 export const comparison = registry.register(
@@ -64,14 +81,23 @@ export const bandCount = registry.register(
     from: z.number(),
     to: z.number(),
     count: z.number(),
+    /** The same band in the instance before ("было N"); null when there is no instance before */
+    prevCount: z.number().nullable(),
   }),
 );
 
 /** The bands of the child's scale with their counts: never fixed ranges (design.md 9, D53) */
-export function bandsOf(scale: GradingScale, stats: PeriodStats) {
+export function bandsOf(scale: GradingScale, stats: PeriodStats, prev: PeriodStats | null = null) {
   return activeBands(scale).map((band: BandRole) => {
     const b = scale.bands[band]!;
-    return { band, labelKey: b.labelKey, from: b.from, to: b.to, count: stats.bands[band] };
+    return {
+      band,
+      labelKey: b.labelKey,
+      from: b.from,
+      to: b.to,
+      count: stats.bands[band],
+      prevCount: prev ? prev.bands[band] : null,
+    };
   });
 }
 
@@ -101,15 +127,31 @@ export const childEvent = registry.register(
   }),
 );
 
+const nowLesson = { slot: z.number().nullable(), subjectName: z.string(), room: z.string().nullable() };
+
 export const nowLine = registry.register(
   'NowLine',
   z.discriminatedUnion('state', [
-    z.object({ state: z.literal('before'), slot: z.number().nullable(), at: z.string() }),
-    z.object({ state: z.literal('lesson'), slot: z.number().nullable(), subjectName: z.string(), until: z.string() }),
-    z.object({ state: z.literal('break'), slot: z.number().nullable(), subjectName: z.string(), at: z.string() }),
-    z.object({ state: z.literal('done'), at: z.string() }),
+    z.object({ ...nowLesson, state: z.literal('before'), at: z.string() }),
+    z.object({ ...nowLesson, state: z.literal('lesson'), until: z.string() }),
+    z.object({ ...nowLesson, state: z.literal('break'), at: z.string() }),
+    z.object({
+      state: z.literal('done'),
+      at: z.string(),
+      /** the next school day's first lesson («завтра к 08:00») */
+      next: z.object({ date: z.string(), at: z.string() }).nullable(),
+    }),
   ]),
 );
+
+/** The distribution card (DistCard): one bucket per value of the child's scale, with its count */
+export const distributionOut = z.array(z.object({ from: z.number(), to: z.number(), count: z.number() }));
+export function distributionOf(scale: GradingScale, values: readonly number[]) {
+  return distributionBuckets(scale).map((b) => ({
+    ...b,
+    count: values.filter((v) => v >= b.from && v <= b.to).length,
+  }));
+}
 
 export const lessonOut = registry.register(
   'Lesson',

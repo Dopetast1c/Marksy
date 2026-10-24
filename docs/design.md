@@ -109,7 +109,7 @@ Bottom tab bar (five tabs):
 
 **Choosing and switching the student.** A parent with more than one child never lands on a child by accident:
 
-- On open (a fresh session, or the app resumed after a few hours) parents see **С кого начнём?** (`#pick`): one card per child, the whole card is the button. Card anatomy, top to bottom: avatar with name and class (and the school under it when the children's schools differ, that is when their `(provider_id, schoolId)` pairs differ: the label is `StudentRef.schoolName`, or the diary's name from the manifest when the system gives none; when the pairs are the same, or both `schoolId`s are empty on one provider, nothing is shown, so one school is never repeated on every card); a row of two or three small stat cells (Новых, Неделя with the arrow and "было", Пропуски when attendance exists; for a first-grader Уроков завтра and Д/з); one line with a severity stripe for the nearest thing to prepare (the nearest lesson still ahead that carries a tag, said as data: "Контрольная · Алгебра, завтра, 2 урок", stripe orange for an important tag; or "Ближайшие 2 недели без уроков с тегами"; never "Завтра контрольная" as if the app knew more than a tag match). Nothing else on the card: no chips, no prose, no chevron. One tap opens Главная for that child. Under the cards: the switch **Всегда начинать с последнего** and an entry row **Настройки** ("семья, уведомления, теги, оформление · без выбора ученика") that opens Ещё without picking anyone. The screen has no bell: events belong to a child. Until a child is picked, only screens that do not belong to a child open (Ещё and everything under it: Уведомления, Семья, Синхронизация, Теги, Оформление, Аватар); a tab or link to any other screen brings **С кого начнём?** back instead of quietly using the last child. While nobody is picked, Ещё starts with a row **"Ученик не выбран"** that leads back to the choice.
+- On open (a fresh session, or the app resumed after a few hours) parents see **С кого начнём?** (`#pick`): one card per child, the whole card is the button. Card anatomy, top to bottom: avatar with name and class (and the school under it when the children's schools differ, that is when their `(provider_id, schoolId)` pairs differ: the label is `StudentRef.schoolName`, or the diary's name from the manifest when the system gives none; when the pairs are the same, or both `schoolId`s are empty on one provider, nothing is shown, so one school is never repeated on every card); a row of two or three small stat cells (Новых, Неделя with the arrow and "было", Пропуски when attendance exists; for a class without marks the lessons and homework of the next school day, labelled «Уроков завтра» when it is tomorrow and «Уроков, пн» otherwise, so a Saturday shows Monday, and Д/з); one line with a severity stripe for the nearest thing to prepare (the nearest lesson still ahead that carries a tag, said as data: "Контрольная · Алгебра, завтра, 2 урок", stripe orange for an important tag; or "Ближайшие 2 недели без уроков с тегами"; never "Завтра контрольная" as if the app knew more than a tag match); until tags exist (M6) the card has no such line at all, because "без уроков с тегами" would not be true; and during the child's school day the «Сейчас» line (below). Nothing else on the card: no chips, no prose, no chevron. One tap opens Главная for that child. Under the cards: the switch **Всегда начинать с последнего** and an entry row **Настройки** ("семья, уведомления, теги, оформление · без выбора ученика") that opens Ещё without picking anyone. The screen has no bell: events belong to a child. Until a child is picked, only screens that do not belong to a child open (Ещё and everything under it: Уведомления, Семья, Синхронизация, Теги, Оформление, Аватар); a tab or link to any other screen brings **С кого начнём?** back instead of quietly using the last child. While nobody is picked, Ещё starts with a row **"Ученик не выбран"** that leads back to the choice.
 - **Several families.** A person who is a member of more than one family (a step-parent, a grandparent who helps two households) sees the cards grouped under small family headings, and Ещё has «Сменить семью»; the current family decides the tags, rules and settings in use. A student who is a member of two families sees no grouping and no switcher: the app is about them, and Внимание and the schedule carry the tags of both families (7.1).
 - **The school day on each card.** During school hours each card ends with one accent line for that child: "3-й урок, до 10:40", "перемена, дальше 4-й в 10:55", "первый урок в 08:30", "уроки закончились в 13:35". Each child has their own bells and lessons, so the two lines differ; a child with nothing on now has no line. Same rules as «Сейчас» (5.2).
 - **When the picker appears.** The selected child is remembered on the device (`localStorage`: child id and the time of the last activity). On launch or when the PWA returns to the foreground, the app compares that time with now: if **more than 12 hours** have passed, the stored child is cleared and the picker is shown; within 12 hours the app continues on the same child, so a parent who checks in the morning and again at lunch is not asked twice, but an evening open after a school day starts from the choice. A parent with one child and a student user never see the picker.
@@ -124,7 +124,11 @@ Routes (React Router):
 
 ```
 /login
+/join/:code                        the login screen with an invite code filled in (the link of POST /api/family/invites)
+/connect/matches                   «Дневник подключён»: a child another family follows (7.2)
+/pick                              «С кого начнём?»
 /s/:studentId                      overview
+/s/:studentId/events               Внимание (all rows of the selected period, 5.2a)
 /s/:studentId/marks                feed, ?period=week|month|quarter|year&offset=N (N instances back)
 /s/:studentId/finals               term and year finals, ?mode=quarters|years (reached from Оценки and Предметы)
 /s/:studentId/subjects             subjects by period
@@ -145,10 +149,10 @@ Each screen has an id in `docs/mockups.html` (`#login`, `#home`, ...). The proto
 Two entry paths on one screen:
 
 - **Вход**: Marksy login and password for an existing family member. Default tab.
-- **Подключить дневник**: first a provider picker (country, then system; one entry per provider in the registry with `status` beta or stable, plus "Другая страна или школа" that links to `docs/providers.md`), then, for multi-tenant vendors, the school or district (URL, code or a searchable list, as the manifest's `tenant` says), then the credential fields the provider's manifest declares and a role toggle when the provider supports both roles. Used once per family by the person who becomes `admin`; a signed-in parent adds another diary (another child's school, another system) with the same flow from Семья → «Добавить дневник», which adds the account to the current family instead of creating one. Copy explains that credentials are stored encrypted and used only to read the diary, a few times a day on school days. A `beta` provider shows a short warning.
+- **Подключить дневник**: first a provider picker (the «Страна и дневник» row opens a sheet, D32: country (its name from `Intl.DisplayNames`) and system; one entry per provider in the registry with `status` beta or stable, plus "Другая страна или школа" that links to `docs/providers.md`), then, for multi-tenant vendors, the school or district (URL, code or a searchable list, as the manifest's `tenant` says), then the credential fields the provider's manifest declares (the fields `login` and `password` are labelled «Логин в дневнике» and «Пароль от дневника» by the app, others with the manifest's label) and a role toggle only when the provider supports both roles; then the person's Marksy login, password and the name the family sees («Как вас называть в семье», `users.display_name`). The consent text under the button is `connect.consent` in every language, its version `CONSENT_VERSION` in `packages/i18n` (14.1). Used once per family by the person who becomes `admin`; a signed-in parent adds another diary (another child's school, another system) with the same flow from Семья → «Добавить дневник», which adds the account to the current family instead of creating one. Copy explains that credentials are stored encrypted and used only to read the diary, a few times a day on school days. A `beta` provider shows a short warning.
 - **У меня есть код приглашения** link: enter the code, choose a display name and a Marksy password, land on the students the admin assigned.
 - Header: the wordmark and a one-line description across the full width (nothing beside it).
-- Language selector at the very bottom of the screen, centred (native names of the twelve languages); the choice is remembered on the device and saved to the user after login.
+- Language selector at the very bottom of the screen, centred (native names of the twelve languages, in a sheet); the choice is remembered on the device and saved to the user after login (`PATCH /api/me`). A family created by «Подключить дневник» or a member joining by invite gets the language the screen was in; a plain sign-in without a choice takes the user's saved language.
 - **The provider is named in one place only**, the "Страна и дневник" field (its display name from the manifest). Every other label, hint and error on this screen and in the app says "дневник": "Логин в дневнике", "Пароль от дневника", "Дети не знают пароль от дневника". The same screen then works for any provider without copy changes.
 - Errors: wrong credentials (Marksy or the diary), the diary unreachable (collector host offline or 503), diary already connected to another family (contact its admin for an invite), invite code expired. When a child of the connected diary is already followed by another family, the flow asks what to do instead of failing (7.2).
 
@@ -751,16 +755,26 @@ DELETE /api/family {confirm: the family name}                  (admin; 14.1)
 
 GET  /api/students                                             -> «С кого начнём?» in one request: per child the
                                                                    card (name, class, school when the schools differ,
-                                                                   new marks, the week compared, absences, tomorrow for
-                                                                   a year without marks, «Сейчас», nearest tag from M6)
-GET  /api/students/:id/periods                                 -> the period kinds and every instance (the navigator)
-GET  /api/students/:id/overview?period=&sort=alpha|weak|strong -> {from, to, average, prevAverage,
-                                                                   trend, marksCount, testsCount,
-                                                                   bands: [{band, label, from, to, count}] (the child's scale: its bands, labels and bounds; never fixed ranges),
-                                                                   absences, newCount, lastDay{date,
-                                                                   marks[]}, movers[], attention[],
-                                                                   nextDay{date, lessons[]}}
-GET  /api/students/:id/subjects?period=&sort=                  -> [{subject, average, prevAverage,
+                                                                   new marks, the week compared, absences, nextDay
+                                                                   {date, lessons, homework} for a year without marks,
+                                                                   «Сейчас» only within the school day (D52), alert (a
+                                                                   critical row in this week's Внимание: the red badge
+                                                                   on the avatar), nearest tag from M6)
+GET  /api/students/:id/periods                                 -> the period kinds and every instance (the navigator),
+                                                                   each with its count of marks, or of lessons in a year
+                                                                   without marks (counts: marks|lessons), and the term's
+                                                                   kind and number (the word «четверть» comes from i18n)
+GET  /api/students/:id/overview?period=&offset=                -> {period, comparison, marksCount, prevMarksCount,
+                                                                   bands: [{band, labelKey, from, to, count, prevCount}] (the child's scale: its bands, labels and bounds; never fixed ranges),
+                                                                   distribution [{from, to, count}], absences,
+                                                                   prevAbsences, newCount, lessonTiles (a year without
+                                                                   marks: lessons and homework with the previous ones),
+                                                                   lastDay {date, marks[{subject, mark, workType,
+                                                                   comment}]} (the last day with marks up to today,
+                                                                   whatever the period), movers[], attention[] (five),
+                                                                   attentionTotal, nextDay {date, lessons[] as the
+                                                                   timetable has them}, now (subject, room; after lessons
+                                                                   the next school day's first lesson)}GET  /api/students/:id/subjects?period=&sort=                  -> [{subject, average, prevAverage,
                                                                    delta, trend, count, last[]}]
 GET  /api/students/:id/finals/quarters?year=                   -> rows: subject × {I..IV, year}: final or running average
                                                                    each {mark|average, kind: final|
@@ -781,7 +795,7 @@ GET  /api/students/:id/marks?period=|from=&to=&subject=&comments=all|only|none&t
                                                                    D56: never a mark, never in an average; only with
                                                                    capabilities.behaviour), markChanged / markRemoved
                                                                    (14 days); in a day the marks, then the comments
-GET  /api/students/:id/subjects/:subjectId/trend?period=|from=&to= -> buckets [{from, to, future, selected, average, count}]
+GET  /api/students/:id/subjects/:subjectId/trend?period=|from=&to= -> buckets [{from, to, future, selected, average, count, bands {critical, low, good, top}}] (the stacked bar, D26)
 GET  /api/students/:id/trend?period=                           -> the same over all marks (TrendCard on Главная)
 POST /api/students/:id/seen                                    -> marks everything as seen
 GET  /api/students/:id/schedule?day=today|tomorrow|next|week=N -> lessons by day (next = the next day with lessons;
@@ -792,7 +806,8 @@ GET  /api/students/:id/schedule?day=today|tomorrow|next|week=N -> lessons by day
 GET  /api/students/:id/school                                  -> Школа (5.9): bells, terms and holidays with notes
 GET  /api/students/:id/absences?period=
 GET  /api/students/:id/events?period=&offset=&skip=&limit=     -> ranked facts (low_mark, mark_changed, mark_removed,
-                                                                   absence, average_down/up, teacher_comment for 7 days,
+                                                                   absence, average_down/up (at most three drops and the
+                                                                   one biggest rise, 6.1), teacher_comment for 7 days,
                                                                    holidays_ahead), each {severity, date, subject, facts,
                                                                    link}; the words are the app's; Главная carries the
                                                                    first five as overview.attention
@@ -986,33 +1001,38 @@ Events come from `mark_events`, `api_drift_events`, account status and lessons (
 
 ## 12. Design tokens and Tailwind
 
-`docs/tokens.json` is the single source for colours, type, radius and spacing. A small script (`web/scripts/tokens-to-css.ts`) writes `web/src/styles/tokens.css` (CSS custom properties for light and dark) and `tailwind.config.ts` reads the same JSON for `theme.extend.colors`, `fontFamily`, `borderRadius`, `spacing`. Components use Tailwind classes that resolve to the variables (`bg-surface`, `text-ink`, `text-band-good`), so no hex value exists outside `tokens.json`. The prototype in `docs/mockups.html` uses the same variable names. Band *ranges* are not tokens: they belong to the grading scale and come from the API per student; tokens only give the four band roles their colours.
+`docs/tokens.json` is the single source for colours, type, radius and spacing. `pnpm --filter @marksy/web tokens` (`web/scripts/tokens-to-css.ts`) writes `web/src/styles/tokens.css`: the CSS variables of the prototype (`--bg`, `--accent`, `--band-good-fg`, `--r-lg`, `--av-skin-light`) for the light theme, the dark theme under `prefers-color-scheme` and `[data-theme="dark"]`, and a Tailwind 4 `@theme inline` block that maps the utilities onto those variables (`bg-surface`, `text-ink3`, `text-band-good-fg`, `rounded-lg`, `shadow-card`, `text-h1`) and resets Tailwind's own colours, fonts, radii and shadows, so nothing outside the tokens can be used. There is no `tailwind.config.ts`. A test fails when `tokens.css` is older than `tokens.json`, and a lint rule rejects a hex value anywhere in `web/`. The prototype in `docs/mockups.html` uses the same variable names. Band *ranges* are not tokens: they belong to the grading scale and come from the API per student; tokens only give the four band roles their colours.
 
-Token groups: `color.bg`, `color.surface`, `color.surface2`, `color.ink`, `color.ink2`, `color.ink3`, `color.line`, `color.accent`, `color.accentInk`, `color.band.{critical,low,ok,good}` with `bg` and `fg` each, `font.display`, `font.body`, `radius.{sm,md,lg,pill}`, `space` scale, `shadow.card`.
+Token groups: `color.light` and `color.dark` (`bg`, `surface`, `surface2`, `ink`, `ink2`, `ink3`, `line`, `accent`, `accentInk`, `accentSoft`, `band.{critical,low,ok,good,top}` with `bg` and `fg`, `holiday`), `color.subject` (the twelve subject hues, 6.6), `avatar` (the trait colours of generated avatars, D9), `font.display`, `font.body`, `typeScale`, `radius.{sm,md,lg,pill}`, `space` (n × 4 px, Tailwind's `--spacing`), `shadow.card` and `shadow.cardDark`, `tap.min`, `palette` and `wallpaper` (Оформление, 5.6a).
 
-Typography: Manrope for UI text and numbers (tabular figures), Fraunces for the large average on the hero and tiles. Both from Google Fonts, with system fallbacks.
+Typography: Manrope for UI text and numbers (tabular figures), Fraunces for the large average on the hero and tiles, with system fallbacks. The fonts are always served from the app's own origin (the `@fontsource` packages, bundled by Vite); the app never requests anything from a font CDN or any other third party (14.1). Only the prototype in `docs/` links Google Fonts.
 
 ## 13. Frontend structure
 
 ```
 web/src/
-  app/            router, providers, auth guard
-  api/            typed client generated from the OpenAPI document (openapi-typescript)
+  app/            router (App.tsx), guards (session, picked child, the 12-hour rule), Frame (column, body, tab bar)
+  api/            openapi.json (written by the server), schema.d.ts (openapi-typescript), client.ts (openapi-fetch,
+                  relative to the page's own origin), queries.ts (TanStack Query hooks)
   features/
-    auth/  overview/  marks/  subjects/  subject/  schedule/  more/  notifications/  settings/
-  hooks/          useScale(studentId), useCapabilities(studentId): every scale- or capability-dependent
-                  element reads these; no component checks a provider id
+    auth/  pick/  overview/  marks/  subjects/  subject/  schedule/  more/  notifications/  settings/
+  hooks/          useScale(studentId), useCapabilities(studentId), useSchoolTz(studentId): every scale-, capability-
+                  or time-dependent element reads these; no component checks a provider id; useSwipe
   components/     ScreenHeader, StudentBar (avatars only), Avatar (SVG from traits or photo), StudentPickerCard, MarkChip, StatBlock, SubjectRow, HintRow, LessonRow, LessonNote, LessonMenu, StudyBar, SessionRow, StudyChart, SegmentedControl,
-                  BottomSheet, TabBar, EmptyState   (one component per kind of information; a block that
-                  exists on one screen is reused, never re-implemented, on another)
-  lib/            marks.ts (bands, averages, target calculator), guidance.ts (rules from 6.2),
-                  tags.ts (tag matching, where a tag lands, hits from 6.3), period.ts
+                  PeriodBar and PeriodNav, FreshnessBanner, BottomSheet, TabBar, EmptyState   (one component per kind of
+                  information; a block that exists on one screen is reused, never re-implemented, on another)
+  lib/            time.ts (the school's timezone), period.ts (labels of kinds and instances), pick.ts (the 12-hour
+                  rule), swipe.ts, fit-bar.ts, freshness.ts: pure and unit-tested
   i18n/           react-i18next setup over packages/i18n (see docs/i18n.md)
-  styles/         tokens.css, base.css
-  sw.ts           service worker: offline shell, push handler
+  styles/         tokens.css (generated, 12), base.css (Tailwind, tokens, fonts)
+  sw.ts           service worker: offline shell, push handler (M8)
 ```
 
-State: TanStack Query for server data (keys by student and period), a tiny Zustand store for selected student, period and theme. `lib/marks.ts` is pure and unit-tested; the same logic exists in SQL for the API, and a Vitest test compares both on the fixtures.
+State: TanStack Query for server data (keys by student and period), a tiny Zustand store for the child picked on this device (with the time of the last activity and «Всегда начинать с последнего», in `localStorage`) and for the period kind and instance, which every screen shares and a child switch keeps. Marks math stays in `packages/core` and on the server; the web app formats what the API computed.
+
+**Types from the API.** `pnpm --filter @marksy/web api:types` runs `pnpm --filter @marksy/server openapi` (the document of every route, built without a database) and then openapi-typescript. A test in each package fails when `openapi.json` or `schema.d.ts` is older than the routes.
+
+**Time is the school's.** Today, now, the last school day and the edges of weeks and periods are the child's school timezone (`StudentSummary.timezone` from `/api/auth/me`), never the device's: a phone abroad shows the school's day (`web/src/lib/time.ts`, tested with the device in another zone). Calendar dates (`2026-10-19`) are formatted as dates, without a timezone shift.
 
 ## 13.1 Localisation
 
@@ -1024,13 +1044,13 @@ Summary of `docs/i18n.md`: one `packages/i18n` package with a JSON file per lang
 
 Marksy stores data about children, and a public project will be run in jurisdictions with different rules (GDPR in the EU and UK, FERPA and COPPA in the US, national laws elsewhere). The design gives every instance the same tools; which rules apply is the operator's decision.
 
-- **Consent record.** Connecting a diary stores `families.consent_version`, `consent_at`, `consent_by`: the text shown on the connect screen (per interface language, versioned in `packages/i18n`) says what is collected, where it is stored, and that the collector only reads. Changing the text bumps the version and asks again.
+- **Consent record.** Connecting a diary stores `families.consent_version`, `consent_at`, `consent_by`: the text shown on the connect screen (`connect.consent` per interface language, its version `CONSENT_VERSION` in `packages/i18n/src/consent.ts`) says what is collected (the children's names and classes, timetable, marks, absences, homework, teachers' comments), where it is stored (only on the server the app runs on, with whoever set it up; deleted with the family), and that the collector only reads. The API accepts only the version the app shows, so a stale client cannot record a text that was never on screen. Changing the text bumps the version and asks again.
 - **Retention.** `families.settings.retention_years` (default: keep everything, which is the point of the product; a family or operator can set a limit, applied by the janitor of 10.4). Operational data has its own limits (10.4, `RETENTION_*` in `.env.example`); raw responses are kept 14 days (`RETENTION_RAW_RESPONSES_DAYS`; the one that verified a week of the current term until the term ends) because they hold more than the app needs, and the provider's `redactRaw()` removes the personal fields the app never uses before they are stored.
 - **Export.** `GET /api/family/export` returns everything the family owns and the data of the children it follows as JSON (students, marks, history, rules, settings), admin only. Names of another family's members are not in it.
 - **Erasure.** `DELETE /api/family` removes the family and all its rows, including notification subscriptions, after a typed confirmation; a child's own data and raw responses go with it unless another family still follows the child, in which case only this family's link and rows go. A member can leave and be erased without deleting the family.
 - **Hosted instances.** Every family's credentials are encrypted with a per-family key derived from `CREDENTIALS_KEY` and the family id (HKDF, AES-256-GCM, `server/src/crypto/credentials.ts`), so when one server serves many families (friends, a school club) a database dump does not expose every diary password at once (the login itself is the account's label in Семья and is stored as it is); operators are told in `README` that hosting other people's children's data makes them a data controller, and the consent text names the operator.
 - **Minors' accounts.** Marksy stores no birth dates. A student user is a minor by assumption; student accounts cannot change family settings, export data or invite others.
-- **No third parties.** No analytics, no crash reporting that sends content, fonts optionally self-hosted (`SELF_HOST_FONTS=true`) for operators who do not want Google Fonts requests from children's phones.
+- **No third parties.** No analytics, no crash reporting that sends content, and every asset (fonts included) served from the app's own origin: a child's phone never sends a request to Google Fonts or any other CDN.
 
 - Privacy: data about minors. HTTPS only, httpOnly cookies, no analytics, no third-party scripts except fonts. Credentials encrypted at rest; `CREDENTIALS_KEY` never in the repo. Logs redact login, password, tokens, full names.
 - Performance: the overview query returns in under 100 ms on a few thousand marks; the PWA shell loads in under 1 s on 4G.

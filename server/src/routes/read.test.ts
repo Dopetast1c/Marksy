@@ -19,6 +19,8 @@ import {
 import { diaryAccounts } from '../db/schema';
 import { listProviders } from '@marksy/registry';
 import { DEMO_LOGINS, DEMO_PASSWORD, demoStudents, seedDemo } from '../seed/seed';
+import type { AppDeps } from '../http/context';
+import { missedSchoolDay } from './sync';
 
 const db = testDb();
 // Thursday 15 October 2026, 19:12 in the demo's time zone (the seed builds its diary around it)
@@ -55,10 +57,13 @@ describe('read API', () => {
     expect(res.status).toBe(200);
     expect(res.body).toHaveLength(2);
     const byId = Object.fromEntries(res.body.map((c: { id: string }) => [c.id, c]));
-    expect(byId[milena.id]).toMatchObject({ hasMarks: true, showSchool: true, tomorrow: null, nearestTag: null });
+    expect(byId[milena.id]).toMatchObject({ hasMarks: true, showSchool: true, nextDay: null, nearestTag: null });
     expect(byId[milena.id].week).toHaveProperty('trend');
-    // a year without marks: no comparison, tomorrow's lessons instead
-    expect(byId[mark.id]).toMatchObject({ hasMarks: false, week: null, tomorrow: expect.any(Object) });
+    // a year without marks: no comparison, the next school day's lessons instead (a weekend shows Monday)
+    expect(byId[mark.id]).toMatchObject({ hasMarks: false, week: null });
+    const next = byId[mark.id].nextDay;
+    expect(next.date > NOW.toISOString().slice(0, 10)).toBe(true);
+    expect(next.lessons).toBeGreaterThan(0);
   });
 
   it('Главная: the comparison and the bands of the child’s scale, the last day, Внимание, the next day', async () => {
@@ -74,9 +79,69 @@ describe('read API', () => {
     expect(res.body.attention.length).toBeLessThanOrEqual(5);
     expect(res.body.attentionTotal).toBeGreaterThanOrEqual(res.body.attention.length);
     expect(res.body.nextDay.lessons.length).toBeGreaterThan(0);
+    // the distribution counts every value of the period once, on the child's scale
+    const sum = res.body.distribution.reduce((n: number, b: { count: number }) => n + b.count, 0);
+    expect(sum).toBeGreaterThanOrEqual(res.body.marksCount);
+    expect(res.body.lessonTiles).toBeNull();
+    // the next day's lessons are the timetable's lessons (the compact LessonRow)
+    expect(res.body.nextDay.lessons[0]).toHaveProperty('ownHomework');
     const none = await mama.get(`/api/students/${mark.id}/overview?period=month`);
-    expect(none.body).toMatchObject({ hasMarks: false, comparison: null, bands: [] });
+    expect(none.body).toMatchObject({ hasMarks: false, comparison: null, bands: [], distribution: [] });
+    expect(none.body.lessonTiles.lessons).toBeGreaterThan(0);
     expect((await mama.get(`/api/students/${milena.id}/overview?period=week&offset=300`)).status).toBe(404);
+  });
+
+  it('the last school day with marks does not follow the period; Внимание keeps at most three drops and one rise', async () => {
+    const mama = await signIn(DEMO_LOGINS.parent);
+    const now = await mama.get(`/api/students/${milena.id}/overview?period=week`);
+    const back = await mama.get(`/api/students/${milena.id}/overview?period=week&offset=3`);
+    expect(back.body.lastDay.date).toBe(now.body.lastDay.date);
+    expect(now.body.lastDay.date <= '2026-10-15').toBe(true);
+    expect(now.body.lastDay.marks[0]).toHaveProperty('workType');
+    for (const offset of [0, 1, 2, 3]) {
+      const ev = await mama.get(`/api/students/${milena.id}/events?period=week&offset=${offset}`);
+      const kinds = ev.body.items.map((i: { kind: string }) => i.kind);
+      expect(kinds.filter((k: string) => k === 'average_down').length).toBeLessThanOrEqual(3);
+      expect(kinds.filter((k: string) => k === 'average_up').length).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it('the period picker counts marks per instance, or lessons for a class without marks', async () => {
+    const mama = await signIn(DEMO_LOGINS.parent);
+    const withMarks = await mama.get(`/api/students/${milena.id}/periods`);
+    expect(withMarks.body.counts).toBe('marks');
+    expect(withMarks.body.instances.year[0].count).toBeGreaterThan(0);
+    const weeks = withMarks.body.instances.week.reduce((n: number, i: { count: number }) => n + i.count, 0);
+    expect(weeks).toBe(withMarks.body.instances.year[0].count);
+    const noMarks = await mama.get(`/api/students/${mark.id}/periods`);
+    expect(noMarks.body.counts).toBe('lessons');
+    expect(noMarks.body.instances.week[0].count).toBeGreaterThan(0);
+  });
+
+  it('«Сейчас» and today are the school’s, whatever timezone the server machine is in', async () => {
+    const mama = await signIn(DEMO_LOGINS.parent);
+    // 10:00 at the school on Thursday: a lesson is on
+    const morning = new Date('2026-10-15T07:00:00Z');
+    const look = () =>
+      request(testApp({ now: () => morning }))
+        .get(`/api/students/${milena.id}/overview`)
+        .set(
+          'cookie',
+          mama.jar.getCookies({ path: '/', domain: '127.0.0.1', secure: false, script: false }).toValueString(),
+        );
+    const machineTz = process.env.TZ;
+    try {
+      const seen = [];
+      for (const tz of ['UTC', 'America/Los_Angeles', 'Asia/Tokyo']) {
+        process.env.TZ = tz;
+        const res = await look();
+        seen.push(JSON.stringify([res.body.now, res.body.period.from, res.body.lastDay?.date]));
+      }
+      expect(new Set(seen).size).toBe(1);
+      expect(JSON.parse(seen[0]!)[0]).not.toBeNull();
+    } finally {
+      process.env.TZ = machineTz;
+    }
   });
 
   it('Оценки, Предметы, Предмет: marks by day, subjects with the child’s teacher and group, the regular week', async () => {
@@ -198,6 +263,23 @@ describe('read API', () => {
     expect(status.accounts).toEqual([expect.objectContaining({ id: account!.id, status: 'loading' })]);
     const runs = (await mama.get('/api/sync/runs')).body;
     expect(runs[0]).toMatchObject({ kind: 'connect', trigger: 'user' });
+  });
+
+  it('stale only when a school day of the child passed unread: a weekend is not an alarm (D22, D55)', async () => {
+    const deps = { db } as AppDeps;
+    const day = 86_400_000;
+    // the last read: Saturday 10 October, 14:00 at the school (the demo school has lessons on Saturdays)
+    const saturday = new Date('2026-10-10T11:00:00Z');
+    const stale = (now: string) => missedSchoolDay(deps, [milena.id], saturday, new Date(now), 'Europe/Minsk', day);
+    expect(await stale('2026-10-12T04:00:00Z')).toBe(false); // Monday 07:00: only Sunday in between
+    expect(await stale('2026-10-14T04:00:00Z')).toBe(true); // Wednesday: Monday and Tuesday were not read
+    expect(await missedSchoolDay(deps, [milena.id], null, new Date(), 'Europe/Minsk', day)).toBe(true);
+    // a child no login reads (the demo family) is not stale: there is nothing to read them through
+    const mama = await signIn(DEMO_LOGINS.parent);
+    const status = (await mama.get('/api/sync/status')).body;
+    expect(
+      status.students.every((s: { readThrough: string; stale: boolean }) => s.readThrough !== 'none' || !s.stale),
+    ).toBe(true);
   });
 });
 

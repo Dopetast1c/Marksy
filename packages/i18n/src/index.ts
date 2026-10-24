@@ -9,6 +9,7 @@ import type { Messages, T } from './translate';
 export * from './languages';
 export * from './translate';
 export * from './check';
+export * from './consent';
 
 /** Every catalog that exists. Languages without a file fall back to English key by key (until milestone M5e). */
 export const CATALOGS: Readonly<Record<string, Messages>> = { en, ru };

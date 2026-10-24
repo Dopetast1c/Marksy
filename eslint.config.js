@@ -1,4 +1,5 @@
 import js from '@eslint/js';
+import i18next from 'eslint-plugin-i18next';
 import reactHooks from 'eslint-plugin-react-hooks';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
@@ -33,7 +34,7 @@ export default tseslint.config(
   {
     files: ['web/**/*.{ts,tsx}'],
     languageOptions: { globals: { ...globals.browser } },
-    plugins: { 'react-hooks': reactHooks },
+    plugins: { 'react-hooks': reactHooks, i18next },
     rules: {
       ...reactHooks.configs.recommended.rules,
       // Colours come from docs/tokens.json through Tailwind; a hex value in a component is a bug (CLAUDE.md)
@@ -43,7 +44,19 @@ export default tseslint.config(
           selector: 'Literal[value=/^#[0-9a-fA-F]{3,8}$/]',
           message: 'No hex colours in components: use the token classes generated from docs/tokens.json.',
         },
+        {
+          // user-facing attributes are words too (docs/i18n.md 5)
+          selector:
+            'JSXAttribute[name.name=/^(aria-label|title|alt|placeholder)$/] > Literal[value=/[A-Za-zА-Яа-яЁё]/]',
+          message: 'User-facing attributes come from t(), never a literal string.',
+        },
       ],
     },
+  },
+  {
+    // No literal user-facing strings in components (CLAUDE.md, docs/i18n.md 5): JSX text is a t() key
+    files: ['web/src/**/*.tsx'],
+    ignores: ['web/src/**/*.test.tsx'],
+    rules: { 'i18next/no-literal-string': ['error', { mode: 'jsx-text-only' }] },
   },
 );

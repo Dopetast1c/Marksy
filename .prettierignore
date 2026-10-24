@@ -9,3 +9,7 @@ docs/
 server/drizzle
 # written by the probe and the conformance suite, never reformatted
 providers/*/fixtures/
+# generated in web (tests compare them with their source byte for byte)
+web/src/styles/tokens.css
+web/src/api/schema.d.ts
+web/src/api/openapi.json

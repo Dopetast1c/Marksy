@@ -1,0 +1,145 @@
+import { useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
+import type { FormEvent } from 'react';
+import { Navigate, useNavigate, useParams } from 'react-router';
+import { api, data } from '../../api/client';
+import { useMe } from '../../api/queries';
+import { Button, Field } from '../../components/Field';
+import { LanguagePicker } from '../../components/LanguagePicker';
+import { SegmentedControl } from '../../components/SegmentedControl';
+import { rememberForUser, setLanguage, useT } from '../../i18n';
+import { ConnectForm } from './ConnectForm';
+import { errorText } from './errors';
+import { InviteForm } from './InviteForm';
+
+// Вход (docs/design.md 5.1): the wordmark and one line across the full width; Вход (a Marksy login, the default) and
+// Подключить дневник; «У меня есть код приглашения» under the sign-in; the language at the very bottom, remembered
+// on the device and given to the user after sign-in. /join/<code> opens the invite with its code filled in.
+
+/** The wordmark: a name, not a word to translate */
+const BRAND = 'Marksy';
+
+type Mode = 'login' | 'connect' | 'invite';
+
+/** Where a sign-in continues: back to an invite («Уже есть вход в Marksy»), otherwise the app; nothing else is honoured */
+function nextPath(): string {
+  const next = new URLSearchParams(window.location.search).get('next');
+  return next && /^\/join\/[A-Za-z0-9]{6,12}$/.test(next) ? next : '/';
+}
+
+export function LoginScreen() {
+  const t = useT();
+  const { code } = useParams();
+  const me = useMe();
+  const [mode, setMode] = useState<Mode>(code ? 'invite' : 'login');
+  // someone is signed in on this device: the login screen is not theirs to use (an invite link still is, it may add
+  // a family to the signed-in person, design.md 7.3)
+  if (!code && me.data) return <Navigate to={nextPath()} replace />;
+  return (
+    <div className="mx-auto flex min-h-dvh w-full max-w-[560px] flex-col gap-4 px-6 pt-6 pb-5">
+      <div className="flex flex-1 flex-col justify-center gap-[22px]">
+        <div>
+          <div className="font-display text-[44px] leading-none font-semibold tracking-[-0.02em]">
+            {BRAND.slice(0, -1)}
+            <span className="text-accent">{BRAND.slice(-1)}</span>
+          </div>
+          <p className="mt-2 text-ink2">{t('login.tagline')}</p>
+        </div>
+        {mode === 'invite' ? (
+          <>
+            <InviteForm initialCode={code ?? ''} />
+            <Button ghost onClick={() => setMode('login')}>
+              {t('invite.back')}
+            </Button>
+          </>
+        ) : (
+          <>
+            <SegmentedControl
+              label={t('login.mode')}
+              value={mode}
+              onChange={setMode}
+              options={[
+                { value: 'login', label: t('login.mode.login') },
+                { value: 'connect', label: t('login.mode.connect') },
+              ]}
+            />
+            {mode === 'login' ? (
+              <>
+                <SignIn />
+                <Button ghost onClick={() => setMode('invite')}>
+                  {t('invite.have')}
+                </Button>
+                <p className="text-small text-ink3">{t('login.note')}</p>
+              </>
+            ) : (
+              <ConnectForm />
+            )}
+          </>
+        )}
+      </div>
+      <div className="flex justify-center">
+        <LanguagePicker
+          onPick={(lng) => {
+            void setLanguage(lng);
+            rememberForUser(lng);
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function SignIn() {
+  const t = useT();
+  const navigate = useNavigate();
+  const queries = useQueryClient();
+  const [login, setLogin] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      await data(api.POST('/api/auth/login', { body: { login, password } }));
+      // the cached answer is "nobody": drop it, so the next screen asks again
+      // a new person on this device: nothing of the previous one may show, not even from the cache
+      queries.clear();
+      navigate(nextPath(), { replace: true });
+    } catch (err) {
+      setError(errorText(t, err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <form onSubmit={submit} className="flex flex-col gap-3.5">
+      <Field
+        label={t('login.marksyLogin')}
+        autoComplete="username"
+        required
+        value={login}
+        onChange={(e) => setLogin(e.target.value)}
+      />
+      <Field
+        label={t('login.password')}
+        type="password"
+        autoComplete="current-password"
+        required
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+      />
+      {error && (
+        <p role="alert" className="text-small text-band-critical-fg">
+          {error}
+        </p>
+      )}
+      <Button type="submit" disabled={busy}>
+        {t('login.submit')}
+      </Button>
+    </form>
+  );
+}

@@ -1,8 +1,9 @@
 import { getProvider } from '@marksy/registry';
-import { and, desc, eq, inArray } from 'drizzle-orm';
+import { and, desc, eq, gt, inArray, isNull, lt } from 'drizzle-orm';
 import { Router } from 'express';
 import { z } from 'zod';
-import { diaryAccounts, studentSources, syncRuns } from '../db/schema';
+import { diaryAccounts, lessons, studentSources, syncRuns } from '../db/schema';
+import { localTime } from '../sync/time';
 import type { AppDeps } from '../http/context';
 import { memberOf } from '../http/context';
 import { route } from '../http/route';
@@ -15,6 +16,42 @@ import { visibleStudents } from './me';
 // this family's login or another family's, with no detail of the other family. The history of runs for adults.
 
 const accountStatus = z.enum(['loading', 'ok', 'stale', 'paused', 'auth_failed', 'blocked', 'needs_2fa']);
+
+/**
+ * Is the data of these children stale (ux-principles D22, D55)? Only when a school day of theirs passed since the last
+ * successful read: a day with their lessons after that read and before today. A weekend or holidays never count, so a
+ * Monday morning is not an alarm. Children whose diary has no lessons at all fall back to the catch-up age.
+ */
+export async function missedSchoolDay(
+  deps: AppDeps,
+  studentIds: readonly string[],
+  lastSuccessAt: Date | null,
+  now: Date,
+  timezone: string,
+  catchupAfterMs: number,
+): Promise<boolean> {
+  if (!lastSuccessAt) return true;
+  if (!studentIds.length) return now.getTime() - lastSuccessAt.getTime() > catchupAfterMs;
+  const anyLesson = await deps.db
+    .select({ id: lessons.id })
+    .from(lessons)
+    .where(and(inArray(lessons.studentId, [...studentIds]), isNull(lessons.removedAt)))
+    .limit(1);
+  if (!anyLesson.length) return now.getTime() - lastSuccessAt.getTime() > catchupAfterMs;
+  const missed = await deps.db
+    .select({ id: lessons.id })
+    .from(lessons)
+    .where(
+      and(
+        inArray(lessons.studentId, [...studentIds]),
+        isNull(lessons.removedAt),
+        gt(lessons.date, localTime(lastSuccessAt, timezone).date),
+        lt(lessons.date, localTime(now, timezone).date),
+      ),
+    )
+    .limit(1);
+  return missed.length > 0;
+}
 
 export function syncRoutes(deps: AppDeps): Router {
   const r = Router();
@@ -61,6 +98,8 @@ export function syncRoutes(deps: AppDeps): Router {
               /** own: through this family's login; otherFamily: another family's login reads the child */
               readThrough: z.enum(['own', 'otherFamily', 'none']),
               lastSuccessAt: z.date().nullable(),
+              /** A school day of the child passed since the last read (the freshness banner, D22, D55) */
+              stale: z.boolean(),
             }),
           ),
         }),
@@ -85,6 +124,7 @@ export function syncRoutes(deps: AppDeps): Router {
               studentId: studentSources.studentId,
               accountId: studentSources.diaryAccountId,
               familyId: diaryAccounts.familyId,
+              providerId: diaryAccounts.providerId,
               lastSuccessAt: diaryAccounts.lastSuccessAt,
             })
             .from(studentSources)
@@ -92,6 +132,23 @@ export function syncRoutes(deps: AppDeps): Router {
             .where(and(inArray(studentSources.studentId, kids), eq(studentSources.active, true)))
         : [];
       const cfg = config();
+      const staleOf = new Map<string, boolean>();
+      for (const a of accounts) {
+        const tz = getProvider(a.providerId)?.manifest.timezone ?? 'UTC';
+        const reads = active.filter((s) => s.accountId === a.id).map((s) => s.studentId);
+        staleOf.set(a.id, await missedSchoolDay(deps, reads, a.lastSuccessAt, now, tz, cfg.catchupAfterMs));
+      }
+      const studentStale = new Map<string, boolean>();
+      for (const id of kids) {
+        const src = active.find((s) => s.studentId === id);
+        // a child no login reads is not stale: there is nothing to read them through (the fictional demo family)
+        if (!src) {
+          studentStale.set(id, false);
+          continue;
+        }
+        const tz = getProvider(src.providerId)?.manifest.timezone ?? 'UTC';
+        studentStale.set(id, await missedSchoolDay(deps, [id], src.lastSuccessAt, now, tz, cfg.catchupAfterMs));
+      }
       return {
         accounts: accounts.map((a) => {
           const own = runs.filter((x) => x.diaryAccountId === a.id);
@@ -109,7 +166,7 @@ export function syncRoutes(deps: AppDeps): Router {
                   ? 'needs_2fa'
                   : a.pausedUntil && a.pausedUntil > now
                     ? 'paused'
-                    : !a.lastSuccessAt || now.getTime() - a.lastSuccessAt.getTime() > cfg.catchupAfterMs
+                    : staleOf.get(a.id)
                       ? 'stale'
                       : 'ok';
           return {
@@ -140,6 +197,7 @@ export function syncRoutes(deps: AppDeps): Router {
             id,
             readThrough: !src ? 'none' : src.familyId === m.familyId ? 'own' : 'otherFamily',
             lastSuccessAt: src?.lastSuccessAt ?? null,
+            stale: studentStale.get(id) ?? true,
           };
         }),
       };

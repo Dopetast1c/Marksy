@@ -1,3 +1,4 @@
+import { CONSENT_VERSION } from '@marksy/i18n';
 import { DEMO_FULL_FIXTURES, demoFullTransport } from '@marksy/registry';
 import type { Transport } from '@marksy/core';
 import request from 'supertest';
@@ -8,7 +9,8 @@ export type TestAgent = ReturnType<typeof request.agent>;
 
 // Connecting fictional diaries through the API, as a person in a browser would (one agent keeps the cookie).
 
-export const CONSENT = 'test-1';
+/** The consent text the app shows: the only version the API accepts */
+export const CONSENT = CONSENT_VERSION;
 
 export function agentWith(over: Partial<AppDeps> = {}): TestAgent {
   return request.agent(testApp(over));

@@ -1,4 +1,4 @@
-import { addDays, compareSubjects, isLowMark, markBand, previousInstance } from '@marksy/core';
+import { addDays, bandOf, compareSubjects, isLowMark, markBand, previousInstance } from '@marksy/core';
 import type { ISODate } from '@marksy/core';
 import { and, desc, eq, gte, lte } from 'drizzle-orm';
 import type { Db } from '../db/client';
@@ -54,7 +54,7 @@ export async function childEvents(db: Db, ctx: ChildContext, p: ResolvedPeriod):
         severity: markBand(scale, m.values) === 'critical' ? 'critical' : 'low',
         date: m.date,
         subject: subj(m.subjectId, m.subjectName),
-        facts: { mark: chipOf(scale, m), workType: m.workType, topic: m.topic },
+        facts: { mark: chipOf(scale, m), workType: m.workType, topic: m.topic, comment: m.comment },
         link: { screen: 'subject', subjectId: m.subjectId },
       });
     }
@@ -70,13 +70,21 @@ export async function childEvents(db: Db, ctx: ChildContext, p: ResolvedPeriod):
         range,
         before ? { from: before.from, to: before.to } : null,
       );
-      for (const r of rows) {
-        if (r.delta == null || r.trend === 'flat' || r.trend == null) continue;
-        if (Math.abs(r.delta) < rules.dropStep || r.count < rules.dropMinMarks) continue;
+      // at most three drops, the biggest first, and the one biggest rise, so the list is not only bad news (6.1)
+      const moved = rows
+        .filter((r) => r.delta != null && (r.trend === 'up' || r.trend === 'down'))
+        .filter((r) => Math.abs(r.delta!) >= rules.dropStep && r.count >= rules.dropMinMarks)
+        .sort((a, b) => Math.abs(b.delta!) - Math.abs(a.delta!));
+      const shown = [
+        ...moved.filter((r) => r.trend === 'down').slice(0, 3),
+        ...moved.filter((r) => r.trend === 'up').slice(0, 1),
+      ];
+      for (const r of shown) {
         const s = subjectRows.find((x) => x.id === r.subjectId)!;
         out.push({
           kind: r.trend === 'down' ? 'average_down' : 'average_up',
-          severity: r.trend === 'down' ? 'low' : 'good',
+          // a drop into the lowest band is critical, any other drop low
+          severity: r.trend === 'down' ? (bandOf(scale, r.average) === 'critical' ? 'critical' : 'low') : 'good',
           date: p.to,
           subject: { id: s.id, name: s.name },
           facts: { average: r.average, prevAverage: r.prevAverage, delta: r.delta, count: r.count },

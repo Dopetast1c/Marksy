@@ -1,4 +1,5 @@
 import { randomBytes } from 'node:crypto';
+import { CONSENT_VERSION } from '@marksy/i18n';
 import { Router } from 'express';
 import { and, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
@@ -176,8 +177,11 @@ export function authRoutes(deps: AppDeps, limiters: Limiters): Router {
         credentials: z.record(z.string(), z.string().max(500)),
         role: z.enum(['parent', 'student']),
         user: z.object({ login, password, displayName }),
-        /** The version of the consent text the person agreed to (design.md 14.1) */
-        consentVersion: z.string().min(1).max(40),
+        /**
+         * The version of the consent text the person agreed to (design.md 14.1): only the text this build shows, so a
+         * stale or crafted client cannot record a version that was never on screen
+         */
+        consentVersion: z.literal(CONSENT_VERSION),
       }),
       response: connectResponse,
       errors: {
