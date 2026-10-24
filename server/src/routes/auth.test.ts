@@ -129,6 +129,22 @@ describe('auth: connect, login, logout, me', () => {
     expect((await db.select().from(diaryAccounts))[0]!.lastLoginAt!.getTime()).toBe(before.getTime() + 60_000);
   });
 
+  it('only the consent text the app shows can be agreed to, before any diary login', async () => {
+    const log: TransportRequest[] = [];
+    const res = await request(testApp({ transportFor: () => demoFullTransport({ log }) }))
+      .post('/api/auth/connect')
+      .send({
+        providerId: 'demo-full',
+        credentials: { login: 'diary-user', password: 'x' },
+        role: 'parent',
+        user: { login: 'new@example.com', password: 'correct horse battery', displayName: 'Мама' },
+        consentVersion: 'an-old-text',
+      });
+    expect(res.status).toBe(400);
+    expect(log).toEqual([]);
+    expect(await db.select().from(families)).toHaveLength(0);
+  });
+
   it('connecting is limited per address and per diary login: every try is a diary login', async () => {
     const app = testApp({ transportFor: () => async () => ({ status: 401, headers: {}, text: '{}' }) });
     const body = {

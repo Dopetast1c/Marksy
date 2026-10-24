@@ -4,7 +4,6 @@ import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router';
 import { api, data } from '../../api/client';
 import type { paths } from '../../api/schema';
-import { meKey } from '../../api/queries';
 import { Button, Field } from '../../components/Field';
 import { i18n, rememberForUser, useT } from '../../i18n';
 import { errorText } from './errors';
@@ -46,7 +45,8 @@ export function InviteForm({ initialCode = '' }: { initialCode?: string }) {
     try {
       await data(api.POST('/api/invites/{code}/accept', { params: { path: { code: clean } }, body: user }));
       rememberForUser(i18n.language);
-      queries.removeQueries({ queryKey: meKey });
+      // a new person on this device: nothing of the previous one may show, not even from the cache
+      queries.clear();
       navigate('/', { replace: true });
     } catch (err) {
       setError(errorText(t, err));

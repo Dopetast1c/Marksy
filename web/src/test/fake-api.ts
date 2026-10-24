@@ -387,7 +387,7 @@ export function fakeApi(start: Partial<FakeState> = {}) {
     if (route === 'PATCH /api/me') return json({});
     if (route === 'GET /api/family')
       return json({
-        matches: matchesPending ? [{ accountId: 'acc-1', studentId: 'kid-shared', name: 'Ева' }] : [],
+        matches: matchesPending ? [{ accountId: 'acc-1', studentId: 'kid-shared', name: 'Марк' }] : [],
       });
     if (route === 'POST /api/family/accounts/acc-1/matches/kid-shared') {
       matchesPending = false;

@@ -2,7 +2,7 @@ import { and, eq } from 'drizzle-orm';
 import request from 'supertest';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { settle, testApp } from '../../test/app';
-import { agentWith, connectFamily, otherParentTransport } from '../../test/connect';
+import { agentWith, CONSENT, connectFamily, otherParentTransport } from '../../test/connect';
 import type { TestAgent } from '../../test/connect';
 import { resetDb, testDb } from '../../test/db';
 import {
@@ -30,7 +30,7 @@ async function secondFamily() {
     credentials: { login: 'other-diary-user', password: 'other-pw-123' },
     role: 'parent',
     user: { login: 'papa@example.com', password: 'correct horse battery', displayName: 'Папа' },
-    consentVersion: 'test-1',
+    consentVersion: CONSENT,
   });
   expect(res.status).toBe(201);
   return {

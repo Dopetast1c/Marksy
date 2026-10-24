@@ -24,6 +24,8 @@
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "^9.1.0",
     "@marksy/core": "workspace:*",
+    "@marksy/demo-diary": "workspace:*",
+    "@marksy/i18n": "workspace:*",
     "@marksy/registry": "workspace:*",
     "@node-rs/argon2": "^2.2.2",
     "drizzle-orm": "^0.45.4",
@@ -31,8 +33,7 @@
     "node-cron": "^4.6.0",
     "pg": "^8.23.1",
     "swagger-ui-express": "^5.0.1",
-    "zod": "^4.6.7",
-    "@marksy/demo-diary": "workspace:*"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",

@@ -5,7 +5,6 @@ import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router';
 import { api, data } from '../../api/client';
 import type { Schemas } from '../../api/client';
-import { meKey } from '../../api/queries';
 import { BottomSheet, SheetOption } from '../../components/BottomSheet';
 import { Button, Field } from '../../components/Field';
 import { DownIcon } from '../../components/icons';
@@ -64,7 +63,8 @@ export function ConnectForm() {
       );
       // the family was made in this language: it becomes the new user's
       rememberForUser(i18n.language);
-      queries.removeQueries({ queryKey: meKey });
+      // a new person on this device: nothing of the previous one may show, not even from the cache
+      queries.clear();
       navigate(res.connect.matches.length ? '/connect/matches' : '/', { replace: true });
     } catch (err) {
       setError(errorText(t, err));

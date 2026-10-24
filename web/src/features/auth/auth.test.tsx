@@ -40,7 +40,7 @@ describe('the login screen', () => {
       consentVersion: CONSENT_VERSION,
     });
     // a child another family follows: the choice, «Из своей семьи» by default
-    expect(await screen.findByText('Ева уже есть в Marksy')).toBeTruthy();
+    expect(await screen.findByText('Марк уже есть в Marksy')).toBeTruthy();
     await user.click(screen.getByRole('button', { name: 'Продолжить' }));
     await waitFor(() =>
       expect(api.bodies['POST /api/family/accounts/acc-1/matches/kid-shared']).toEqual({ action: 'follow' }),

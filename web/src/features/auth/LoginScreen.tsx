@@ -1,9 +1,9 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { Navigate, useNavigate, useParams } from 'react-router';
 import { api, data } from '../../api/client';
-import { meKey } from '../../api/queries';
+import { useMe } from '../../api/queries';
 import { Button, Field } from '../../components/Field';
 import { LanguagePicker } from '../../components/LanguagePicker';
 import { SegmentedControl } from '../../components/SegmentedControl';
@@ -24,7 +24,11 @@ type Mode = 'login' | 'connect' | 'invite';
 export function LoginScreen() {
   const t = useT();
   const { code } = useParams();
+  const me = useMe();
   const [mode, setMode] = useState<Mode>(code ? 'invite' : 'login');
+  // someone is signed in on this device: the login screen is not theirs to use (an invite link still is, it may add
+  // a family to the signed-in person, design.md 7.3)
+  if (!code && me.data) return <Navigate to="/" replace />;
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-[560px] flex-col gap-4 px-6 pt-6 pb-5">
       <div className="flex flex-1 flex-col justify-center gap-[22px]">
@@ -95,7 +99,8 @@ function SignIn() {
     try {
       await data(api.POST('/api/auth/login', { body: { login, password } }));
       // the cached answer is "nobody": drop it, so the next screen asks again
-      queries.removeQueries({ queryKey: meKey });
+      // a new person on this device: nothing of the previous one may show, not even from the cache
+      queries.clear();
       navigate('/', { replace: true });
     } catch (err) {
       setError(errorText(t, err));

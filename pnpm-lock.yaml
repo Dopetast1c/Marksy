@@ -241,6 +241,9 @@ importers:
       '@marksy/demo-diary':
         specifier: workspace:*
         version: link:../packages/demo-diary
+      '@marksy/i18n':
+        specifier: workspace:*
+        version: link:../packages/i18n
       '@marksy/registry':
         specifier: workspace:*
         version: link:../packages/registry

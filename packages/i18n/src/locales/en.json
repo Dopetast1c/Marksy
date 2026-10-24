@@ -97,7 +97,7 @@
   "connect.displayName.hint": "for example, Mum",
   "connect.checking": "Checking the diary…",
   "connect.submit": "Connect and create the family",
-  "connect.consent": "The diary login and password are checked once, stored encrypted and used only to read the diary a few times a day on school days. Marksy never changes anything in the diary.",
+  "connect.consent": "The diary login and password are checked once, stored encrypted and used only to read the diary a few times a day on school days. Marksy never changes anything in the diary. It copies the children's names and classes, the timetable, marks, absences, homework and teachers' comments from the diary. All of it is kept only on the server this app runs on, with whoever set it up, and is deleted with the family.",
   "connect.otherCountry": "Another country or school",
   "connect.otherCountry.sub": "how to add your own diary",
 

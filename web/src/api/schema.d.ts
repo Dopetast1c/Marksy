@@ -325,7 +325,8 @@ export interface paths {
                             password: string;
                             displayName: string;
                         };
-                        consentVersion: string;
+                        /** @enum {string} */
+                        consentVersion: "2026-10-24.2";
                     };
                 };
             };
