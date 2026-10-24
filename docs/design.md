@@ -748,7 +748,11 @@ DELETE /api/family/members/:id                                 (admin, or yourse
 PUT  /api/family/accounts/:id/password {password}              -> re-check at next allowed login (admin)
 DELETE /api/family {confirm: the family name}                  (admin; 14.1)
 
-GET  /api/students                                             -> students the user may see
+GET  /api/students                                             -> «С кого начнём?» in one request: per child the
+                                                                   card (name, class, school when the schools differ,
+                                                                   new marks, the week compared, absences, tomorrow for
+                                                                   a year without marks, «Сейчас», nearest tag from M6)
+GET  /api/students/:id/periods                                 -> the period kinds and every instance (the navigator)
 GET  /api/students/:id/overview?period=&sort=alpha|weak|strong -> {from, to, average, prevAverage,
                                                                    trend, marksCount, testsCount,
                                                                    bands: [{band, label, from, to, count}] (the child's scale: its bands, labels and bounds; never fixed ranges),
@@ -761,20 +765,36 @@ GET  /api/students/:id/finals/quarters?year=                   -> rows: subject 
                                                                    each {mark|average, kind: final|
                                                                    running|none}, prevYearFinal
 GET  /api/students/:id/finals/years                            -> rows: subject × school year, direction
-GET  /api/students/:id/subjects/:subjectId?period=             -> {stats, quarters[], prevYearFinal,
-                                                                   distribution, marks[]}
+GET  /api/students/:id/subjects/:subjectId?period=             -> {subject (teacher, group, level, lessons per week),
+                                                                   comparison, bands, distribution, terms[] (average,
+                                                                   final), timeline[] (marks and the teacher's comments
+                                                                   without a mark, D56), week[] (the subject in the
+                                                                   regular week: weekday, slot, times, room, group)}
 PUT  /api/students/:id/final-marks                             -> manual year/quarter finals
                                                                    [{schoolYear, subjectName,
                                                                    period?, mark}] (admin, parent)
 PUT  /api/students/:id/subject-links                           -> [{from, to}]
-GET  /api/students/:id/marks?period=|from=&to=&subject=&tags=a,b&tagMode=any|all&absent=&below= -> cursor-paginated feed;
-                                                                   each mark carries its lesson's tagIds
-GET  /api/students/:id/subjects/:subjectId/trend?period=|from=&to= -> buckets [{from, to, label, average, count}]
+GET  /api/students/:id/marks?period=|from=&to=&subject=&comments=all|only|none&tags=a,b&tagMode=any|all&cursor=&limit=
+                                                                -> the feed: items of type mark (each with its lesson's
+                                                                   tagIds), comment (a teacher's comment without a mark,
+                                                                   D56: never a mark, never in an average; only with
+                                                                   capabilities.behaviour), markChanged / markRemoved
+                                                                   (14 days); in a day the marks, then the comments
+GET  /api/students/:id/subjects/:subjectId/trend?period=|from=&to= -> buckets [{from, to, future, selected, average, count}]
+GET  /api/students/:id/trend?period=                           -> the same over all marks (TrendCard on Главная)
 POST /api/students/:id/seen                                    -> marks everything as seen
-GET  /api/students/:id/schedule?day=today|tomorrow|next|week=  -> lessons with homework
-                                                                   (next = next school day)
+GET  /api/students/:id/schedule?day=today|tomorrow|next|week=N -> lessons by day (next = the next day with lessons;
+                                                                   week=0 this week, 1 next, -1 last): times, room,
+                                                                   group, teacher, homework, own homework, «готово»
+                                                                   (the author's name only inside the family),
+                                                                   «урока не будет», marks, absence, teacherComment
+GET  /api/students/:id/school                                  -> Школа (5.9): bells, terms and holidays with notes
 GET  /api/students/:id/absences?period=
-GET  /api/students/:id/events?period=&offset=&limit=           -> ranked events; Внимание is limit=5 of the same call
+GET  /api/students/:id/events?period=&offset=&skip=&limit=     -> ranked facts (low_mark, mark_changed, mark_removed,
+                                                                   absence, average_down/up, teacher_comment for 7 days,
+                                                                   holidays_ahead), each {severity, date, subject, facts,
+                                                                   link}; the words are the app's; Главная carries the
+                                                                   first five as overview.attention
 GET  /api/students/:id/guidance?subject=&day=                  -> subject hints, quarter goal,
                                                                    lesson hints (section 6.2)
 GET  /api/students/:id/tag-hits?horizon=14                     -> tag hits with due lesson, days left, advice (6.3)

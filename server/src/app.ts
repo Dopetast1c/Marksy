@@ -9,6 +9,9 @@ import { openApiDocument, registry } from './openapi';
 import { authRoutes } from './routes/auth';
 import { familyRoutes } from './routes/family';
 import { inviteRoutes } from './routes/invites';
+import { scheduleRoutes } from './routes/schedule';
+import { studentRoutes } from './routes/students';
+import { syncRoutes } from './routes/sync';
 
 // The Express app without listening, so Supertest can drive it in tests. Every route is described with Zod and appears
 // in Swagger at /api/docs (docs/design.md 9); every route but login, connect, invites, providers, health and docs
@@ -36,6 +39,9 @@ export function createApp(deps: AppDeps) {
   app.use(authRoutes(deps, new LoginLimiter(() => (deps.now?.() ?? new Date()).getTime())));
   app.use(familyRoutes(deps));
   app.use(inviteRoutes(deps));
+  app.use(studentRoutes(deps));
+  app.use(scheduleRoutes(deps));
+  app.use(syncRoutes(deps));
 
   // the document is built once, after every route registered itself; Swagger UI's assets are served from this
   // server (swagger-ui-dist), never from a CDN
