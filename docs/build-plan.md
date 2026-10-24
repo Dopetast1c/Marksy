@@ -11,7 +11,7 @@ The order in which Marksy is built with Claude Code, what each milestone must de
 | M2 | Provider `by-eschools` and the probe | `m2-eschools` | done |
 | M3 | Server: schema, collector, planner, seed data | `m3-server` | done |
 | M3a | School details (teachers, subgroups, rooms, bells, the regular week), children across families and systems, the per-child sync window | `m3a-school` | done |
-| M4 | Accounts, families and the read API | `m4-api` | todo |
+| M4 | Accounts, families and the read API | `m4-api` | in progress |
 | M5a | Web: tokens, shell, login, student pick, Главная, Внимание | `m5a-shell` | todo |
 | M5b | Web: Оценки, Итоги, Предметы, Предмет | `m5b-marks` | todo |
 | M5c | Web: Расписание, lesson menu, ready ticks, own homework | `m5c-schedule` | todo |

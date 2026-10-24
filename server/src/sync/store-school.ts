@@ -23,7 +23,7 @@ import { normName } from './upsert';
 
 export type StudentRow = typeof students.$inferSelect;
 
-interface AccountRef {
+export interface AccountRef {
   id: string;
   familyId: string;
   providerId: string;
@@ -34,6 +34,49 @@ export interface StoredStudents {
   listed: StudentRow[];
   /** The children this account is the active source of: the ones its run reads (one read per child, design.md 10.2) */
   readable: StudentRow[];
+}
+
+/**
+ * One child an account lists: the child's row (one per system, whichever login lists them), the identity, and this
+ * account as a source. Linking the family and choosing the active source are the caller's (storeStudents, connect).
+ */
+export async function upsertListedStudent(
+  db: Db,
+  account: AccountRef,
+  s: AccountInfo['students'][number],
+  now: Date,
+): Promise<StudentRow> {
+  const values = {
+    fullName: s.fullName,
+    givenName: s.givenName ?? null,
+    familyName: s.familyName ?? null,
+    schoolId: s.schoolId ?? null,
+    schoolLabel: s.schoolName ?? null,
+    timezone: s.timezone ?? null,
+    classExternalId: s.classExternalId ?? null,
+    classLabel: s.className ?? null,
+    grade: s.grade ?? null,
+    gradeLabel: s.gradeLabel ?? null,
+    isActive: true,
+  };
+  const [row] = await db
+    .insert(students)
+    .values({ ...values, providerId: account.providerId, externalId: s.externalId })
+    .onConflictDoUpdate({ target: [students.providerId, students.externalId], set: values })
+    .returning();
+  const studentId = row!.id;
+  await db
+    .insert(studentIdentities)
+    .values({ providerId: account.providerId, externalId: s.externalId, studentId })
+    .onConflictDoNothing();
+  await db
+    .insert(studentSources)
+    .values({ studentId, diaryAccountId: account.id, externalId: s.externalId, lastSeenAt: now })
+    .onConflictDoUpdate({
+      target: [studentSources.studentId, studentSources.diaryAccountId],
+      set: { externalId: s.externalId, lastSeenAt: now },
+    });
+  return row!;
 }
 
 /**
@@ -49,39 +92,12 @@ export async function storeStudents(
 ): Promise<StoredStudents> {
   const listed: StudentRow[] = [];
   for (const s of info.students) {
-    const values = {
-      fullName: s.fullName,
-      givenName: s.givenName ?? null,
-      familyName: s.familyName ?? null,
-      schoolId: s.schoolId ?? null,
-      schoolLabel: s.schoolName ?? null,
-      timezone: s.timezone ?? null,
-      classExternalId: s.classExternalId ?? null,
-      classLabel: s.className ?? null,
-      grade: s.grade ?? null,
-      gradeLabel: s.gradeLabel ?? null,
-      isActive: true,
-    };
-    const [row] = await db
-      .insert(students)
-      .values({ ...values, providerId: account.providerId, externalId: s.externalId })
-      .onConflictDoUpdate({ target: [students.providerId, students.externalId], set: values })
-      .returning();
-    const studentId = row!.id;
-    await db
-      .insert(studentIdentities)
-      .values({ providerId: account.providerId, externalId: s.externalId, studentId })
-      .onConflictDoNothing();
-    await db
-      .insert(studentSources)
-      .values({ studentId, diaryAccountId: account.id, externalId: s.externalId, lastSeenAt: now })
-      .onConflictDoUpdate({
-        target: [studentSources.studentId, studentSources.diaryAccountId],
-        set: { externalId: s.externalId, lastSeenAt: now },
-      });
-    await rebalance(db, studentId, now);
+    const row = await upsertListedStudent(db, account, s, now);
+    const studentId = row.id;
+    // the link first: only an account whose family follows the child can become its source
     await linkFamily(db, account.familyId, studentId, now);
-    listed.push(row!);
+    await rebalance(db, studentId, now);
+    listed.push(row);
   }
   await dropUnlisted(
     db,

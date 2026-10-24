@@ -125,7 +125,7 @@ export const cliLogins = pgTable(
     diaryAccountId: uuid('diary_account_id').references(() => diaryAccounts.id, { onDelete: 'set null' }),
     /** sha256 of the lower-cased login */
     loginHash: text('login_hash').notNull(),
-    command: text('command').$type<'probe' | 'sync:once'>().notNull(),
+    command: text('command').$type<'probe' | 'sync:once' | 'dev:connect'>().notNull(),
     runner: text('runner').$type<'owner' | 'claude'>().notNull(),
     at: ts('at').notNull(),
   },

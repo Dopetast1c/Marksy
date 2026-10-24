@@ -2,6 +2,7 @@ import { getProvider } from '@marksy/registry';
 import { eq, inArray } from 'drizzle-orm';
 import type { Db } from '../db/client';
 import {
+  alertRules,
   attendance,
   bellSchedules,
   families,
@@ -26,6 +27,7 @@ import {
   weekTemplates,
 } from '../db/schema';
 import { hashPassword } from '../auth/password';
+import { rulesForMember } from '../family/rules';
 import { fromLocal, localTime } from '../sync/time';
 import { followKey } from '../sync/sources';
 import { normName } from '../sync/upsert';
@@ -199,6 +201,13 @@ export async function seedDemo(db: Db, opts: { reset?: boolean; now?: Date } = {
     params: { child: 'Марк' },
     link: '/family',
   });
+  // the default notification rules of every member about every child they see, as on joining (design.md 7.1, 11)
+  const members = await db
+    .select({ userId: memberships.userId, familyId: memberships.familyId, role: memberships.role })
+    .from(memberships)
+    .where(inArray(memberships.familyId, [familyId.fid, familyId.otherId]));
+  for (const m of members) await rulesForMember(db, m.userId, m.familyId, m.role);
+  count('alert_rules', (await db.select({ id: alertRules.id }).from(alertRules)).length);
   return { created: true, familyId: familyId.fid, counts };
 }
 

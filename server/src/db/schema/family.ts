@@ -96,18 +96,28 @@ export const userFiles = pgTable('user_files', {
   createdAt: createdAt(),
 });
 
+/**
+ * A signed-in browser (design.md 7.2 step 5). The cookie holds a random token; only its SHA-256 is stored, so a
+ * database dump gives no live session. The current family of a person in several families lives here.
+ */
 export const sessions = pgTable(
   'sessions',
   {
     id: id(),
+    tokenHash: text('token_hash').notNull(),
     userId: uuid('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
+    familyId: uuid('family_id').references(() => families.id, { onDelete: 'set null' }),
     expiresAt: ts('expires_at').notNull(),
     createdAt: createdAt(),
     userAgent: text('user_agent'),
   },
-  (t) => [index('sessions_user_idx').on(t.userId), index('sessions_expires_idx').on(t.expiresAt)],
+  (t) => [
+    uniqueIndex('sessions_token_key').on(t.tokenHash),
+    index('sessions_user_idx').on(t.userId),
+    index('sessions_expires_idx').on(t.expiresAt),
+  ],
 );
 
 export const diaryAccounts = pgTable(
@@ -206,6 +216,7 @@ export const joinRequests = pgTable('join_requests', {
   decidedBy: uuid('decided_by').references(() => users.id, { onDelete: 'set null' }),
 });
 
+/** A one-time code to join a family (design.md 7.3); `code` is the SHA-256 of the code, never the code itself */
 export const invites = pgTable('invites', {
   code: text('code').primaryKey(),
   familyId: uuid('family_id')
@@ -229,7 +240,8 @@ export const familyStudents = pgTable(
     studentId: uuid('student_id')
       .notNull()
       .references(() => students.id, { onDelete: 'cascade' }),
-    status: text('status', { enum: ['active', 'suspended'] })
+    /** stopped: «Перестать следить» while a login of the family still shows the child (design.md 7.1) */
+    status: text('status', { enum: ['active', 'suspended', 'stopped'] })
       .notNull()
       .default('active'),
     settings: jsonb('settings').$type<ChildSettings>().notNull().default({}),

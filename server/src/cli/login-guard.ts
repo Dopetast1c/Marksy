@@ -12,7 +12,7 @@ import { fromLocal, localTime } from '../sync/time';
 // A refusal names the next allowed time; nothing is retried here.
 
 export type Runner = 'owner' | 'claude';
-export type CliCommand = 'probe' | 'sync:once';
+export type CliCommand = 'probe' | 'sync:once' | 'dev:connect';
 
 export const CLAUDE_RUNS_PER_DAY = 3;
 /** Local minutes: 07:00 to 20:00 */
