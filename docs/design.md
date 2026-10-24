@@ -12,7 +12,7 @@ Companion to `docs/ux-principles.md` (why the interface is the way it is, decisi
 | Grading | The grading system belongs to the provider, not to the app. Each provider names a `GradingScale` (range, direction, four band ranges, thresholds, goal targets, averaging, final rule, formatting); the UI derives every mark-related number and colour from it (`docs/providers.md` section 5). `by-10` reproduces the current interface exactly, and a snapshot test keeps it that way |
 | Roles | `admin` (the parent who connected the first diary) manages the family; `parent` sees all children the family follows and switches between them; `student` sees only themself. Roles are per family: one person has one login and may be a member of several families (`memberships`) |
 | Accounts | Marksy users are separate from diary accounts and from families. A family connects one or more diary accounts, on any providers, so children of one family can go to different schools in different systems; each child carries its own provider, capabilities, scale, calendar and bells. A child can be followed by several families (parents who live apart): the child's diary and the child's own work exist once and are shared, everything else stays in each family (section 7.1, ux-principles D53, D54). Each family member (second parent, each child) gets their own Marksy login through an invite code and sees only what the admin assigned |
-| Sync cadence | Only on each child's school days and only during that child's school day: from an hour before the first lesson to two hours after the last, read from the child's own timetable and bells (the manifest's window only when the day's times are unknown); nothing in the evening, at weekends or in the child's holidays. Each run shifted by a random 0 to 20 minutes and random seconds. A child is collected once, through one of the diary logins that see them. Never more than one diary login per hour per account, manual refresh included (10.2, ux-principles D55) |
+| Sync cadence | Only on each child's school days and only during that child's school day: from an hour before the first lesson to two hours after the last, read from the child's own timetable and bells (the manifest's window only when the day's times are unknown); nothing in the evening, at weekends or in the child's holidays. Each run shifted by a random 0 to 20 minutes and random seconds. A child is collected once, through one of the diary logins that see them. Never more than one diary login per hour per account, manual refresh included; only a developer's command-line runs in development mode may log in every 10 minutes (10.2, ux-principles D55, D57) |
 | History | Marks are kept forever and the past is re-checked: a weekly full re-scan of the current quarter (default Friday 20:00 to 23:00, jittered) detects changed and removed marks; manual re-scan by student and period from the app |
 | API drift | Every e-schools response is validated against a schema that allows unknown fields; new fields, missing fields, new enum values and new error shapes are logged, stored and pushed to the admin so support can be added quickly |
 | Core views | Overview (what matters now), Marks feed (week / month / quarter / year, any past instance, calendar-aligned), Finals (quarter table, year table), Subjects (period list), Subject detail, Schedule and homework, Notifications |
@@ -280,12 +280,12 @@ One list, by period. The period control and the mark filter chips (same as Оц�
 Order, from the most important down: who is signed in (a card); then **what the app does for the family**: **Семья** (children, members, diary accounts; parents only; first, because everything else depends on who is in the family), **Школа** (the selected child's bells, terms and holidays, 5.9; it asks for a child first when none is picked; hidden when the provider has neither), **Настройки уведомлений** (the setting people come back to most), **Теги** (what the schedule, Внимание and notifications look for), **Синхронизация** (status; parents only, and the freshness banner already leads there when something is wrong); then **how the app looks and behaves**, set once: **Оформление**, **Простой режим** (student only), **Подсказки**, **Всегда начинать с последнего ребёнка** (parents only), **Язык**; last and in its own card, **Выйти**. While no child is picked, the row "Ученик не выбран" comes first (5.1).
 
 - Avatars (`#avatarEdit`, from Family by tapping a student): a generated avatar from traits, or an uploaded photo. Traits: age (6–9, 10–13, 14–17, adult), look (boy, girl, neutral), skin tone (six), hair colour (black, dark, chestnut, light brown, blond, red, grey), hairstyle (buzz, short, medium, long, ponytail, bob, curly, braids), eye colour (brown, hazel, green, blue, grey), glasses. Every combination exists and is drawn on the fly as SVG from the trait set (no image library), so "a seven-year-old boy with dark hair and brown eyes" and "a twelve-year-old girl with dark hair and brown eyes" are both a few taps. The picker shows each option already applied to the child's current avatar. Photos are stored on the family's server only. Avatars appear in the StudentBar, the start screen, the family list, the student sheet and in notifications.
-- Family (`#family`, admin and parents): members of the family with role and which children they see; invite button that shows a code valid for 48 hours and a link; **diaries**, one row each: provider name, the school, status (ok, password changed, blocked, needs a code) and which children it shows; **children**, one row each: class and school, and for a child followed by another family too the quiet line «Также следит другая семья» (no names, no details, ux-principles D54); "Добавить дневник" connects another account, possibly on another provider (children in different systems), into this family. Admin can change a member's role and student access, remove a member, and «Перестать следить» a child (the child's shared data is deleted only when no family follows the child any more: the last `family_students` row going takes the child with it, a trigger of migration 0004). Stopping to follow a child that one of the family's own logins still lists is recorded as a status of the link that the collector respects (M4), not as a deleted row, or the next run would follow the child again and notify the other family a second time. A child whose diary no longer shows them to any of this family's logins is marked «Дневник больше не показывает этого ребёнка» and hidden from the pickers until it does (7.1). Prototype: the rail's «Семья (демо)» puts Марк in another school on a thinner fictional system and lets another family follow him; the screen «Подключение: ребёнок уже в Marksy» shows the choice of 7.2.
+- Family (`#family`, admin and parents): members of the family with role and which children they see; invite button that shows a code valid for 48 hours and a link; **diaries**, one row each: provider name, the school, status (ok, password changed, blocked, needs a code) and which children it shows; **children**, one row each: class and school, and for a child followed by another family too the quiet line «Также следит другая семья» (no names, no details, ux-principles D54); "Добавить дневник" connects another account, possibly on another provider (children in different systems), into this family. Admin can change a member's role and student access, remove a member, and «Перестать следить» a child (7.1): while one of the family's logins still shows the child, the link becomes `stopped` and the child stays in Семья with «Следить снова» and «Удалить данные» (only when no other family follows the child, typed confirmation); otherwise the link is deleted. The child's shared data goes only with the last `family_students` row (a trigger of migration 0004). A child whose diary no longer shows them to any of this family's logins is marked «Дневник больше не показывает этого ребёнка» and hidden from the pickers until it does (7.1). Prototype: the rail's «Семья (демо)» puts Марк in another school on a thinner fictional system and lets another family follow him; the screen «Подключение: ребёнок уже в Marksy» shows the choice of 7.2.
 - Теги (`#tags`): the family's tags (section 6.3) as rows with icon tile (orange for important), name, where and which words, "готовиться за N дней", on/off; tapping a row opens the editor; "Добавить тег"; an entry "Уведомления по тегам" that opens Уведомления; below, "Сейчас в расписании": every hit for the next two weeks.
 - Tag editor (`#tagEdit`): name; icon from the line set; tone (Обычный / Важный) with a live preview of the пометка; keywords as removable chips with an input (Enter adds; case-insensitive prefix, explained under the field); where to search (topic, homework) with the rule of where the tag lands; a switch for the diary's lesson type "контрольная" only when the provider has `lessonTypes`; subjects (none = all); "Готовиться заранее, дней" (нет / 1 / 2 / 3 / 5 / 7); for whom. No notification settings here. Below the form, "Проверка на расписании" shows what the tag as edited finds in the next two weeks. Save / delete.
 - Notifications (`#notifications`): channels (Web Push toggle per device, Telegram link with a one-time code); then a list of **alert rules** the user owns, each shown as a title built from its condition ("Оценка ниже 5", "Средний по предмету вырос больше чем на 0.5") and a line with the comparison period, when it is sent and for whom; a toggle per rule; tap to edit; "Добавить правило". Quiet hours. Rules whose event needs a capability the provider lacks are hidden.
 - Alert rule editor (`#alertEdit`, section 6.4): pick the **event** (new mark, teacher comment without a mark, subject average changed, mark changed or removed, absence, lesson with a tag, homework digest, weekly summary); set the **condition** that belongs to the event: for a mark, any / worse than a value / not worse than a value / in a band, with values and bands from the scale; for an average, direction (dropped / rose / changed), step, the **period and what it is compared with** (week vs previous week, 2 weeks, month, term: calendar-aligned, named explicitly on screen), minimum marks; for a lesson with a tag, **which tags** (chips, several allowed) and **when to remind** (several allowed: как только появился, за N дней, вечером накануне, в субботу на следующую неделю), which replace the generic "when" choice; choose **for whom** (all students or one) and **which subjects** (none selected = all); choose **when** (immediately, evening digest at 19:00, weekly on Sunday). Below, "Проверка на данных" shows how often the rule would have fired in the last two weeks or which subjects match now, so the threshold is tangible before saving. Save, delete.
-- Default rules created for a new user (all editable, deletable): any new mark (students on, parents off), teacher comment without a mark (parents on, in the evening digest; students off), mark worse than the scale's first threshold (parents on, immediately), mark in the top band (parents on, evening digest: good news belongs in notifications too), subject average dropped by 0.5 of a by-10 point over a week versus the previous week on at least 2 marks (off), mark changed or removed, absence, "Теги: Контрольная, Стихотворение" (as soon as it appears, the evening before, in the Saturday list; everyone on), "Теги: Принести" (the evening before; students on), homework digest, weekly summary.
+- Default rules, created per child on that child's scale for every user who may see the child, when the user joins a family and when a child comes into it (7.1; a student only about themselves; all editable, deletable): any new mark (students on, parents off), teacher comment without a mark (parents on, in the evening digest; students off), mark worse than the scale's first threshold (parents on, immediately), mark in the top band (parents on, evening digest: good news belongs in notifications too), subject average dropped by 0.5 of a by-10 point over a week versus the previous week on at least 2 marks (off), mark changed or removed, absence, "Теги: Контрольная, Стихотворение" (as soon as it appears, the evening before, in the Saturday list; everyone on), "Теги: Принести" (the evening before; students on), homework digest, weekly summary.
 - Sync (`#sync`, admin and parents): one block per diary account of the family, each with its own state card (status dot and word, last data, last attempt with its outcome, failures in a row when any, next run and why, today's window and whose school day makes it, "сегодня 07:00–16:20 · уроки Милены и Марка", or "сегодня без обновлений · у детей каникулы", a plain-language note when something is wrong; for a child collected through another family's login, «Обновляется через другую семью» with the time of the last data and no controls), "Следующий запуск возьмёт" (the planned weeks and a request estimate, 10.4), re-scan status (the current term's weeks not checked for six days, taken in the next school-day runs), API drift notices, manual actions: "Обновить сейчас" and "Перепроверить" with a scope picker (student, period: quarter / school year / specific weeks), and the run log (90 days). Both buttons respect the one-login-per-hour rule and show when the next run is allowed; after a wrong-password failure the primary button becomes "Обновить пароль дневника" and opens Семья. Every student screen gets a `FreshnessBanner` under its header when the last success is older than 24 hours or the account is paused or needs action (D22); it opens this screen. Prototype: rail toggle "Состояние синхронизации" with scenarios fresh / device was off / paused after failures / wrong password.
 - Настройки приложения (per device): "Всегда начинать с последнего ребёнка" (off: the picker appears after 12 hours of inactivity), simple mode for a student, theme.
 - Language: one of the twelve interface languages with its review status (`docs/i18n.md`); saved per user, also used for that user's notifications.
@@ -522,12 +522,15 @@ Marksy logins are independent from the diaries. A Marksy username is unique per 
 - **Access comes from the diary.** A family reaches a child only through an `active` `family_students` row, and a row is active only while at least one of the family's own diary accounts shows the child (`student_sources`, confirmed by `getAccount()` on that account's logins). Marksy adds no access the diary did not give: if a login loses the child (a school or a court changed who may see the diary), that family's link becomes `suspended`, the child disappears from its pickers and their data is not served to it until a login shows the child again.
 - **Authors across families.** A shared row records who made it (`done_by`, `created_by`, `set_by`). The name is shown only to the author's own family; another family sees the act without the name: «отмечено в другой семье». The student's own acts are shown as the student's in every family.
 - **The child as a user.** A child followed by two families has one Marksy login and a `student` membership in each; they see their own diary and work, the tags of both families, and their own notification rules (rules are per user). Adults of one family never see the other family's members, tags, rules, notifications or settings.
-- **Leaving.** A family that stops following a child removes its link; the child and the child's data are deleted when the last link goes (14.1).
+- **Leaving.** «Перестать следить» depends on whether one of the family's own logins still shows the child:
+  - it does: the link becomes `stopped`. The child's data stays; «Следить снова» makes the link `active` again with the whole history. The collector leaves a `stopped` link alone: it never re-links it, never notifies the other family about it and never reads the child through this family's logins (if another family's login shows the child, the active source moves there). The child is not in this family's pickers or the student switcher; Семья shows the child with «Следить снова» and «Удалить данные». «Удалить данные» is offered only when no other family follows the child, after a typed confirmation, and deletes the link, which takes the child and the child's data with it.
+  - it does not: the link is deleted; the child and the child's data go with the last link (14.1).
+- **Notification rules per child.** Rules are per user and per child (6.4, D53): the default set of section 11 is created for every child the user may see, on that child's scale, when the user joins a family and, for every member, when a child comes into the family (a new diary, «Следить из своей семьи», a child appearing in a connected account). A student gets rules about themselves only.
 
 ### 7.2 Connecting a diary (creates the family, or adds to it)
 
 1. Signed out, the first parent picks the provider, submits the credentials its manifest asks for (login and password for `by-eschools`) and the role, plus the Marksy login and password they want for themselves; this creates the family. Signed in, a parent of a family does the same from Семья → «Добавить дневник» without the Marksy fields; the account is added to the current family (a child at another school, possibly on another provider).
-2. Backend calls `provider.login()` once through the shared HTTP client (same throttling, allow-list and login-interval rules; this counts as that hour's login for the account), then `provider.getAccount()`.
+2. Backend calls `provider.login()` once through the shared HTTP client (same throttling, allow-list and login-interval rules; this counts as that hour's login for the account), then `provider.getAccount()`. The first sync goes on in this same login at once (10.4: a new account runs at once and backfills): standing weeks, then the history within the request cap, no second login; the answer to the connect does not wait for it, the app shows «загружаем» from `/api/sync/status`. A child the login shows whom another family follows is not read or linked until the parent chooses (step 3).
 3. If a `diary_accounts` row with this `(provider_id, external_user_id)` already exists, refuse with "this diary is already connected, ask the family admin for an invite". Otherwise, for every child of the account, look up `student_identities (provider_id, external_id)`:
    - **new child**: create the student, the identity, a `student_sources` row for this account and an active `family_students` row;
    - **child already in this family** (through another of its accounts): only add the `student_sources` row (a second source; the collector still reads the child once);
@@ -555,7 +558,9 @@ Marksy login and password only; verified against `users.password_hash`. e-school
 - Every `/api/students/:id/*` route checks that the user is a member of the current family, that the family's `family_students` link to the child is active, and `user_student_access`. Family-owned rows are filtered by the current family; child-owned rows by the child.
 - `POST /api/sync/run`, `POST /api/sync/rescan`: `admin` and `parent`. Family management, invites, diary accounts: `admin` (parents may invite if the admin enables it; default on).
 - All API routes except `/api/auth/login`, `/api/auth/connect`, `/api/invites/:code`, `/api/health` and `/api/docs` require a session.
-- Rate limits: login 5 per 15 minutes per IP and per login; sync and rescan share the login budget of the diary account (manifest `minLoginIntervalMinutes`) (section 10).
+- Rate limits: login 5 failed tries per 15 minutes per IP and per login (in memory: one process); sync and rescan share the login budget of the diary account (manifest `minLoginIntervalMinutes`) (section 10).
+- Sessions: a random token in an httpOnly, SameSite=Lax cookie (`Secure` behind https), only its SHA-256 in `sessions.token_hash`, 30 days sliding, the current family on the session; invite codes as their HMAC under `SESSION_SECRET`. An unknown login and a wrong password get the same answer; an attempt is counted before the password is checked.
+- Connecting a diary is a login to the diary: 5 tries per 15 minutes per address and per diary login; a diary login connected already is refused before the diary is called, and whether a Marksy login is taken is said only to someone the diary accepted. Invite codes: 5 lookups per 15 minutes per address. «Присоединиться» (handing the family's diary login to another family) is the admin's, and an approval moves nothing once the asker is no longer that family's admin.
 
 ## 8. Data model (PostgreSQL 16, Drizzle)
 
@@ -572,14 +577,15 @@ users               id, login (unique), display_name, timezone (IANA, for notifi
 user_files          id, user_id, kind (wallpaper), mime, bytes, width, height, storage_key, created_at   (5.6a; one
                     wallpaper per user, replaced on upload; served only to its owner)
 memberships         user_id, family_id, role (admin|parent|student), created_at, PK(user_id, family_id)
-family_students     family_id, student_id, status (active|suspended), settings (jsonb: low_mark, drop_step, call_after),
+family_students     family_id, student_id, status (active|suspended|stopped: 7.1 «Перестать следить»), settings (jsonb: low_mark, drop_step, call_after),
                     linked_at, linked_by, PK(family_id, student_id)      (the children a family follows, 7.1)
 student_identities  provider_id, external_id, student_id, UNIQUE(provider_id, external_id)   (one child, found at connect)
 student_sources     student_id, diary_account_id, external_id, last_seen_at (the last getAccount() that listed the child),
                     active (the account the collector reads this child through now), PK(student_id, diary_account_id)
 join_requests       id, family_id, from_user_id, diary_account_id, status, created_at, decided_by
-sessions            id, user_id, expires_at, created_at, user_agent
-invites             code (unique), family_id, created_by, role, student_ids (uuid[]), expires_at,
+sessions            id, token_hash (SHA-256 of the cookie token), user_id, family_id (the current family),
+                    expires_at, created_at, user_agent
+invites             code (SHA-256 of the code, unique), family_id, created_by, role, student_ids (uuid[]), expires_at,
                     used_by, used_at
 diary_accounts      id, family_id, provider_id, tenant (jsonb: url | code | id, nullable), role (parent|student),
                     label (login or email shown in the UI), credentials_enc (bytea, encrypted JSON of the manifest's auth fields),
@@ -673,7 +679,8 @@ notifications         id, user_id, student_id (null = family-wide), rule_id (nul
                       params), params (jsonb: the i18n parameters of title and body, which are keys), channels (text[]:
                       push|telegram), created_at, sent_at, read_at (nullable)   (180 days, 10.4)
                       webpush: {endpoint, keys}; telegram: {chat_id}
-alert_rules           id, user_id, event (mark|comment|average|changed|absence|tag|homework|summary),
+alert_rules           id, user_id, family_id, student_id, preset_key (the default it started as),
+                      event (mark|comment|average|changed|absence|tag|homework|summary),
                       condition (jsonb: mark {dir any|worse|better|band, value, band}; average {dir down|up|any,
                       step, period week|month|term|year, minMarks}; tag {tagIds [], moments [new|before|evening|saturday],
                       daysBefore}),
@@ -705,11 +712,11 @@ Conventions: JSON, `camelCase`, dates as ISO strings, errors as `{ error: { code
 ```
 POST /api/auth/login              {login, password}            -> {user, students[]}   Marksy login
 POST /api/auth/connect            {providerId, credentials: {...manifest fields}, role,
-                                   user: {login, password, displayName}}
+                                   user: {login, password, displayName}, consentVersion}
                                                                -> creates family, admin session;
                                                                   409 needs_2fa with a prompt
 POST /api/auth/logout
-PATCH /api/me                     {locale?, displayName?, avatar?}
+PATCH /api/me                     {locale?, displayName?, timezone?, uiMode?, avatar?}
 PATCH /api/students/:id           {avatar?}                    (admin, parent)
 POST /api/uploads/avatar          multipart, 512 px square, stored locally
 GET  /api/auth/me                                              -> {user, memberships[], family (current),
@@ -728,21 +735,28 @@ POST /api/family/accounts         {providerId, credentials, role} -> add a diary
                                                                    already followed by another family
 POST /api/family/accounts/:id/matches/:studentId {action: join|follow}   (7.2 step 3)
 PATCH /api/family/students/:id    {settings: {lowMark?, dropStep?, callAfter?}}   (admin, parent)
-DELETE /api/family/students/:id                                -> stop following (admin); the child is deleted
-                                                                   with the last link
+DELETE /api/family/students/:id                                -> «Перестать следить» (admin): {outcome: stopped|removed} (7.1)
+POST /api/family/students/:id/follow                           -> «Следить снова» (admin): a stopped link is active again
+DELETE /api/family/students/:id/data {confirm}                 -> «Удалить данные» of a stopped child nobody else follows (admin);
+                                                                   the child is deleted with the last link
 GET  /api/family/export                                        -> everything the family owns and the data of
                                                                    the children it follows, JSON (admin)
 DELETE /api/family                                             -> erase the family (admin, typed confirmation)
-POST /api/family/join-requests        PATCH /api/family/join-requests/:id   (approve / reject)
+PATCH /api/family/join-requests/:id {approve}   (admin; a request is made by POST …/matches/:studentId {action: join})
 POST /api/family/invites          {role, studentIds[]}          -> {code, url, expiresAt}
 PATCH /api/family/members/:id     {role?, studentIds?}
-DELETE /api/family/members/:id
-PUT  /api/family/accounts/:id/password {password}              -> re-check at next allowed login
+DELETE /api/family/members/:id                                 (admin, or yourself to leave; the last admin cannot)
+PUT  /api/family/accounts/:id/password {password}              -> re-check at next allowed login (admin)
+DELETE /api/family {confirm: the family name}                  (admin; 14.1)
 
-GET  /api/students                                             -> students the user may see
+GET  /api/students                                             -> «С кого начнём?» in one request: per child the
+                                                                   card (name, class, school when the schools differ,
+                                                                   new marks, the week compared, absences, tomorrow for
+                                                                   a year without marks, «Сейчас», nearest tag from M6)
+GET  /api/students/:id/periods                                 -> the period kinds and every instance (the navigator)
 GET  /api/students/:id/overview?period=&sort=alpha|weak|strong -> {from, to, average, prevAverage,
                                                                    trend, marksCount, testsCount,
-                                                                   bands: {b1to4, b5to6, b7to8, b9to10},
+                                                                   bands: [{band, label, from, to, count}] (the child's scale: its bands, labels and bounds; never fixed ranges),
                                                                    absences, newCount, lastDay{date,
                                                                    marks[]}, movers[], attention[],
                                                                    nextDay{date, lessons[]}}
@@ -752,20 +766,36 @@ GET  /api/students/:id/finals/quarters?year=                   -> rows: subject 
                                                                    each {mark|average, kind: final|
                                                                    running|none}, prevYearFinal
 GET  /api/students/:id/finals/years                            -> rows: subject × school year, direction
-GET  /api/students/:id/subjects/:subjectId?period=             -> {stats, quarters[], prevYearFinal,
-                                                                   distribution, marks[]}
+GET  /api/students/:id/subjects/:subjectId?period=             -> {subject (teacher, group, level, lessons per week),
+                                                                   comparison, bands, distribution, terms[] (average,
+                                                                   final), timeline[] (marks and the teacher's comments
+                                                                   without a mark, D56), week[] (the subject in the
+                                                                   regular week: weekday, slot, times, room, group)}
 PUT  /api/students/:id/final-marks                             -> manual year/quarter finals
                                                                    [{schoolYear, subjectName,
                                                                    period?, mark}] (admin, parent)
 PUT  /api/students/:id/subject-links                           -> [{from, to}]
-GET  /api/students/:id/marks?period=|from=&to=&subject=&tags=a,b&tagMode=any|all&absent=&below= -> cursor-paginated feed;
-                                                                   each mark carries its lesson's tagIds
-GET  /api/students/:id/subjects/:subjectId/trend?period=|from=&to= -> buckets [{from, to, label, average, count}]
+GET  /api/students/:id/marks?period=|from=&to=&subject=&comments=all|only|none&tags=a,b&tagMode=any|all&cursor=&limit=
+                                                                -> the feed: items of type mark (each with its lesson's
+                                                                   tagIds), comment (a teacher's comment without a mark,
+                                                                   D56: never a mark, never in an average; only with
+                                                                   capabilities.behaviour), markChanged / markRemoved
+                                                                   (14 days); in a day the marks, then the comments
+GET  /api/students/:id/subjects/:subjectId/trend?period=|from=&to= -> buckets [{from, to, future, selected, average, count}]
+GET  /api/students/:id/trend?period=                           -> the same over all marks (TrendCard on Главная)
 POST /api/students/:id/seen                                    -> marks everything as seen
-GET  /api/students/:id/schedule?day=today|tomorrow|next|week=  -> lessons with homework
-                                                                   (next = next school day)
+GET  /api/students/:id/schedule?day=today|tomorrow|next|week=N -> lessons by day (next = the next day with lessons;
+                                                                   week=0 this week, 1 next, -1 last): times, room,
+                                                                   group, teacher, homework, own homework, «готово»
+                                                                   (the author's name only inside the family),
+                                                                   «урока не будет», marks, absence, teacherComment
+GET  /api/students/:id/school                                  -> Школа (5.9): bells, terms and holidays with notes
 GET  /api/students/:id/absences?period=
-GET  /api/students/:id/events?period=&offset=&limit=           -> ranked events; Внимание is limit=5 of the same call
+GET  /api/students/:id/events?period=&offset=&skip=&limit=     -> ranked facts (low_mark, mark_changed, mark_removed,
+                                                                   absence, average_down/up, teacher_comment for 7 days,
+                                                                   holidays_ahead), each {severity, date, subject, facts,
+                                                                   link}; the words are the app's; Главная carries the
+                                                                   first five as overview.attention
 GET  /api/students/:id/guidance?subject=&day=                  -> subject hints, quarter goal,
                                                                    lesson hints (section 6.2)
 GET  /api/students/:id/tag-hits?horizon=14                     -> tag hits with due lesson, days left, advice (6.3)
@@ -852,6 +882,7 @@ Goal: look like a parent who opens the diary a few times during the school day, 
 - **Manual re-scan** from the Sync screen: student(s) and period (current quarter, school year, specific weeks). The API fetches per week, not per subject, so a subject filter in the UI does not reduce requests; the UI offers period and student only and explains why.
 - **Backfill** after connecting a diary: every week of the school year so far that was never verified, newest first. It is the lowest-priority set of any allowed run (10.4), so a school year arrives over a few runs, each within the request cap; a new account starts its first run at once, at any hour.
 - Limits come from the provider manifest (`limits`) and can be tightened globally in `.env` (`SYNC_WINDOW` as an outer bound on every child's window, `SYNC_MIN_LOGIN_INTERVAL`, `SYNC_MAX_REQUESTS_PER_RUN`); windows are intersected and limits take the stricter value, never the looser one. There is no family setting for the window: it follows the children's school days. `SYNC_JITTER_MIN` sets the delay and adds no requests. The two hours after the last lesson are a working assumption (teachers enter most marks during or right after lessons); if evening marks turn out to be common, add a single evening run rather than widening the hourly window.
+- **Manual runs in development.** The developer's command-line runs against a real diary (`pnpm probe`, `pnpm sync:once`, `pnpm dev:connect`) pass the login guard (`server/src/cli/login-guard.ts`) under a mode (`server/src/cli/mode.ts`). In `MARKSY_ENV=development` (exactly; the default of `.env.example`) they may log in once per account every `DEV_MIN_LOGIN_INTERVAL_MINUTES` (10, which the variable can only raise), at any hour, with no daily cap. Every other value, a missing one included, is production, and so is any build with `NODE_ENV=production`, whatever `MARKSY_ENV` says: the runs draw from the manifest's interval like every other run, and Claude Code (`MARKSY_RUNNER=claude`) is held to three runs a day between 07:00 and 20:00 school time. `SYNC_MIN_LOGIN_INTERVAL` tightens both modes. In both, Claude Code is refused while the account is paused and after the diary refused the login (the account's `requires_action`, or `cli_logins.outcome` of the last run) until the owner's own run succeeds (ux-principles D57). Every such login still stamps `last_login_at`, so the scheduler's next run waits its full interval after it. The mode never touches scheduled runs: in both, they keep each child's school-day window, the manifest's interval and D55.
 
 The schedule above describes the ideal day. Section 10.4 describes what happens on every other day: the server is a home machine that can be off for an hour, a day or a week, and the diary can be down. The scheduler is therefore not a list of cron expressions but a planner that looks at recorded state and decides what to fetch now.
 
@@ -896,7 +927,8 @@ The schedule above describes the ideal day. Section 10.4 describes what happens 
 
 | Data | Keep | Why |
 |---|---|---|
-| `cli_logins` | 90 days (`RETENTION_SYNC_RUNS_DAYS`) | the login guard of `pnpm probe` and `pnpm sync:once` needs a day; the rest is for diagnosis. Only a hash of the login is stored |
+| `join_requests` | a decided request 180 days (`RETENTION_MARK_EVENTS_DAYS`); a pending one until the admin decides | the decision is in the family's members and accounts; the request itself is only history |
+| `cli_logins` | 90 days (`RETENTION_SYNC_RUNS_DAYS`) | the login guard of `pnpm probe`, `pnpm sync:once` and `pnpm dev:connect` needs a day, and the last run's `outcome` (a login the diary refused); the rest is for diagnosis. Only a hash of the login is stored |
 | `sync_runs` | 90 days, then one row per day is compacted into `sync_daily` (date, runs, failures, requests) | the log is for diagnosing recent problems; the daily line is enough for "how often did this break" |
 | `sync_coverage` | current and previous school year; older rows deleted with the year's compaction | the planner never looks further back |
 | `raw_responses` | 14 days; the response that verified a `(student, week)` of the current term is kept until the term ends. Stored without the personal fields the mapper never uses (the provider's `redactRaw()`), never the login response | re-parsing after a drift fix needs recent bodies, not a year of them |

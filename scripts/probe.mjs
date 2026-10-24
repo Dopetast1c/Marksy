@@ -1,6 +1,7 @@
 // pnpm probe [--provider <id>] [--weeks <1-8>]: runs a provider's own probe script (docs/providers.md 8). It logs in to
 // the real diary with the logins in .env, after the login guard allowed it (the provider's probe asks it itself,
-// server/src/cli/login-guard.ts: one login an hour per account; for Claude Code three runs a day, 07:00 to 20:00).
+// server/src/cli/login-guard.ts and mode.ts: one login per account per interval, 10 minutes in development and the
+// manifest's in production, where Claude Code also has three runs a day, 07:00 to 20:00).
 // pnpm probe --offline [run] re-runs the provider's probe on saved raw responses in data/probe/ without a login.
 // Without --provider it picks the only provider that has a probe.
 import { spawnSync } from 'node:child_process';

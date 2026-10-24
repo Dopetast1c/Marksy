@@ -125,9 +125,11 @@ export const cliLogins = pgTable(
     diaryAccountId: uuid('diary_account_id').references(() => diaryAccounts.id, { onDelete: 'set null' }),
     /** sha256 of the lower-cased login */
     loginHash: text('login_hash').notNull(),
-    command: text('command').$type<'probe' | 'sync:once'>().notNull(),
+    command: text('command').$type<'probe' | 'sync:once' | 'dev:connect'>().notNull(),
     runner: text('runner').$type<'owner' | 'claude'>().notNull(),
     at: ts('at').notNull(),
+    /** Set when the diary refused this login: Claude Code's next run waits for the owner (login-guard.ts) */
+    outcome: text('outcome', { enum: ['auth', 'blocked', 'needs_2fa'] }),
   },
   (t) => [index('cli_logins_login_at_idx').on(t.providerId, t.loginHash, t.at)],
 );

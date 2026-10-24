@@ -30,6 +30,7 @@ import type { SyncErrorClass, SyncRunStats } from '../db/schema';
 import { localTime } from './time';
 import { storeCalendar, storeFinals, storeStudents, storeSubjects, studentRef } from './store-school';
 import type { StoredCalendar, StudentRow } from './store-school';
+import type { OpenedLogin } from './opened';
 import { upsertRange } from './upsert';
 import type { UpsertStats } from './upsert';
 
@@ -68,6 +69,8 @@ export interface CollectorOptions {
    * weeks, no coverage (design.md 10.4)
    */
   accountOnly?: boolean;
+  /** A login opened already (connecting a diary): no second login, no second getAccount() (sync/opened.ts) */
+  opened?: OpenedLogin;
   /** Whether finals are fetched for this student in this run; default: once per local day */
   finalsDue?(input: PlanInput): Promise<boolean> | boolean;
   /** Whether bells and the regular week are fetched for this student in this run; default: once per local day */
@@ -193,15 +196,18 @@ export async function runCollector(opts: CollectorOptions): Promise<CollectorRes
     if (pending.length) await db.insert(rawResponses).values(pending.splice(0));
   };
 
-  const run = createRunContext(provider, {
-    ...(opts.transport && { transport: opts.transport }),
-    ...(opts.sleep && { sleep: opts.sleep }),
-    ...(opts.random && { random: opts.random }),
-    ...(opts.log && { log: opts.log }),
-    ...(opts.stricter && { stricter: opts.stricter }),
-    now,
-    onResponse,
-  });
+  const run =
+    opts.opened?.run ??
+    createRunContext(provider, {
+      ...(opts.transport && { transport: opts.transport }),
+      ...(opts.sleep && { sleep: opts.sleep }),
+      ...(opts.random && { random: opts.random }),
+      ...(opts.log && { log: opts.log }),
+      ...(opts.stricter && { stricter: opts.stricter }),
+      now,
+      onResponse,
+    });
+  opts.opened?.observe(onResponse);
   const { ctx } = run;
   const stats: UpsertStats = emptyStats();
   const warnings: string[] = [];
@@ -210,8 +216,8 @@ export async function runCollector(opts: CollectorOptions): Promise<CollectorRes
   let failure: unknown;
 
   try {
-    const session = await run.login(opts.credentials);
-    const info = await provider.getAccount(session, ctx);
+    const session = opts.opened ? opts.opened.session : await run.login(opts.credentials);
+    const info = opts.opened ? opts.opened.info : await provider.getAccount(session, ctx);
     // every listed child is stored and linked; only those this account is the active source of are read
     students = (await storeStudents(db, account, info, now())).readable;
     if (opts.accountOnly) students = [];

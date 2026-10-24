@@ -1,5 +1,6 @@
 import { getProvider, listProviders } from '@marksy/registry';
 import { claimLogin, refusalText, runnerOf } from '../src/cli/login-guard';
+import { manualLoginPolicy } from '../src/cli/mode';
 import { createDb, migrateDb } from '../src/db/client';
 import { masterKey } from '../src/crypto/credentials';
 import { errorSummary, log } from '../src/log';
@@ -7,8 +8,8 @@ import { readSyncConfig } from '../src/sync/config';
 import { exitCodeOf, formatReport, syncOnce } from '../src/sync/once';
 
 // `pnpm sync:once [--provider <id>]`: one sync of the owner's own diary account from .env (DIARY_LOGIN,
-// DIARY_PASSWORD) into the local database. It logs in to the real diary: the owner runs it, or Claude Code within the
-// login guard (CLAUDE.md, Real diary runs; src/cli/login-guard.ts). The default provider
+// DIARY_PASSWORD) into the local database. It logs in to the real diary, within the login guard and the mode's limits
+// (CLAUDE.md, Real diary runs; src/cli/login-guard.ts, src/cli/mode.ts). The default provider
 // is the first one offered to families (status stable or beta); fixture-only providers are refused, so the real login
 // is never sent anywhere else.
 
@@ -36,22 +37,24 @@ try {
   await migrateDb(db);
   const runner = runnerOf();
   const manifest = provider.manifest;
+  const policy = manualLoginPolicy(manifest);
   const claim = await claimLogin(db, {
     providerId: manifest.id,
     login,
     command: 'sync:once',
     runner,
-    minLoginIntervalMinutes: manifest.limits.minLoginIntervalMinutes,
+    policy,
     timezone: manifest.timezone,
     now: new Date(),
   });
   if (!claim.ok) {
-    console.error(refusalText(claim, manifest.timezone));
+    console.error(refusalText(claim, manifest.timezone, policy));
     // the owner's run held back by the interval ends like a run the gate held back (0); every other refusal is not 0
     process.exit(runner === 'owner' && claim.reason === 'interval' ? 0 : 3);
   }
   const report = await syncOnce({
     trigger: runner === 'claude' ? 'cli-claude' : 'cli',
+    manualLoginIntervalMinutes: policy.intervalMinutes,
     db,
     provider,
     login,

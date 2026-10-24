@@ -10,6 +10,7 @@ import {
   schoolYears,
   studentIdentities,
   students,
+  familyStudents,
   studentSources,
   studentYears,
   subjects,
@@ -21,9 +22,11 @@ import { normName } from './upsert';
 // Students, school years, terms, holidays, subjects and finals: what a run learns before it fetches any week. Every
 // run refreshes them; ids from the provider stay in external_id.
 
-export type StudentRow = typeof students.$inferSelect;
+export type { StudentRow } from './readers';
+export { readableStudents, sourcedStudents } from './readers';
+import type { StudentRow } from './readers';
 
-interface AccountRef {
+export interface AccountRef {
   id: string;
   familyId: string;
   providerId: string;
@@ -34,6 +37,58 @@ export interface StoredStudents {
   listed: StudentRow[];
   /** The children this account is the active source of: the ones its run reads (one read per child, design.md 10.2) */
   readable: StudentRow[];
+}
+
+/**
+ * One child an account lists: the child's row (one per system, whichever login lists them), the identity, and this
+ * account as a source. Linking the family and choosing the active source are the caller's (storeStudents, connect).
+ */
+export async function upsertListedStudent(
+  db: Db,
+  account: AccountRef,
+  s: AccountInfo['students'][number],
+  now: Date,
+): Promise<StudentRow> {
+  const values = {
+    fullName: s.fullName,
+    givenName: s.givenName ?? null,
+    familyName: s.familyName ?? null,
+    schoolId: s.schoolId ?? null,
+    schoolLabel: s.schoolName ?? null,
+    timezone: s.timezone ?? null,
+    classExternalId: s.classExternalId ?? null,
+    classLabel: s.className ?? null,
+    grade: s.grade ?? null,
+    gradeLabel: s.gradeLabel ?? null,
+    isActive: true,
+  };
+  const [row] = await db
+    .insert(students)
+    .values({ ...values, providerId: account.providerId, externalId: s.externalId })
+    .onConflictDoUpdate({ target: [students.providerId, students.externalId], set: values })
+    .returning();
+  const studentId = row!.id;
+  await db
+    .insert(studentIdentities)
+    .values({ providerId: account.providerId, externalId: s.externalId, studentId })
+    .onConflictDoNothing();
+  await db
+    .insert(studentSources)
+    .values({ studentId, diaryAccountId: account.id, externalId: s.externalId, lastSeenAt: now })
+    .onConflictDoUpdate({
+      target: [studentSources.studentId, studentSources.diaryAccountId],
+      set: { externalId: s.externalId, lastSeenAt: now },
+    });
+  return row!;
+}
+
+/** No link of this family to the child, and another family follows them: «Присоединиться» or «Следить» is pending */
+async function awaitingChoice(db: Db, familyId: string, studentId: string): Promise<boolean> {
+  const links = await db
+    .select({ familyId: familyStudents.familyId })
+    .from(familyStudents)
+    .where(eq(familyStudents.studentId, studentId));
+  return links.length > 0 && !links.some((l) => l.familyId === familyId);
 }
 
 /**
@@ -48,40 +103,21 @@ export async function storeStudents(
   now = new Date(),
 ): Promise<StoredStudents> {
   const listed: StudentRow[] = [];
+  const before = await db
+    .select({ studentId: studentSources.studentId })
+    .from(studentSources)
+    .where(eq(studentSources.diaryAccountId, account.id));
+  const shownBefore = new Set(before.map((b) => b.studentId));
   for (const s of info.students) {
-    const values = {
-      fullName: s.fullName,
-      givenName: s.givenName ?? null,
-      familyName: s.familyName ?? null,
-      schoolId: s.schoolId ?? null,
-      schoolLabel: s.schoolName ?? null,
-      timezone: s.timezone ?? null,
-      classExternalId: s.classExternalId ?? null,
-      classLabel: s.className ?? null,
-      grade: s.grade ?? null,
-      gradeLabel: s.gradeLabel ?? null,
-      isActive: true,
-    };
-    const [row] = await db
-      .insert(students)
-      .values({ ...values, providerId: account.providerId, externalId: s.externalId })
-      .onConflictDoUpdate({ target: [students.providerId, students.externalId], set: values })
-      .returning();
-    const studentId = row!.id;
-    await db
-      .insert(studentIdentities)
-      .values({ providerId: account.providerId, externalId: s.externalId, studentId })
-      .onConflictDoNothing();
-    await db
-      .insert(studentSources)
-      .values({ studentId, diaryAccountId: account.id, externalId: s.externalId, lastSeenAt: now })
-      .onConflictDoUpdate({
-        target: [studentSources.studentId, studentSources.diaryAccountId],
-        set: { externalId: s.externalId, lastSeenAt: now },
-      });
+    const row = await upsertListedStudent(db, account, s, now);
+    const studentId = row.id;
+    // the link first: only an account whose family follows the child can become its source. A child this login showed
+    // already, whom another family follows and this one does not, waits for the parent's choice made at connect
+    // (design.md 7.2 step 3): the collector links only a child that appears in the login anew
+    if (!(shownBefore.has(studentId) && (await awaitingChoice(db, account.familyId, studentId))))
+      await linkFamily(db, account.familyId, studentId, now);
     await rebalance(db, studentId, now);
-    await linkFamily(db, account.familyId, studentId, now);
-    listed.push(row!);
+    listed.push(row);
   }
   await dropUnlisted(
     db,
@@ -94,27 +130,6 @@ export async function storeStudents(
     .where(and(eq(studentSources.diaryAccountId, account.id), eq(studentSources.active, true)));
   const readable = new Set(mine.map((m) => m.studentId));
   return { listed, readable: listed.filter((s) => readable.has(s.id)) };
-}
-
-/** The children an account is the active source of, as stored (the planner's view before any login) */
-export async function readableStudents(db: Db, accountId: string): Promise<StudentRow[]> {
-  const rows = await db
-    .select({ student: students })
-    .from(studentSources)
-    .innerJoin(students, eq(students.id, studentSources.studentId))
-    .where(
-      and(eq(studentSources.diaryAccountId, accountId), eq(studentSources.active, true), eq(students.isActive, true)),
-    );
-  return rows.map((r) => r.student);
-}
-
-/** Every child an account is a source of, active or not */
-export async function sourcedStudents(db: Db, accountId: string): Promise<string[]> {
-  const rows = await db
-    .select({ studentId: studentSources.studentId })
-    .from(studentSources)
-    .where(eq(studentSources.diaryAccountId, accountId));
-  return rows.map((r) => r.studentId);
 }
 
 /** The provider's view of a stored student, for the provider's methods. */

@@ -528,7 +528,7 @@ The frontend counts weekly absences as slots with `lesson_mark.kind === "ABSENT"
 - Through a VPN: 503 on everything, then connections hung. Treat 503 or a hanging connection as "probably wrong network path" first.
 - Real rate limits are unknown. Stay conservative:
   - strictly serial requests, 1.5 to 3 s apart; backfill and re-scans slower (3 to 5 s after 40 requests);
-  - at most one login per hour per account, whatever triggers the run; scheduled runs only during each child's school day (from their timetable and bells; the manifest's 08:00 to 14:00 Europe/Minsk only when the day's times are unknown) with a random 0 to 20 minute offset, the term's re-scan inside those runs, backfill in any allowed run; details in `design.md` section 10.2;
+  - at most one login per hour per account, whatever triggers the run (the one exception: a developer's command-line runs in development mode, one login per 10 minutes, `design.md` 10.2); scheduled runs only during each child's school day (from their timetable and bells; the manifest's 08:00 to 14:00 Europe/Minsk only when the day's times are unknown) with a random 0 to 20 minute offset, the term's re-scan inside those runs, backfill in any allowed run; details in `design.md` section 10.2;
   - on 503/429/network error: exponential backoff (30 s, 2 min, 10 min), then give up until the next schedule;
   - one login per run; never loop on failed logins (risk of account lock);
   - normal browser-like `User-Agent`; no parallel requests.

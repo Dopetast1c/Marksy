@@ -111,6 +111,8 @@ export async function applyRetention(db: Db, limits: RetentionLimits, now = new 
   // single-use secrets: an expired code is useless and should not linger
   await run('invites', sql`delete from invites where expires_at < ${now}`);
   await run('telegram_link_codes', sql`delete from telegram_link_codes where expires_at < ${now}`);
+  // a decided request to join is history after the events' time; a pending one waits for the admin
+  await run('join_requests', sql`delete from join_requests where status <> 'pending' and created_at < ${events}`);
 
   // per student: the start of the oldest school year still kept (null while the student has fewer years)
   const keptFrom = (student: ReturnType<typeof sql>) => sql`(

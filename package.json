@@ -34,7 +34,9 @@
     "test:provider": "node scripts/test-provider.mjs",
     "probe": "node scripts/probe.mjs",
     "sync:once": "pnpm --filter @marksy/server sync:once",
-    "sync:plan": "pnpm --filter @marksy/server sync:plan"
+    "sync:plan": "pnpm --filter @marksy/server sync:plan",
+    "dev:connect": "pnpm --filter @marksy/server dev:connect",
+    "smoke:lan": "node --env-file-if-exists=.env scripts/smoke-lan.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

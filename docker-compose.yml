@@ -1,5 +1,9 @@
-# Local PostgreSQL 16 for development and tests. Data lives in a named volume, never in the repo.
-# `pnpm db:up` starts it and waits for the health check; `pnpm db:reset` wipes it.
+# Local PostgreSQL 16. Two servers:
+# - postgres (marksy-postgres, port 5432): the app's database `marksy`, kept in the named volume pgdata, never in the
+#   repo. `pnpm db:reset` wipes that volume.
+# - postgres-test (marksy-postgres-test, port 5434): `marksy_test` for `pnpm test` only, in memory (tmpfs) and without
+#   fsync, so the test load never strains the app's database or Docker's disk; it starts empty every time.
+# `pnpm db:up` starts both and waits for their health checks.
 services:
   postgres:
     image: postgres:16
@@ -16,6 +20,26 @@ services:
       - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U marksy -d marksy']
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  postgres-test:
+    image: postgres:16
+    container_name: marksy-postgres-test
+    environment:
+      POSTGRES_USER: marksy
+      POSTGRES_PASSWORD: marksy
+      POSTGRES_DB: marksy_test
+      TZ: Europe/Minsk
+    # durability is worthless for a database the tests wipe anyway, and costs Docker's disk most
+    command: postgres -c fsync=off -c synchronous_commit=off -c full_page_writes=off
+    ports:
+      - '5434:5432'
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U marksy -d marksy_test']
       interval: 2s
       timeout: 3s
       retries: 30

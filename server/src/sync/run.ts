@@ -18,8 +18,9 @@ import type { Alert } from './failures';
 import { decideStart, isManual, selectWeeks, termBookkeeping } from './plan';
 import type { GateDecision, Trigger } from './plan';
 import { accountToday, planCalendarOf, planState, storedPlanCalendar, weekContext } from './state';
-import { readableStudents, sourcedStudents } from './store-school';
+import { readableStudents, sourcedStudents } from './readers';
 import { rebalanceAccount } from './sources';
+import type { OpenedLogin } from './opened';
 import { localTime } from './time';
 
 // One attempt to sync one diary account (docs/design.md 10.4), whatever triggered it: the scheduler's tick, the
@@ -40,6 +41,17 @@ export interface RunSyncOptions {
   online?: OnlineCheck;
   log?: Logger;
   credentialsKey?: Buffer;
+  /**
+   * A login connecting the diary opened already, and the connect run it belongs to: the first sync goes on in it at
+   * once, past the gate (the login was this hour's), without a second login (design.md 7.2, 10.4)
+   */
+  opened?: { login: OpenedLogin; runId: string };
+  /**
+   * A command-line run's login interval in this mode (cli/mode.ts: 10 minutes in development), checked by the login
+   * guard already; SYNC_MIN_LOGIN_INTERVAL still tightens it. Ignored for every other trigger (the scheduler, the
+   * app's refresh), which keep the manifest's
+   */
+  manualLoginIntervalMinutes?: number;
 }
 
 export type RunSyncResult =
@@ -104,9 +116,15 @@ async function runLocked(opts: RunSyncOptions): Promise<RunSyncResult> {
   const settings = family?.settings ?? {};
   const manifest = provider.manifest;
   const limits = effectiveLimits(manifest, config);
+  if (opts.manualLoginIntervalMinutes !== undefined && (opts.trigger === 'cli' || opts.trigger === 'cli-claude'))
+    limits.minLoginIntervalMinutes = Math.max(opts.manualLoginIntervalMinutes, config.minLoginIntervalMinutes ?? 0);
   const started = now();
   const local = localTime(started, manifest.timezone);
   const ctx = weekContext(manifest, settings, started, account.lastSuccessAt);
+
+  if (opts.opened) {
+    return execute(opts, { account, provider, ctx, limits, started, runId: opts.opened.runId, sourceCheck: false });
+  }
 
   // what the stored state says, before anyone logs in: each child's school day today and what is waiting
   const pupils = await readableStudents(db, account.id);
@@ -187,12 +205,32 @@ async function runLocked(opts: RunSyncOptions): Promise<RunSyncResult> {
     .set({ lastAttemptAt: started, lastLoginAt: started })
     .where(eq(diaryAccounts.id, account.id));
 
+  return execute(opts, { account, provider, ctx, limits, started, runId, sourceCheck });
+}
+
+interface Running {
+  account: typeof diaryAccounts.$inferSelect;
+  provider: DiaryProvider;
+  ctx: ReturnType<typeof weekContext>;
+  limits: ReturnType<typeof effectiveLimits>;
+  started: Date;
+  runId: string;
+  sourceCheck: boolean;
+}
+
+/** The run once its row exists: credentials, the collector, the outcome on the run, the account and the inbox */
+async function execute(opts: RunSyncOptions, r: Running): Promise<RunSyncResult> {
+  const { db, config } = opts;
+  const now = opts.now ?? (() => new Date());
+  const { account, provider, ctx, limits, started, runId, sourceCheck } = r;
   const planned: Record<string, ISODate[]> = {};
   const sets: Record<string, number> = {};
-  let credentials: Record<string, string>;
+  let credentials: Record<string, string> = {};
   try {
-    if (!account.credentialsEnc) throw new Error('no credentials');
-    credentials = decryptCredentials(account.credentialsEnc, account.familyId, opts.credentialsKey ?? masterKey());
+    if (opts.opened) {
+      // no login here: the opened one is used
+    } else if (!account.credentialsEnc) throw new Error('no credentials');
+    else credentials = decryptCredentials(account.credentialsEnc, account.familyId, opts.credentialsKey ?? masterKey());
   } catch (err) {
     const error = err instanceof Error && err.message === 'no credentials' ? 'NoCredentials' : 'CredentialsKeyError';
     await db
@@ -204,6 +242,7 @@ async function runLocked(opts: RunSyncOptions): Promise<RunSyncResult> {
 
   const collected = await runCollector({
     accountOnly: sourceCheck,
+    ...(opts.opened && { opened: opts.opened.login }),
     db,
     provider,
     account,
