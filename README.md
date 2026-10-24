@@ -155,6 +155,8 @@ Vite prints a `Network:` address such as `http://192.168.1.20:5173`; open it on 
 
 `pnpm smoke:lan` checks the API the way a phone sees it, without a phone: while `pnpm dev:lan` runs, it finds this computer's home-network address, signs in at `http://<address>:5173/api` with `MARKSY_DEV_EMAIL` and `MARKSY_DEV_PASSWORD` from `.env`, and reads every child's data. It prints statuses, counts and the shape of each response (keys and types, no values) and fails when a response carries a password or the session token, or when the session cookie would not work over plain http. `--host <ip>` picks the address yourself.
 
+`pnpm smoke:ui` does the same for the screens: with `pnpm dev:lan` running it opens the app over the home-network address in a headless browser at a phone size (360 px, touch) and a tablet size, signs in as the demo parent (and as you, when `MARKSY_DEV_EMAIL` is set), walks the login, the student pick, Главная and Внимание, and shoots the same states of the clickable prototype (`docs/mockups.html`) for comparison. The screenshots land in `data/ui/` (the last three runs), which is never committed. It needs Chromium for Playwright once: `pnpm exec playwright install chromium`.
+
 ## Configuration
 
 All configuration is in `.env` (created by `pnpm setup:env` from `.env.example`). Secrets never go into the repository.

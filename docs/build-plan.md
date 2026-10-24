@@ -12,7 +12,7 @@ The order in which Marksy is built with Claude Code, what each milestone must de
 | M3 | Server: schema, collector, planner, seed data | `m3-server` | done |
 | M3a | School details (teachers, subgroups, rooms, bells, the regular week), children across families and systems, the per-child sync window | `m3a-school` | done |
 | M4 | Accounts, families and the read API | `m4-api` | done |
-| M5a | Web: tokens, shell, login, student pick, Главная, Внимание | `m5a-shell` | todo |
+| M5a | Web: tokens, shell, login, student pick, Главная, Внимание | `m5a-shell` | in progress |
 | M5b | Web: Оценки, Итоги, Предметы, Предмет | `m5b-marks` | todo |
 | M5c | Web: Расписание, lesson menu, ready ticks, own homework | `m5c-schedule` | todo |
 | M5d | Web: Ещё, Семья, Синхронизация, Оформление | `m5d-more` | todo |
@@ -40,7 +40,7 @@ M9 and M10 come last on purpose: the app is complete and usable without them (В
 
 Two kinds of data, kept apart:
 
-- **The owner's own family (real).** The diary login lives in `.env` (`DIARY_LOGIN`, `DIARY_PASSWORD`, plus `MARKSY_DEV_EMAIL` and `MARKSY_DEV_PASSWORD` for the Marksy account), which is gitignored, flagged by `pnpm privacy` if it is ever added, and not readable by Claude Code. The data lands only in the local `marksy` database inside the Docker volume. It is used as soon as it makes sense: the probe in M2, the first real sync in M3 (`pnpm sync:once`), and from M4 on the owner's daily testing (`pnpm dev:connect` creates the family through the same code as «Подключить дневник» and starts the sync). These commands talk to the real diary: `pnpm probe` and `pnpm sync:once` are run by Claude Code within the budget of CLAUDE.md "Real diary runs" or by the owner; `pnpm dev:connect` only by the owner.
+- **The owner's own family (real).** The diary login lives in `.env` (`DIARY_LOGIN`, `DIARY_PASSWORD`, plus `MARKSY_DEV_EMAIL` and `MARKSY_DEV_PASSWORD` for the Marksy account), which is gitignored, flagged by `pnpm privacy` if it is ever added, and not readable by Claude Code. The data lands only in the local `marksy` database inside the Docker volume. It is used as soon as it makes sense: the probe in M2, the first real sync in M3 (`pnpm sync:once`), and from M4 on the owner's daily testing (`pnpm dev:connect` creates the family through the same code as «Подключить дневник» and starts the sync). These commands talk to the real diary: `pnpm probe`, `pnpm sync:once` and `pnpm dev:connect` are run by Claude Code within the limits of CLAUDE.md "Real diary runs", or by the owner.
 - **A fictional family (seed and fixtures).** Used by automated tests (in the separate `marksy_test` database), by anyone who clones the public repo without a diary account, and for cases the real family does not have (a class without marks, a missing capability, an empty period). `pnpm db:seed` creates it with demo logins at example.com.
 
 Claude Code builds and tests with the fictional data. It may read the real family's raw responses and rows to debug, and run `pnpm probe` and `pnpm sync:once` within the budget of CLAUDE.md "Real diary runs"; real values never go into anything git tracks, and a bug seen on real data is reproduced in a test with fictional data.
@@ -135,7 +135,9 @@ Local check: `pnpm install`, `pnpm db:up`, `pnpm check`, `pnpm dev`, then open h
 
 **Deliver:** tokens pipeline (`docs/tokens.json` to CSS variables and Tailwind theme, light and dark), i18n wiring, app shell (ScreenHeader with StudentBar and bell, tab bar, PeriodBar plus PeriodNav with swipe, bottom sheets), API client from OpenAPI, `useScale`, `useCapabilities`, login (three paths), «С кого начнём?» with the rule that child screens need a pick, Главная including the class-without-marks variant, the Внимание block and the Внимание screen (design 5.2a, computed on read). The bell in the header and the inbox come with M9; until then the header has no bell.
 
-**Done when:** `/ui-check` on these screens reports no differences that matter, the shell works at 360 px and on a tablet, no hex colours and no literal strings in components; `pnpm dev:lan` opens the login, the student pick, Главная and Внимание on a phone in the home network, on the owner's family and on the seed.
+**Done when:** `/ui-check` on these screens reports no differences that matter, the shell works at 360 px and on a tablet, no hex colours and no literal strings in components; `pnpm smoke:ui` (with `pnpm dev:lan` running) walks the login, the student pick, Главная and Внимание over the home-network address on a phone and a tablet size, on the owner's family and on the seed, with no failure, and each screen's pair with the prototype shows no difference that matters; today, now and period edges follow the child's school timezone, not the device's (a test with the device in another zone); and at the end the owner opens the login, the pick, Главная and Внимание once on their own phone.
+
+**Split (approved):** session A, the shell (tokens, i18n, API types and client, state, ScreenHeader, StudentBar, TabBar, PeriodBar and PeriodNav with swipe, BottomSheet, FreshnessBanner, `smoke:ui`); session B, the login's three paths and «С кого начнём?»; session C, Главная, Внимание and the server additions they need. Until M6 the pick card has no tag line at all; until M5d the freshness banner has no chevron (the Sync screen it opens comes then).
 
 ## M5b. Web: Оценки, Итоги, Предметы, Предмет
 

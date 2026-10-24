@@ -1,0 +1,23 @@
+/* The app's base layer: Tailwind, the tokens (generated) and the fonts, all served from this origin (design.md 12,
+   14.1). No colour, size or radius is written here; everything comes from the token variables. */
+@import 'tailwindcss';
+@import './tokens.css';
+
+@import '@fontsource/manrope/400.css';
+@import '@fontsource/manrope/500.css';
+@import '@fontsource/manrope/600.css';
+@import '@fontsource/manrope/700.css';
+@import '@fontsource/manrope/800.css';
+@import '@fontsource/fraunces/500.css';
+@import '@fontsource/fraunces/600.css';
+
+@layer base {
+  html,
+  body {
+    @apply bg-bg font-body text-body text-ink tabular-nums;
+    -webkit-tap-highlight-color: transparent;
+  }
+  button {
+    cursor: pointer;
+  }
+}

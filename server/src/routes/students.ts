@@ -38,6 +38,7 @@ import {
   comparison,
   markChip,
   nowLine as nowLineSchema,
+  instanceOut,
   periodOf,
   periodOut,
   subjectRef,
@@ -340,19 +341,7 @@ export function studentRoutes(deps: AppDeps): Router {
       return {
         today: ctx.today,
         kinds,
-        instances: Object.fromEntries(
-          kinds.map((k: PeriodKind) => [
-            k,
-            listInstances(ctx.period, k).map((i) => ({
-              kind: i.kind,
-              offset: i.offset,
-              from: i.from,
-              to: i.to,
-              end: i.end,
-              termLabel: i.term?.label ?? null,
-            })),
-          ]),
-        ),
+        instances: Object.fromEntries(kinds.map((k: PeriodKind) => [k, listInstances(ctx.period, k).map(instanceOut)])),
       };
     },
   );

@@ -124,7 +124,9 @@ Routes (React Router):
 
 ```
 /login
+/pick                              «С кого начнём?»
 /s/:studentId                      overview
+/s/:studentId/events               Внимание (all rows of the selected period, 5.2a)
 /s/:studentId/marks                feed, ?period=week|month|quarter|year&offset=N (N instances back)
 /s/:studentId/finals               term and year finals, ?mode=quarters|years (reached from Оценки and Предметы)
 /s/:studentId/subjects             subjects by period
@@ -986,33 +988,38 @@ Events come from `mark_events`, `api_drift_events`, account status and lessons (
 
 ## 12. Design tokens and Tailwind
 
-`docs/tokens.json` is the single source for colours, type, radius and spacing. A small script (`web/scripts/tokens-to-css.ts`) writes `web/src/styles/tokens.css` (CSS custom properties for light and dark) and `tailwind.config.ts` reads the same JSON for `theme.extend.colors`, `fontFamily`, `borderRadius`, `spacing`. Components use Tailwind classes that resolve to the variables (`bg-surface`, `text-ink`, `text-band-good`), so no hex value exists outside `tokens.json`. The prototype in `docs/mockups.html` uses the same variable names. Band *ranges* are not tokens: they belong to the grading scale and come from the API per student; tokens only give the four band roles their colours.
+`docs/tokens.json` is the single source for colours, type, radius and spacing. `pnpm --filter @marksy/web tokens` (`web/scripts/tokens-to-css.ts`) writes `web/src/styles/tokens.css`: the CSS variables of the prototype (`--bg`, `--accent`, `--band-good-fg`, `--r-lg`, `--av-skin-light`) for the light theme, the dark theme under `prefers-color-scheme` and `[data-theme="dark"]`, and a Tailwind 4 `@theme inline` block that maps the utilities onto those variables (`bg-surface`, `text-ink3`, `text-band-good-fg`, `rounded-lg`, `shadow-card`, `text-h1`) and resets Tailwind's own colours, fonts, radii and shadows, so nothing outside the tokens can be used. There is no `tailwind.config.ts`. A test fails when `tokens.css` is older than `tokens.json`, and a lint rule rejects a hex value anywhere in `web/`. The prototype in `docs/mockups.html` uses the same variable names. Band *ranges* are not tokens: they belong to the grading scale and come from the API per student; tokens only give the four band roles their colours.
 
-Token groups: `color.bg`, `color.surface`, `color.surface2`, `color.ink`, `color.ink2`, `color.ink3`, `color.line`, `color.accent`, `color.accentInk`, `color.band.{critical,low,ok,good}` with `bg` and `fg` each, `font.display`, `font.body`, `radius.{sm,md,lg,pill}`, `space` scale, `shadow.card`.
+Token groups: `color.light` and `color.dark` (`bg`, `surface`, `surface2`, `ink`, `ink2`, `ink3`, `line`, `accent`, `accentInk`, `accentSoft`, `band.{critical,low,ok,good,top}` with `bg` and `fg`, `holiday`), `color.subject` (the twelve subject hues, 6.6), `avatar` (the trait colours of generated avatars, D9), `font.display`, `font.body`, `typeScale`, `radius.{sm,md,lg,pill}`, `space` (n × 4 px, Tailwind's `--spacing`), `shadow.card` and `shadow.cardDark`, `tap.min`, `palette` and `wallpaper` (Оформление, 5.6a).
 
-Typography: Manrope for UI text and numbers (tabular figures), Fraunces for the large average on the hero and tiles. Both from Google Fonts, with system fallbacks.
+Typography: Manrope for UI text and numbers (tabular figures), Fraunces for the large average on the hero and tiles, with system fallbacks. The fonts are always served from the app's own origin (the `@fontsource` packages, bundled by Vite); the app never requests anything from a font CDN or any other third party (14.1). Only the prototype in `docs/` links Google Fonts.
 
 ## 13. Frontend structure
 
 ```
 web/src/
-  app/            router, providers, auth guard
-  api/            typed client generated from the OpenAPI document (openapi-typescript)
+  app/            router (App.tsx), guards (session, picked child, the 12-hour rule), Frame (column, body, tab bar)
+  api/            openapi.json (written by the server), schema.d.ts (openapi-typescript), client.ts (openapi-fetch,
+                  relative to the page's own origin), queries.ts (TanStack Query hooks)
   features/
-    auth/  overview/  marks/  subjects/  subject/  schedule/  more/  notifications/  settings/
-  hooks/          useScale(studentId), useCapabilities(studentId): every scale- or capability-dependent
-                  element reads these; no component checks a provider id
+    auth/  pick/  overview/  marks/  subjects/  subject/  schedule/  more/  notifications/  settings/
+  hooks/          useScale(studentId), useCapabilities(studentId), useSchoolTz(studentId): every scale-, capability-
+                  or time-dependent element reads these; no component checks a provider id; useSwipe
   components/     ScreenHeader, StudentBar (avatars only), Avatar (SVG from traits or photo), StudentPickerCard, MarkChip, StatBlock, SubjectRow, HintRow, LessonRow, LessonNote, LessonMenu, StudyBar, SessionRow, StudyChart, SegmentedControl,
-                  BottomSheet, TabBar, EmptyState   (one component per kind of information; a block that
-                  exists on one screen is reused, never re-implemented, on another)
-  lib/            marks.ts (bands, averages, target calculator), guidance.ts (rules from 6.2),
-                  tags.ts (tag matching, where a tag lands, hits from 6.3), period.ts
+                  PeriodBar and PeriodNav, FreshnessBanner, BottomSheet, TabBar, EmptyState   (one component per kind of
+                  information; a block that exists on one screen is reused, never re-implemented, on another)
+  lib/            time.ts (the school's timezone), period.ts (labels of kinds and instances), pick.ts (the 12-hour
+                  rule), swipe.ts, fit-bar.ts, freshness.ts: pure and unit-tested
   i18n/           react-i18next setup over packages/i18n (see docs/i18n.md)
-  styles/         tokens.css, base.css
-  sw.ts           service worker: offline shell, push handler
+  styles/         tokens.css (generated, 12), base.css (Tailwind, tokens, fonts)
+  sw.ts           service worker: offline shell, push handler (M8)
 ```
 
-State: TanStack Query for server data (keys by student and period), a tiny Zustand store for selected student, period and theme. `lib/marks.ts` is pure and unit-tested; the same logic exists in SQL for the API, and a Vitest test compares both on the fixtures.
+State: TanStack Query for server data (keys by student and period), a tiny Zustand store for the child picked on this device (with the time of the last activity and «Всегда начинать с последнего», in `localStorage`) and for the period kind and instance, which every screen shares and a child switch keeps. Marks math stays in `packages/core` and on the server; the web app formats what the API computed.
+
+**Types from the API.** `pnpm --filter @marksy/web api:types` runs `pnpm --filter @marksy/server openapi` (the document of every route, built without a database) and then openapi-typescript. A test in each package fails when `openapi.json` or `schema.d.ts` is older than the routes.
+
+**Time is the school's.** Today, now, the last school day and the edges of weeks and periods are the child's school timezone (`StudentSummary.timezone` from `/api/auth/me`), never the device's: a phone abroad shows the school's day (`web/src/lib/time.ts`, tested with the device in another zone). Calendar dates (`2026-10-19`) are formatted as dates, without a timezone shift.
 
 ## 13.1 Localisation
 
@@ -1030,7 +1037,7 @@ Marksy stores data about children, and a public project will be run in jurisdict
 - **Erasure.** `DELETE /api/family` removes the family and all its rows, including notification subscriptions, after a typed confirmation; a child's own data and raw responses go with it unless another family still follows the child, in which case only this family's link and rows go. A member can leave and be erased without deleting the family.
 - **Hosted instances.** Every family's credentials are encrypted with a per-family key derived from `CREDENTIALS_KEY` and the family id (HKDF, AES-256-GCM, `server/src/crypto/credentials.ts`), so when one server serves many families (friends, a school club) a database dump does not expose every diary password at once (the login itself is the account's label in Семья and is stored as it is); operators are told in `README` that hosting other people's children's data makes them a data controller, and the consent text names the operator.
 - **Minors' accounts.** Marksy stores no birth dates. A student user is a minor by assumption; student accounts cannot change family settings, export data or invite others.
-- **No third parties.** No analytics, no crash reporting that sends content, fonts optionally self-hosted (`SELF_HOST_FONTS=true`) for operators who do not want Google Fonts requests from children's phones.
+- **No third parties.** No analytics, no crash reporting that sends content, and every asset (fonts included) served from the app's own origin: a child's phone never sends a request to Google Fonts or any other CDN.
 
 - Privacy: data about minors. HTTPS only, httpOnly cookies, no analytics, no third-party scripts except fonts. Credentials encrypted at rest; `CREDENTIALS_KEY` never in the repo. Logs redact login, password, tokens, full names.
 - Performance: the overview query returns in under 100 ms on a few thousand marks; the PWA shell loads in under 1 s on 4G.

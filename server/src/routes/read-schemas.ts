@@ -1,5 +1,5 @@
-import { activeBands } from '@marksy/core';
-import type { BandRole, GradingScale, PeriodStats } from '@marksy/core';
+import { activeBands, termKind } from '@marksy/core';
+import type { BandRole, GradingScale, PeriodStats, Term } from '@marksy/core';
 import { z } from 'zod';
 import { registry } from '../openapi';
 import type { ResolvedPeriod } from '../students/context';
@@ -30,17 +30,34 @@ export const periodOut = registry.register(
     from: z.string(),
     to: z.string(),
     end: z.string(),
+    /** The diary's own name of the term, shown as it is */
     termLabel: z.string().nullable(),
+    /** What a term is called comes from its kind through the app's words (CLAUDE.md, "четверть"), never typed */
+    termKind: termKind.nullable(),
+    termIndex: z.number().nullable(),
   }),
 );
 
-export const periodOf = (p: ResolvedPeriod) => ({
-  kind: p.kind,
-  offset: p.offset,
-  from: p.from,
-  to: p.to,
-  end: p.end,
-  termLabel: p.instance?.term?.label ?? null,
+export const periodOf = (p: ResolvedPeriod) =>
+  instanceOut({ ...p, ...(p.instance?.term && { term: p.instance.term }) });
+
+/** One instance of the navigator, as every read route sends it */
+export const instanceOut = (i: {
+  kind: string;
+  offset: number;
+  from: string;
+  to: string;
+  end: string;
+  term?: Term;
+}) => ({
+  kind: i.kind as z.infer<typeof periodOut>['kind'],
+  offset: i.offset,
+  from: i.from,
+  to: i.to,
+  end: i.end,
+  termLabel: i.term?.label ?? null,
+  termKind: i.term?.kind ?? null,
+  termIndex: i.term?.index ?? null,
 });
 
 export const comparison = registry.register(
