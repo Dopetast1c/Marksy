@@ -41,8 +41,8 @@ describe('Предметы', () => {
     useMarkFilter.setState({ comments: true });
     fakeApi({ signedIn: true });
     render(<App at={`/s/${milena.id}/subjects`} />);
-    expect(await screen.findByText('2 комментария учителя за неделю')).toBeTruthy();
-    expect(screen.getByText('комментариев учителя за неделю нет')).toBeTruthy();
+    expect(await screen.findByText('2 комментария')).toBeTruthy();
+    expect(screen.getByText('нет комментариев')).toBeTruthy();
     expect(screen.queryByText('нет оценок за неделю')).toBeNull();
   });
 

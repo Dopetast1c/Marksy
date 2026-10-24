@@ -13,7 +13,7 @@ The order in which Marksy is built with Claude Code, what each milestone must de
 | M3a | School details (teachers, subgroups, rooms, bells, the regular week), children across families and systems, the per-child sync window | `m3a-school` | done |
 | M4 | Accounts, families and the read API | `m4-api` | done |
 | M5a | Web: tokens, shell, login, student pick, Главная, Внимание | `m5a-shell` | done |
-| M5b | Web: Оценки, Итоги, Предметы, Предмет | `m5b-marks` | in progress |
+| M5b | Web: Оценки, Итоги, Предметы, Предмет | `m5b-marks` | done |
 | M5c | Web: Расписание, lesson menu, ready ticks, own homework | `m5c-schedule` | todo |
 | M5d | Web: Ещё, Семья, Синхронизация, Оформление | `m5d-more` | todo |
 | M5e | Translations: the ten other interface languages | `m5e-i18n` | todo |
@@ -151,7 +151,7 @@ Local check: `pnpm install`, `pnpm db:up`, `pnpm check`, `pnpm dev`, then open h
 
 **Read:** `docs/design.md` 5.5, 6.5; prototype screen Расписание.
 
-**Deliver:** day and week views with the period navigator, LessonRow with пометки, LessonMenu (готово first, задание, урока не будет), ready ticks with `lesson_prep_events`, own homework items, missing slots, «Обратить внимание» for the selected range.
+**Deliver:** day and week views with the period navigator, LessonRow with пометки, LessonMenu (готово first, задание, урока не будет), ready ticks with `lesson_prep_events`, own homework items, missing slots, «Обратить внимание» for the selected range. Carried over from M5b: once the diary posts the first term's finals (after 31 October 2026), one real `pnpm probe`, the mapping of the finals response checked against its real shape, and Итоги checked on the owner's family; the teacher's comment row in Оценки then opens its lesson in Расписание.
 
 ## M5d. Web: Ещё and settings screens
 

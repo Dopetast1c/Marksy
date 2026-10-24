@@ -80,11 +80,12 @@ export function SubjectsScreen() {
             </span>
           ) : (
             <span className="text-small text-ink3">
-              {/* the filter Комментарии shows the teacher's comments, so the row counts them (D56) */}
+              {/* the filter Комментарии shows the teacher's comments, so the row counts them, short: the chip and the
+                  navigator already say what and when (D56, design 5.3a) */}
               {filter.comments
                 ? r.comments
-                  ? t('subjects.comments', { count: r.comments, span })
-                  : t('subjects.noComments', { span })
+                  ? t('subjects.comments', { count: r.comments })
+                  : t('subjects.noComments')
                 : t('subjects.noMarks', { span })}
             </span>
           )
