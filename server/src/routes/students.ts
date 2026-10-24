@@ -3,7 +3,6 @@ import {
   availableKinds,
   compareSubjects,
   comparePeriods,
-  distributionBuckets,
   listInstances,
   movers,
   periodInstance,
@@ -26,7 +25,17 @@ import { route } from '../http/route';
 import { registry } from '../openapi';
 import { loadChild, periodQuery, resolvePeriod } from '../students/context';
 import type { ChildContext } from '../students/context';
-import { absencesIn, chipOf, factOf, lessonsIn, marksIn, remarksIn, subjectInfo, subjectsOf } from '../students/data';
+import {
+  absencesIn,
+  chipOf,
+  factOf,
+  lessonCounts,
+  lessonsIn,
+  marksIn,
+  remarksIn,
+  subjectInfo,
+  subjectsOf,
+} from '../students/data';
 import { childEvents } from '../students/events';
 import { nowLine } from '../students/now';
 import { localTime } from '../sync/time';
@@ -36,6 +45,9 @@ import {
   bandsOf,
   childEvent,
   comparison,
+  distributionOf,
+  distributionOut,
+  lessonOut,
   markChip,
   nowLine as nowLineSchema,
   instanceOut,
@@ -218,7 +230,15 @@ async function trendOf(deps: AppDeps, ctx: ChildContext, q: z.infer<typeof perio
     period: periodOf(p),
     buckets: trendBuckets(ctx.period, p.instance).map((b) => {
       const s = periodStats(scale, all, b);
-      return { from: b.from, to: b.to, future: b.future, selected: b.selected, average: s.average, count: s.count };
+      return {
+        from: b.from,
+        to: b.to,
+        future: b.future,
+        selected: b.selected,
+        average: s.average,
+        count: s.count,
+        bands: s.bands,
+      };
     }),
   };
 }
@@ -235,6 +255,8 @@ const trendResponse = registry.register(
         selected: z.boolean(),
         average: z.number().nullable(),
         count: z.number(),
+        /** The bucket's values per band role: the stacked bar (ux-principles D26) */
+        bands: z.object({ critical: z.number(), low: z.number(), good: z.number(), top: z.number() }),
       }),
     ),
   }),
@@ -271,6 +293,8 @@ export function studentRoutes(deps: AppDeps): Router {
            */
           nextDay: z.object({ date: z.string(), lessons: z.number(), homework: z.number() }).nullable(),
           now: nowLineSchema.nullable(),
+          /** A critical row in this week's Внимание: the red badge on the child's avatar in the StudentBar (design 4) */
+          alert: z.boolean(),
           /** The nearest lesson with a tag (M6) */
           nearestTag: z.null(),
         }),
@@ -324,6 +348,9 @@ export function studentRoutes(deps: AppDeps): Router {
               }
             : null,
           now: nowLine(today, localTime(ctx.now, ctx.timezone).minutes),
+          alert: (await childEvents(deps.db, ctx, resolvePeriod(ctx, { period: 'week', offset: 0 }))).some(
+            (e) => e.severity === 'critical',
+          ),
           nearestTag: null,
         });
       }
@@ -343,17 +370,36 @@ export function studentRoutes(deps: AppDeps): Router {
       response: z.object({
         today: z.string(),
         kinds: z.array(z.enum(['week', 'month', 'term', 'year'])),
-        instances: z.record(z.string(), z.array(periodOut)),
+        /** Each instance with what the picker shows next to it (D2): its marks, or its lessons in a year without marks */
+        instances: z.record(z.string(), z.array(periodOut.extend({ count: z.number() }))),
+        /** What the counts are */
+        counts: z.enum(['marks', 'lessons']),
       }),
       errors: { 404: 'No such child' },
     },
     async (req, { params }) => {
       const ctx = await child(req, params.id);
       const kinds = availableKinds(ctx.period);
+      // one read of the year, counted per instance
+      const dates = ctx.scale
+        ? (await marksIn(deps.db, ctx.student.id)).filter((m) => m.values.length).map((m) => m.date)
+        : (await lessonsIn(deps.db, ctx, { from: ctx.period.schoolYear.from, to: ctx.period.schoolYear.to }))
+            .filter((l) => !l.cancelled)
+            .map((l) => l.date);
+      const countIn = (from: string, to: string) => dates.filter((d) => d >= from && d <= to).length;
       return {
         today: ctx.today,
         kinds,
-        instances: Object.fromEntries(kinds.map((k: PeriodKind) => [k, listInstances(ctx.period, k).map(instanceOut)])),
+        counts: ctx.scale ? ('marks' as const) : ('lessons' as const),
+        instances: Object.fromEntries(
+          kinds.map((k: PeriodKind) => [
+            k,
+            listInstances(ctx.period, k, ctx.scale ? 'marks' : 'lessons').map((i) => ({
+              ...instanceOut(i),
+              count: countIn(i.from, i.to),
+            })),
+          ]),
+        ),
       };
     },
   );
@@ -394,32 +440,45 @@ export function studentRoutes(deps: AppDeps): Router {
         hasMarks: z.boolean(),
         comparison: comparison.nullable(),
         marksCount: z.number(),
+        /** The count of the instance before ("было N" under Оценок); null when there is none */
+        prevMarksCount: z.number().nullable(),
         bands: z.array(bandCount),
+        /** One bucket per value of the scale (the Распределение card); empty without a scale */
+        distribution: distributionOut,
         absences: z.number().nullable(),
+        prevAbsences: z.number().nullable(),
         newCount: z.number(),
-        lastDay: z
-          .object({ date: z.string(), marks: z.array(z.object({ subject: subjectRef, mark: markChip })) })
+        /**
+         * A year without marks (D49): the two tiles count lessons and homework in the instance (lessons are planned
+         * ahead, so the current week counts to its end) and in the one before; null with a scale
+         */
+        lessonTiles: z
+          .object({
+            lessons: z.number(),
+            homework: z.number(),
+            prevLessons: z.number().nullable(),
+            prevHomework: z.number().nullable(),
+          })
           .nullable(),
-        movers: z.array(z.object({ subject: subjectRef, comparison, count: z.number() })),
-        attention: z.array(childEvent),
-        attentionTotal: z.number(),
-        nextDay: z
+        /** The most recent school day with marks up to today (today on a school day, Friday at the weekend) */
+        lastDay: z
           .object({
             date: z.string(),
-            lessons: z.array(
+            marks: z.array(
               z.object({
-                id: z.string(),
-                slot: z.number().nullable(),
-                start: z.string().nullable(),
-                end: z.string().nullable(),
-                subjectName: z.string(),
-                room: z.string().nullable(),
-                homework: z.string().nullable(),
-                cancelled: z.boolean(),
+                subject: subjectRef,
+                mark: markChip,
+                workType: z.string().nullable(),
+                comment: z.string().nullable(),
               }),
             ),
           })
           .nullable(),
+        movers: z.array(z.object({ subject: subjectRef, comparison, count: z.number() })),
+        attention: z.array(childEvent),
+        attentionTotal: z.number(),
+        /** The next school day after today with its lessons as Расписание has them (the compact LessonRow) */
+        nextDay: z.object({ date: z.string(), lessons: z.array(lessonOut) }).nullable(),
         now: nowLineSchema.nullable(),
       }),
       errors: { 404: 'No such child or period' },
@@ -447,25 +506,49 @@ export function studentRoutes(deps: AppDeps): Router {
           )
         : [];
       const seen = await lastSeen(deps, ctx);
-      const lastDate = inP[0]?.date;
+      // the last school day with marks, whatever the period: today, or Friday at the weekend (design.md 5.2)
+      const upToToday = all.filter((x) => x.date <= ctx.today);
+      const lastDate = upToToday
+        .map((x) => x.date)
+        .sort()
+        .at(-1);
       const events = await childEvents(deps.db, ctx, p);
       const ahead = await lessonsIn(deps.db, ctx, { from: addDays(ctx.today, 1), to: addDays(ctx.today, 14) });
-      const nextDate = ahead[0]?.date;
+      const nextDate = ahead.map((l) => l.date).sort()[0];
+      const nextLessons = ahead.filter((l) => l.date === nextDate);
       const today = await lessonsIn(deps.db, ctx, { from: ctx.today, to: ctx.today });
+      const tiles = scale ? null : await lessonCounts(deps.db, ctx, resolvePeriod(ctx, query, 'lessons'));
       return {
         period: periodOf(p),
         hasMarks: !!scale,
         comparison: scale && stats ? comparePeriods(scale, stats, prev && periodStats(scale, facts, prev)) : null,
         marksCount: stats?.count ?? 0,
-        bands: scale && stats ? bandsOf(scale, stats) : [],
+        prevMarksCount: scale && prev ? periodStats(scale, facts, prev).count : null,
+        bands: scale && stats ? bandsOf(scale, stats, prev && periodStats(scale, facts, prev)) : [],
+        distribution: scale
+          ? distributionOf(
+              scale,
+              inP.flatMap((x) => x.values),
+            )
+          : [],
         absences: ctx.caps.attendance === 'none' ? null : (await absencesIn(deps.db, ctx, range)).length,
+        prevAbsences:
+          ctx.caps.attendance === 'none' || !prev
+            ? null
+            : (await absencesIn(deps.db, ctx, { from: prev.from, to: prev.to })).length,
         newCount: all.filter((x) => !seen || x.firstSeenAt > seen).length,
+        lessonTiles: tiles,
         lastDay: lastDate
           ? {
               date: lastDate,
-              marks: inP
+              marks: upToToday
                 .filter((x) => x.date === lastDate)
-                .map((x) => ({ subject: { id: x.subjectId, name: x.subjectName }, mark: chipOf(scale, x) })),
+                .map((x) => ({
+                  subject: { id: x.subjectId, name: x.subjectName },
+                  mark: chipOf(scale, x),
+                  workType: x.workType,
+                  comment: x.comment,
+                })),
             }
           : null,
         movers: moved.map((mv) => {
@@ -475,24 +558,12 @@ export function studentRoutes(deps: AppDeps): Router {
         }),
         attention: events.slice(0, 5),
         attentionTotal: events.length,
-        nextDay: nextDate
-          ? {
-              date: nextDate,
-              lessons: ahead
-                .filter((l) => l.date === nextDate)
-                .map((l) => ({
-                  id: l.id,
-                  slot: l.slot,
-                  start: l.start,
-                  end: l.end,
-                  subjectName: l.subjectName,
-                  room: l.room,
-                  homework: l.homework,
-                  cancelled: l.cancelled,
-                })),
-            }
-          : null,
-        now: nowLine(today, localTime(ctx.now, ctx.timezone).minutes),
+        nextDay: nextDate ? { date: nextDate, lessons: nextLessons } : null,
+        now: nowLine(
+          today,
+          localTime(ctx.now, ctx.timezone).minutes,
+          nextDate ? { date: nextDate, lessons: nextLessons } : null,
+        ),
       };
     },
   );
@@ -602,7 +673,7 @@ export function studentRoutes(deps: AppDeps): Router {
         period: periodOut,
         comparison: comparison.nullable(),
         bands: z.array(bandCount),
-        distribution: z.array(z.object({ from: z.number(), to: z.number(), count: z.number() })),
+        distribution: distributionOut,
         terms: z.array(
           z.object({
             id: z.string(),
@@ -656,13 +727,8 @@ export function studentRoutes(deps: AppDeps): Router {
         subject: subjectInfo(s),
         period: periodOf(p),
         comparison: scale && stats ? comparePeriods(scale, stats, prev && periodStats(scale, facts, prev)) : null,
-        bands: scale && stats ? bandsOf(scale, stats) : [],
-        distribution: scale
-          ? distributionBuckets(scale).map((b) => ({
-              ...b,
-              count: values.filter((v) => v >= b.from && v <= b.to).length,
-            }))
-          : [],
+        bands: scale && stats ? bandsOf(scale, stats, prev && periodStats(scale, facts, prev)) : [],
+        distribution: scale ? distributionOf(scale, values) : [],
         terms: ctx.termRows.map((t) => {
           const f = finals.find((x) => x.periodId === t.id);
           return {

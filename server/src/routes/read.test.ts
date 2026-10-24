@@ -77,9 +77,69 @@ describe('read API', () => {
     expect(res.body.attention.length).toBeLessThanOrEqual(5);
     expect(res.body.attentionTotal).toBeGreaterThanOrEqual(res.body.attention.length);
     expect(res.body.nextDay.lessons.length).toBeGreaterThan(0);
+    // the distribution counts every value of the period once, on the child's scale
+    const sum = res.body.distribution.reduce((n: number, b: { count: number }) => n + b.count, 0);
+    expect(sum).toBeGreaterThanOrEqual(res.body.marksCount);
+    expect(res.body.lessonTiles).toBeNull();
+    // the next day's lessons are the timetable's lessons (the compact LessonRow)
+    expect(res.body.nextDay.lessons[0]).toHaveProperty('ownHomework');
     const none = await mama.get(`/api/students/${mark.id}/overview?period=month`);
-    expect(none.body).toMatchObject({ hasMarks: false, comparison: null, bands: [] });
+    expect(none.body).toMatchObject({ hasMarks: false, comparison: null, bands: [], distribution: [] });
+    expect(none.body.lessonTiles.lessons).toBeGreaterThan(0);
     expect((await mama.get(`/api/students/${milena.id}/overview?period=week&offset=300`)).status).toBe(404);
+  });
+
+  it('the last school day with marks does not follow the period; Внимание keeps at most three drops and one rise', async () => {
+    const mama = await signIn(DEMO_LOGINS.parent);
+    const now = await mama.get(`/api/students/${milena.id}/overview?period=week`);
+    const back = await mama.get(`/api/students/${milena.id}/overview?period=week&offset=3`);
+    expect(back.body.lastDay.date).toBe(now.body.lastDay.date);
+    expect(now.body.lastDay.date <= '2026-10-15').toBe(true);
+    expect(now.body.lastDay.marks[0]).toHaveProperty('workType');
+    for (const offset of [0, 1, 2, 3]) {
+      const ev = await mama.get(`/api/students/${milena.id}/events?period=week&offset=${offset}`);
+      const kinds = ev.body.items.map((i: { kind: string }) => i.kind);
+      expect(kinds.filter((k: string) => k === 'average_down').length).toBeLessThanOrEqual(3);
+      expect(kinds.filter((k: string) => k === 'average_up').length).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it('the period picker counts marks per instance, or lessons for a class without marks', async () => {
+    const mama = await signIn(DEMO_LOGINS.parent);
+    const withMarks = await mama.get(`/api/students/${milena.id}/periods`);
+    expect(withMarks.body.counts).toBe('marks');
+    expect(withMarks.body.instances.year[0].count).toBeGreaterThan(0);
+    const weeks = withMarks.body.instances.week.reduce((n: number, i: { count: number }) => n + i.count, 0);
+    expect(weeks).toBe(withMarks.body.instances.year[0].count);
+    const noMarks = await mama.get(`/api/students/${mark.id}/periods`);
+    expect(noMarks.body.counts).toBe('lessons');
+    expect(noMarks.body.instances.week[0].count).toBeGreaterThan(0);
+  });
+
+  it('«Сейчас» and today are the school’s, whatever timezone the server machine is in', async () => {
+    const mama = await signIn(DEMO_LOGINS.parent);
+    // 10:00 at the school on Thursday: a lesson is on
+    const morning = new Date('2026-10-15T07:00:00Z');
+    const look = () =>
+      request(testApp({ now: () => morning }))
+        .get(`/api/students/${milena.id}/overview`)
+        .set(
+          'cookie',
+          mama.jar.getCookies({ path: '/', domain: '127.0.0.1', secure: false, script: false }).toValueString(),
+        );
+    const machineTz = process.env.TZ;
+    try {
+      const seen = [];
+      for (const tz of ['UTC', 'America/Los_Angeles', 'Asia/Tokyo']) {
+        process.env.TZ = tz;
+        const res = await look();
+        seen.push(JSON.stringify([res.body.now, res.body.period.from, res.body.lastDay?.date]));
+      }
+      expect(new Set(seen).size).toBe(1);
+      expect(JSON.parse(seen[0]!)[0]).not.toBeNull();
+    } finally {
+      process.env.TZ = machineTz;
+    }
   });
 
   it('Оценки, Предметы, Предмет: marks by day, subjects with the child’s teacher and group, the regular week', async () => {

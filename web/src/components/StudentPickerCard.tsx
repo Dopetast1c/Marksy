@@ -57,7 +57,7 @@ export function StudentPickerCard({
   const t = useT();
   const locale = intlLocale();
   const scale = summary?.gradingScale ?? null;
-  const attendance = !!summary?.capabilities?.attendance;
+  const attendance = !!summary && summary.capabilities.attendance !== 'none';
   const w = card.week;
   let cells: ReactNode;
   // a year without marks (no scale, D49) counts tomorrow's lessons and homework instead

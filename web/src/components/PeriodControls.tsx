@@ -107,6 +107,15 @@ export function PeriodNav({ studentId, compare = false }: { studentId: string; c
             key={i.offset}
             title={instanceTitle(t, i, ds)}
             sub={instanceSub(t, i, ds)}
+            value={
+              periods.data?.counts === 'lessons'
+                ? i.count
+                  ? t('lessons.count', { count: i.count })
+                  : t('period.noLessons')
+                : i.count
+                  ? t('marks.count', { count: i.count })
+                  : t('period.noMarks')
+            }
             selected={i.offset === offset}
             onSelect={() => {
               setOffset(i.offset);

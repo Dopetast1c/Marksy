@@ -1434,6 +1434,7 @@ export interface paths {
                                 homework: number;
                             } | null;
                             now: components["schemas"]["NowLine"];
+                            alert: boolean;
                             nearestTag: null;
                         }[];
                     };
@@ -1486,8 +1487,12 @@ export interface paths {
                             today: string;
                             kinds: ("week" | "month" | "term" | "year")[];
                             instances: {
-                                [key: string]: components["schemas"]["Period"][];
+                                [key: string]: (components["schemas"]["Period"] & {
+                                    count: number;
+                                })[];
                             };
+                            /** @enum {string} */
+                            counts: "marks" | "lessons";
                         };
                     };
                 };
@@ -1599,9 +1604,22 @@ export interface paths {
                             hasMarks: boolean;
                             comparison: components["schemas"]["Comparison"] & (Record<string, never> | null);
                             marksCount: number;
+                            prevMarksCount: number | null;
                             bands: components["schemas"]["BandCount"][];
+                            distribution: {
+                                from: number;
+                                to: number;
+                                count: number;
+                            }[];
                             absences: number | null;
+                            prevAbsences: number | null;
                             newCount: number;
+                            lessonTiles: {
+                                lessons: number;
+                                homework: number;
+                                prevLessons: number | null;
+                                prevHomework: number | null;
+                            } | null;
                             lastDay: {
                                 date: string;
                                 marks: {
@@ -1610,6 +1628,8 @@ export interface paths {
                                         name: string;
                                     };
                                     mark: components["schemas"]["MarkChip"];
+                                    workType: string | null;
+                                    comment: string | null;
                                 }[];
                             } | null;
                             movers: {
@@ -1624,16 +1644,7 @@ export interface paths {
                             attentionTotal: number;
                             nextDay: {
                                 date: string;
-                                lessons: {
-                                    id: string;
-                                    slot: number | null;
-                                    start: string | null;
-                                    end: string | null;
-                                    subjectName: string;
-                                    room: string | null;
-                                    homework: string | null;
-                                    cancelled: boolean;
-                                }[];
+                                lessons: components["schemas"]["Lesson"][];
                             } | null;
                             now: components["schemas"]["NowLine"];
                         };
@@ -2793,6 +2804,7 @@ export interface components {
             from: number;
             to: number;
             count: number;
+            prevCount: number | null;
         };
         ChildEvent: {
             /** @enum {string} */
@@ -2816,26 +2828,34 @@ export interface components {
             };
         };
         NowLine: {
+            slot: number | null;
+            subjectName: string;
+            room: string | null;
             /** @enum {string} */
             state: "before";
-            slot: number | null;
             at: string;
         } | {
+            slot: number | null;
+            subjectName: string;
+            room: string | null;
             /** @enum {string} */
             state: "lesson";
-            slot: number | null;
-            subjectName: string;
             until: string;
         } | {
-            /** @enum {string} */
-            state: "break";
             slot: number | null;
             subjectName: string;
+            room: string | null;
+            /** @enum {string} */
+            state: "break";
             at: string;
         } | {
             /** @enum {string} */
             state: "done";
             at: string;
+            next: {
+                date: string;
+                at: string;
+            } | null;
         };
         Lesson: {
             id: string;
@@ -2936,6 +2956,12 @@ export interface components {
                 selected: boolean;
                 average: number | null;
                 count: number;
+                bands: {
+                    critical: number;
+                    low: number;
+                    good: number;
+                    top: number;
+                };
             }[];
         };
         Health: {

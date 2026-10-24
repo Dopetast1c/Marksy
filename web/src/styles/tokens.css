@@ -190,3 +190,7 @@
   --text-label--letter-spacing: 0.06em;
 }
 
+@utility bg-subject {
+  background-color: hsl(var(--sh, 210) var(--ss, 62%) 46%);
+}
+

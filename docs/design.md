@@ -757,16 +757,24 @@ GET  /api/students                                             -> «С кого 
                                                                    card (name, class, school when the schools differ,
                                                                    new marks, the week compared, absences, nextDay
                                                                    {date, lessons, homework} for a year without marks,
-                                                                   «Сейчас» only within the school day (D52), nearest
-                                                                   tag from M6)
-GET  /api/students/:id/periods                                 -> the period kinds and every instance (the navigator)
-GET  /api/students/:id/overview?period=&sort=alpha|weak|strong -> {from, to, average, prevAverage,
-                                                                   trend, marksCount, testsCount,
-                                                                   bands: [{band, label, from, to, count}] (the child's scale: its bands, labels and bounds; never fixed ranges),
-                                                                   absences, newCount, lastDay{date,
-                                                                   marks[]}, movers[], attention[],
-                                                                   nextDay{date, lessons[]}}
-GET  /api/students/:id/subjects?period=&sort=                  -> [{subject, average, prevAverage,
+                                                                   «Сейчас» only within the school day (D52), alert (a
+                                                                   critical row in this week's Внимание: the red badge
+                                                                   on the avatar), nearest tag from M6)
+GET  /api/students/:id/periods                                 -> the period kinds and every instance (the navigator),
+                                                                   each with its count of marks, or of lessons in a year
+                                                                   without marks (counts: marks|lessons), and the term's
+                                                                   kind and number (the word «четверть» comes from i18n)
+GET  /api/students/:id/overview?period=&offset=                -> {period, comparison, marksCount, prevMarksCount,
+                                                                   bands: [{band, labelKey, from, to, count, prevCount}] (the child's scale: its bands, labels and bounds; never fixed ranges),
+                                                                   distribution [{from, to, count}], absences,
+                                                                   prevAbsences, newCount, lessonTiles (a year without
+                                                                   marks: lessons and homework with the previous ones),
+                                                                   lastDay {date, marks[{subject, mark, workType,
+                                                                   comment}]} (the last day with marks up to today,
+                                                                   whatever the period), movers[], attention[] (five),
+                                                                   attentionTotal, nextDay {date, lessons[] as the
+                                                                   timetable has them}, now (subject, room; after lessons
+                                                                   the next school day's first lesson)}GET  /api/students/:id/subjects?period=&sort=                  -> [{subject, average, prevAverage,
                                                                    delta, trend, count, last[]}]
 GET  /api/students/:id/finals/quarters?year=                   -> rows: subject × {I..IV, year}: final or running average
                                                                    each {mark|average, kind: final|
@@ -787,7 +795,7 @@ GET  /api/students/:id/marks?period=|from=&to=&subject=&comments=all|only|none&t
                                                                    D56: never a mark, never in an average; only with
                                                                    capabilities.behaviour), markChanged / markRemoved
                                                                    (14 days); in a day the marks, then the comments
-GET  /api/students/:id/subjects/:subjectId/trend?period=|from=&to= -> buckets [{from, to, future, selected, average, count}]
+GET  /api/students/:id/subjects/:subjectId/trend?period=|from=&to= -> buckets [{from, to, future, selected, average, count, bands {critical, low, good, top}}] (the stacked bar, D26)
 GET  /api/students/:id/trend?period=                           -> the same over all marks (TrendCard on Главная)
 POST /api/students/:id/seen                                    -> marks everything as seen
 GET  /api/students/:id/schedule?day=today|tomorrow|next|week=N -> lessons by day (next = the next day with lessons;
@@ -798,7 +806,8 @@ GET  /api/students/:id/schedule?day=today|tomorrow|next|week=N -> lessons by day
 GET  /api/students/:id/school                                  -> Школа (5.9): bells, terms and holidays with notes
 GET  /api/students/:id/absences?period=
 GET  /api/students/:id/events?period=&offset=&skip=&limit=     -> ranked facts (low_mark, mark_changed, mark_removed,
-                                                                   absence, average_down/up, teacher_comment for 7 days,
+                                                                   absence, average_down/up (at most three drops and the
+                                                                   one biggest rise, 6.1), teacher_comment for 7 days,
                                                                    holidays_ahead), each {severity, date, subject, facts,
                                                                    link}; the words are the app's; Главная carries the
                                                                    first five as overview.attention

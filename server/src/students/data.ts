@@ -1,4 +1,4 @@
-import { markBand } from '@marksy/core';
+import { markBand, previousInstance } from '@marksy/core';
 import type { DateRange, GradingScale, MarkFact } from '@marksy/core';
 import { and, asc, desc, eq, gte, inArray, isNull, lte } from 'drizzle-orm';
 import type { Db } from '../db/client';
@@ -14,7 +14,7 @@ import {
   subjects,
   users,
 } from '../db/schema';
-import type { ChildContext } from './context';
+import type { ChildContext, ResolvedPeriod } from './context';
 
 // What a read route needs of one child, always as the diary has it now: removed rows are left out (their history is
 // the feed's business), facts a capability does not promise are empty. Every query is by the child (child-owned rows,
@@ -224,4 +224,19 @@ export async function lessonsIn(db: Db, ctx: ChildContext, range: DateRange) {
       teacherComment: remarks.find((r) => r.lessonId === l.id)?.text ?? null,
     };
   });
+}
+
+/**
+ * The two tiles of a year without marks (design.md 5.2, D49): lessons and homework in the selected instance and in the
+ * one before. Lessons are planned ahead, so an instance counts to its end, not to today. Cancelled lessons do not count.
+ */
+export async function lessonCounts(db: Db, ctx: ChildContext, p: ResolvedPeriod) {
+  const count = async (range: DateRange) => {
+    const ls = (await lessonsIn(db, ctx, range)).filter((l) => !l.cancelled);
+    return { lessons: ls.length, homework: ls.filter((l) => l.homework || l.ownHomework.length).length };
+  };
+  const cur = await count({ from: p.from, to: p.end });
+  const before = p.instance ? previousInstance(ctx.period, p.instance, 'lessons') : null;
+  const prev = before ? await count({ from: before.from, to: before.end }) : null;
+  return { ...cur, prevLessons: prev?.lessons ?? null, prevHomework: prev?.homework ?? null };
 }

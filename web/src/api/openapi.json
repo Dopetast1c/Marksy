@@ -1121,6 +1121,12 @@
           },
           "count": {
             "type": "number"
+          },
+          "prevCount": {
+            "type": [
+              "number",
+              "null"
+            ]
           }
         },
         "required": [
@@ -1128,7 +1134,8 @@
           "labelKey",
           "from",
           "to",
-          "count"
+          "count",
+          "prevCount"
         ]
       },
       "ChildEvent": {
@@ -1224,66 +1231,78 @@
           {
             "type": "object",
             "properties": {
+              "slot": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "subjectName": {
+                "type": "string"
+              },
+              "room": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
               "state": {
                 "type": "string",
                 "enum": [
                   "before"
                 ]
               },
-              "slot": {
-                "type": [
-                  "number",
-                  "null"
-                ]
-              },
               "at": {
                 "type": "string"
               }
             },
             "required": [
-              "state",
               "slot",
+              "subjectName",
+              "room",
+              "state",
               "at"
             ]
           },
           {
             "type": "object",
             "properties": {
+              "slot": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "subjectName": {
+                "type": "string"
+              },
+              "room": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
               "state": {
                 "type": "string",
                 "enum": [
                   "lesson"
                 ]
               },
-              "slot": {
-                "type": [
-                  "number",
-                  "null"
-                ]
-              },
-              "subjectName": {
-                "type": "string"
-              },
               "until": {
                 "type": "string"
               }
             },
             "required": [
-              "state",
               "slot",
               "subjectName",
+              "room",
+              "state",
               "until"
             ]
           },
           {
             "type": "object",
             "properties": {
-              "state": {
-                "type": "string",
-                "enum": [
-                  "break"
-                ]
-              },
               "slot": {
                 "type": [
                   "number",
@@ -1293,14 +1312,27 @@
               "subjectName": {
                 "type": "string"
               },
+              "room": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "state": {
+                "type": "string",
+                "enum": [
+                  "break"
+                ]
+              },
               "at": {
                 "type": "string"
               }
             },
             "required": [
-              "state",
               "slot",
               "subjectName",
+              "room",
+              "state",
               "at"
             ]
           },
@@ -1315,11 +1347,30 @@
               },
               "at": {
                 "type": "string"
+              },
+              "next": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "date": {
+                    "type": "string"
+                  },
+                  "at": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "date",
+                  "at"
+                ]
               }
             },
             "required": [
               "state",
-              "at"
+              "at",
+              "next"
             ]
           }
         ]
@@ -1819,6 +1870,29 @@
                 },
                 "count": {
                   "type": "number"
+                },
+                "bands": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "number"
+                    },
+                    "low": {
+                      "type": "number"
+                    },
+                    "good": {
+                      "type": "number"
+                    },
+                    "top": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "critical",
+                    "low",
+                    "good",
+                    "top"
+                  ]
                 }
               },
               "required": [
@@ -1827,7 +1901,8 @@
                 "future",
                 "selected",
                 "average",
-                "count"
+                "count",
+                "bands"
               ]
             }
           }
@@ -3866,6 +3941,9 @@
                       "now": {
                         "$ref": "#/components/schemas/NowLine"
                       },
+                      "alert": {
+                        "type": "boolean"
+                      },
                       "nearestTag": {
                         "type": "null"
                       }
@@ -3883,6 +3961,7 @@
                       "absencesWeek",
                       "nextDay",
                       "now",
+                      "alert",
                       "nearestTag"
                     ]
                   }
@@ -3953,15 +4032,38 @@
                       "additionalProperties": {
                         "type": "array",
                         "items": {
-                          "$ref": "#/components/schemas/Period"
+                          "allOf": [
+                            {
+                              "$ref": "#/components/schemas/Period"
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "count": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "count"
+                              ]
+                            }
+                          ]
                         }
                       }
+                    },
+                    "counts": {
+                      "type": "string",
+                      "enum": [
+                        "marks",
+                        "lessons"
+                      ]
                     }
                   },
                   "required": [
                     "today",
                     "kinds",
-                    "instances"
+                    "instances",
+                    "counts"
                   ]
                 }
               }
@@ -4129,10 +4231,38 @@
                     "marksCount": {
                       "type": "number"
                     },
+                    "prevMarksCount": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
                     "bands": {
                       "type": "array",
                       "items": {
                         "$ref": "#/components/schemas/BandCount"
+                      }
+                    },
+                    "distribution": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "from": {
+                            "type": "number"
+                          },
+                          "to": {
+                            "type": "number"
+                          },
+                          "count": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "from",
+                          "to",
+                          "count"
+                        ]
                       }
                     },
                     "absences": {
@@ -4141,8 +4271,46 @@
                         "null"
                       ]
                     },
+                    "prevAbsences": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
                     "newCount": {
                       "type": "number"
+                    },
+                    "lessonTiles": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "lessons": {
+                          "type": "number"
+                        },
+                        "homework": {
+                          "type": "number"
+                        },
+                        "prevLessons": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "prevHomework": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "lessons",
+                        "homework",
+                        "prevLessons",
+                        "prevHomework"
+                      ]
                     },
                     "lastDay": {
                       "type": [
@@ -4175,11 +4343,25 @@
                               },
                               "mark": {
                                 "$ref": "#/components/schemas/MarkChip"
+                              },
+                              "workType": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "comment": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
                               }
                             },
                             "required": [
                               "subject",
-                              "mark"
+                              "mark",
+                              "workType",
+                              "comment"
                             ]
                           }
                         }
@@ -4244,58 +4426,7 @@
                         "lessons": {
                           "type": "array",
                           "items": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string"
-                              },
-                              "slot": {
-                                "type": [
-                                  "number",
-                                  "null"
-                                ]
-                              },
-                              "start": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
-                              },
-                              "end": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
-                              },
-                              "subjectName": {
-                                "type": "string"
-                              },
-                              "room": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
-                              },
-                              "homework": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
-                              },
-                              "cancelled": {
-                                "type": "boolean"
-                              }
-                            },
-                            "required": [
-                              "id",
-                              "slot",
-                              "start",
-                              "end",
-                              "subjectName",
-                              "room",
-                              "homework",
-                              "cancelled"
-                            ]
+                            "$ref": "#/components/schemas/Lesson"
                           }
                         }
                       },
@@ -4313,9 +4444,13 @@
                     "hasMarks",
                     "comparison",
                     "marksCount",
+                    "prevMarksCount",
                     "bands",
+                    "distribution",
                     "absences",
+                    "prevAbsences",
                     "newCount",
+                    "lessonTiles",
                     "lastDay",
                     "movers",
                     "attention",

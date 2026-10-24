@@ -74,7 +74,7 @@ export const KIDS = [
     schoolLabel: null,
     timezone: 'Europe/Minsk',
     providerId: 'demo-full',
-    capabilities: { attendance: true },
+    capabilities: { lessons: true, futureTimetable: true, bellSchedule: true, attendance: 'derived' },
     gradingScale: scale,
   },
   {
@@ -99,10 +99,208 @@ const week = (offset: number, from: string, to: string, end = to) => ({
   termLabel: null,
   termKind: null,
   termIndex: null,
+  count: 12 - offset * 3,
 });
+
+const chip = (id: string, raw: string, band: string | null) => ({
+  id,
+  values: band ? [Number(raw)] : [],
+  raw,
+  kind: 'SINGLE',
+  band,
+});
+const lesson = (id: string, slot: number, start: string, end: string, subjectName: string, extra: object = {}) => ({
+  id,
+  date: '2026-10-22',
+  slot,
+  start,
+  end,
+  subjectId: `sub-${id}`,
+  subjectName,
+  teacherName: null,
+  room: '206',
+  groupLabel: null,
+  lessonType: null,
+  topic: null,
+  homework: null,
+  homeworkDueDate: null,
+  hasAttachments: false,
+  cancelled: false,
+  ready: null,
+  ownHomework: [],
+  marks: [],
+  absent: false,
+  teacherComment: null,
+  ...extra,
+});
+const bands = (counts: [number, number, number, number], prev: [number, number, number, number] | null) =>
+  (['critical', 'low', 'good', 'top'] as const).map((band, i) => ({
+    band,
+    labelKey: `band.${band}`,
+    from: [1, 5, 7, 9][i],
+    to: [4, 6, 8, 10][i],
+    count: counts[i],
+    prevCount: prev ? prev[i] : null,
+  }));
+const PERIOD = {
+  kind: 'week',
+  offset: 0,
+  from: '2026-10-19',
+  to: '2026-10-21',
+  end: '2026-10-25',
+  termLabel: null,
+  termKind: null,
+  termIndex: null,
+};
+const EVENTS = [
+  {
+    kind: 'low_mark',
+    severity: 'critical',
+    date: '2026-10-20',
+    subject: { id: 'sub-ph', name: 'Физика' },
+    facts: { mark: chip('m9', '3', 'critical'), workType: 'quiz', topic: null, comment: 'Не решены задачи 2 и 3' },
+    link: { screen: 'subject', subjectId: 'sub-ph' },
+  },
+  {
+    kind: 'average_down',
+    severity: 'low',
+    date: '2026-10-21',
+    subject: { id: 'sub-ph', name: 'Физика' },
+    facts: { average: 4, prevAverage: 6, delta: -2, count: 2 },
+    link: { screen: 'subject', subjectId: 'sub-ph' },
+  },
+  {
+    kind: 'teacher_comment',
+    severity: 'neutral',
+    date: '2026-10-21',
+    subject: { id: 'sub-en', name: 'Английский язык' },
+    facts: { text: 'Нет домашнего задания', slot: 3 },
+    link: { screen: 'schedule', lessonId: 'l3', date: '2026-10-21' },
+  },
+  ...['2026-10-19', '2026-10-20', '2026-10-21', '2026-10-21'].map((date, i) => ({
+    kind: 'absence',
+    severity: 'low',
+    date,
+    subject: { id: `sub-a${i}`, name: 'Беларуская мова' },
+    facts: { status: 'absent', excused: null, code: null },
+    link: { screen: 'schedule', lessonId: null, date },
+  })),
+];
+export const OVERVIEW: Record<string, unknown> = {
+  'kid-milena': {
+    period: PERIOD,
+    hasMarks: true,
+    comparison: { current: 'marks', previous: 'marks', average: 7.4, prevAverage: 8.2, delta: -0.8, trend: 'down' },
+    marksCount: 12,
+    prevMarksCount: 15,
+    bands: bands([1, 2, 6, 3], [0, 2, 8, 5]),
+    distribution: Array.from({ length: 10 }, (_, i) => ({
+      from: i + 1,
+      to: i + 1,
+      count: [0, 0, 1, 0, 1, 1, 3, 3, 2, 1][i],
+    })),
+    absences: 4,
+    prevAbsences: 1,
+    newCount: 3,
+    lessonTiles: null,
+    lastDay: {
+      date: '2026-10-21',
+      marks: [
+        { subject: { id: 'sub-al', name: 'Алгебра' }, mark: chip('m1', '9', 'top'), workType: null, comment: null },
+        {
+          subject: { id: 'sub-ph', name: 'Физика' },
+          mark: chip('m2', '3', 'critical'),
+          workType: 'quiz',
+          comment: 'Пересдача во вторник',
+        },
+      ],
+    },
+    movers: [],
+    attention: EVENTS.slice(0, 5),
+    attentionTotal: EVENTS.length,
+    nextDay: {
+      date: '2026-10-22',
+      lessons: [
+        lesson('l2', 2, '09:25', '10:10', 'Алгебра', { homework: '№ 214, 215' }),
+        lesson('l4', 4, '11:25', '12:10', 'Физика', { lessonType: 'lab' }),
+      ],
+    },
+    now: { state: 'lesson', slot: 3, subjectName: 'Беларуская мова', room: '206', until: '10:40' },
+  },
+  'kid-mark': {
+    period: PERIOD,
+    hasMarks: false,
+    comparison: null,
+    marksCount: 0,
+    prevMarksCount: null,
+    bands: [],
+    distribution: [],
+    absences: null,
+    prevAbsences: null,
+    newCount: 0,
+    lessonTiles: { lessons: 15, homework: 9, prevLessons: 16, prevHomework: 7 },
+    lastDay: null,
+    movers: [],
+    attention: [],
+    attentionTotal: 0,
+    nextDay: null,
+    now: { state: 'done', at: '11:45', next: { date: '2026-10-26', at: '08:30' } },
+  },
+};
+const TREND = {
+  period: PERIOD,
+  buckets: [
+    {
+      from: '2026-10-05',
+      to: '2026-10-11',
+      future: false,
+      selected: false,
+      average: 8.1,
+      count: 9,
+      bands: { critical: 0, low: 1, good: 5, top: 3 },
+    },
+    {
+      from: '2026-10-12',
+      to: '2026-10-18',
+      future: false,
+      selected: false,
+      average: 8.2,
+      count: 15,
+      bands: { critical: 0, low: 2, good: 8, top: 5 },
+    },
+    {
+      from: '2026-10-19',
+      to: '2026-10-21',
+      future: false,
+      selected: true,
+      average: 7.4,
+      count: 12,
+      bands: { critical: 1, low: 2, good: 6, top: 3 },
+    },
+  ],
+};
+const SCHOOL = {
+  timezone: 'Europe/Minsk',
+  year: { label: '2026/27', from: '2026-09-01', to: '2027-05-31' },
+  terms: [],
+  holidays: [],
+  bells: [
+    {
+      label: null,
+      days: [1, 2, 3, 4, 5],
+      periods: [
+        { slot: 1, start: '08:30', end: '09:15' },
+        { slot: 2, start: '09:25', end: '10:10' },
+        { slot: 3, start: '10:30', end: '11:15' },
+        { slot: 4, start: '11:25', end: '12:10' },
+      ],
+    },
+  ],
+};
 
 const periods = {
   today: '2026-10-21',
+  counts: 'marks',
   kinds: ['week', 'month', 'term', 'year'],
   instances: {
     week: [
@@ -196,6 +394,19 @@ export function fakeApi(start: Partial<FakeState> = {}) {
       return json({ outcome: 'followed' });
     }
     if (/^GET \/api\/students\/[^/]+\/periods$/.test(route)) return json(periods);
+    const kid = route.match(/^GET \/api\/students\/([^/]+)\/(overview|trend|events|school)$/);
+    if (kid) {
+      const [, id, what] = kid;
+      if (what === 'overview') return json(OVERVIEW[id!]);
+      if (what === 'trend') return json(id === 'kid-milena' ? TREND : { period: PERIOD, buckets: [] });
+      if (what === 'events')
+        return json(
+          id === 'kid-milena'
+            ? { period: PERIOD, items: EVENTS, total: EVENTS.length }
+            : { period: PERIOD, items: [], total: 0 },
+        );
+      return json(SCHOOL);
+    }
     throw new Error(`fake API: no route ${route}`);
   });
   return state;

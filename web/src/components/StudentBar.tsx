@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router';
-import { useMe } from '../api/queries';
+import { useMe, useStudentCards } from '../api/queries';
 import { useT } from '../i18n';
 import { AVATAR_SLOT_PX, fitAvatars, TITLE_MIN_PX } from '../lib/fit-bar';
 import { useDevice } from '../state/store';
@@ -24,6 +24,7 @@ export function useSwitchStudent() {
 export function StudentBar({ activeId }: { activeId: string }) {
   const t = useT();
   const me = useMe();
+  const cards = useStudentCards();
   const kids = me.data?.students ?? [];
   const switchTo = useSwitchStudent();
   const box = useRef<HTMLDivElement>(null);
@@ -51,18 +52,23 @@ export function StudentBar({ activeId }: { activeId: string }) {
       {visible.map((i) => {
         const k = kids[i]!;
         const on = k.id === activeId;
+        // a critical row in this week's Внимание of another child: a red badge on that child (design.md 4)
+        const alert = !on && !!cards.data?.find((c) => c.id === k.id)?.alert;
         return (
           <button
             key={k.id}
             type="button"
             role="tab"
             aria-selected={on}
-            aria-label={k.name}
+            aria-label={alert ? t('header.studentAlert', { name: k.name }) : k.name}
             title={k.classLabel ? `${k.name} · ${k.classLabel}` : k.name}
             onClick={() => !on && switchTo(activeId, k.id)}
-            className={`grid size-10 place-items-center rounded-pill transition-opacity ${on ? 'opacity-100 outline-[2.5px] outline-offset-1 outline-accent outline-solid' : 'opacity-55 hover:opacity-90'}`}
+            className={`relative grid size-10 place-items-center rounded-pill transition-opacity ${on ? 'opacity-100 outline-[2.5px] outline-offset-1 outline-accent outline-solid' : 'opacity-55 hover:opacity-90'}`}
           >
             <Avatar traits={defaultTraits(k.grade)} index={i} />
+            {alert && (
+              <i className="absolute -top-0.5 -right-0.5 size-3 rounded-pill border-2 border-bg bg-band-critical-fg" />
+            )}
           </button>
         );
       })}

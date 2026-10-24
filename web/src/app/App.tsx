@@ -32,6 +32,7 @@ export const routes: RouteObject[] = [
           { path: 'events', element: <EventsScreen /> },
           { path: 'marks', element: <SoonScreen screen="marks" /> },
           { path: 'subjects', element: <SoonScreen screen="subjects" /> },
+          { path: 'subjects/:subjectId', element: <SoonScreen screen="subjects" /> },
           { path: 'schedule', element: <SoonScreen screen="schedule" /> },
         ],
       },
