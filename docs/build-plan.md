@@ -177,7 +177,7 @@ Local check: `pnpm install`, `pnpm db:up`, `pnpm check`, `pnpm dev`, then open h
 
 **Deliver:** presets, matching at sync into `lesson_tag_hits`, recompute on tag change, the Теги screen and editor with the live check (its entry «Уведомления по тегам» comes with M9), the тег пометка in the schedule, tags on marks for the filter, tag hits in «Обратить внимание» and «С кого начнём?».
 
-**Done when:** matching, recompute and the screens have tests; a Supertest test shows that a child shared by two families never shows the other family's tags (not on lessons, marks, the filter, «Обратить внимание» or «С кого начнём?», and not in the live check).
+**Done when:** matching, recompute and the screens have tests; a Supertest test shows that a child shared by two families never shows the other family's tags (not on lessons, marks, the filter, «Обратить внимание» or «С кого начнём?», and not in the live check), while a student who is a member of both families sees the tags of both on every one of these surfaces (design.md 7.1; until M6 the schedule reads only the current family's hits).
 
 ## M7. Study time
 
