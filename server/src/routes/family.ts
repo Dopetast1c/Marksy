@@ -22,7 +22,7 @@ import { eraseFamily, exportFamily } from '../family/data';
 import { createInvite } from '../family/invites';
 import { changeMember, removeMember } from '../family/members';
 import type { AppDeps } from '../http/context';
-import { memberOf } from '../http/context';
+import { connectDepsOf, inBackground, memberOf } from '../http/context';
 import { HttpError } from '../http/errors';
 import { route } from '../http/route';
 import { registry } from '../openapi';
@@ -230,16 +230,11 @@ export function familyRoutes(deps: AppDeps): Router {
     },
     async (req, { body }) => {
       const m = memberOf(req);
-      await connectDiary(
-        {
-          db: deps.db,
-          credentialsKey: deps.credentialsKey,
-          ...(deps.now && { now: deps.now }),
-          transport: deps.transportFor?.(body.providerId),
-          ...(deps.allowDemoProviders && { allowDemoProviders: true }),
-        },
-        { ...body, into: { familyId: m.familyId, userId: m.userId } },
-      );
+      const result = await connectDiary(connectDepsOf(deps, body.providerId), {
+        ...body,
+        into: { familyId: m.familyId, userId: m.userId },
+      });
+      inBackground(deps, result.firstSync);
       return viewFamily(deps.db, m.familyId, m.role);
     },
   );

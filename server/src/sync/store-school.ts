@@ -10,6 +10,7 @@ import {
   schoolYears,
   studentIdentities,
   students,
+  familyStudents,
   studentSources,
   studentYears,
   subjects,
@@ -21,7 +22,9 @@ import { normName } from './upsert';
 // Students, school years, terms, holidays, subjects and finals: what a run learns before it fetches any week. Every
 // run refreshes them; ids from the provider stay in external_id.
 
-export type StudentRow = typeof students.$inferSelect;
+export type { StudentRow } from './readers';
+export { readableStudents, sourcedStudents } from './readers';
+import type { StudentRow } from './readers';
 
 export interface AccountRef {
   id: string;
@@ -79,6 +82,15 @@ export async function upsertListedStudent(
   return row!;
 }
 
+/** No link of this family to the child, and another family follows them: «Присоединиться» or «Следить» is pending */
+async function awaitingChoice(db: Db, familyId: string, studentId: string): Promise<boolean> {
+  const links = await db
+    .select({ familyId: familyStudents.familyId })
+    .from(familyStudents)
+    .where(eq(familyStudents.studentId, studentId));
+  return links.length > 0 && !links.some((l) => l.familyId === familyId);
+}
+
 /**
  * The children an account lists: one row per child and system, whichever login lists them (design.md 7.1, 7.2). The
  * account becomes a source of each (the active one when the child has no source that can read), its family follows each
@@ -91,11 +103,19 @@ export async function storeStudents(
   now = new Date(),
 ): Promise<StoredStudents> {
   const listed: StudentRow[] = [];
+  const before = await db
+    .select({ studentId: studentSources.studentId })
+    .from(studentSources)
+    .where(eq(studentSources.diaryAccountId, account.id));
+  const shownBefore = new Set(before.map((b) => b.studentId));
   for (const s of info.students) {
     const row = await upsertListedStudent(db, account, s, now);
     const studentId = row.id;
-    // the link first: only an account whose family follows the child can become its source
-    await linkFamily(db, account.familyId, studentId, now);
+    // the link first: only an account whose family follows the child can become its source. A child this login showed
+    // already, whom another family follows and this one does not, waits for the parent's choice made at connect
+    // (design.md 7.2 step 3): the collector links only a child that appears in the login anew
+    if (!(shownBefore.has(studentId) && (await awaitingChoice(db, account.familyId, studentId))))
+      await linkFamily(db, account.familyId, studentId, now);
     await rebalance(db, studentId, now);
     listed.push(row);
   }
@@ -110,27 +130,6 @@ export async function storeStudents(
     .where(and(eq(studentSources.diaryAccountId, account.id), eq(studentSources.active, true)));
   const readable = new Set(mine.map((m) => m.studentId));
   return { listed, readable: listed.filter((s) => readable.has(s.id)) };
-}
-
-/** The children an account is the active source of, as stored (the planner's view before any login) */
-export async function readableStudents(db: Db, accountId: string): Promise<StudentRow[]> {
-  const rows = await db
-    .select({ student: students })
-    .from(studentSources)
-    .innerJoin(students, eq(students.id, studentSources.studentId))
-    .where(
-      and(eq(studentSources.diaryAccountId, accountId), eq(studentSources.active, true), eq(students.isActive, true)),
-    );
-  return rows.map((r) => r.student);
-}
-
-/** Every child an account is a source of, active or not */
-export async function sourcedStudents(db: Db, accountId: string): Promise<string[]> {
-  const rows = await db
-    .select({ studentId: studentSources.studentId })
-    .from(studentSources)
-    .where(eq(studentSources.diaryAccountId, accountId));
-  return rows.map((r) => r.studentId);
 }
 
 /** The provider's view of a stored student, for the provider's methods. */

@@ -6,7 +6,7 @@ import { hashPassword, verifyPassword } from '../auth/password';
 import { memberships, sessions, users } from '../db/schema';
 import { connectDiary } from '../family/connect';
 import type { AppDeps } from '../http/context';
-import { authOf } from '../http/context';
+import { authOf, connectDepsOf, inBackground } from '../http/context';
 import { HttpError } from '../http/errors';
 import type { LoginLimiter } from '../http/rate-limit';
 import { route } from '../http/route';
@@ -189,21 +189,13 @@ export function authRoutes(deps: AppDeps, limiter: LoginLimiter): Router {
       },
     },
     async (req, { body }, res) => {
-      const result = await connectDiary(
-        {
-          db: deps.db,
-          credentialsKey: deps.credentialsKey,
-          ...(deps.now && { now: deps.now }),
-          transport: deps.transportFor?.(body.providerId),
-          ...(deps.allowDemoProviders && { allowDemoProviders: true }),
-        },
-        {
-          providerId: body.providerId,
-          credentials: body.credentials,
-          role: body.role,
-          newUser: { ...body.user, consentVersion: body.consentVersion },
-        },
-      );
+      const result = await connectDiary(connectDepsOf(deps, body.providerId), {
+        providerId: body.providerId,
+        credentials: body.credentials,
+        role: body.role,
+        newUser: { ...body.user, consentVersion: body.consentVersion },
+      });
+      inBackground(deps, result.firstSync);
       await startSession(deps, res, {
         userId: result.userId,
         familyId: result.familyId,

@@ -1,9 +1,10 @@
-import type { Transport } from '@marksy/core';
+import type { Logger, Transport } from '@marksy/core';
 import { and, asc, eq, sql } from 'drizzle-orm';
 import { hashPassword } from '../auth/password';
 import { claimLogin, refusalText } from '../cli/login-guard';
 import type { Runner } from '../cli/login-guard';
 import type { Db } from '../db/client';
+import type { SyncConfig } from '../sync/config';
 import { diaryAccounts, familyStudents, memberships, users } from '../db/schema';
 import { connectDiary, connectableProvider } from './connect';
 import { rulesForMember, welcomeChild } from './rules';
@@ -23,10 +24,13 @@ export interface DevConnectInput {
   now?: () => Date;
   transport?: Transport;
   allowDemoProviders?: boolean;
+  syncConfig: SyncConfig;
+  log?: Logger;
 }
 
 export type DevConnectResult =
-  | { outcome: 'adopted' | 'connected' | 'unchanged'; familyId: string; children: number }
+  | { outcome: 'adopted' | 'unchanged'; familyId: string; children: number }
+  | { outcome: 'connected'; familyId: string; children: number; firstSync: string }
   | { outcome: 'refused'; message: string };
 
 async function ensureUser(db: Db, login: string, password: string): Promise<string> {
@@ -102,6 +106,8 @@ export async function devConnect(db: Db, input: DevConnectInput): Promise<DevCon
   const deps = {
     db,
     credentialsKey: input.credentialsKey,
+    syncConfig: input.syncConfig,
+    ...(input.log && { log: input.log }),
     ...(input.now && { now: input.now }),
     transport: input.transport,
     ...(input.allowDemoProviders && { allowDemoProviders: true }),
@@ -126,8 +132,11 @@ export async function devConnect(db: Db, input: DevConnectInput): Promise<DevCon
             consentVersion: 'dev',
           },
         });
+  // the command waits for the first sync it started in the same login
+  const first = await result.firstSync;
   return {
     outcome: 'connected',
+    firstSync: first.outcome === 'ran' ? first.status : first.outcome,
     familyId: result.familyId,
     children: result.children.filter((c) => c.outcome === 'linked').length,
   };

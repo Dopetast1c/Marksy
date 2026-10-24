@@ -1,11 +1,5 @@
-import {
-  createRunContext,
-  ProviderAuthError,
-  ProviderBlockedError,
-  ProviderNeeds2FAError,
-  ProviderUnavailableError,
-} from '@marksy/core';
-import type { AccountInfo, DiaryProvider, Transport } from '@marksy/core';
+import { ProviderAuthError, ProviderBlockedError, ProviderNeeds2FAError, ProviderUnavailableError } from '@marksy/core';
+import type { AccountInfo, DiaryProvider, Logger, Transport } from '@marksy/core';
 import { getProvider, listProviders } from '@marksy/registry';
 import { and, eq, ne, sql } from 'drizzle-orm';
 import { hashPassword } from '../auth/password';
@@ -13,6 +7,11 @@ import { encryptCredentials } from '../crypto/credentials';
 import type { Db } from '../db/client';
 import { diaryAccounts, families, familyStudents, memberships, syncRuns, users } from '../db/schema';
 import { HttpError } from '../http/errors';
+import type { SyncConfig } from '../sync/config';
+import { openLogin } from '../sync/opened';
+import type { OpenedLogin } from '../sync/opened';
+import { runSync } from '../sync/run';
+import type { RunSyncResult } from '../sync/run';
 import { linkFamily, rebalance } from '../sync/sources';
 import { upsertListedStudent } from '../sync/store-school';
 import { rulesForMember } from './rules';
@@ -21,7 +20,9 @@ import { rulesForMember } from './rules';
 // «Добавить дневник» in Семья adds the account to the current family; `pnpm dev:connect` runs the same. One login to
 // the diary through the shared client (it counts as that hour's login for the account), then getAccount(). A child
 // another family already follows is not linked here: the parent chooses «Присоединиться» or «Следить из своей семьи»
-// (matches). The first sync of the diary's data is the planner's, at the next allowed login.
+// (matches). The first sync goes on in the same login at once (design.md 10.4: a new account runs at once and
+// backfills): standing weeks, then the history within the request cap, without a second login. The answer does not wait
+// for it; the app shows «загружаем» from /api/sync/status.
 
 export interface ConnectInput {
   providerId: string;
@@ -39,6 +40,8 @@ export interface ConnectResult {
   accountId: string;
   /** Children of this login, and what happened to each */
   children: { studentId: string; outcome: 'linked' | 'match' }[];
+  /** The first sync in the same login, under way; the caller does not wait for it */
+  firstSync: Promise<RunSyncResult>;
 }
 
 export interface ConnectDeps {
@@ -47,6 +50,10 @@ export interface ConnectDeps {
   now?: () => Date;
   transport?: Transport | undefined;
   allowDemoProviders?: boolean;
+  /** The collector's settings for the first sync */
+  syncConfig: SyncConfig;
+  sleep?: (ms: number) => Promise<void>;
+  log?: Logger;
 }
 
 /** A provider the person may connect: one offered to families (or any, for tests and the demo) */
@@ -57,16 +64,20 @@ export function connectableProvider(providerId: string, allowDemo = false): Diar
   return provider;
 }
 
-/** One login and getAccount(), with the diary's refusals as API errors (never its text) */
-async function readAccount(provider: DiaryProvider, credentials: Record<string, string>, deps: ConnectDeps) {
-  const run = createRunContext(provider, {
-    ...(deps.transport && { transport: deps.transport }),
-    ...(deps.now && { now: deps.now }),
-  });
+/** One login and getAccount(), kept open for the first sync, with the diary's refusals as API errors (never its text) */
+async function readAccount(
+  provider: DiaryProvider,
+  credentials: Record<string, string>,
+  deps: ConnectDeps,
+): Promise<OpenedLogin> {
   try {
-    const session = await run.login(credentials);
-    const info = await provider.getAccount(session, run.ctx);
-    return { info, requests: run.ctx.http.requestCount };
+    return await openLogin(provider, credentials, {
+      transport: deps.transport,
+      ...(deps.now && { now: deps.now }),
+      ...(deps.sleep && { sleep: deps.sleep }),
+      ...(deps.log && { log: deps.log }),
+      stricter: { maxRequestsPerRun: deps.syncConfig.maxRequestsPerRun },
+    });
   } catch (err) {
     if (err instanceof ProviderNeeds2FAError) throw new HttpError(409, 'needs_2fa', 'The diary asks for a code');
     if (err instanceof ProviderAuthError)
@@ -99,11 +110,12 @@ export async function connectDiary(deps: ConnectDeps, input: ConnectInput): Prom
     if (taken) throw new HttpError(409, 'login_taken', 'This Marksy login is taken');
   }
 
-  const { info, requests } = await readAccount(provider, credentials, deps);
+  const opened = await readAccount(provider, credentials, deps);
+  const { info } = opened;
   await refuseKnownAccount(db, provider.manifest.id, info);
   const passwordHash = input.newUser ? await hashPassword(input.newUser.password) : null;
 
-  return db.transaction(async (txn) => {
+  const done = await db.transaction(async (txn) => {
     // the collector's helpers take the database; inside the transaction they run on it the same way
     const tx = txn as unknown as Db;
     let familyId: string;
@@ -173,20 +185,39 @@ export async function connectDiary(deps: ConnectDeps, input: ConnectInput): Prom
     }
     // the admin of a new family sees every child and gets their rules (linkFamily did it for children it linked)
     if (input.newUser) await rulesForMember(tx, userId, familyId, 'admin');
-    await tx.insert(syncRuns).values({
-      familyId,
-      diaryAccountId: account!.id,
-      providerId: provider.manifest.id,
-      kind: 'connect',
-      trigger: `user:${userId}`,
-      startedAt: now,
-      finishedAt: now,
-      status: 'success',
-      requests,
-      stats: {},
-    });
-    return { familyId, userId, accountId: account!.id, children };
+    const [run] = await tx
+      .insert(syncRuns)
+      .values({
+        familyId,
+        diaryAccountId: account!.id,
+        providerId: provider.manifest.id,
+        kind: 'connect',
+        trigger: `user:${userId}`,
+        startedAt: now,
+        status: 'running',
+      })
+      .returning({ id: syncRuns.id });
+    return { familyId, userId, accountId: account!.id, children, runId: run!.id };
   });
+  const firstSync = runSync({
+    db,
+    accountId: done.accountId,
+    trigger: `user:${done.userId}`,
+    config: deps.syncConfig,
+    opened: { login: opened, runId: done.runId },
+    credentialsKey: deps.credentialsKey,
+    ...(deps.now && { now: deps.now }),
+    ...(deps.sleep && { sleep: deps.sleep }),
+    ...(deps.log && { log: deps.log }),
+    provider: (id) => (id === provider.manifest.id ? provider : undefined),
+  });
+  return {
+    familyId: done.familyId,
+    userId: done.userId,
+    accountId: done.accountId,
+    children: done.children,
+    firstSync,
+  };
 }
 
 /** design.md 7.2 step 3: a diary login connected anywhere already is refused */

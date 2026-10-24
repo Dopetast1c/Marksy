@@ -9,7 +9,7 @@ import { effectiveLimits } from './config';
 import type { SyncConfig } from './config';
 import { decideStart } from './plan';
 import { accountToday, weekContext } from './state';
-import { readableStudents, sourcedStudents } from './store-school';
+import { readableStudents, sourcedStudents } from './readers';
 import { localTime } from './time';
 import { formatWindow } from './window';
 

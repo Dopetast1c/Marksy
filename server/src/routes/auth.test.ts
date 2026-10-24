@@ -1,6 +1,6 @@
 import request from 'supertest';
-import { beforeEach, describe, expect, it } from 'vitest';
-import { testApp } from '../../test/app';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { settle, testApp } from '../../test/app';
 import { agentWith, connectFamily, CONSENT } from '../../test/connect';
 import { resetDb, testDb } from '../../test/db';
 import { diaryAccounts, families, sessions, syncRuns } from '../db/schema';
@@ -12,6 +12,7 @@ const cookieOf = (res: request.Response) =>
 
 describe('auth: connect, login, logout, me', () => {
   beforeEach(() => resetDb(db));
+  afterEach(settle);
 
   it('connecting a diary creates the family, its admin and a session; the token is stored only as a hash', async () => {
     const agent = agentWith();

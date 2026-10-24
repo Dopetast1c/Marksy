@@ -1,7 +1,10 @@
 import type { Logger, Transport } from '@marksy/core';
 import type { Request } from 'express';
 import type { Db } from '../db/client';
+import type { ConnectDeps } from '../family/connect';
 import type { MemberRole } from '../family/rules';
+import { readSyncConfig } from '../sync/config';
+import type { SyncConfig } from '../sync/config';
 import { HttpError } from './errors';
 
 // What the API runs on: the database, the key of the diary credentials, the cookie policy, and for tests and the
@@ -19,6 +22,34 @@ export interface AppDeps {
   /** Tests and the demo: fixture-only providers may be connected too */
   allowDemoProviders?: boolean;
   log?: Logger;
+  /** The collector's settings (the first sync after connecting); from the environment by default */
+  syncConfig?: SyncConfig;
+  /** Tests: no pauses between requests */
+  sleep?: (ms: number) => Promise<void>;
+  /** Work the answer does not wait for (the first sync); tests collect it to wait for it */
+  background?: (work: Promise<unknown>) => void;
+}
+
+/** What connecting a diary needs, for one provider */
+export function connectDepsOf(deps: AppDeps, providerId: string): ConnectDeps {
+  return {
+    db: deps.db,
+    credentialsKey: deps.credentialsKey,
+    syncConfig: deps.syncConfig ?? readSyncConfig(),
+    transport: deps.transportFor?.(providerId),
+    ...(deps.now && { now: deps.now }),
+    ...(deps.sleep && { sleep: deps.sleep }),
+    ...(deps.log && { log: deps.log }),
+    ...(deps.allowDemoProviders && { allowDemoProviders: true }),
+  };
+}
+
+/** Lets the first sync run on after the answer, its failure logged (it is a run like any other: sync_runs has it) */
+export function inBackground(deps: AppDeps, work: Promise<unknown>): void {
+  if (deps.background) return deps.background(work);
+  work.catch((err: unknown) =>
+    deps.log?.error('first sync failed', { error: err instanceof Error ? err.name : 'Error' }),
+  );
 }
 
 /** The signed-in person on a request: who, in which family, with which role there */

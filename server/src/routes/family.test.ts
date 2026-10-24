@@ -1,7 +1,7 @@
 import { and, eq } from 'drizzle-orm';
 import request from 'supertest';
-import { beforeEach, describe, expect, it } from 'vitest';
-import { testApp } from '../../test/app';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { settle, testApp } from '../../test/app';
 import { agentWith, connectFamily, otherParentTransport } from '../../test/connect';
 import type { TestAgent } from '../../test/connect';
 import { resetDb, testDb } from '../../test/db';
@@ -46,6 +46,7 @@ async function invite(agent: TestAgent, role: string, studentIds: string[] = [])
 
 describe('family', () => {
   beforeEach(() => resetDb(db));
+  afterEach(settle);
 
   it('Семья shows members, the diary login and the children; never credentials', async () => {
     const agent = agentWith();

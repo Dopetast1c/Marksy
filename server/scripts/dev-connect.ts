@@ -3,7 +3,8 @@ import { runnerOf } from '../src/cli/login-guard';
 import { masterKey } from '../src/crypto/credentials';
 import { createDb, migrateDb } from '../src/db/client';
 import { devConnect } from '../src/family/dev-connect';
-import { errorSummary } from '../src/log';
+import { errorSummary, log } from '../src/log';
+import { readSyncConfig } from '../src/sync/config';
 
 // `pnpm dev:connect [--provider <id>]`: the owner's family from .env (DIARY_LOGIN, DIARY_PASSWORD for the diary,
 // MARKSY_DEV_EMAIL, MARKSY_DEV_PASSWORD for the Marksy login), through the same service as «Подключить дневник»
@@ -28,12 +29,15 @@ try {
     marksy: { login: env('MARKSY_DEV_EMAIL'), password: process.env.MARKSY_DEV_PASSWORD ?? '' },
     runner: runnerOf(),
     credentialsKey: masterKey(),
+    syncConfig: readSyncConfig(),
+    log,
   });
   if (result.outcome === 'refused') {
     console.error(result.message);
     process.exitCode = 3;
   } else {
     console.log(`dev:connect: ${result.outcome}, ${result.children} children followed`);
+    if (result.outcome === 'connected') console.log(`first sync in the same login: ${result.firstSync}`);
     console.log('Sign in to the app with MARKSY_DEV_EMAIL and MARKSY_DEV_PASSWORD.');
   }
 } catch (err) {
