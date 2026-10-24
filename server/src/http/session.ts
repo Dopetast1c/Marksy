@@ -23,8 +23,9 @@ function readCookie(req: Request, name: string): string | undefined {
   return undefined;
 }
 
-function setCookie(res: Response, token: string, expires: Date, secure: boolean) {
-  res.cookie(SESSION_COOKIE, token, { httpOnly: true, sameSite: 'lax', secure, expires, path: '/' });
+/** Max-Age, not Expires: the browser counts the 30 days on its own clock, whatever this server's clock says */
+function setCookie(res: Response, token: string, secure: boolean) {
+  res.cookie(SESSION_COOKIE, token, { httpOnly: true, sameSite: 'lax', secure, maxAge: TTL_MS, path: '/' });
 }
 
 /** Signs a person in: a new session in their current family, and the cookie */
@@ -44,7 +45,7 @@ export async function startSession(
     createdAt: now,
     userAgent: who.userAgent?.slice(0, 200) ?? null,
   });
-  setCookie(res, token, expiresAt, deps.secureCookies);
+  setCookie(res, token, deps.secureCookies);
 }
 
 /** Signs this browser out: the session row goes, the cookie is cleared */
@@ -86,7 +87,7 @@ export function loadSession(deps: AppDeps): RequestHandler {
       if (row.expiresAt.getTime() - now.getTime() < TTL_MS - SLIDE_AFTER_MS) {
         const expiresAt = new Date(now.getTime() + TTL_MS);
         await deps.db.update(sessions).set({ expiresAt }).where(eq(sessions.id, row.id));
-        setCookie(res, token, expiresAt, deps.secureCookies);
+        setCookie(res, token, deps.secureCookies);
       }
       req.auth = { sessionId: row.id, userId: row.userId, ...membership };
       next();
