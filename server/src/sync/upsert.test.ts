@@ -1,7 +1,7 @@
 import type { Lesson } from '@marksy/core';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { resetDb, testDb } from '../../test/db';
-import { behaviourEvents, lessons, marks, schoolYears, students } from '../db/schema';
+import { behaviourEvents, lessonOverrides, lessons, marks, schoolYears, students } from '../db/schema';
 import { upsertRange } from './upsert';
 
 const db = testDb();
@@ -86,5 +86,64 @@ describe('upsertRange: teacher remarks on lessons', () => {
     await upsertRange(db, scope(T2), fetch(lesson('Нет домашнего задания, исправлено')));
     const [back] = await db.select().from(behaviourEvents);
     expect(back).toMatchObject({ removedAt: null, comment: 'Нет домашнего задания, исправлено', firstSeenAt: T1 });
+  });
+});
+
+describe('upsertRange: «Урока не будет» gives way to the diary', () => {
+  beforeEach(() => resetDb(db));
+
+  it('a topic keeps the family’s cancellation; a mark for the lesson removes it', async () => {
+    const [student] = await db
+      .insert(students)
+      .values({ providerId: 'demo-full', externalId: 'p-1', fullName: 'Ученик А' })
+      .returning();
+    const [year] = await db
+      .insert(schoolYears)
+      .values({
+        studentId: student!.id,
+        providerId: 'demo-full',
+        externalId: 'y',
+        label: '2026-2027',
+        startDate: '2026-09-01',
+        endDate: '2027-05-31',
+      })
+      .returning();
+    const scope = {
+      studentId: student!.id,
+      providerId: 'demo-full',
+      schoolYearId: year!.id,
+      now: T1,
+      subjectIds: new Map<string, string>(),
+    };
+    await upsertRange(db, scope, { range: RANGE, lessons: [lesson()], marks: [], attendance: [] });
+    const [l] = await db.select().from(lessons);
+    await db.insert(lessonOverrides).values({ studentId: student!.id, lessonId: l!.id, cancelled: true, setAt: T1 });
+
+    // the diary shows a planned topic ahead: the lesson is still cancelled
+    await upsertRange(db, scope, {
+      range: RANGE,
+      lessons: [{ ...lesson(), topic: 'Дроби' }],
+      marks: [],
+      attendance: [],
+    });
+    expect(await db.select().from(lessonOverrides)).toHaveLength(1);
+
+    const mark = {
+      externalId: 'm-1',
+      date: '2026-10-12',
+      subjectExternalId: 's-1',
+      subjectName: 'Математика',
+      lessonExternalId: 'l-1',
+      raw: '8',
+      kind: 'numeric' as const,
+      values: [8],
+    };
+    await upsertRange(db, scope, {
+      range: RANGE,
+      lessons: [{ ...lesson(), marks: [mark] }],
+      marks: [],
+      attendance: [],
+    });
+    expect(await db.select().from(lessonOverrides)).toEqual([]);
   });
 });

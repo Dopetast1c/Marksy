@@ -14,7 +14,7 @@ The order in which Marksy is built with Claude Code, what each milestone must de
 | M4 | Accounts, families and the read API | `m4-api` | done |
 | M5a | Web: tokens, shell, login, student pick, Главная, Внимание | `m5a-shell` | done |
 | M5b | Web: Оценки, Итоги, Предметы, Предмет | `m5b-marks` | done |
-| M5c | Web: Расписание, lesson menu, ready ticks, own homework | `m5c-schedule` | todo |
+| M5c | Web: Расписание, lesson menu, ready ticks, own homework | `m5c-schedule` | in progress |
 | M5d | Web: Ещё, Семья, Синхронизация, Оформление | `m5d-more` | todo |
 | M5e | Translations: the ten other interface languages | `m5e-i18n` | todo |
 | M6 | Tags | `m6-tags` | todo |
@@ -151,13 +151,15 @@ Local check: `pnpm install`, `pnpm db:up`, `pnpm check`, `pnpm dev`, then open h
 
 **Read:** `docs/design.md` 5.5, 6.5; prototype screen Расписание.
 
-**Deliver:** day and week views with the period navigator, LessonRow with пометки, LessonMenu (готово first, задание, урока не будет), ready ticks with `lesson_prep_events`, own homework items, missing slots, «Обратить внимание» for the selected range. Carried over from M5b: once the diary posts the first term's finals (after 31 October 2026), one real `pnpm probe`, the mapping of the finals response checked against its real shape, and Итоги checked on the owner's family; the teacher's comment row in Оценки then opens its lesson in Расписание.
+**Deliver:** day and week views with the period navigator, LessonRow with пометки, LessonMenu (готово first, задание, урока не будет), ready ticks with `lesson_prep_events`, own homework items, missing slots, «Обратить внимание» for the selected range (read from `lesson_tag_hits`, hidden until M6 fills them; the seed gets no hits before M6). One rule for "the lesson has passed" in core (`lessonPassed`) behind the server's 409, the ⋯ menu and the «сейчас» tint. The teacher's comment row in Оценки opens its lesson in Расписание.
+
+**Moved on (owner, 2026-10-24):** the finals check carried over from M5b (one real `pnpm probe` once the diary posts the first term's finals after 31 October 2026, the mapping of the finals response checked against its real shape, Итоги checked on the owner's family) belongs to whichever milestone is in progress after 31 October; M5c is not held open for it.
 
 ## M5d. Web: Ещё and settings screens
 
 **Read:** `docs/design.md` 5.6, 5.6a, 5.7; prototype screens Ещё, Семья, Синхронизация, Оформление, Аватар.
 
-**Deliver:** Ещё in the documented order (the row «Настройки уведомлений» comes with M9), Семья (members, invites, diary accounts, students), avatars, Синхронизация (status, history, manual refresh within the login limit), Оформление (theme, palette, wallpaper, font, subject colours), student mode and simple mode, manual entry of past years' finals (`PUT /api/students/:id/final-marks`, the button «Ввести итоги прошлого года» on Итоги → Годы for admin and parents; moved here from M5b).
+**Deliver:** Ещё in the documented order (the row «Настройки уведомлений» comes with M9), Семья (members, invites, diary accounts, students), avatars, Синхронизация (status, history, manual refresh within the login limit), Оформление (theme, palette, wallpaper, font, subject colours), student mode and simple mode, manual entry of past years' finals (`PUT /api/students/:id/final-marks`, the button «Ввести итоги прошлого года» on Итоги → Годы for admin and parents; moved here from M5b). If M5d is the milestone in progress after 31 October 2026, it also takes the finals check moved on from M5c.
 
 ## M5e. Translations
 

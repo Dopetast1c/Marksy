@@ -2460,7 +2460,7 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
-                    day?: "today" | "tomorrow" | "next";
+                    day?: ("today" | "tomorrow" | "next") | string;
                     week?: number | null;
                 };
                 header?: never;
@@ -2477,12 +2477,68 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
+                        "application/json": components["schemas"]["Schedule"];
+                    };
+                };
+                /** @description No session */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such child */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/students/{id}/schedule/days": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The days of the school year with lessons and how many (the Расписание navigator and its picker, 5.5) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
                         "application/json": {
-                            from: string;
-                            to: string;
+                            today: string;
                             days: {
                                 date: string;
-                                lessons: components["schemas"]["Lesson"][];
+                                lessons: number;
+                                held: number;
                             }[];
                         };
                     };
@@ -2641,6 +2697,464 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/students/{id}/lessons/{lessonId}/prep": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** «Готово» on a lesson that has not passed (6.5): who and when are kept, the history in lesson_prep_events */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    lessonId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            done: boolean;
+                            /** Format: date-time */
+                            doneAt: string | null;
+                            doneBy: {
+                                name: string | null;
+                                otherFamily: boolean;
+                            } | null;
+                        };
+                    };
+                };
+                /** @description No session */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such child or lesson */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description The lesson has passed: nothing to prepare or plan any more */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        /** Take «готово» off a lesson that has not passed: the lesson goes back to open (6.5) */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    lessonId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            done: boolean;
+                            /** Format: date-time */
+                            doneAt: string | null;
+                            doneBy: {
+                                name: string | null;
+                                otherFamily: boolean;
+                            } | null;
+                        };
+                    };
+                };
+                /** @description No session */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such child or lesson */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description The lesson has passed: nothing to prepare or plan any more */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/students/{id}/lessons/{lessonId}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** «Урока не будет» (5.5): out of the counts and reminders; the diary wins once it records the lesson */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    lessonId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            cancelled: boolean;
+                            /** Format: date-time */
+                            setAt: string | null;
+                        };
+                    };
+                };
+                /** @description No session */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such child or lesson */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description The lesson has passed, or the diary already has a mark or an attendance record for it */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        /** «Вернуть урок»: the lesson is back exactly as it was (5.5) */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    lessonId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            cancelled: boolean;
+                            /** Format: date-time */
+                            setAt: string | null;
+                        };
+                    };
+                };
+                /** @description No session */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such child or lesson */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description The lesson has passed: nothing to prepare or plan any more */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/students/{id}/lessons/{lessonId}/homework": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** «Добавить задание»: homework the diary does not have, shown like the diary’s (6.5); one per lesson */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    lessonId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        text: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: string;
+                            text: string;
+                        };
+                    };
+                };
+                /** @description No session */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such child or lesson */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description The lesson has passed, or it has the family’s homework already */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/students/{id}/homework/{itemId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** «Удалить задание»: the family’s own homework only (6.5) */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    itemId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            removed: boolean;
+                        };
+                    };
+                };
+                /** @description No session */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such child or homework of the family */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description The lesson has passed: nothing to prepare or plan any more */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        /** «Изменить задание»: the family’s own homework only (6.5) */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    itemId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        text: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: string;
+                            text: string;
+                        };
+                    };
+                };
+                /** @description No session */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such child or homework of the family */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description The lesson has passed: nothing to prepare or plan any more */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
         trace?: never;
     };
     "/api/sync/status": {
@@ -3047,6 +3561,14 @@ export interface components {
                 at: string;
             } | null;
         };
+        TagRef: {
+            id: string;
+            name: string;
+            icon: string | null;
+            /** @enum {string} */
+            tone: "normal" | "important";
+            presetKey: string | null;
+        };
         Lesson: {
             id: string;
             date: string;
@@ -3081,9 +3603,24 @@ export interface components {
                     otherFamily: boolean;
                 } | null;
             }[];
-            marks: components["schemas"]["MarkChip"][];
+            marks: (components["schemas"]["MarkChip"] & {
+                workType: string | null;
+                comment: string | null;
+            })[];
             absent: boolean;
             teacherComment: string | null;
+            tags: {
+                tag: components["schemas"]["TagRef"];
+                /** @enum {string} */
+                field: "topic" | "homework" | "type";
+                snippet: string | null;
+                setOn: string | null;
+            }[];
+            setHere: {
+                tag: components["schemas"]["TagRef"];
+                dueDate: string;
+            }[];
+            isTest: boolean;
         };
         TermRef: {
             id: string;
@@ -3116,6 +3653,25 @@ export interface components {
             postedOn: string | null;
             /** @enum {string|null} */
             source: "api" | "manual" | null;
+        };
+        Hint: {
+            rule: string;
+            /** @enum {string} */
+            severity: "critical" | "low" | "ok" | "good";
+            fact: {
+                key: string;
+                params: {
+                    [key: string]: string | number | string[] | null;
+                };
+            };
+            advice?: {
+                key: string;
+                params: {
+                    [key: string]: string | number | string[] | null;
+                };
+            };
+            lessonId?: string;
+            date?: string;
         };
         FeedItem: {
             /** @enum {string} */
@@ -3219,25 +3775,6 @@ export interface components {
             lessonsPerWeek: number | null;
             color: string | null;
         };
-        Hint: {
-            rule: string;
-            /** @enum {string} */
-            severity: "critical" | "low" | "ok" | "good";
-            fact: {
-                key: string;
-                params: {
-                    [key: string]: string | number | string[] | null;
-                };
-            };
-            advice?: {
-                key: string;
-                params: {
-                    [key: string]: string | number | string[] | null;
-                };
-            };
-            lessonId?: string;
-            date?: string;
-        };
         GoalRow: {
             target: number;
             /** @enum {string} */
@@ -3259,6 +3796,45 @@ export interface components {
         Health: {
             /** @enum {string} */
             status: "ok";
+        };
+        Schedule: {
+            from: string;
+            to: string;
+            days: {
+                date: string;
+                lessons: (components["schemas"]["Lesson"] & {
+                    notes: {
+                        facts: {
+                            average: number | null;
+                            last: components["schemas"]["MarkChip"][];
+                            lastDate: string;
+                            since: number;
+                        } | null;
+                        signal: {
+                            /** @enum {string} */
+                            kind: "call" | "callLow" | "push";
+                            lessons: number;
+                            average: number | null;
+                        } | null;
+                        hint: components["schemas"]["Hint"] & (Record<string, never> | null);
+                    } | null;
+                })[];
+            }[];
+            attention: {
+                tag: components["schemas"]["TagRef"];
+                /** @enum {string} */
+                field: "topic" | "homework" | "type";
+                snippet: string | null;
+                setOn: string | null;
+                lessonId: string;
+                date: string;
+                slot: number | null;
+                subject: {
+                    id: string;
+                    name: string;
+                    color: string | null;
+                };
+            }[];
         };
         TermFinals: {
             state: components["schemas"]["FinalsState"];

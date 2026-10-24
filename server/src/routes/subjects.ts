@@ -10,7 +10,7 @@ import {
   sortSubjects,
   subjectHints,
 } from '@marksy/core';
-import type { GuidanceLesson, GuidanceMark, Hint, WorkType } from '@marksy/core';
+import type { GuidanceLesson, Hint } from '@marksy/core';
 import { and, desc, eq } from 'drizzle-orm';
 import { Router } from 'express';
 import { z } from 'zod';
@@ -26,6 +26,7 @@ import {
   absencesIn,
   chipOf,
   factOf,
+  guidanceMark,
   lessonCounts,
   lessonsIn,
   marksIn,
@@ -33,7 +34,6 @@ import {
   subjectInfo,
   subjectsOf,
 } from '../students/data';
-import type { MarkRow } from '../students/data';
 import { feedItem, feedItems } from '../students/feed';
 import { finalsOf, finalsState, lastYearFinals, termCell, termRef, yearCell } from '../students/finals';
 import { trendOf, trendResponse } from '../students/trend';
@@ -50,6 +50,7 @@ import {
   periodOf,
   periodOut,
   termRefOut,
+  hintOut,
 } from './read-schemas';
 
 // Предметы and Предмет (docs/design.md 5.3a, 5.4, 6.6): every subject of the child with its average and direction under
@@ -85,24 +86,6 @@ const subjectInfoSchema = registry.register(
     lessonsPerWeek: z.number().nullable(),
     /** The family's colour, a palette key of docs/tokens.json; null = «авто» (6.6) */
     color: z.string().nullable(),
-  }),
-);
-
-const hintText = z.object({
-  key: z.string(),
-  params: z.record(z.string(), z.union([z.string(), z.number(), z.array(z.string()), z.null()])),
-});
-
-/** A guidance hint (6.2): the fact and the advice as i18n keys with raw scale values the app formats */
-const hintOut = registry.register(
-  'Hint',
-  z.object({
-    rule: z.string(),
-    severity: z.enum(['critical', 'low', 'ok', 'good']),
-    fact: hintText,
-    advice: hintText.optional(),
-    lessonId: z.string().optional(),
-    date: z.string().optional(),
   }),
 );
 
@@ -180,13 +163,6 @@ const goalsApply = (ctx: ChildContext) =>
 
 const runningTerm = (ctx: ChildContext) =>
   ctx.termRows.find((t) => t.startDate <= ctx.today && ctx.today <= t.endDate) ?? null;
-
-const guidanceMark = (m: MarkRow): GuidanceMark => ({
-  ...factOf(m),
-  raw: m.raw,
-  ...(m.workType && { workType: m.workType as WorkType }),
-  ...(m.comment && { comment: m.comment }),
-});
 
 export function subjectRoutes(deps: AppDeps): Router {
   const r = Router();

@@ -20,6 +20,7 @@ export * from './marks/dates';
 export * from './marks/short-dates';
 export * from './marks/periods';
 export * from './marks/stats';
+export * from './marks/lesson-time';
 export * from './guidance/guidance';
 export * from './http/allow-list';
 export * from './http/throttled-client';

@@ -260,7 +260,7 @@ One list, by period. The period control and the mark filter chips (same as Оц�
   - **подсказка**: the guidance hint (6.2), action in bold and the reason after it.
   - **сигнал**: "Давно без оценки, могут спросить; можно вызваться самой", "Могут спросить, стоит подготовиться", "Нужно поднажать" (guidance on).
   - **факты**: "Средняя оценка", "Последние оценки", "Последняя оценка: 14 окт, 2 урока назад" (grey bars).
-- **A lesson that has passed keeps only its оценка** (or "Пропуск урока"), in both views: every other note exists to prepare for a lesson, and that lesson is over. Passed lessons have no ⋯ button and no actions; "Обратить внимание" and the day's "готово N из M" count only lessons still ahead.
+- **A lesson that has passed keeps only its оценка** (or "Пропуск урока"), in both views: every other note exists to prepare for a lesson, and that lesson is over. Passed lessons have no ⋯ button and no actions; "Обратить внимание" and the day's "готово N из M" count only lessons still ahead. **When a lesson has passed** is one rule in core (`lessonPassed`), used by the server and the app alike: the lesson's end time (from the diary or the child's bells) is reached in the school's time zone; a lesson without an end time counts as passed from the next day. The same rule hides the ⋯ button, ends the «сейчас» tint and makes the server refuse a tick, a cancellation or homework on that lesson (409 `lesson_passed`).
 - **One view, facts always shown.** There is no Подробно / Кратко switch: with one fact per note and icons on the left axis the full row stays easy to scan, so every upcoming lesson shows the пометки факты and сигнал: the subject facts as of the start of the lesson: **"Средняя оценка: 8.5"** (in its band colour), **"Последние оценки:"** with the last five marks this school year as chips (never mixed with last year), **"Последняя оценка: 14 окт, 2 урока назад"** (lessons of this subject since the last mark); and, when guidance is on, **"Давно без оценки, могут спросить · 7 уроков без оценки; можно вызваться самой"** in the accent colour after `callAfter` lessons without a mark (family rule, default 4, 6.4), or **"Могут спросить, стоит подготовиться"** in orange when the average is also low, or **"Нужно поднажать · средний 5.8"** when the average is low and nothing more serious is said. These answer "where should I push and where might I be called" before the day, next to the lesson.
 - **Lesson actions: one ⋯ menu.** Every upcoming lesson has a ⋯ button at the right, and a tap anywhere on the row (except the subject name) opens the same bottom sheet, titled "Алгебра · 2 урок, завтра 09:25". The actions, always in this order, each a row with an icon tile, a bold title and one line of context:
   1. **"Отметить «готово»"** (green tile, check icon; "к уроку подготовились") or **"Снять отметку «готово»"** ("отметила Милена в 17:40"). First, because it is the action used every day.
@@ -272,7 +272,7 @@ One list, by period. The period control and the mark filter chips (same as Оц�
   - is skipped as a due lesson: homework, tag hits and "Обратить внимание" items that pointed at it move to the next lesson of the subject that will take place;
   - is skipped when counting "N уроков без оценки" and "N уроков назад" (`callAfter`);
   - keeps its test event on Главная and События, with "урока не будет, уточните перенос" added, because a cancelled test is usually moved, not dropped.
-  If the diary later records a mark or an absence for that lesson (a planned topic does not count: the diary shows topics ahead), the diary wins: the override is removed, the lesson shows normally, and nothing is announced. Passed lessons have no cancel action (nothing to plan any more).
+  If the diary later records a mark or an attendance record for that lesson (an absence, a late arrival; a planned topic does not count: the diary shows topics ahead), the diary wins: the collector removes the override, the lesson shows normally (the read side already ignores an override next to a mark), and nothing is announced. A lesson the diary already has a mark or an attendance record for cannot be cancelled (409 `diary_has_lesson`). Passed lessons have no cancel action (nothing to plan any more).
 - In Неделя the block lists the whole selected week, so the weekend planning view is "Неделя → следующая неделя".
 - Grade 1: this is the primary screen; the overview links here.
 
@@ -436,7 +436,7 @@ The problem: a child sees "выучить стихотворение" in Thursda
 
 **The tick is per lesson, not per homework item.** The diary often shows no topic and no homework for a lesson although the teacher gave one (entered late, said aloud, written on the board), so a checklist built on diary homework would miss half of what the child actually has to do. Every upcoming lesson on the timetable therefore carries one tick, "готово": the child marks that they are prepared for that lesson, whatever the diary says. A parent sees the tick and may tick or untick too; the card remembers who and when ("готово · Милена, 17:40", "готово · папа, 19:12"). The tick never touches the diary (the collector is read-only); it is Marksy's own shared state, the same on every phone in the family.
 
-- **Where.** The first action in the ⋯ menu of every lesson for today and later (5.5), so a lesson with or without topic or homework is marked the same way; a marked lesson shows the пометка "Готово · кто, когда" first under it (check icon, green bar, like a tag). In the home widget "Готово" is the first item of the tag line, in green. In the day header: "готово 2 из 5". Tag hits have no tick of their own (6.3): a poem learned is Tuesday's literature lesson marked ready.
+- **Where.** The first action in the ⋯ menu of every lesson that has not passed yet (5.5), so a lesson with or without topic or homework is marked the same way; a marked lesson shows the пометка "Готово · кто, когда" first under it (check icon, green bar, like a tag). In the home widget "Готово" is the first item of the tag line, in green. In the day header: "готово 2 из 5". Tag hits have no tick of their own (6.3): a poem learned is Tuesday's literature lesson marked ready.
 - **Homework the diary does not have.** The ⋯ menu of an upcoming lesson without homework offers **"Добавить задание"** (pen icon). It opens a sheet with one text field; anyone in the family, child or parent, types what was actually assigned and saves. The item is then shown in the lesson like the diary's homework, and the menu action becomes **"Изменить задание"**, which reopens the same sheet with the text filled in, a "Сохранить" button and "Удалить задание". Who added or edited it is not displayed (it is stored, for undo). Only manual items can be edited; the diary's homework is read-only. When the diary later delivers the homework, both are shown; nothing is overwritten. A passed lesson has no menu, so its homework can no longer be added or edited.
 - **Who may.** The student for their own lessons, every parent and the admin for any student they follow. A tick by a parent is shown as such; an untick is the lesson going back to open (the history of ticks is kept in `lesson_prep_events` for 180 days and is not shown).
 - **Notifications.** `homework_digest` at 19:00 lists tomorrow's lessons with their ticks and what is still open ("Не отмечено: Алгебра, Английский"); parents may switch on "к 20:00 не всё отмечено" (event `prep_open`, 6.4). Nothing nags the child beyond the digest they chose.
@@ -822,11 +822,18 @@ GET  /api/students/:id/marks?period=|from=&to=&subject=&comments=all|only|none&t
 GET  /api/students/:id/subjects/:subjectId/trend?period=|from=&to=&tags=&tagMode=&comments= -> buckets [{from, to, future, selected, average, count, bands {critical, low, good, top}}] (the stacked bar, D26)
 GET  /api/students/:id/trend?period=                           -> the same over all marks (TrendCard on Главная)
 POST /api/students/:id/seen                                    -> marks everything as seen
-GET  /api/students/:id/schedule?day=today|tomorrow|next|week=N -> lessons by day (next = the next day with lessons;
-                                                                   week=0 this week, 1 next, -1 last): times, room,
-                                                                   group, teacher, homework, own homework, «готово»
+GET  /api/students/:id/schedule?day=today|tomorrow|next|YYYY-MM-DD|week=N -> lessons by day (next = the next day with
+                                                                   lessons; week=0 this week, 1 next, -1 last): times,
+                                                                   room, group, teacher, homework, own homework, «готово»
                                                                    (the author's name only inside the family),
-                                                                   «урока не будет», marks, absence, teacherComment
+                                                                   «урока не будет», marks (work type and comment only
+                                                                   when set), absence, teacherComment, the family's tags
+                                                                   (due here, set here, isTest from «Контрольная»); for a
+                                                                   lesson not passed yet the пометки факты, сигнал and
+                                                                   подсказка (the last two only with guidance on);
+                                                                   attention = «Обратить внимание» of the range
+GET  /api/students/:id/schedule/days                           -> every day of the school year with lessons: {date,
+                                                                   lessons, held} (the navigator and its picker, 5.5)
 GET  /api/students/:id/school                                  -> Школа (5.9): bells, terms and holidays with notes
 GET  /api/students/:id/absences?period=
 GET  /api/students/:id/events?period=&offset=&skip=&limit=     -> ranked facts (low_mark, mark_changed, mark_removed,
@@ -844,9 +851,14 @@ GET  /api/students/:id/study?period=|from=&to=&onlyTimer=       -> sessions and 
                                                                    per bucket (same buckets as /trend), averages alongside
                                                                    when the viewer may see them
 POST /api/students/:id/study {subjectId?, lessonId?, startedAt, endedAt}   PATCH/DELETE /api/students/:id/study/:sessionId  (manual)
-PUT  /api/students/:id/lessons/:lessonId/prep  DELETE …/prep   -> {done, doneBy, doneAt} (6.5); student (own), parent, admin
-POST /api/students/:id/lessons/:lessonId/homework {text}      -> manual homework item (source: manual)
-PUT  /api/students/:id/lessons/:lessonId/cancel  DELETE …/cancel -> {cancelled, setAt} (5.5); same roles as prep; the lessons endpoint carries `cancelled`
+PUT  /api/students/:id/lessons/:lessonId/prep  DELETE …/prep   -> {done, doneBy, doneAt} (6.5); student (own), parent, admin;
+                                                                   every lesson action answers 409 lesson_passed once the
+                                                                   lesson has passed (core lessonPassed, 5.5)
+POST /api/students/:id/lessons/:lessonId/homework {text}      -> manual homework item (source: manual); one per lesson
+                                                                   (409 homework_exists)
+PUT  /api/students/:id/lessons/:lessonId/cancel  DELETE …/cancel -> {cancelled, setAt} (5.5); same roles as prep; the lessons endpoint carries `cancelled`;
+                                                                   409 diary_has_lesson when the diary has a mark or an
+                                                                   attendance record for it
 PATCH /api/students/:id/homework/:itemId {text}   DELETE /api/students/:id/homework/:itemId   -> edit or remove a manual item (source: manual only)
 PATCH /api/me/settings {appearance: {...}}                      -> personal appearance (5.6a)
 POST /api/me/wallpaper (multipart, image ≤ 5 MB)   DELETE /api/me/wallpaper   GET /api/me/wallpaper -> own picture only
