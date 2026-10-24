@@ -6,10 +6,11 @@ import type { Tx } from '../sync/upsert';
 import { cliLogins, diaryAccounts } from '../db/schema';
 import { fromLocal, localTime } from '../sync/time';
 
-// The login guard of `pnpm probe` and `pnpm sync:once` (CLAUDE.md "Real diary runs"): one real login per account and
-// login interval, shared with the scheduler through diary_accounts.last_login_at, for whoever runs them; for Claude
-// Code (MARKSY_RUNNER=claude) also at most three runs a day, only between 07:00 and 20:00 in the school's time zone.
-// A refusal names the next allowed time; nothing is retried here.
+// The login guard of `pnpm probe`, `pnpm sync:once` and `pnpm dev:connect` (CLAUDE.md "Real diary runs"): one real
+// login per account and interval, shared with the scheduler through diary_accounts.last_login_at, for whoever runs
+// them. The interval and, for Claude Code (MARKSY_RUNNER=claude), a daily cap and school hours come from the mode
+// (cli/mode.ts: development 10 minutes, any hour, no cap; production the manifest's interval, three runs, 07:00 to
+// 20:00). A refusal names the next allowed time; nothing is retried here.
 
 export type Runner = 'owner' | 'claude';
 export type CliCommand = 'probe' | 'sync:once' | 'dev:connect';
@@ -32,10 +33,19 @@ export interface LoginClaim {
   login: string;
   command: CliCommand;
   runner: Runner;
-  minLoginIntervalMinutes: number;
+  policy: LoginPolicy;
   /** The school's time zone (the provider manifest's) */
   timezone: string;
   now: Date;
+}
+
+/** What a mode allows for manual real runs (cli/mode.ts) */
+export interface LoginPolicy {
+  intervalMinutes: number;
+  /** Claude Code's runs per school-local day; null: no cap */
+  claudeRunsPerDay: number | null;
+  /** Claude Code's hours, local minutes [from, to); null: any hour */
+  claudeHours: readonly [number, number] | null;
 }
 
 export type ClaimResult = { ok: true } | { ok: false; reason: 'interval' | 'daily_cap' | 'hours'; nextAllowedAt: Date };
@@ -68,25 +78,26 @@ async function claimIn(db: Tx, c: LoginClaim): Promise<ClaimResult> {
     .orderBy(desc(cliLogins.at))
     .limit(1);
   const last = Math.max(account?.lastLoginAt?.getTime() ?? 0, lastCli?.at.getTime() ?? 0);
-  const intervalEnd = new Date(last + c.minLoginIntervalMinutes * 60_000);
+  const intervalEnd = new Date(last + c.policy.intervalMinutes * 60_000);
+  const { claudeRunsPerDay: cap, claudeHours: hours } = c.policy;
 
   const local = localTime(c.now, c.timezone);
-  const opensAt = (date: ISODate) => fromLocal(date, CLAUDE_HOURS[0], c.timezone);
-  if (c.runner === 'claude') {
+  const opensAt = (date: ISODate) => fromLocal(date, hours?.[0] ?? 0, c.timezone);
+  if (c.runner === 'claude' && cap !== null) {
     const [{ n } = { n: 0 }] = await db
       .select({ n: sql<number>`count(*)::int` })
       .from(cliLogins)
       .where(and(eq(cliLogins.runner, 'claude'), gte(cliLogins.at, fromLocal(local.date, 0, c.timezone))));
-    if (n >= CLAUDE_RUNS_PER_DAY)
-      return { ok: false, reason: 'daily_cap', nextAllowedAt: opensAt(nextDay(local.date)) };
-    if (local.minutes < CLAUDE_HOURS[0]) return { ok: false, reason: 'hours', nextAllowedAt: opensAt(local.date) };
-    if (local.minutes >= CLAUDE_HOURS[1])
-      return { ok: false, reason: 'hours', nextAllowedAt: opensAt(nextDay(local.date)) };
+    if (n >= cap) return { ok: false, reason: 'daily_cap', nextAllowedAt: opensAt(nextDay(local.date)) };
+  }
+  if (c.runner === 'claude' && hours) {
+    if (local.minutes < hours[0]) return { ok: false, reason: 'hours', nextAllowedAt: opensAt(local.date) };
+    if (local.minutes >= hours[1]) return { ok: false, reason: 'hours', nextAllowedAt: opensAt(nextDay(local.date)) };
   }
   if (intervalEnd > c.now) {
     // for Claude Code, an interval that ends after hours moves to the next morning
     const end = localTime(intervalEnd, c.timezone);
-    const late = c.runner === 'claude' && (end.date !== local.date || end.minutes >= CLAUDE_HOURS[1]);
+    const late = c.runner === 'claude' && !!hours && (end.date !== local.date || end.minutes >= hours[1]);
     return { ok: false, reason: 'interval', nextAllowedAt: late ? opensAt(nextDay(local.date)) : intervalEnd };
   }
 
@@ -104,12 +115,12 @@ async function claimIn(db: Tx, c: LoginClaim): Promise<ClaimResult> {
 }
 
 /** One line for the terminal: what was refused and when the next run is allowed, never the login */
-export function refusalText(r: Exclude<ClaimResult, { ok: true }>, timezone: string): string {
+export function refusalText(r: Exclude<ClaimResult, { ok: true }>, timezone: string, policy?: LoginPolicy): string {
   const at = localTime(r.nextAllowedAt, timezone);
   const when = `${at.date} ${String(Math.floor(at.minutes / 60)).padStart(2, '0')}:${String(at.minutes % 60).padStart(2, '0')} (${timezone})`;
   const why = {
     interval: 'this account logged in to the diary less than the login interval ago',
-    daily_cap: `Claude Code already started ${CLAUDE_RUNS_PER_DAY} real runs today`,
+    daily_cap: `Claude Code already started ${policy?.claudeRunsPerDay ?? CLAUDE_RUNS_PER_DAY} real runs today`,
     hours: 'Claude Code runs real logins only between 07:00 and 20:00 school time',
   }[r.reason];
   return `not run: ${why}; next allowed at ${when}. Do not retry in a loop.`;

@@ -3,6 +3,7 @@ import { and, asc, eq, sql } from 'drizzle-orm';
 import { hashPassword } from '../auth/password';
 import { claimLogin, refusalText } from '../cli/login-guard';
 import type { Runner } from '../cli/login-guard';
+import { manualLoginPolicy } from '../cli/mode';
 import type { Db } from '../db/client';
 import type { SyncConfig } from '../sync/config';
 import { diaryAccounts, familyStudents, memberships, users } from '../db/schema';
@@ -26,6 +27,8 @@ export interface DevConnectInput {
   allowDemoProviders?: boolean;
   syncConfig: SyncConfig;
   log?: Logger;
+  /** Where the mode is read from (cli/mode.ts); process.env by default */
+  env?: Record<string, string | undefined>;
 }
 
 export type DevConnectResult =
@@ -81,16 +84,17 @@ export async function devConnect(db: Db, input: DevConnectInput): Promise<DevCon
     return { outcome: member ? 'unchanged' : 'adopted', familyId: account.familyId, children: children.length };
   }
 
+  const policy = manualLoginPolicy(provider.manifest, input.env);
   const claim = await claimLogin(db, {
     providerId: provider.manifest.id,
     login: input.diary.login,
     command: 'dev:connect',
     runner: input.runner,
-    minLoginIntervalMinutes: provider.manifest.limits.minLoginIntervalMinutes,
+    policy,
     timezone: provider.manifest.timezone,
     now,
   });
-  if (!claim.ok) return { outcome: 'refused', message: refusalText(claim, provider.manifest.timezone) };
+  if (!claim.ok) return { outcome: 'refused', message: refusalText(claim, provider.manifest.timezone, policy) };
   const [existing] = await db
     .select({ id: users.id })
     .from(users)

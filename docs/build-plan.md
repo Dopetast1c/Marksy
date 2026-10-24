@@ -127,7 +127,7 @@ Local check: `pnpm install`, `pnpm db:up`, `pnpm check`, `pnpm dev`, then open h
 
 **Deliver:** read routes include the school details of M3a (lesson end time, room and group; the subject's teacher, group, level and lessons per week; the child's bells and regular week). `pnpm dev:connect` (reads the owner's logins from `.env`, runs the same service as «Подключить дневник», idempotent after a database reset), connect a diary with the provider picker (creates the family) and add another one from Семья, with the join / follow choice for a child already followed by another family (design 7.2), membership switching for a person in several families, Marksy login with argon2id and session cookies, invites with a 48-hour code, roles and student access, family management; credentials encrypted with AES-256-GCM; read routes for providers, overview, marks feed, subjects, subject, schedule, finals, attention, sync status; everything in Swagger.
 
-**Done when:** every route has Supertest tests including "another family's data is not reachable", "a shared child's data is reachable from both families but neither family's tags, rules, members or author names are", "a suspended link serves nothing" and "no session, no data"; no route returns or logs a credential; the owner (after `pnpm dev:connect`) and the seeded demo parent can log in and read data through the `/api` proxy from another device on the home network (session cookie `SameSite=Lax`, `Secure` only when `PUBLIC_URL` is https).
+**Done when:** every route has Supertest tests including "another family's data is not reachable", "a shared child's data is reachable from both families but neither family's tags, rules, members or author names are", "a suspended link serves nothing" and "no session, no data"; no route returns or logs a credential; after `pnpm dev:connect`, `pnpm smoke:lan` (with `pnpm dev:lan` running) signs in through the home-network address of the app server and reads `/auth/me`, `/students` and every read route of each child with no failure, no password or token in any response, and a session cookie that works over http (`SameSite=Lax`, `HttpOnly`, `Secure` only when `PUBLIC_URL` is https). The check of the screens on a phone starts with M5a.
 
 ## M5a. Web: tokens, shell, login, pick, Главная, Внимание
 
@@ -173,6 +173,8 @@ Local check: `pnpm install`, `pnpm db:up`, `pnpm check`, `pnpm dev`, then open h
 
 **Deliver:** presets, matching at sync into `lesson_tag_hits`, recompute on tag change, the Теги screen and editor with the live check (its entry «Уведомления по тегам» comes with M9), the тег пометка in the schedule, tags on marks for the filter, tag hits in «Обратить внимание» and «С кого начнём?».
 
+**Done when:** matching, recompute and the screens have tests; a Supertest test shows that a child shared by two families never shows the other family's tags (not on lessons, marks, the filter, «Обратить внимание» or «С кого начнём?», and not in the live check).
+
 ## M7. Study time
 
 **Read:** `docs/design.md` 5.8, 6.7; prototype screens Занятия, Главная, Предмет.
@@ -192,6 +194,8 @@ Local check: `pnpm install`, `pnpm db:up`, `pnpm check`, `pnpm dev`, then open h
 **Read:** `docs/design.md` 5.2b, 11, 6.4; prototype screens Уведомления, Настройки уведомлений, Правило уведомления, Внимание (the «пришло …» line).
 
 **Deliver:** the bell in every header (and on «С кого начнём?»), the `notifications` inbox with unread count and deep links, «пришло …» on Внимание rows, alert rules and the rule editor with the live check, quiet hours and grouping, Web Push (VAPID), Telegram (link code, webhook), digests, tag reminders at their moments, drift and auth alerts for the admin, push handling in the service worker (deep links on tap).
+
+**Done when:** rules, quiet hours, grouping and every channel have tests; Supertest tests show that a child shared by two families never shows the other family's rules or inbox notifications (not in the inbox, the unread count, «пришло …» or a push or Telegram message), and that an event about the shared child notifies each family by its own rules only.
 
 ## M10. Running at home
 

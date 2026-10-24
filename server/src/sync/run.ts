@@ -46,6 +46,11 @@ export interface RunSyncOptions {
    * once, past the gate (the login was this hour's), without a second login (design.md 7.2, 10.4)
    */
   opened?: { login: OpenedLogin; runId: string };
+  /**
+   * A manual run's login interval in this mode (cli/mode.ts: 10 minutes in development), checked by the login guard
+   * already; ignored for the scheduler's triggers, which keep the manifest's
+   */
+  manualLoginIntervalMinutes?: number;
 }
 
 export type RunSyncResult =
@@ -110,6 +115,8 @@ async function runLocked(opts: RunSyncOptions): Promise<RunSyncResult> {
   const settings = family?.settings ?? {};
   const manifest = provider.manifest;
   const limits = effectiveLimits(manifest, config);
+  if (opts.manualLoginIntervalMinutes !== undefined && isManual(opts.trigger))
+    limits.minLoginIntervalMinutes = opts.manualLoginIntervalMinutes;
   const started = now();
   const local = localTime(started, manifest.timezone);
   const ctx = weekContext(manifest, settings, started, account.lastSuccessAt);

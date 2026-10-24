@@ -8,7 +8,8 @@ import { readSyncConfig } from '../src/sync/config';
 
 // `pnpm dev:connect [--provider <id>]`: the owner's family from .env (DIARY_LOGIN, DIARY_PASSWORD for the diary,
 // MARKSY_DEV_EMAIL, MARKSY_DEV_PASSWORD for the Marksy login), through the same service as «Подключить дневник»
-// (src/family/dev-connect.ts). It may log in to the real diary: only the owner runs it. Prints the outcome and counts.
+// (src/family/dev-connect.ts). It may log in to the real diary, within the login guard and the mode's limits
+// (CLAUDE.md, Real diary runs). Prints the outcome and counts.
 
 const args = process.argv.slice(2);
 const at = args.indexOf('--provider');

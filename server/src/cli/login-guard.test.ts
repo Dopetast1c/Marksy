@@ -5,6 +5,8 @@ import { createAccount, DEMO_CREDENTIALS } from '../../test/factories';
 import { cliLogins, diaryAccounts } from '../db/schema';
 import { claimLogin, refusalText, runnerOf } from './login-guard';
 import type { LoginClaim } from './login-guard';
+import { manualLoginPolicy } from './mode';
+import type { ProviderManifest } from '@marksy/core';
 
 const db = testDb();
 const TZ = 'Europe/Minsk';
@@ -15,7 +17,9 @@ const claim = (over: Partial<LoginClaim> = {}): LoginClaim => ({
   login: DEMO_CREDENTIALS.login,
   command: 'probe',
   runner: 'claude',
-  minLoginIntervalMinutes: 60,
+  policy: manualLoginPolicy({ limits: { minLoginIntervalMinutes: 60 } } as ProviderManifest, {
+    MARKSY_ENV: 'production',
+  }),
   timezone: TZ,
   now: at('10:00'),
   ...over,
@@ -83,6 +87,21 @@ describe('login guard of probe and sync:once', () => {
     expect(runnerOf({ MARKSY_RUNNER: 'claude' })).toBe('claude');
     expect(runnerOf({ CLAUDECODE: '1', MARKSY_RUNNER: 'owner' })).toBe('claude');
     expect(runnerOf({})).toBe('owner');
+  });
+
+  it('development: every 10 minutes, at any hour, with no daily cap, for Claude Code too', async () => {
+    const dev = manualLoginPolicy({ limits: { minLoginIntervalMinutes: 60 } } as ProviderManifest, {
+      MARKSY_ENV: 'development',
+    });
+    await createAccount(db, 'demo-full', { lastLoginAt: at('21:55') });
+    expect(await claimLogin(db, claim({ policy: dev, now: at('22:00') }))).toEqual({
+      ok: false,
+      reason: 'interval',
+      nextAllowedAt: at('22:05'),
+    });
+    for (const t of ['22:05', '22:15', '22:25', '22:35', '22:45'])
+      expect(await claimLogin(db, claim({ policy: dev, now: at(t) }))).toEqual({ ok: true });
+    expect(await claimLogin(db, claim({ policy: dev, now: at('05:00', '2026-10-14') }))).toEqual({ ok: true });
   });
 
   it('two runs started together: one passes, the other waits for the interval', async () => {

@@ -74,6 +74,14 @@ describe('runSync', () => {
     expect((await runs()).map((r) => r.status)).toEqual(['success', 'skipped_interval']);
   });
 
+  it("the development interval of a manual run never shortens the scheduler's", async () => {
+    const a = await setup();
+    await sync(a.id, '2025-09-17 10:00');
+    const dev = { manualLoginIntervalMinutes: 10 };
+    expect(await sync(a.id, '2025-09-17 10:15', { ...dev })).toMatchObject({ decision: { reason: 'interval' } });
+    expect(await sync(a.id, '2025-09-17 10:15', { ...dev, trigger: 'cli-claude' })).toMatchObject({ outcome: 'ran' });
+  });
+
   it('offline: recorded, nothing counted, no login', async () => {
     const a = await setup();
     const r = await sync(a.id, '2025-09-17 10:00', { online: async () => false });

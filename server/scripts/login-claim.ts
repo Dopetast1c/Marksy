@@ -1,5 +1,6 @@
 import { getProvider } from '@marksy/registry';
 import { claimLogin, refusalText, runnerOf } from '../src/cli/login-guard';
+import { manualLoginPolicy } from '../src/cli/mode';
 import { createDb, migrateDb } from '../src/db/client';
 
 // `pnpm --filter @marksy/server login:claim --provider <id>`: asks the login guard (src/cli/login-guard.ts) for one real
@@ -19,17 +20,18 @@ const db = createDb();
 try {
   await migrateDb(db);
   const { manifest } = provider;
+  const policy = manualLoginPolicy(manifest);
   const claim = await claimLogin(db, {
     providerId: manifest.id,
     login,
     command: 'probe',
     runner: runnerOf(),
-    minLoginIntervalMinutes: manifest.limits.minLoginIntervalMinutes,
+    policy,
     timezone: manifest.timezone,
     now: new Date(),
   });
   if (!claim.ok) {
-    console.error(refusalText(claim, manifest.timezone));
+    console.error(refusalText(claim, manifest.timezone, policy));
     process.exitCode = 3;
   }
 } finally {
