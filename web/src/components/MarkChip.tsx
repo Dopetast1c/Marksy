@@ -29,3 +29,12 @@ export function MarkChip({ mark, small = false }: { mark: Mark; small?: boolean 
     </span>
   );
 }
+
+/** An absence where marks are listed (Оценки, D23): the diary's code («н») in a dashed frame; never a mark, never counted */
+export function AbsenceChip({ code }: { code: string }) {
+  return (
+    <span className="inline-flex h-[30px] min-w-[30px] flex-none items-center justify-center rounded-[9px] border-[1.5px] border-dashed border-line px-[7px] text-[14px] font-bold text-ink3">
+      {code}
+    </span>
+  );
+}

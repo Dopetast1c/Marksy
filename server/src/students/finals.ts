@@ -56,7 +56,7 @@ export type FinalsState =
  * finals is in, until the next term starts. null without terms or final marks, or before the first term.
  */
 export function finalsState(ctx: ChildContext, finals: readonly FinalRow[]): FinalsState | null {
-  if (!ctx.caps.terms || !ctx.caps.finalMarks || !ctx.termRows.length) return null;
+  if (ctx.caps.terms === 'none' || !ctx.caps.finalMarks || !ctx.termRows.length) return null;
   const running = ctx.termRows.find((t) => t.startDate <= ctx.today && ctx.today <= t.endDate);
   const ended = [...ctx.termRows].reverse().find((t) => t.endDate < ctx.today);
   const term = running ?? ended;

@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { api, ApiFailure, data } from './client';
 import type { Schemas } from './client';
 import type { paths } from './schema';
@@ -94,4 +94,46 @@ export const useSyncStatus = () =>
     queryFn: () => data(api.GET('/api/sync/status')),
     staleTime: 60_000,
     refetchInterval: 5 * 60_000,
+  });
+
+export type FeedItem = Schemas['FeedItem'];
+export type FinalCell = Schemas['FinalCell'];
+export type FinalsState = Schemas['FinalsState'];
+export type TermRef = Schemas['TermRef'];
+export type TermFinals = Schemas['TermFinals'];
+export type YearFinals =
+  paths['/api/students/{id}/finals/years']['get']['responses'][200]['content']['application/json'];
+
+type FilterQuery = { comments: 'all' | 'only'; tags?: string; tagMode?: 'any' | 'all' };
+const FEED_PAGE = 100;
+
+/** Оценки: the feed of the period under the mark filter, a page at a time */
+export const useMarksFeed = (id: string, q: PeriodQuery, f: FilterQuery) =>
+  useInfiniteQuery({
+    queryKey: ['marks', id, q.period, q.offset, f.comments, f.tags ?? '', f.tagMode ?? 'any'],
+    queryFn: ({ pageParam }) =>
+      data(
+        api.GET('/api/students/{id}/marks', {
+          params: { path: { id }, query: { ...q, ...f, cursor: pageParam, limit: FEED_PAGE } },
+        }),
+      ),
+    initialPageParam: 0,
+    getNextPageParam: (last) => last.next ?? undefined,
+    placeholderData: sameChild(id),
+  });
+
+/** Итоги → Четверти: the current year's terms, every subject's cells, last year's finals */
+export const useTermFinals = (id: string) =>
+  useQuery({
+    queryKey: ['finals', id, 'terms'],
+    queryFn: () => data(api.GET('/api/students/{id}/finals/quarters', { params: { path: { id } } })),
+    placeholderData: sameChild(id),
+  });
+
+/** Итоги → Годы */
+export const useYearFinals = (id: string) =>
+  useQuery({
+    queryKey: ['finals', id, 'years'],
+    queryFn: () => data(api.GET('/api/students/{id}/finals/years', { params: { path: { id } } })),
+    placeholderData: sameChild(id),
   });

@@ -29,6 +29,10 @@ export const PROTOTYPE_STATES = [
   ['home-1', 'home', 'k'],
   ['events-1', 'events', 'k'],
   ['home-2', 'home', 'm'],
+  ['marks-1', 'marks', 'k'],
+  ['marks-2', 'marks', 'm'],
+  ['finals', 'finals', 'k', { finalsMode: 'quarters' }],
+  ['finals-years', 'finals', 'k', { finalsMode: 'years' }],
 ];
 
 /** The demo family is fictional and its password is published (server/src/seed/seed.ts) */
@@ -96,9 +100,21 @@ async function shootApp(browser, base, family, device, dir, log) {
     for (const [i, kid] of kids.entries()) {
       await page.goto(`${base}/s/${kid.id}`);
       await shot(`home-${i + 1}`);
+      await page.goto(`${base}/s/${kid.id}/marks`);
+      await shot(`marks-${i + 1}`);
       if (i === 0) {
         await page.goto(`${base}/s/${kid.id}/events`);
         await shot(`events-${i + 1}`);
+      }
+      // Итоги of the first child with marks (a year without marks has none)
+      if (kid.gradingScale && kid === kids.find((k) => k.gradingScale)) {
+        await page.goto(`${base}/s/${kid.id}/finals`);
+        await shot('finals');
+        const years = page.getByRole('button', { name: /^(Годы|Years)$/ });
+        if (await years.count()) {
+          await years.click();
+          await shot('finals-years');
+        }
       }
     }
   } catch (err) {

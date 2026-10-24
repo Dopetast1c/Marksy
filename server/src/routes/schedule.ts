@@ -80,6 +80,8 @@ export function scheduleRoutes(deps: AppDeps): Router {
           /** The header line («I четверть идёт, итоги после 31 окт» / «I четверть выставлена сегодня») */
           state: finalsStateOut.nullable(),
           terms: z.array(termRefOut),
+          /** The current school year (the table heading «2026/27 · 7 «Г»») */
+          year: z.object({ id: z.string(), label: z.string() }).nullable(),
           /** The school year the «итог 2025/26: 8» line under a subject comes from */
           lastYear: z.object({ id: z.string(), label: z.string() }).nullable(),
           rows: z.array(
@@ -97,7 +99,7 @@ export function scheduleRoutes(deps: AppDeps): Router {
     },
     async (req, { params }) => {
       const ctx = await loadChild(deps, req, params.id);
-      if (!ctx.year) return { state: null, terms: [], lastYear: null, rows: [] };
+      if (!ctx.year) return { state: null, year: null, terms: [], lastYear: null, rows: [] };
       const year = ctx.year;
       const [subjectRows, finals, last] = await Promise.all([
         subjectsOf(deps.db, ctx),
@@ -108,6 +110,7 @@ export function scheduleRoutes(deps: AppDeps): Router {
       return {
         state: finalsState(ctx, finals),
         terms: ctx.termRows.map(termRef),
+        year: { id: year.id, label: year.label },
         lastYear: last?.year ?? null,
         rows: subjectRows.map((s) => {
           const prev = last?.byName.get(s.name);

@@ -3262,6 +3262,10 @@ export interface components {
         TermFinals: {
             state: components["schemas"]["FinalsState"];
             terms: components["schemas"]["TermRef"][];
+            year: {
+                id: string;
+                label: string;
+            } | null;
             lastYear: {
                 id: string;
                 label: string;

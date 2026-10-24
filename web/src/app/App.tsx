@@ -1,6 +1,8 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createBrowserRouter, createMemoryRouter, RouterProvider } from 'react-router';
 import type { RouteObject } from 'react-router';
+import { FinalsScreen } from '../features/finals/FinalsScreen';
+import { MarksScreen } from '../features/marks/MarksScreen';
 import { ConnectMatchScreen } from '../features/auth/ConnectMatchScreen';
 import { LoginScreen } from '../features/auth/LoginScreen';
 import { MoreScreen } from '../features/more/MoreScreen';
@@ -30,7 +32,8 @@ export const routes: RouteObject[] = [
         children: [
           { index: true, element: <HomeScreen /> },
           { path: 'events', element: <EventsScreen /> },
-          { path: 'marks', element: <SoonScreen screen="marks" /> },
+          { path: 'marks', element: <MarksScreen /> },
+          { path: 'finals', element: <FinalsScreen /> },
           { path: 'subjects', element: <SoonScreen screen="subjects" /> },
           { path: 'subjects/:subjectId', element: <SoonScreen screen="subjects" /> },
           { path: 'schedule', element: <SoonScreen screen="schedule" /> },

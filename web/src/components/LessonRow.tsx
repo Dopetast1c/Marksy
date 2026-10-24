@@ -58,7 +58,7 @@ export function LessonRow({
   const t = useT();
   const navigate = useNavigate();
   const locale = intlLocale();
-  const subject = subjectStyle(lesson.subjectName);
+  const subject = subjectStyle(lesson.subjectName, lesson.subjectColor);
   // every subject name is a link (principle 9)
   const openSubject = () => navigate(`/s/${studentId}/subjects/${lesson.subjectId}`);
   if (lesson.cancelled)

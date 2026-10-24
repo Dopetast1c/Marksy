@@ -173,7 +173,7 @@ async function goalOf(deps: AppDeps, ctx: ChildContext, subjectId: string): Prom
 
 /** The goal needs terms, finals and a scale whose final rule can be inverted (6.2) */
 const goalsApply = (ctx: ChildContext) =>
-  !!ctx.scale && ctx.caps.terms && ctx.caps.finalMarks && defaultGoal(ctx.scale) != null;
+  !!ctx.scale && ctx.caps.terms !== 'none' && ctx.caps.finalMarks && defaultGoal(ctx.scale) != null;
 
 const runningTerm = (ctx: ChildContext) =>
   ctx.termRows.find((t) => t.startDate <= ctx.today && ctx.today <= t.endDate) ?? null;
@@ -442,17 +442,18 @@ export function subjectRoutes(deps: AppDeps): Router {
         }),
         upcoming,
         lessonTiles: scale ? null : await lessonCounts(deps.db, ctx, p, s.id),
-        terms: ctx.caps.terms
-          ? ctx.termRows.map((t) => ({
-              ...termRef(t),
-              cell: termCell(ctx, finals, facts, s.id, t),
-              average:
-                scale && t.startDate <= ctx.today
-                  ? periodStats(scale, facts, { from: t.startDate, to: t.endDate }).average
-                  : null,
-            }))
-          : [],
-        year: ctx.caps.terms && ctx.caps.finalMarks ? yearCell(ctx, finals, facts, s.id) : null,
+        terms:
+          ctx.caps.terms !== 'none'
+            ? ctx.termRows.map((t) => ({
+                ...termRef(t),
+                cell: termCell(ctx, finals, facts, s.id, t),
+                average:
+                  scale && t.startDate <= ctx.today
+                    ? periodStats(scale, facts, { from: t.startDate, to: t.endDate }).average
+                    : null,
+              }))
+            : [],
+        year: ctx.caps.terms !== 'none' && ctx.caps.finalMarks ? yearCell(ctx, finals, facts, s.id) : null,
         lastYear: last && prevYear ? { label: last.year.label, raw: prevYear.raw, value: prevYear.value } : null,
         week: (template?.entries ?? [])
           .filter((e) => e.subject_id === s.id)

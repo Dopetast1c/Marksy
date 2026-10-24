@@ -2455,6 +2455,24 @@
               "$ref": "#/components/schemas/TermRef"
             }
           },
+          "year": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "label"
+            ]
+          },
           "lastYear": {
             "type": [
               "object",
@@ -2558,6 +2576,7 @@
         "required": [
           "state",
           "terms",
+          "year",
           "lastYear",
           "rows"
         ]

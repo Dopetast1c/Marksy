@@ -54,3 +54,44 @@ export const usePeriod = create<PeriodState>()((set) => ({
   step: (delta) => set((s) => ({ offset: Math.max(0, s.offset + delta) })),
   setOffset: (offset) => set({ offset: Math.max(0, offset) }),
 }));
+
+export type TagMode = 'any' | 'all';
+
+interface MarkFilterState {
+  /** Комментарии: only the teacher's comments without a mark (D56) */
+  comments: boolean;
+  /** Ticked tags (M6); several combine by tagMode */
+  tags: string[];
+  tagMode: TagMode;
+  /** Все: no filter */
+  clear: () => void;
+  setComments: (on: boolean) => void;
+  toggleTag: (id: string) => void;
+  setTagMode: (mode: TagMode) => void;
+  clearTags: () => void;
+}
+
+/**
+ * The mark filter (MarkFilter, docs/design.md 5.3, D27): one piece of state for Оценки, Предметы and Предмет, so moving
+ * between them never changes what is being looked at; switching the child keeps it too. Комментарии and tags exclude
+ * each other: the comments have no tags.
+ */
+export const useMarkFilter = create<MarkFilterState>()((set) => ({
+  comments: false,
+  tags: [],
+  tagMode: 'any',
+  clear: () => set({ comments: false, tags: [] }),
+  setComments: (on) => set(on ? { comments: true, tags: [] } : { comments: false }),
+  toggleTag: (id) =>
+    set((s) => ({ comments: false, tags: s.tags.includes(id) ? s.tags.filter((t) => t !== id) : [...s.tags, id] })),
+  setTagMode: (tagMode) => set({ tagMode }),
+  clearTags: () => set({ tags: [] }),
+}));
+
+/** The filter as the API reads it (`/marks`, `/subjects`, `/subjects/:id`, its trend) */
+export function markFilterQuery(f: Pick<MarkFilterState, 'comments' | 'tags' | 'tagMode'>) {
+  return {
+    comments: f.comments ? ('only' as const) : ('all' as const),
+    ...(f.tags.length ? { tags: f.tags.join(','), tagMode: f.tagMode } : {}),
+  };
+}
