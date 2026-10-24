@@ -41,7 +41,7 @@ export const periodOut = registry.register(
 export const periodOf = (p: ResolvedPeriod) =>
   instanceOut({ ...p, ...(p.instance?.term && { term: p.instance.term }) });
 
-/** One instance of the navigator, as every read route sends it */
+/** One instance of the navigator, as every read route sends it (with the term's kind and number for its label) */
 export const instanceOut = (i: {
   kind: string;
   offset: number;

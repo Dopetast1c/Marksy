@@ -1,11 +1,12 @@
+import { shortRange } from '@marksy/core';
+import type { ShortDateStyle } from '@marksy/core';
 import type { TFunction } from 'i18next';
 import type { Schemas } from '../api/client';
-import { formatRange } from './time';
 
 // What the period controls say (docs/design.md 6, ux-principles D2): the kind ("Неделя", "Четверть" from the term's
 // kind), the instance ("Эта неделя · 12–18 окт", "Этот месяц · октябрь", the diary's own term name) and, once, what
-// "было" is compared with ("против 5–11 окт"). Dates and month names come from Intl in the interface language, never
-// from the translation files.
+// "было" is compared with ("против 5–11 окт"). Short dates come from core's shortRange in the interface language;
+// full month names from Intl.
 
 export type Instance = Schemas['Period'];
 export type Kind = 'week' | 'month' | 'term' | 'year';
@@ -24,7 +25,7 @@ export function kindLabel(t: TFunction, kind: Kind, termKind: Instance['termKind
   return t(`period.${kind}`);
 }
 
-export function instanceTitle(t: TFunction, i: Instance, locale: string): string {
+export function instanceTitle(t: TFunction, i: Instance, ds: ShortDateStyle): string {
   switch (i.kind) {
     case 'week':
       return i.offset === 0 ? t('period.thisWeek') : i.offset === 1 ? t('period.lastWeek') : t('period.week');
@@ -33,7 +34,7 @@ export function instanceTitle(t: TFunction, i: Instance, locale: string): string
         ? t('period.thisMonth')
         : i.offset === 1
           ? t('period.lastMonth')
-          : capital(monthName(i.from, locale), locale);
+          : capital(monthName(i.from, ds.locale), ds.locale);
     case 'term':
       return (
         i.termLabel ??
@@ -44,20 +45,20 @@ export function instanceTitle(t: TFunction, i: Instance, locale: string): string
   }
 }
 
-export function instanceSub(t: TFunction, i: Instance, locale: string): string {
+export function instanceSub(t: TFunction, i: Instance, ds: ShortDateStyle): string {
   const running = i.offset === 0 && i.kind !== 'week' && i.kind !== 'month';
   const what =
     i.kind === 'month'
       ? i.offset <= 1
-        ? monthName(i.from, locale)
+        ? monthName(i.from, ds.locale)
         : i.from.slice(0, 4)
-      : formatRange(i.from, i.end, locale);
+      : shortRange(i.from, i.end, ds);
   return running ? t('period.withRunning', { what }) : what;
 }
 
 /** What "было" compares with, said once in the navigator: the instance right before the selected one */
-export function comparedWith(t: TFunction, list: readonly Instance[], i: Instance, locale: string): string {
+export function comparedWith(t: TFunction, list: readonly Instance[], i: Instance, ds: ShortDateStyle): string {
   const prev = list.find((x) => x.offset === i.offset + 1);
   if (!prev) return t('period.nothingToCompare');
-  return t('period.vs', { what: prev.kind === 'year' ? yearLabel(prev) : formatRange(prev.from, prev.end, locale) });
+  return t('period.vs', { what: prev.kind === 'year' ? yearLabel(prev) : shortRange(prev.from, prev.end, ds) });
 }

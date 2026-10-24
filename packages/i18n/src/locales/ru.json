@@ -72,6 +72,19 @@
 
   "more.signOut": "Выйти",
 
+  "date.monthShort.1": "янв",
+  "date.monthShort.2": "фев",
+  "date.monthShort.3": "мар",
+  "date.monthShort.4": "апр",
+  "date.monthShort.5": "мая",
+  "date.monthShort.6": "июн",
+  "date.monthShort.7": "июл",
+  "date.monthShort.8": "авг",
+  "date.monthShort.9": "сен",
+  "date.monthShort.10": "окт",
+  "date.monthShort.11": "ноя",
+  "date.monthShort.12": "дек",
+
   "time.todayAt": "сегодня в {{time}}",
   "time.dayAt": "{{day}}, {{time}}",
 

@@ -6,8 +6,8 @@
   "description": "Express API, collector, Drizzle schema and migrations",
   "license": "PolyForm-Noncommercial-1.0.0",
   "scripts": {
-    "dev": "tsx watch --env-file-if-exists=../.env src/main.ts",
-    "dev:lan": "tsx watch --env-file-if-exists=../.env src/main.ts",
+    "dev": "node scripts/dev.mjs",
+    "dev:lan": "node scripts/dev.mjs",
     "start": "tsx --env-file-if-exists=../.env src/main.ts",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",

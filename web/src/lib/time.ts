@@ -29,26 +29,7 @@ export function minutesIn(tz: string, at = new Date()): number {
   return Number(p.hour) * 60 + Number(p.minute);
 }
 
-const plain = (iso: string) => new Date(`${iso.slice(0, 10)}T12:00:00Z`);
-
-/** A calendar day in the interface language: "пн, 19 окт" */
-export function formatDay(iso: string, locale: string, opts: Intl.DateTimeFormatOptions = {}): string {
-  return new Intl.DateTimeFormat(locale, {
-    timeZone: 'UTC',
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-    ...opts,
-  }).format(plain(iso));
-}
-
-/** A range of calendar days: "12–18 окт" */
-export function formatRange(from: string, to: string, locale: string): string {
-  return new Intl.DateTimeFormat(locale, { timeZone: 'UTC', day: 'numeric', month: 'short' }).formatRange(
-    plain(from),
-    plain(to),
-  );
-}
+// Calendar days ("12–18 окт", "чт, 15 окт") are written by core's shortDate and shortRange with i18n's dateStyle().
 
 /** An instant as school time: "12:17" */
 export function formatTime(at: string | Date, tz: string, locale: string): string {
@@ -56,7 +37,3 @@ export function formatTime(at: string | Date, tz: string, locale: string): strin
     typeof at === 'string' ? new Date(at) : at,
   );
 }
-
-/** Whole days from one calendar day to another */
-export const daysBetween = (from: string, to: string) =>
-  Math.round((plain(to).getTime() - plain(from).getTime()) / 86_400_000);

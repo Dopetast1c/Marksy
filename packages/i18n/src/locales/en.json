@@ -70,6 +70,19 @@
 
   "more.signOut": "Sign out",
 
+  "date.monthShort.1": "Jan",
+  "date.monthShort.2": "Feb",
+  "date.monthShort.3": "Mar",
+  "date.monthShort.4": "Apr",
+  "date.monthShort.5": "May",
+  "date.monthShort.6": "Jun",
+  "date.monthShort.7": "Jul",
+  "date.monthShort.8": "Aug",
+  "date.monthShort.9": "Sep",
+  "date.monthShort.10": "Oct",
+  "date.monthShort.11": "Nov",
+  "date.monthShort.12": "Dec",
+
   "time.todayAt": "today at {{time}}",
   "time.dayAt": "{{day}}, {{time}}",
 

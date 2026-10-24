@@ -1,8 +1,9 @@
 import { useSyncStatus } from '../api/queries';
 import { useSchoolTz } from '../hooks/useStudent';
-import { intlLocale, useT } from '../i18n';
+import { shortDate } from '@marksy/core';
+import { dateStyle, intlLocale, useT } from '../i18n';
 import { freshnessOf } from '../lib/freshness';
-import { formatDay, formatTime, todayIn } from '../lib/time';
+import { formatTime, todayIn } from '../lib/time';
 
 // One banner under the header of every student screen when the data is not fresh (ux-principles D22). It opens the
 // Sync screen once that screen exists (M5d); until then it is a plain line, with no chevron, so it does not look
@@ -19,7 +20,7 @@ export function FreshnessBanner({ studentId }: { studentId: string }) {
     ? todayIn(tz, new Date(f.since)) === todayIn(tz)
       ? t('time.todayAt', { time: formatTime(f.since, tz, locale) })
       : t('time.dayAt', {
-          day: formatDay(todayIn(tz, new Date(f.since)), locale),
+          day: shortDate(todayIn(tz, new Date(f.since)), dateStyle(), { weekday: true }),
           time: formatTime(f.since, tz, locale),
         })
     : null;

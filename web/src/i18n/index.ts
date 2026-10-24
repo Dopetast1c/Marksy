@@ -1,4 +1,5 @@
 import { CATALOGS, languageOf, LANGUAGES, resolveLanguage, SOURCE_LANGUAGE } from '@marksy/i18n';
+import type { ShortDateStyle } from '@marksy/core';
 import i18next from 'i18next';
 import { initReactI18next, useTranslation } from 'react-i18next';
 
@@ -62,5 +63,15 @@ export async function setLanguage(lng: string) {
 
 /** The BCP 47 tag for Intl in the current language */
 export const intlLocale = () => languageOf(i18n.language)?.intl ?? 'en-GB';
+
+/**
+ * How short dates are written in the current language (core shortDate, shortRange): the language's own short month
+ * names when its catalog has them, otherwise Intl's. Never English months in another language.
+ */
+export function dateStyle(): ShortDateStyle {
+  const own = CATALOGS[i18n.language];
+  const months = Array.from({ length: 12 }, (_, i) => own?.[`date.monthShort.${i + 1}`]);
+  return { locale: intlLocale(), months: months.every(Boolean) ? (months as string[]) : null };
+}
 
 export const useT = () => useTranslation().t;

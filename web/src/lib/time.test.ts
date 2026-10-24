@@ -1,9 +1,15 @@
-import { afterEach, describe, expect, it } from 'vitest';
-import { daysBetween, formatDay, formatTime, minutesIn, todayIn } from './time';
+import { shortDate, shortRange } from '@marksy/core';
+import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { dateStyle, i18n, initI18n } from '../i18n';
+import { formatTime, minutesIn, todayIn } from './time';
 
 const deviceTz = process.env.TZ;
-afterEach(() => {
+beforeAll(() => {
+  initI18n('ru');
+});
+afterEach(async () => {
   process.env.TZ = deviceTz;
+  await i18n.changeLanguage('ru');
 });
 
 describe('school time, not the device', () => {
@@ -22,8 +28,22 @@ describe('school time, not the device', () => {
   it('a calendar day keeps its date in every device timezone', () => {
     for (const tz of ['Pacific/Kiritimati', 'Pacific/Pago_Pago']) {
       process.env.TZ = tz;
-      expect(formatDay('2026-10-19', 'en-GB', { weekday: undefined, month: 'long' })).toBe('19 October');
+      expect(shortDate('2026-10-19', dateStyle(), { weekday: true })).toBe('пн, 19 окт');
     }
-    expect(daysBetween('2026-10-19', '2026-11-01')).toBe(13);
+  });
+});
+
+describe('short dates in the interface language', () => {
+  it('Russian and English from their catalogs, without a dot', async () => {
+    expect(shortRange('2026-10-12', '2026-10-18', dateStyle())).toBe('12–18 окт');
+    expect(shortRange('2026-11-01', '2026-11-08', dateStyle())).toBe('1–8 ноя');
+    await i18n.changeLanguage('en');
+    expect(shortRange('2026-10-12', '2026-10-18', dateStyle())).toBe('12–18 Oct');
+  });
+
+  it('a language without its own month names uses Intl, never English months', async () => {
+    await i18n.changeLanguage('pl');
+    expect(dateStyle().months).toBeNull();
+    expect(shortDate('2026-10-15', dateStyle())).not.toContain('Oct');
   });
 });

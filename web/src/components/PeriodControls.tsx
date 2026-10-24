@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { usePeriods } from '../api/queries';
 import { useSwipe } from '../hooks/useSwipe';
-import { intlLocale, useT } from '../i18n';
+import { dateStyle, useT } from '../i18n';
 import { comparedWith, instanceSub, instanceTitle, kindLabel } from '../lib/period';
 import type { Kind } from '../lib/period';
 import { usePeriod } from '../state/store';
@@ -37,7 +37,7 @@ export function PeriodBar({ studentId }: { studentId: string }) {
 
 export function PeriodNav({ studentId, compare = false }: { studentId: string; compare?: boolean }) {
   const t = useT();
-  const locale = intlLocale();
+  const ds = dateStyle();
   const periods = usePeriods(studentId);
   const { kind, offset, step, setOffset } = usePeriod();
   const [sheet, setSheet] = useState(false);
@@ -62,7 +62,7 @@ export function PeriodNav({ studentId, compare = false }: { studentId: string; c
   }, [list, offset, setOffset]);
 
   if (!current) return <div ref={nav} className="h-[50px]" />;
-  const sub = instanceSub(t, current, locale);
+  const sub = instanceSub(t, current, ds);
   return (
     <div ref={nav} className="sticky top-0 z-[5] -mx-5 flex items-center gap-1.5 bg-bg px-5 pt-1.5 pb-2">
       <button
@@ -80,9 +80,9 @@ export function PeriodNav({ studentId, compare = false }: { studentId: string; c
         onClick={() => setSheet(true)}
         className="flex flex-1 flex-col items-center rounded-md px-1.5 py-0.5 leading-[1.2]"
       >
-        <b className="text-[15px]">{instanceTitle(t, current, locale)}</b>
+        <b className="text-[15px]">{instanceTitle(t, current, ds)}</b>
         <span className="text-[12px] text-ink3">
-          {compare ? t('period.withCompare', { what: sub, compare: comparedWith(t, list, current, locale) }) : sub}
+          {compare ? t('period.withCompare', { what: sub, compare: comparedWith(t, list, current, ds) }) : sub}
         </span>
       </button>
       <button
@@ -105,8 +105,8 @@ export function PeriodNav({ studentId, compare = false }: { studentId: string; c
         {list.map((i) => (
           <SheetOption
             key={i.offset}
-            title={instanceTitle(t, i, locale)}
-            sub={instanceSub(t, i, locale)}
+            title={instanceTitle(t, i, ds)}
+            sub={instanceSub(t, i, ds)}
             selected={i.offset === offset}
             onSelect={() => {
               setOffset(i.offset);
