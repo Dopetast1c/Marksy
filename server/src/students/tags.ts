@@ -39,6 +39,8 @@ export async function tagHitsIn(db: Db, ctx: ChildContext, range: DateRange, les
     .where(
       and(
         eq(lessonTagHits.familyId, ctx.familyId),
+        // the tag too: a hit can never show another household's tag by name
+        eq(lessonTags.familyId, ctx.familyId),
         eq(lessonTagHits.studentId, ctx.student.id),
         eq(lessonTags.enabled, true),
         isNull(lessonTagHits.removedAt),

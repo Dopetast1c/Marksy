@@ -236,11 +236,8 @@ export function lessonRoutes(deps: AppDeps): Router {
     async (req, { params, body }) => {
       const ctx = await child(req, params.id);
       const item = await manualItem(ctx, params.itemId);
-      // who changed it is kept, not shown
-      await deps.db
-        .update(homeworkItems)
-        .set({ title: body.text, createdBy: ctx.userId })
-        .where(eq(homeworkItems.id, item.id));
+      // the author stays the one who added it (an edit is not attributed, and nothing of it is shown)
+      await deps.db.update(homeworkItems).set({ title: body.text }).where(eq(homeworkItems.id, item.id));
       return { id: item.id, text: body.text };
     },
   );

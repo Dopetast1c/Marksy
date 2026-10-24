@@ -162,7 +162,8 @@ describe('the lesson menu: «готово», «Урока не будет», own
       'Параграф 13',
     );
     expect((await lessonIn(mama, milena.id, next!.date, next!.id)).ownHomework).toEqual([
-      expect.objectContaining({ id: added.body.id, text: 'Параграф 13' }),
+      // the student edited it; the author stays the parent who added it
+      expect.objectContaining({ id: added.body.id, text: 'Параграф 13', by: { name: 'Мама', otherFamily: false } }),
     ]);
     expect((await mama.delete(`${base}/homework/${added.body.id}`)).body).toEqual({ removed: true });
     expect((await lessonIn(mama, milena.id, next!.date, next!.id)).ownHomework).toEqual([]);
@@ -322,6 +323,8 @@ describe('Расписание: пометки, tags and the navigator’s days'
 
   it('the navigator’s days: every day with lessons this school year, today included', async () => {
     const mama = await signIn(DEMO_LOGINS.parent);
+    // a day that is not a date is a bad request, never a database error
+    expect((await mama.get(`/api/students/${milena.id}/schedule?day=2026-02-30`)).status).toBe(400);
     const res = await mama.get(`/api/students/${milena.id}/schedule/days`);
     expect(res.status).toBe(200);
     expect(res.body.today).toBe(TODAY);

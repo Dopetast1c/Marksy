@@ -80,7 +80,7 @@ export function scheduleRoutes(deps: AppDeps): Router {
       params: z.object({ id }),
       query: z.object({
         /** today, tomorrow, next (the next day with lessons) or a date */
-        day: z.union([z.enum(['today', 'tomorrow', 'next']), z.string().regex(ISO_DAY)]).optional(),
+        day: z.union([z.enum(['today', 'tomorrow', 'next']), z.iso.date()]).optional(),
         week: z.coerce.number().int().min(-60).max(8).optional(),
       }),
       response: registry.register(
