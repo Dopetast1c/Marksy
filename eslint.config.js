@@ -54,6 +54,30 @@ export default tseslint.config(
     },
   },
   {
+    // One way to write a number of the scale (docs/i18n.md 2): web/src/lib/numbers.ts, bound to the child's scale and
+    // the interface language; no toFixed, no core formatter called past it
+    files: ['web/src/**/*.{ts,tsx}'],
+    ignores: ['web/src/lib/numbers.ts', 'web/src/**/*.test.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: '@marksy/core',
+              importNames: ['formatAverage', 'formatValue', 'formatFinal', 'formatBandRange'],
+              message: 'Write numbers through web/src/lib/numbers.ts.',
+            },
+          ],
+        },
+      ],
+      'no-restricted-properties': [
+        'error',
+        { property: 'toFixed', message: 'Write numbers through web/src/lib/numbers.ts.' },
+      ],
+    },
+  },
+  {
     // No literal user-facing strings in components (CLAUDE.md, docs/i18n.md 5): JSX text is a t() key
     files: ['web/src/**/*.tsx'],
     ignores: ['web/src/**/*.test.tsx'],

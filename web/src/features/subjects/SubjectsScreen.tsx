@@ -1,4 +1,4 @@
-import { addDays, bandOf, formatAverage, shortDate } from '@marksy/core';
+import { addDays, bandOf, shortDate } from '@marksy/core';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import type { SubjectRowData } from '../../api/queries';
@@ -21,6 +21,7 @@ import { forPeriod, roman } from '../../lib/period';
 import { todayIn } from '../../lib/time';
 import type { SubjectSort } from '../../state/store';
 import { usePeriod, useSubjectSort } from '../../state/store';
+import { numbers } from '../../lib/numbers';
 
 // Предметы (docs/design.md 5.3a): the child's curriculum, every subject whatever the filter. The period control and the
 // mark filter in the header, the navigator, the finals entry row, the order (a text button opening a sheet, D32), then
@@ -63,7 +64,7 @@ export function SubjectsScreen() {
     const was = r.final
       ? t('subjects.final', { term: roman(r.final.term.index), mark: r.final.raw })
       : c?.prevAverage != null && scale
-        ? t('stat.was', { value: formatAverage(scale, c.prevAverage, locale) })
+        ? t('stat.was', { value: numbers(scale).average(c.prevAverage) })
         : null;
     return (
       <SubjectRow
@@ -90,7 +91,7 @@ export function SubjectsScreen() {
             <span
               className={`min-w-11 text-right font-display text-[22px] leading-none font-semibold tabular-nums ${band ? AVG_TEXT[band] : 'text-ink3'}`}
             >
-              {avg != null && scale ? formatAverage(scale, avg, locale) : '—'}
+              {avg != null && scale ? numbers(scale).average(avg) : '—'}
               {avg != null && c?.previous === 'marks' && <ChangeArrow delta={c.delta} trend={c.trend} />}
             </span>
             {was && <span className="text-[11.5px] font-semibold text-ink3 tabular-nums">{was}</span>}

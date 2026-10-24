@@ -1,4 +1,4 @@
-import { formatValue, scaleValues } from '@marksy/core';
+import { scaleValues } from '@marksy/core';
 import type { GradingScale } from '@marksy/core';
 import { useState } from 'react';
 import type { SubjectColor, SubjectDetail } from '../../api/queries';
@@ -8,6 +8,7 @@ import { Button } from '../../components/Field';
 import { CheckIcon, ChevIcon, SlidersIcon } from '../../components/icons';
 import { intlLocale, useT } from '../../i18n';
 import { SUBJECT_COLORS, subjectStyle } from '../../lib/subject-color';
+import { numbers } from '../../lib/numbers';
 
 // «Настройки предмета» (docs/design.md 5.4, 6.6, D32, D45): an entry row in the style of «Итоговые отметки» with one line
 // («цель: итог 8 · цвет: синий»), opening a sheet with the goal for the term (every whole value of the child's scale and
@@ -35,7 +36,7 @@ export function SubjectSettings({
   const [open, setOpen] = useState(false);
   const save = useSubjectSettings(studentId, subject.id);
   const goals = settings.goalAvailable && scale ? scaleValues(scale).filter((v) => Number.isInteger(v)) : [];
-  const v = (x: number) => (scale ? formatValue(scale, x, locale) : String(x));
+  const v = (x: number) => (scale ? numbers(scale).value(x) : String(x));
   const line = [
     settings.goalAvailable
       ? settings.goal != null

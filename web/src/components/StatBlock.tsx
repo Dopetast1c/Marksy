@@ -1,10 +1,11 @@
-import { bandOf, formatAverage, formatBandRange } from '@marksy/core';
+import { bandOf } from '@marksy/core';
 import type { GradingScale } from '@marksy/core';
 import type { ReactNode } from 'react';
 import type { Schemas } from '../api/client';
 import type { Overview } from '../api/queries';
-import { intlLocale, useT } from '../i18n';
+import { useT } from '../i18n';
 import { ChangeArrow } from './ChangeArrow';
+import { numbers } from '../lib/numbers';
 
 // StatBlock (CLAUDE.md "One kind of information, one component", ux-principles principle 2, D5, D23): the average and
 // the count with what they were in the instance before, and the band distribution. On Главная it is split: the two
@@ -60,12 +61,11 @@ export function StatTiles({
   prevCount: number | null;
 }) {
   const t = useT();
-  const locale = intlLocale();
   const cur = comparison?.current === 'marks';
   const prev = comparison?.previous === 'marks';
   const avg = cur ? (comparison?.average ?? null) : null;
   const band = bandOf(scale, avg);
-  const prevText = comparison?.prevAverage != null ? formatAverage(scale, comparison.prevAverage, locale) : '';
+  const prevText = comparison?.prevAverage != null ? numbers(scale).average(comparison.prevAverage) : '';
   const avgHint = cur ? (
     prev ? (
       was(t('stat.was', { value: prevText }))
@@ -86,7 +86,7 @@ export function StatTiles({
         tone={band ? BAND_TEXT[band] : 'text-ink3'}
         value={
           <>
-            {cur ? formatAverage(scale, avg, locale) : '—'}
+            {cur ? numbers(scale).average(avg) : '—'}
             {cur && prev && <ChangeArrow delta={comparison?.delta ?? null} trend={comparison?.trend ?? null} />}
           </>
         }
@@ -146,7 +146,6 @@ export function BandCard({
   prevAbsences: number | null;
 }) {
   const t = useT();
-  const locale = intlLocale();
   const total = bands.reduce((n, b) => n + b.count, 0);
   const both = comparison?.current === 'marks' && comparison.previous === 'marks';
   const hasPrev = comparison?.previous === 'marks';
@@ -188,7 +187,7 @@ export function BandCard({
       </div>
       <div className="grid auto-cols-fr grid-flow-col items-start gap-2 pt-1">
         {bands.map((b) => {
-          const range = formatBandRange(scale, b.band, locale) ?? '';
+          const range = numbers(scale).range(b.band);
           const pill = (
             <span
               className={`self-start rounded-pill px-[7px] py-px text-[11px] font-extrabold whitespace-nowrap ${BAND_PILL[b.band]}`}

@@ -1,10 +1,10 @@
-import { formatAverage, formatBandRange } from '@marksy/core';
 import type { GradingScale } from '@marksy/core';
 import type { Schemas } from '../api/client';
-import { dateStyle, intlLocale, useT } from '../i18n';
+import { dateStyle, useT } from '../i18n';
 import type { TFunction } from 'i18next';
 import type { Kind } from '../lib/period';
 import { roman } from '../lib/period';
+import { numbers } from '../lib/numbers';
 
 // «Динамика» (ux-principles D26, docs/design.md 5.2, 5.4): one stacked bar per bucket of the selected kind (weeks,
 // months, terms, the months of a year), marks stacked by band, worst at the bottom, the average line with its value
@@ -53,7 +53,6 @@ export function TrendCard({
   termKind?: string | null;
 }) {
   const t = useT();
-  const locale = intlLocale();
   const n = buckets.length;
   const plotH = H - TOP - BOTTOM;
   const barMax = plotH * 0.72;
@@ -74,7 +73,8 @@ export function TrendCard({
       open = false;
       continue;
     }
-    path += `${open ? 'L' : 'M'}${pt[0].toFixed(1)},${pt[1].toFixed(1)} `;
+    // svg coordinates, not numbers a person reads: a tenth of a pixel is enough
+    path += `${open ? 'L' : 'M'}${Math.round(pt[0] * 10) / 10},${Math.round(pt[1] * 10) / 10} `;
     open = true;
   }
   const any = buckets.some((b) => b.average != null);
@@ -164,7 +164,7 @@ export function TrendCard({
                     textAnchor="middle"
                     className={`${b.selected ? 'fill-accent' : 'fill-ink'} text-[10.5px] font-extrabold`}
                   >
-                    {formatAverage(scale, b.average, locale)}
+                    {numbers(scale).average(b.average)}
                   </text>
                   <text x={cx} y={H - 4} textAnchor="middle" className={`${cls} text-[10px] font-semibold`}>
                     {label}
@@ -175,7 +175,7 @@ export function TrendCard({
           </svg>
           <div className="flex flex-wrap justify-center gap-1.5">
             {ORDER.map((role) => {
-              const range = formatBandRange(scale, role, locale);
+              const range = numbers(scale).range(role);
               return range ? (
                 <span key={role} className={`rounded-pill px-[7px] py-px text-[11px] font-extrabold ${PILL[role]}`}>
                   {range}

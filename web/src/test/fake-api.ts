@@ -13,6 +13,8 @@ export interface FakeState {
   bodies: Record<string, unknown>;
   /** the connected diary refuses the login */
   diaryRefuses?: boolean;
+  /** the signed-in person's interface language */
+  locale?: string;
   /** the subject screen's answer, when a test needs another one */
   subject?: unknown;
 }
@@ -637,7 +639,7 @@ export function fakeApi(start: Partial<FakeState> = {}) {
           id: 'u1',
           login: 'parent@example.com',
           displayName: 'Родитель',
-          locale: 'ru',
+          locale: state.locale ?? 'ru',
           timezone: null,
           uiMode: 'full',
         },

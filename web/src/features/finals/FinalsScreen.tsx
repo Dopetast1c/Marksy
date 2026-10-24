@@ -87,9 +87,9 @@ function TermsView({ studentId, termKind }: { studentId: string; termKind: strin
               )}
             </span>
             {r.terms.map((c) => (
-              <FinalCellView key={c.termId} cell={c} scale={scale} locale={locale} />
+              <FinalCellView key={c.termId} cell={c} scale={scale} />
             ))}
-            <FinalCellView cell={r.year} scale={scale} locale={locale} />
+            <FinalCellView cell={r.year} scale={scale} />
           </button>
         ))}
       </ListCard>
@@ -102,7 +102,6 @@ function YearsView({ studentId, termKind }: { studentId: string; termKind: strin
   const navigate = useNavigate();
   const scale = useScale(studentId);
   const q = useYearFinals(studentId);
-  const locale = intlLocale();
   if (!q.data) return <EmptyState title={q.isError ? t('app.error') : t('app.loading')} />;
   const { years, rows } = q.data;
   const cols = { gridTemplateColumns: `minmax(0,1fr) repeat(${years.length}, 60px) 28px` };
@@ -134,7 +133,7 @@ function YearsView({ studentId, termKind }: { studentId: string; termKind: strin
                 ) : null}
               </span>
               {r.cells.map((c) => (
-                <FinalCellView key={c.yearId} cell={c} scale={scale} locale={locale} />
+                <FinalCellView key={c.yearId} cell={c} scale={scale} />
               ))}
               <span className="text-center text-[15px]">
                 <ChangeArrow delta={cur != null && prev != null ? cur - prev : null} trend={r.trend} />

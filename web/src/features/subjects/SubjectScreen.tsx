@@ -1,4 +1,4 @@
-import { formatAverage, shortDate } from '@marksy/core';
+import { shortDate } from '@marksy/core';
 import { Fragment } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate, useParams } from 'react-router';
@@ -26,6 +26,7 @@ import { forPeriod, roman } from '../../lib/period';
 import { subjectStyle } from '../../lib/subject-color';
 import { usePeriod } from '../../state/store';
 import { SubjectSettings } from './SubjectSettings';
+import { numbers } from '../../lib/numbers';
 
 // Предмет (docs/design.md 5.4, ux-principles D45): the header and the navigator on a tint of the subject colour, the
 // screen's own controls in it; statistics, charts and mark chips never take it. First what does not depend on the
@@ -111,7 +112,7 @@ export function SubjectScreen() {
   let body: ReactNode;
   if (!d) body = <EmptyState title={subject.isError ? t('app.error') : t('app.loading')} />;
   else {
-    const goal = d.attention.goal && scale ? goalText(t, d.attention.goal, scale, locale) : null;
+    const goal = d.attention.goal && scale ? goalText(t, d.attention.goal, scale) : null;
     const hints = scale ? d.attention.hints : [];
     const upcoming = d.upcoming.length ? (
       <section className="flex flex-col gap-2">
@@ -253,13 +254,13 @@ export function SubjectScreen() {
                   {d.terms.map((x) => (
                     <span key={x.id} className="flex flex-col items-center gap-1">
                       <span className="text-label text-ink3">{roman(x.index)}</span>
-                      <FinalCellView cell={x.cell} scale={scale} locale={locale} />
+                      <FinalCellView cell={x.cell} scale={scale} />
                     </span>
                   ))}
                   {d.year && (
                     <span className="flex flex-col items-center gap-1">
                       <span className="text-label text-ink3 uppercase">{t('finals.year')}</span>
-                      <FinalCellView cell={d.year} scale={scale} locale={locale} />
+                      <FinalCellView cell={d.year} scale={scale} />
                     </span>
                   )}
                 </button>
@@ -269,7 +270,7 @@ export function SubjectScreen() {
                       ? t(`subject.termPosted.${termKind}`, {
                           roman: roman(term.index),
                           mark: termFinal.raw ?? '',
-                          average: term.average != null ? formatAverage(scale, term.average, locale) : '—',
+                          average: term.average != null ? numbers(scale).average(term.average) : '—',
                         })
                       : t(`subject.termRunning.${termKind}`, { date: shortDate(term.to, ds) })}
                   </span>

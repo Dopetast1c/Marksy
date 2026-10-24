@@ -1,8 +1,9 @@
-import { formatAverage, formatValue, shortDate } from '@marksy/core';
+import { shortDate } from '@marksy/core';
 import type { GradingScale, ShortDateStyle } from '@marksy/core';
 import type { TFunction } from 'i18next';
 import type { GoalRow, Hint } from '../api/queries';
 import { roman } from './period';
+import { numbers } from './numbers';
 
 // The words of «Обратить внимание» on the subject screen (docs/design.md 5.4, 6.2): a guidance hint is a fact and an
 // optional advice as i18n keys with raw values; the goal row is numbers from the scale. Values are written here with
@@ -15,8 +16,7 @@ export function hintText(t: TFunction, text: Hint['fact'], scale: GradingScale, 
   for (const [k, v] of Object.entries(text.params)) {
     if (v == null) continue;
     if (Array.isArray(v)) p[k] = v.join(', ');
-    else if (typeof v === 'number')
-      p[k] = AVERAGES.test(k) ? formatAverage(scale, v, ds.locale) : formatValue(scale, v, ds.locale);
+    else if (typeof v === 'number') p[k] = AVERAGES.test(k) ? numbers(scale).average(v) : numbers(scale).value(v);
     else if (k === 'date') p[k] = shortDate(v, ds, { weekday: true });
     else p[k] = v;
   }
@@ -31,9 +31,9 @@ export function hintText(t: TFunction, text: Hint['fact'], scale: GradingScale, 
 export type GoalTone = 'good' | 'low' | 'critical' | 'neutral';
 
 /** The goal row (5.4): «Цель итог 8: ещё 2 × 9 или 1 × 10», «Цель итог 8: хватает», «… уже не достичь» */
-export function goalText(t: TFunction, g: GoalRow, scale: GradingScale, locale: string) {
-  const v = (x: number | null) => (x == null ? '' : formatValue(scale, x, locale));
-  const a = (x: number | null) => (x == null ? '' : formatAverage(scale, x, locale));
+export function goalText(t: TFunction, g: GoalRow, scale: GradingScale) {
+  const v = (x: number | null) => (x == null ? '' : numbers(scale).value(x));
+  const a = (x: number | null) => (x == null ? '' : numbers(scale).average(x));
   const kind = g.term.kind;
   const target = v(g.target);
   switch (g.state) {
