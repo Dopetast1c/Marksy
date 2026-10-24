@@ -104,6 +104,7 @@ describe('selectWeeks', () => {
     expect(aheadDue(readThursday, ctx('2025-10-18 10:00', five))).toEqual({
       week: '2025-10-20',
       lastSchoolDay: '2025-10-17',
+      since: '2025-10-17',
     });
     // read on Friday: nothing waits over the weekend
     expect(aheadDue(state([['2025-10-20', '2025-10-17 12:00']]), ctx('2025-10-18 10:00', five))).toBeNull();
@@ -116,6 +117,13 @@ describe('selectWeeks', () => {
     ).toEqual({
       week: '2025-11-03',
       lastSchoolDay: '2025-10-25',
+      since: '2025-10-25',
+    });
+    // late August: no school day in sight behind, the stretch starts at the horizon, so last spring's run does not count
+    expect(aheadDue(state(), ctx('2025-08-30 10:00', { readsAhead: true }))).toEqual({
+      week: '2025-09-01',
+      lastSchoolDay: null,
+      since: '2025-08-02',
     });
   });
 

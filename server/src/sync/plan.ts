@@ -83,7 +83,7 @@ export function nextSchoolWeek(cal: PlanCalendar, ctx: WeekContext): ISODate | n
 export function aheadDue(
   state: StudentPlanState,
   ctx: WeekContext,
-): { week: ISODate; lastSchoolDay: ISODate | null } | null {
+): { week: ISODate; lastSchoolDay: ISODate | null; since: ISODate } | null {
   const cal = state.calendar;
   if (!ctx.readsAhead || isSchoolDay(ctx.today, cal, ctx)) return null;
   const until = addDays(weekStartOf(ctx.today, ctx.weekStart), 7 * (AHEAD_WEEKS + 1) - 1);
@@ -107,7 +107,8 @@ export function aheadDue(
   const week = weekStartOf(next, ctx.weekStart);
   const at = state.coverage.get(week);
   if (at && (!last || ctx.localDate(at) >= last)) return null;
-  return { week, lastSchoolDay: last };
+  // the stretch without school began after the last school day; with none in sight (late August), at the horizon
+  return { week, lastSchoolDay: last, since: last ?? addDays(ctx.today, -7 * (AHEAD_WEEKS + 1)) };
 }
 
 /** School weeks of the year up to today, newest first */

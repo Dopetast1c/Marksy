@@ -199,7 +199,7 @@ export async function accountToday(
       if (hasPostTerm(weeks)) postTerm = true;
       // one run per stretch without school: none since the child's last school day
       const due = aheadDue(state, ctx);
-      if (due && !(aheadOn && (!due.lastSchoolDay || aheadOn > due.lastSchoolDay))) ahead = true;
+      if (due && !(aheadOn && aheadOn > due.since)) ahead = true;
     }
     children.push({ studentId, window, sets });
   }
