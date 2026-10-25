@@ -110,7 +110,13 @@ describe('family', () => {
     // asking twice is asking once
     expect((await ask()).body).toEqual({ outcome: 'requested' });
     const pending = (await mama.get('/api/family')).body.joinRequests;
-    expect(pending).toEqual([expect.objectContaining({ displayName: 'Папа' })]);
+    // who asks and with which diary: the admin decides whom to let in (D54's one exception)
+    expect(pending).toEqual([
+      expect.objectContaining({
+        displayName: 'Папа',
+        diary: { providerName: expect.any(String), label: 'other-diary-user' },
+      }),
+    ]);
     expect((await mama.patch(`/api/family/join-requests/${pending[0].id}`).send({ approve: true })).status).toBe(204);
     const [account] = await db.select().from(diaryAccounts).where(eq(diaryAccounts.id, body.connect.accountId));
     expect(account!.familyId).toBe(first.family.id);
@@ -149,6 +155,58 @@ describe('family', () => {
     expect(stale.body.error.code).toBe('request_stale');
     const [account] = await db.select().from(diaryAccounts).where(eq(diaryAccounts.id, body.connect.accountId));
     expect(account!.familyId).toBe(body.family.id);
+  });
+
+  it('the family’s «Подсказки» switch is the admin’s; advice shows only when it and the person’s own are on', async () => {
+    const mama = agentWith();
+    await connectFamily(mama);
+    expect((await mama.get('/api/family')).body.family.guidance).toBe(true);
+    const off = await mama.patch('/api/family').send({ guidance: false });
+    expect(off.status).toBe(200);
+    expect(off.body.family).toMatchObject({ guidance: false, parentsCanInvite: true });
+    // the person's own switch stays on: their own setting, the family's decides too
+    expect((await mama.get('/api/auth/me')).body.user.guidance).toBe(true);
+    const [family] = await db.select().from(families);
+    expect(family!.settings.guidance).toBe(false);
+    const code = await invite(mama, 'parent');
+    const papa = agentWith();
+    expect(
+      (
+        await papa
+          .post(`/api/invites/${code}/accept`)
+          .send({ login: 'papa2@example.com', password: 'correct horse battery', displayName: 'Папа' })
+      ).status,
+    ).toBe(200);
+    expect((await papa.patch('/api/family').send({ guidance: true })).status).toBe(403);
+  });
+
+  it('a child’s avatar: set by a parent, seen by every family that follows the child, never by a student’s hand', async () => {
+    const mama = agentWith();
+    await connectFamily(mama);
+    const { agent: papa, body } = await secondFamily();
+    const shared = body.connect.matches[0]!.studentId;
+    await papa.post(`/api/family/accounts/${body.connect.accountId}/matches/${shared}`).send({ action: 'follow' });
+    const traits = {
+      age: 'kid',
+      look: 'boy',
+      skin: 'light',
+      hair: 'dark',
+      style: 'short',
+      eyes: 'brown',
+      glasses: false,
+    };
+    const set = await mama.patch(`/api/students/${shared}`).send({ avatar: traits });
+    expect(set.body.avatar).toEqual({ kind: 'traits', traits });
+    const papaKid = (await papa.get('/api/auth/me')).body.students[0];
+    expect(papaKid.avatar).toEqual({ kind: 'traits', traits });
+    expect((await mama.patch(`/api/students/${shared}`).send({ avatar: { ...traits, hair: 'green' } })).status).toBe(
+      400,
+    );
+    expect((await mama.patch(`/api/students/${shared}`).send({ avatar: null })).body.avatar).toBeNull();
+    // a child of another family is not reachable
+    const own = (await mama.get('/api/auth/me')).body.students.map((x: { id: string }) => x.id);
+    const notPapas = own.find((x: string) => x !== shared);
+    expect((await papa.patch(`/api/students/${notPapas}`).send({ avatar: traits })).status).toBe(404);
   });
 
   it('a student sees exactly one child: becoming a student needs that one child', async () => {

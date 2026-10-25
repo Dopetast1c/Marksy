@@ -517,7 +517,43 @@ export interface paths {
         };
         options?: never;
         head?: never;
-        patch?: never;
+        /** The family’s switches (admin): «Подсказки» for everyone, whether parents may invite */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        guidance?: boolean;
+                        parentsCanInvite?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Family"];
+                    };
+                };
+                /** @description No session */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
         trace?: never;
     };
     "/api/family/accounts": {
@@ -3212,6 +3248,79 @@ export interface paths {
         };
         trace?: never;
     };
+    "/api/students/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** The child’s avatar (admin, parent): traits to draw, or null for the neutral look */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        avatar: components["schemas"]["AvatarTraits"] & (Record<string, never> | null);
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            avatar: components["schemas"]["Avatar"];
+                        };
+                    };
+                };
+                /** @description No session */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description A student does not set avatars */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such child */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
     "/api/sync/status": {
         parameters: {
             query?: never;
@@ -3330,6 +3439,30 @@ export interface components {
                 details?: unknown;
             };
         };
+        AvatarTraits: {
+            /** @enum {string} */
+            age: "kid" | "preteen" | "teen" | "adult";
+            /** @enum {string} */
+            look: "boy" | "girl" | "neutral";
+            /** @enum {string} */
+            skin: "pale" | "light" | "medium" | "tan" | "brown" | "dark";
+            /** @enum {string} */
+            hair: "black" | "dark" | "brown" | "lightbrown" | "blond" | "red" | "grey";
+            /** @enum {string} */
+            style: "buzz" | "short" | "medium" | "long" | "ponytail" | "bob" | "curly" | "braids";
+            /** @enum {string} */
+            eyes: "brown" | "hazel" | "green" | "blue" | "grey";
+            glasses: boolean;
+        };
+        Avatar: {
+            /** @enum {string} */
+            kind: "traits";
+            traits: components["schemas"]["AvatarTraits"];
+        } | {
+            /** @enum {string} */
+            kind: "photo";
+            url: string;
+        } | null;
         StudentSummary: {
             id: string;
             name: string;
@@ -3430,6 +3563,7 @@ export interface components {
                     width: number;
                 };
             } | null;
+            avatar: components["schemas"]["Avatar"];
         };
         Me: {
             user: {
@@ -3461,6 +3595,7 @@ export interface components {
                 id: string;
                 name: string;
                 parentsCanInvite: boolean;
+                guidance: boolean;
             };
             /** @enum {string} */
             role: "admin" | "parent" | "student";
@@ -3490,6 +3625,7 @@ export interface components {
                 /** @enum {string} */
                 status: "active" | "suspended" | "stopped";
                 sharedWithOtherFamily: boolean;
+                avatar: components["schemas"]["Avatar"];
                 settings: {
                     lowMark: number | null;
                     dropStep: number | null;
@@ -3506,6 +3642,10 @@ export interface components {
                 displayName: string;
                 /** Format: date-time */
                 createdAt: string;
+                diary: {
+                    providerName: string;
+                    label: string;
+                } | null;
             }[];
         };
         Provider: {

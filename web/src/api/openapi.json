@@ -43,6 +43,129 @@
           "error"
         ]
       },
+      "AvatarTraits": {
+        "type": "object",
+        "properties": {
+          "age": {
+            "type": "string",
+            "enum": [
+              "kid",
+              "preteen",
+              "teen",
+              "adult"
+            ]
+          },
+          "look": {
+            "type": "string",
+            "enum": [
+              "boy",
+              "girl",
+              "neutral"
+            ]
+          },
+          "skin": {
+            "type": "string",
+            "enum": [
+              "pale",
+              "light",
+              "medium",
+              "tan",
+              "brown",
+              "dark"
+            ]
+          },
+          "hair": {
+            "type": "string",
+            "enum": [
+              "black",
+              "dark",
+              "brown",
+              "lightbrown",
+              "blond",
+              "red",
+              "grey"
+            ]
+          },
+          "style": {
+            "type": "string",
+            "enum": [
+              "buzz",
+              "short",
+              "medium",
+              "long",
+              "ponytail",
+              "bob",
+              "curly",
+              "braids"
+            ]
+          },
+          "eyes": {
+            "type": "string",
+            "enum": [
+              "brown",
+              "hazel",
+              "green",
+              "blue",
+              "grey"
+            ]
+          },
+          "glasses": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "age",
+          "look",
+          "skin",
+          "hair",
+          "style",
+          "eyes",
+          "glasses"
+        ]
+      },
+      "Avatar": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "traits"
+                ]
+              },
+              "traits": {
+                "$ref": "#/components/schemas/AvatarTraits"
+              }
+            },
+            "required": [
+              "kind",
+              "traits"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "photo"
+                ]
+              },
+              "url": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "url"
+            ]
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
       "StudentSummary": {
         "type": "object",
         "properties": {
@@ -494,6 +617,9 @@
               "yearRule",
               "distribution"
             ]
+          },
+          "avatar": {
+            "$ref": "#/components/schemas/Avatar"
           }
         },
         "required": [
@@ -505,7 +631,8 @@
           "timezone",
           "providerId",
           "capabilities",
-          "gradingScale"
+          "gradingScale",
+          "avatar"
         ]
       },
       "Me": {
@@ -635,12 +762,16 @@
               },
               "parentsCanInvite": {
                 "type": "boolean"
+              },
+              "guidance": {
+                "type": "boolean"
               }
             },
             "required": [
               "id",
               "name",
-              "parentsCanInvite"
+              "parentsCanInvite",
+              "guidance"
             ]
           },
           "role": {
@@ -775,6 +906,9 @@
                 "sharedWithOtherFamily": {
                   "type": "boolean"
                 },
+                "avatar": {
+                  "$ref": "#/components/schemas/Avatar"
+                },
                 "settings": {
                   "type": "object",
                   "properties": {
@@ -811,6 +945,7 @@
                 "schoolLabel",
                 "status",
                 "sharedWithOtherFamily",
+                "avatar",
                 "settings"
               ]
             }
@@ -851,12 +986,31 @@
                 "createdAt": {
                   "type": "string",
                   "format": "date-time"
+                },
+                "diary": {
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "properties": {
+                    "providerName": {
+                      "type": "string"
+                    },
+                    "label": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "providerName",
+                    "label"
+                  ]
                 }
               },
               "required": [
                 "id",
                 "displayName",
-                "createdAt"
+                "createdAt",
+                "diary"
               ]
             }
           }
@@ -3577,6 +3731,56 @@
             "session": []
           }
         ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Family"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "The family’s switches (admin): «Подсказки» for everyone, whether parents may invite",
+        "tags": [
+          "family"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "guidance": {
+                    "type": "boolean"
+                  },
+                  "parentsCanInvite": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "OK",
@@ -8425,6 +8629,107 @@
           },
           "409": {
             "description": "The lesson has passed: nothing to prepare or plan any more",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/students/{id}": {
+      "patch": {
+        "summary": "The child’s avatar (admin, parent): traits to draw, or null for the neutral look",
+        "tags": [
+          "students"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "avatar": {
+                    "allOf": [
+                      {
+                        "$ref": "#/components/schemas/AvatarTraits"
+                      },
+                      {
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "avatar"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "avatar": {
+                      "$ref": "#/components/schemas/Avatar"
+                    }
+                  },
+                  "required": [
+                    "avatar"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A student does not set avatars",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such child",
             "content": {
               "application/json": {
                 "schema": {

@@ -29,6 +29,7 @@ import type { Limiters } from '../http/rate-limit';
 import { route } from '../http/route';
 import { diaryKey } from './auth';
 import { registry } from '../openapi';
+import { avatarOf, avatarOut } from '../students/avatar';
 import { studentScale } from '../students/scale';
 
 // Семья (docs/design.md 5.6, 7, 9, 14.1): members, diary accounts, the children the family follows, invites, join
@@ -43,7 +44,8 @@ const admin = { roles: ['admin'] as ('admin' | 'parent' | 'student')[] };
 const familyView = registry.register(
   'Family',
   z.object({
-    family: z.object({ id: z.string(), name: z.string(), parentsCanInvite: z.boolean() }),
+    /** guidance: the family's «Подсказки» switch (admin); advice shows when the person's own is on too */
+    family: z.object({ id: z.string(), name: z.string(), parentsCanInvite: z.boolean(), guidance: z.boolean() }),
     role,
     members: z.array(z.object({ userId: z.string(), displayName: z.string(), role, studentIds: z.array(z.string()) })),
     accounts: z.array(
@@ -67,6 +69,7 @@ const familyView = registry.register(
         status: z.enum(['active', 'suspended', 'stopped']),
         /** «Также следит другая семья»: nothing more about that family */
         sharedWithOtherFamily: z.boolean(),
+        avatar: avatarOut,
         settings: z.object({
           lowMark: z.number().nullable(),
           dropStep: z.number().nullable(),
@@ -77,7 +80,15 @@ const familyView = registry.register(
     /** Children of the family's logins that another family follows: join or follow (design.md 7.2 step 3) */
     matches: z.array(z.object({ accountId: z.string(), studentId: z.string(), name: z.string() })),
     /** For the admin: people who asked to join with their diary login */
-    joinRequests: z.array(z.object({ id: z.string(), displayName: z.string(), createdAt: z.date() })),
+    joinRequests: z.array(
+      z.object({
+        id: z.string(),
+        displayName: z.string(),
+        createdAt: z.date(),
+        /** the diary they connected: its system and login, so the admin knows whom they let in (D54) */
+        diary: z.object({ providerName: z.string(), label: z.string() }).nullable(),
+      }),
+    ),
   }),
 );
 
@@ -132,9 +143,16 @@ async function viewFamily(db: Db, familyId: string, myRole: 'admin' | 'parent' |
   const requests =
     myRole === 'admin'
       ? await db
-          .select({ id: joinRequests.id, displayName: users.displayName, createdAt: joinRequests.createdAt })
+          .select({
+            id: joinRequests.id,
+            displayName: users.displayName,
+            createdAt: joinRequests.createdAt,
+            providerId: diaryAccounts.providerId,
+            label: diaryAccounts.label,
+          })
           .from(joinRequests)
           .innerJoin(users, eq(users.id, joinRequests.fromUserId))
+          .leftJoin(diaryAccounts, eq(diaryAccounts.id, joinRequests.diaryAccountId))
           .where(and(eq(joinRequests.familyId, familyId), eq(joinRequests.status, 'pending')))
       : [];
   return {
@@ -142,6 +160,7 @@ async function viewFamily(db: Db, familyId: string, myRole: 'admin' | 'parent' |
       id: family.id,
       name: family.name,
       parentsCanInvite: family.settings.parents_can_invite ?? true,
+      guidance: family.settings.guidance !== false,
     },
     role: myRole,
     members: people.map((p) => ({
@@ -164,6 +183,7 @@ async function viewFamily(db: Db, familyId: string, myRole: 'admin' | 'parent' |
       schoolLabel: student.schoolLabel,
       status: link.status,
       sharedWithOtherFamily: shared.has(student.id),
+      avatar: avatarOf(student.avatar, student.id),
       settings: {
         lowMark: link.settings.low_mark ?? null,
         dropStep: link.settings.drop_step ?? null,
@@ -176,7 +196,10 @@ async function viewFamily(db: Db, familyId: string, myRole: 'admin' | 'parent' |
         const student = pending.find((p) => p.id === s.studentId)!;
         return { accountId: s.accountId, studentId: s.studentId, name: childName(student) };
       }),
-    joinRequests: requests,
+    joinRequests: requests.map(({ providerId, label, ...r }) => ({
+      ...r,
+      diary: providerId && label ? { providerName: getProvider(providerId)?.manifest.name ?? providerId, label } : null,
+    })),
   };
 }
 
@@ -485,6 +508,33 @@ export function familyRoutes(deps: AppDeps, limiters: Limiters): Router {
       response: z.record(z.string(), z.unknown()),
     },
     async (req) => exportFamily(deps.db, memberOf(req).familyId),
+  );
+
+  route(
+    r,
+    {
+      method: 'patch',
+      path: '/api/family',
+      summary: 'The family’s switches (admin): «Подсказки» for everyone, whether parents may invite',
+      tags: ['family'],
+      access: admin,
+      body: z.object({ guidance: z.boolean().optional(), parentsCanInvite: z.boolean().optional() }),
+      response: familyView,
+    },
+    async (req, { body }) => {
+      const m = memberOf(req);
+      const [f] = await deps.db
+        .select({ settings: families.settings })
+        .from(families)
+        .where(eq(families.id, m.familyId));
+      const settings: FamilySettings = {
+        ...(f?.settings ?? {}),
+        ...(body.guidance !== undefined && { guidance: body.guidance }),
+        ...(body.parentsCanInvite !== undefined && { parents_can_invite: body.parentsCanInvite }),
+      };
+      await deps.db.update(families).set({ settings }).where(eq(families.id, m.familyId));
+      return viewFamily(deps.db, m.familyId, m.role);
+    },
   );
 
   route(

@@ -9,6 +9,7 @@ import { childName } from '../family/children';
 import type { Auth } from '../http/context';
 import { HttpError } from '../http/errors';
 import { registry } from '../openapi';
+import { avatarOf, avatarOut } from '../students/avatar';
 import { studentScale } from '../students/scale';
 
 // Who is signed in and what they may see (docs/design.md 9, GET /api/auth/me): the person, their families, the current
@@ -30,6 +31,8 @@ export const studentSummary = registry.register(
     capabilities,
     /** null: a year without marks (ux-principles D49) */
     gradingScale: gradingScale.nullable(),
+    /** traits or a photo; null: the neutral look until the family sets one */
+    avatar: avatarOut,
   }),
 );
 
@@ -95,6 +98,7 @@ export async function buildMe(db: Db, auth: Pick<Auth, 'userId' | 'familyId'>): 
       providerId: student.providerId,
       capabilities: manifest.capabilities,
       gradingScale: await studentScale(db, student.id),
+      avatar: avatarOf(student.avatar, student.id),
     });
   }
   return {

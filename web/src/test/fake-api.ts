@@ -100,6 +100,7 @@ export const KIDS = [
       behaviour: 'separate',
     },
     gradingScale: scale,
+    avatar: null,
   },
   {
     id: 'kid-mark',
@@ -111,6 +112,7 @@ export const KIDS = [
     providerId: 'demo-full',
     capabilities: {},
     gradingScale: null,
+    avatar: null,
   },
 ];
 
