@@ -24,6 +24,8 @@ export interface AppDeps {
   /** Tests and the demo: fixture-only providers may be connected too */
   allowDemoProviders?: boolean;
   log?: Logger;
+  /** UPLOADS_DIR: uploaded pictures (14.1), data/uploads by default */
+  uploadsDir?: string;
   /** The collector's settings (the first sync after connecting); from the environment by default */
   syncConfig?: SyncConfig;
   /** Tests: no pauses between requests */

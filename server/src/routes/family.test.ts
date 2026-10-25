@@ -19,6 +19,7 @@ import {
   users,
 } from '../db/schema';
 import { storeStudents } from '../sync/store-school';
+import { jpegWithGps } from '../../test/images';
 
 const db = testDb();
 
@@ -207,6 +208,49 @@ describe('family', () => {
     const own = (await mama.get('/api/auth/me')).body.students.map((x: { id: string }) => x.id);
     const notPapas = own.find((x: string) => x !== shared);
     expect((await papa.patch(`/api/students/${notPapas}`).send({ avatar: traits })).status).toBe(404);
+  });
+
+  it('a child’s photo: a JPEG with GPS in its EXIF is kept without it, served to both families, to nobody else', async () => {
+    const mama = agentWith();
+    await connectFamily(mama);
+    const { agent: papa, body } = await secondFamily();
+    const shared = body.connect.matches[0]!.studentId;
+    await papa.post(`/api/family/accounts/${body.connect.accountId}/matches/${shared}`).send({ action: 'follow' });
+    const put = await mama.put(`/api/students/${shared}/photo`).set('Content-Type', 'image/jpeg').send(jpegWithGps());
+    expect(put.status).toBe(200);
+    expect(put.body.avatar).toEqual({
+      kind: 'photo',
+      url: expect.stringContaining(`/api/students/${shared}/photo?v=`),
+    });
+    for (const agent of [mama, papa]) {
+      const got = await agent
+        .get(`/api/students/${shared}/photo`)
+        .buffer(true)
+        .parse((res, done) => {
+          const parts: Buffer[] = [];
+          res.on('data', (c: Buffer) => parts.push(c));
+          res.on('end', () => done(null, Buffer.concat(parts)));
+        });
+      expect(got.status).toBe(200);
+      expect(got.headers['content-type']).toBe('image/jpeg');
+      const text = (got.body as Buffer).toString('latin1');
+      expect(text).toContain('JFIF');
+      for (const gone of ['Exif', 'GPS', 'xmpmeta', 'taken at home']) expect(text).not.toContain(gone);
+    }
+    expect((await request(testApp()).get(`/api/students/${shared}/photo`)).status).toBe(401);
+    // the declared type means nothing: an SVG sent as a JPEG is refused; so is a picture larger than 512 px
+    const svg = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"><script/></svg>');
+    expect((await mama.put(`/api/students/${shared}/photo`).set('Content-Type', 'image/jpeg').send(svg)).status).toBe(
+      400,
+    );
+    expect(
+      (await mama.put(`/api/students/${shared}/photo`).set('Content-Type', 'image/jpeg').send(jpegWithGps(800, 800)))
+        .status,
+    ).toBe(400);
+    expect((await mama.put(`/api/students/${shared}/photo`).send(Buffer.alloc(2_100_000))).status).toBe(413);
+    // traits instead: the photo goes, the file too
+    await mama.patch(`/api/students/${shared}`).send({ avatar: null });
+    expect((await mama.get(`/api/students/${shared}/photo`)).status).toBe(404);
   });
 
   it('a student sees exactly one child: becoming a student needs that one child', async () => {

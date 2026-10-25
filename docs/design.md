@@ -725,8 +725,11 @@ POST /api/auth/connect            {providerId, credentials: {...manifest fields}
                                                                   409 needs_2fa with a prompt
 POST /api/auth/logout
 PATCH /api/me                     {locale?, displayName?, timezone?, uiMode?, avatar?}
-PATCH /api/students/:id           {avatar?}                    (admin, parent)
-POST /api/uploads/avatar          multipart, 512 px square, stored locally
+PATCH /api/students/:id           {avatar: traits | null}      (admin, parent): the child's avatar, seen by every family that
+                                                                   follows the child (D54)
+PUT  /api/students/:id/photo      the picture's bytes            (admin, parent): JPEG, PNG or WebP up to 512 px, checked and
+                                                                   stripped of metadata on the server (14.1)
+GET  /api/students/:id/photo                                   -> the photo, to the families that follow the child
 GET  /api/auth/me                                              -> {user, memberships[], family (current),
                                                                    students[] with provider, school,
                                                                    capabilities and gradingScale}
@@ -997,6 +1000,7 @@ The schedule above describes the ideal day. Section 10.4 describes what happens 
 | `sync_daily` | while the diary account exists | one small line per account and day |
 | `invites`, `telegram_link_codes` | until they expire | single-use secrets |
 | `user_files` (wallpaper) | while the user exists; replaced on upload, deleted with the user | a personal picture, one per user |
+| picture files under `UPLOADS_DIR` (a child's photo, a wallpaper) | while a row points at them: a replaced picture is deleted at once, and the janitor removes every file no `students.avatar` or `user_files` row points at (older than an hour), whatever removed the row | a child's photo must go with the child's data, never linger on disk |
 | `user_seen`, sessions | sessions expire by TTL; `user_seen` keeps only the last visit per screen | nothing historical is needed |
 
 A daily janitor job (same process, after the first planner tick of each day) applies these limits; each limit is a constant in `server/src/retention.ts` with a matching `RETENTION_*` env override in `.env.example`. Deleting a diary account removes its `student_sources`; a family whose last source of a child is gone loses that link (7.1). Removing the last `family_students` link of a child cascades to everything the child owns immediately; retention never keeps data about a child no family follows.

@@ -40,6 +40,11 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     res.status(400).json({ error: { code: 'invalid_json', message: 'The body is not JSON' } });
     return;
   }
+  // a body over its limit: the JSON limit, or an upload's (14.1)
+  if ((err as { type?: string }).type === 'entity.too.large') {
+    res.status(413).json({ error: { code: 'too_large', message: 'The body is larger than this route accepts' } });
+    return;
+  }
   log.error('api error', { error: errorSummary(err) });
   res.status(500).json({ error: { code: 'internal', message: 'Something went wrong' } });
 };

@@ -1,3 +1,6 @@
+import { mkdir, mkdtemp, readdir, rm, utimes, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { resetDb, testDb } from '../test/db';
@@ -263,5 +266,35 @@ describe('retention janitor', () => {
     expect(await db.select().from(students)).toHaveLength(0);
     expect(await db.select().from(schoolYears)).toHaveLength(0);
     expect(await db.select().from(terms)).toHaveLength(0);
+  });
+});
+
+describe('retention: uploaded pictures', () => {
+  beforeEach(() => resetDb(db));
+
+  it('a picture no row points at goes; one a child still shows, and one just uploaded, stay', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'marksy-sweep-'));
+    try {
+      await mkdir(join(dir, 'avatars'), { recursive: true });
+      const shown = 'avatars/11111111-1111-4111-8111-111111111111.jpg';
+      const orphan = 'avatars/22222222-2222-4222-8222-222222222222.jpg';
+      const fresh = 'avatars/33333333-3333-4333-8333-333333333333.jpg';
+      for (const key of [shown, orphan, fresh]) await writeFile(join(dir, key), 'x');
+      // the orphan has lain there for a day
+      const dayAgo = new Date(Date.now() - 86_400_000);
+      await utimes(join(dir, orphan), dayAgo, dayAgo);
+      await utimes(join(dir, shown), dayAgo, dayAgo);
+      await db.insert(students).values({
+        providerId: 'demo-full',
+        externalId: 'p-9',
+        fullName: 'Ученик Б',
+        avatar: { kind: 'photo', key: shown, mime: 'image/jpeg', bytes: 1 },
+      });
+      const report = await applyRetention(db, RETENTION_DEFAULTS, new Date(), dir);
+      expect(report.uploads_orphaned).toBe(1);
+      expect((await readdir(join(dir, 'avatars'))).sort()).toEqual([shown, fresh].map((k) => k.slice(8)).sort());
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
   });
 });

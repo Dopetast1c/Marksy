@@ -19,24 +19,32 @@ function sessionSecret(): string {
 
 // cookies are Secure only when the app is served over https (CLAUDE.md, local and phone testing)
 const secureCookies = (process.env.PUBLIC_URL ?? '').startsWith('https://');
-createApp({ db: createDb(), credentialsKey: masterKey(), secret: sessionSecret(), secureCookies, log }).listen(
-  port,
-  host,
-  () => {
-    // No personal data in logs, ever (CLAUDE.md)
-    console.log(`marksy api on ${host}:${port}`);
-  },
-);
+createApp({
+  db: createDb(),
+  credentialsKey: masterKey(),
+  secret: sessionSecret(),
+  secureCookies,
+  log,
+  ...(process.env.UPLOADS_DIR?.trim() && { uploadsDir: process.env.UPLOADS_DIR.trim() }),
+}).listen(port, host, () => {
+  // No personal data in logs, ever (CLAUDE.md)
+  console.log(`marksy api on ${host}:${port}`);
+});
 
 // The collector runs in the same process (docs/design.md 10.1); SYNC_ENABLED=false keeps a copy away from every diary.
 const config = readSyncConfig();
 if (config.enabled) {
   const db = createDb();
   // the retention janitor runs after the first tick of each day (docs/design.md 10.4)
-  const janitor = dailyJanitor(db, readRetention(), (report) => {
-    // one line per table under safe keys: table names like raw_responses would be redacted as keys
-    for (const [kind, count] of Object.entries(report)) if (count) log.info('retention', { kind, count });
-  });
+  const janitor = dailyJanitor(
+    db,
+    readRetention(),
+    (report) => {
+      // one line per table under safe keys: table names like raw_responses would be redacted as keys
+      for (const [kind, count] of Object.entries(report)) if (count) log.info('retention', { kind, count });
+    },
+    process.env.UPLOADS_DIR?.trim() || undefined,
+  );
   createScheduler({ db, config, log, afterTick: janitor });
   log.info('collector scheduler on', { count: config.tickMinutes });
 } else {
