@@ -1,5 +1,5 @@
 import { addDays, daysBetween, weekdayOf } from '@marksy/core';
-import type { DateRange, ISODate, LessonType, MarkKind, WorkType } from '@marksy/core';
+import type { DateRange, HolidayKind, ISODate, LessonType, MarkKind, WorkType } from '@marksy/core';
 
 // The fictional school of the demo family (`pnpm db:seed`) and of the demo providers' fixtures, ported from the
 // prototype's buildGrade7, buildGrade1 and SCHOOL (docs/mockups.html). Deterministic: the same `today` always gives
@@ -78,7 +78,8 @@ export interface SeedCalendar {
   schoolDays: readonly number[];
   year: { label: string; start: ISODate; end: ISODate };
   terms: { index: number; start: ISODate; end: ISODate; note?: string }[];
-  holidays: (DateRange & { name: string; note?: string })[];
+  /** the kind names them in the app (Осенние каникулы), as a real diary's type would */
+  holidays: (DateRange & { kind: HolidayKind; note?: string })[];
 }
 
 /** Grades with the extra February week (as the Belarusian calendar has it, api-spec 6.4) */
@@ -93,13 +94,13 @@ export function seedCalendar(today: ISODate, schoolDays: readonly number[], grad
   const y = Number(today.slice(0, 4)) - (Number(today.slice(5, 7)) < 8 ? 1 : 0);
   const n = y + 1;
   const holidays: SeedCalendar['holidays'] = [
-    { name: 'Осенние каникулы', from: `${y}-11-01`, to: `${y}-11-08` },
-    { name: 'Зимние каникулы', from: `${y}-12-25`, to: `${n}-01-10` },
-    { name: 'Весенние каникулы', from: `${n}-03-21`, to: `${n}-03-28` },
-    { name: 'Летние каникулы', from: `${n}-06-01`, to: `${n}-08-31`, note: `Для окончивших 9 класс: с 11.06.${n}.` },
+    { kind: 'autumn', from: `${y}-11-01`, to: `${y}-11-08` },
+    { kind: 'winter', from: `${y}-12-25`, to: `${n}-01-10` },
+    { kind: 'spring', from: `${n}-03-21`, to: `${n}-03-28` },
+    { kind: 'summer', from: `${n}-06-01`, to: `${n}-08-31`, note: `Для окончивших 9 класс: с 11.06.${n}.` },
   ];
   if (grade <= LAST_GRADE_WITH_EXTRA_HOLIDAYS) {
-    holidays.push({ name: 'Дополнительные каникулы', from: `${n}-02-15`, to: `${n}-02-21` });
+    holidays.push({ kind: 'additional', from: `${n}-02-15`, to: `${n}-02-21` });
   }
   return {
     schoolDays,

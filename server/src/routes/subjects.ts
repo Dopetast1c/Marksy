@@ -2,7 +2,6 @@ import {
   addDays,
   compareSubjects,
   comparePeriods,
-  defaultGoal,
   marksNeeded,
   periodStats,
   previousInstance,
@@ -36,6 +35,7 @@ import {
 } from '../students/data';
 import { feedItem, feedItems } from '../students/feed';
 import { finalsOf, finalsState, lastYearFinals, termCell, termRef, yearCell } from '../students/finals';
+import { goalOf, goalsApply, runningTerm } from '../students/goals';
 import { trendOf, trendResponse } from '../students/trend';
 import { localTime } from '../sync/time';
 import {
@@ -145,24 +145,6 @@ async function subjectOf(deps: AppDeps, ctx: ChildContext, subjectId: string) {
   if (!s) throw new HttpError(404, 'not_found', 'No such subject');
   return s;
 }
-
-/** The goal of a subject: the family's choice, null for «Без цели», the scale's default until one is chosen */
-async function goalOf(deps: AppDeps, ctx: ChildContext, subjectId: string): Promise<number | null> {
-  if (!ctx.scale) return null;
-  const [row] = await deps.db
-    .select({ termGoal: subjectGoals.termGoal })
-    .from(subjectGoals)
-    .where(and(eq(subjectGoals.studentId, ctx.student.id), eq(subjectGoals.subjectId, subjectId)));
-  if (!row) return defaultGoal(ctx.scale);
-  return row.termGoal == null ? null : Number(row.termGoal);
-}
-
-/** The goal needs terms, finals and a scale whose final rule can be inverted (6.2) */
-const goalsApply = (ctx: ChildContext) =>
-  !!ctx.scale && ctx.caps.terms !== 'none' && ctx.caps.finalMarks && defaultGoal(ctx.scale) != null;
-
-const runningTerm = (ctx: ChildContext) =>
-  ctx.termRows.find((t) => t.startDate <= ctx.today && ctx.today <= t.endDate) ?? null;
 
 export function subjectRoutes(deps: AppDeps): Router {
   const r = Router();

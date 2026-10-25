@@ -1,4 +1,6 @@
 import { randomBytes } from 'node:crypto';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { demoFullTransport, demoLiteTransport, demoTransport } from '@marksy/registry';
 import { createApp } from '../src/app';
 import type { AppDeps } from '../src/http/context';
@@ -13,6 +15,7 @@ import { TEST_CREDENTIALS_KEY } from './factories';
 const inFlight: Promise<unknown>[] = [];
 /** A random key per test run, like the credentials key */
 const TEST_SESSION_SECRET = randomBytes(32).toString('hex');
+export const TEST_UPLOADS_DIR = join(tmpdir(), `marksy-test-uploads-${randomBytes(6).toString('hex')}`);
 
 export const settle = () => Promise.allSettled(inFlight.splice(0));
 
@@ -22,6 +25,8 @@ export function testDeps(over: Partial<AppDeps> = {}): AppDeps {
     credentialsKey: TEST_CREDENTIALS_KEY,
     secret: TEST_SESSION_SECRET,
     secureCookies: false,
+    // pictures of a test run go to a folder of their own, never to data/uploads
+    uploadsDir: TEST_UPLOADS_DIR,
     allowDemoProviders: true,
     syncConfig: readSyncConfig({}),
     sleep: async () => undefined,

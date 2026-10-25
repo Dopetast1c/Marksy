@@ -92,6 +92,20 @@ export const intlLocale = () => languageOf(i18n.language)?.intl ?? 'en-GB';
  * How short dates are written in the current language (core shortDate, shortRange): the language's own short month
  * names when its catalog has them, otherwise Intl's. Never English months in another language.
  */
+/**
+ * A month on its own, not in a date (the year strip of Школа): «май», where a date says «25 мая». The language's own
+ * names when its catalog has them, otherwise Intl's stand-alone short form.
+ */
+export function monthAlone(month: number): string {
+  const own = CATALOGS[i18n.language]?.[`date.monthAlone.${month}`];
+  return (
+    own ??
+    new Intl.DateTimeFormat(intlLocale(), { timeZone: 'UTC', month: 'short' }).format(
+      new Date(Date.UTC(2026, month - 1, 15)),
+    )
+  );
+}
+
 export function dateStyle(): ShortDateStyle {
   const own = CATALOGS[i18n.language];
   const months = Array.from({ length: 12 }, (_, i) => own?.[`date.monthShort.${i + 1}`]);

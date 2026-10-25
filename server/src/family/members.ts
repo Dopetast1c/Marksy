@@ -1,6 +1,14 @@
 import { and, eq, inArray, ne, notInArray } from 'drizzle-orm';
 import type { Db } from '../db/client';
-import { alertRules, familyStudents, memberships, notifications, sessions, userStudentAccess } from '../db/schema';
+import {
+  alertRules,
+  familyStudents,
+  memberships,
+  notifications,
+  sessions,
+  userStudentAccess,
+  users,
+} from '../db/schema';
 import { HttpError } from '../http/errors';
 import { ensureDefaultRules } from './rules';
 import type { MemberRole } from './rules';
@@ -23,6 +31,16 @@ async function otherAdmins(db: Db, familyId: string, userId: string): Promise<nu
     .from(memberships)
     .where(and(eq(memberships.familyId, familyId), eq(memberships.role, 'admin'), ne(memberships.userId, userId)));
   return rows.length;
+}
+
+/**
+ * Simple mode for a student member (design.md 5.7: set by a parent or the student). It is the student's own setting,
+ * so it follows them into every family they are in. Only a student has it.
+ */
+export async function setStudentUiMode(db: Db, familyId: string, userId: string, uiMode: 'full' | 'simple') {
+  const m = await membership(db, familyId, userId);
+  if (m.role !== 'student') throw new HttpError(400, 'not_a_student', 'Simple mode is for a student member');
+  await db.update(users).set({ uiMode }).where(eq(users.id, userId));
 }
 
 /**

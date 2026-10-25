@@ -2,15 +2,10 @@ import { readdirSync, readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { providerManifest } from '@marksy/core';
 import type { ProviderManifest } from '@marksy/core';
-import { and, desc, eq } from 'drizzle-orm';
 import type { Db } from '../db/client';
-import { diaryAccounts, families, syncRuns } from '../db/schema';
-import { effectiveLimits } from './config';
+import { diaryAccounts } from '../db/schema';
 import type { SyncConfig } from './config';
-import { decideStart } from './plan';
-import { accountToday, lastAheadOf, weekContext } from './state';
-import { readableStudents, sourcedStudents } from './readers';
-import { localTime } from './time';
+import { accountPlan } from './account-plan';
 import { formatWindow } from './window';
 
 // `pnpm sync:plan` (docs/build-plan.md M3a): what the planner would do now, for every diary account, without logging
@@ -47,42 +42,13 @@ export async function planReport(
       lines.push(`account ${account.id}: provider ${account.providerId} not found`);
       continue;
     }
-    const [family] = await db.select().from(families).where(eq(families.id, account.familyId));
-    const limits = effectiveLimits(manifest, config);
-    const local = localTime(now, manifest.timezone);
-    const ctx = weekContext(manifest, family?.settings ?? {}, now, account.lastSuccessAt);
-    const readable = (await readableStudents(db, account.id)).map((s) => s.id);
-    const sourced = readable.length ? [] : await sourcedStudents(db, account.id);
-    const sourceCheck = sourced.length > 0;
-    const today = await accountToday(
+    const { local, sourceCheck, readable, sourced, today, decision } = await accountPlan(
       db,
-      sourceCheck ? sourced : readable,
-      ctx,
-      limits,
-      await lastAheadOf(db, account.id),
-    );
-    const [lastOffline] = await db
-      .select({ startedAt: syncRuns.startedAt })
-      .from(syncRuns)
-      .where(and(eq(syncRuns.diaryAccountId, account.id), eq(syncRuns.status, 'skipped_offline')))
-      .orderBy(desc(syncRuns.startedAt))
-      .limit(1);
-    const decision = decideStart({
-      now,
-      local,
-      timeZone: manifest.timezone,
-      trigger: 'schedule',
       account,
-      limits,
-      windows: today.windows,
-      weekday: manifest.calendar.schoolDays.includes(local.weekday),
-      backlog: sourceCheck ? false : today.backlog || readable.length === 0,
-      postTerm: sourceCheck ? false : today.postTerm,
-      ahead: sourceCheck ? false : today.ahead,
-      schoolDay: today.schoolDay,
-      lastOfflineAt: lastOffline?.startedAt ?? null,
-      seed: account.id,
-    });
+      manifest,
+      config,
+      now,
+    );
 
     lines.push(
       `account ${account.id} (${account.providerId}): ${sourceCheck ? `source check of ${sourced.length} children` : `reads ${readable.length} children`}, status ${account.status}${account.requiresAction ? `, needs ${account.requiresAction}` : ''}, last success ${account.lastSuccessAt?.toISOString() ?? 'never'}`,

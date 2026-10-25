@@ -47,3 +47,35 @@
     animation: none;
   }
 }
+
+/* Оформление's wallpaper (design.md 5.6a): a fixed layer behind the app, the picture at the chosen opacity; cards stay
+   solid so data is never on the pattern, and the sticky navigator gets a translucent, blurred background instead of
+   the solid one (the subject screen's tinted navigator keeps its tint). Patterns tile, an own picture covers. */
+html[data-wall]::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: var(--wall-image);
+  background-position: center;
+  opacity: var(--wall-op, 0.35);
+}
+html[data-wall='own']::before {
+  background-size: cover;
+}
+html[data-wall] body {
+  background: transparent;
+}
+html[data-wall] #root {
+  position: relative;
+  z-index: 1;
+}
+html[data-wall] [data-period-nav]:not(.subject-accent) {
+  background: color-mix(in oklab, var(--bg) 70%, transparent);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+html[data-wall] [data-period-nav]:not(.subject-accent)::after {
+  display: none;
+}

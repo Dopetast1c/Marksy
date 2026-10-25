@@ -23,6 +23,19 @@ export interface FakeState {
   subject?: unknown;
   /** the lesson menu's actions answer 409 with this code (lesson_passed, diary_has_lesson) */
   lessonRefuses?: string;
+  /** /api/sync/status and /api/sync/runs, when a test needs them */
+  syncStatus?: unknown;
+  syncRuns?: unknown;
+  /** the person's own «Подсказки» switch */
+  guidance?: boolean;
+  /** Оформление: what PATCH /api/me/settings and the wallpaper routes have made of it */
+  appearance?: Record<string, unknown>;
+  /** who is signed in: the admin by default; a student sees only their own card */
+  role?: 'admin' | 'parent' | 'student';
+  /** fields laid over every child's /overview answer */
+  overview?: Record<string, unknown>;
+  /** the signed-in person's simple mode (5.7); the student member's in Семья follows PUT …/ui-mode */
+  uiMode?: 'full' | 'simple';
   /** the school's today for Расписание's days (a weekend, to see where День opens) */
   scheduleToday?: string;
 }
@@ -98,6 +111,7 @@ export const KIDS = [
       behaviour: 'separate',
     },
     gradingScale: scale,
+    avatar: null,
   },
   {
     id: 'kid-mark',
@@ -109,6 +123,7 @@ export const KIDS = [
     providerId: 'demo-full',
     capabilities: {},
     gradingScale: null,
+    avatar: null,
   },
 ];
 
@@ -308,8 +323,11 @@ const TREND = {
 const SCHOOL = {
   timezone: 'Europe/Minsk',
   year: { label: '2026/27', from: '2026-09-01', to: '2027-05-31' },
-  terms: [],
-  holidays: [],
+  terms: [
+    { id: 'q1', kind: 'quarter', index: 1, label: '1', from: '2026-09-01', to: '2026-10-31', note: null },
+    { id: 'q2', kind: 'quarter', index: 2, label: '2', from: '2026-11-09', to: '2026-12-24', note: null },
+  ],
+  holidays: [{ from: '2026-11-01', to: '2026-11-08', note: null, kind: 'autumn' }],
   bells: [
     {
       label: null,
@@ -467,8 +485,8 @@ export const TERM_FINALS = {
 };
 export const YEAR_FINALS = {
   years: [
-    { id: 'y0', label: '2025-2026', current: false },
-    { id: 'y1', label: '2026-2027', current: true },
+    { id: 'y0', label: '2025-2026', current: false, source: 'manual', startYear: 2025 },
+    { id: 'y1', label: '2026-2027', current: true, source: 'api', startYear: 2026 },
   ],
   rows: [
     {
@@ -486,7 +504,7 @@ export const YEAR_FINALS = {
       subjectId: null,
       isNew: false,
       cells: [
-        { yearId: 'y0', ...cell('final', 9) },
+        { yearId: 'y0', ...cell('final', 9), source: 'manual' },
         { yearId: 'y1', ...cell('none', null) },
       ],
       trend: null,
@@ -669,6 +687,56 @@ const SCHEDULE_ATTENTION = [
   },
 ];
 
+/** Семья of the demo: a request to join, three members (Милена has her own login), two children, one diary */
+const FAMILY = {
+  family: { id: 'f1', name: 'Семья', parentsCanInvite: true, guidance: true },
+  role: 'admin',
+  members: [
+    { userId: 'u1', displayName: 'Родитель', role: 'admin', studentIds: [], uiMode: 'full' },
+    { userId: 'u2', displayName: 'Бабушка', role: 'parent', studentIds: ['kid-mark'], uiMode: 'full' },
+    { userId: 'u3', displayName: 'Милена', role: 'student', studentIds: ['kid-milena'], uiMode: 'full' },
+  ],
+  accounts: [
+    {
+      id: 'acc-1',
+      providerId: 'demo-full',
+      providerName: 'Школьный портал (демо)',
+      label: 'demo-login',
+      status: 'ok',
+      requiresAction: null,
+      studentIds: ['kid-milena', 'kid-mark'],
+    },
+  ],
+  children: [
+    {
+      studentId: 'kid-milena',
+      name: 'Милена',
+      classLabel: '7 «Г»',
+      schoolLabel: null,
+      status: 'active',
+      sharedWithOtherFamily: false,
+      settings: { lowMark: null, dropStep: null, callAfter: null },
+    },
+    {
+      studentId: 'kid-mark',
+      name: 'Марк',
+      classLabel: '1 «Д»',
+      schoolLabel: null,
+      status: 'active',
+      sharedWithOtherFamily: true,
+      settings: { lowMark: null, dropStep: null, callAfter: null },
+    },
+  ],
+  joinRequests: [
+    {
+      id: 'jr-1',
+      displayName: 'Папа',
+      createdAt: '2026-10-20T10:00:00Z',
+      diary: { providerName: 'Школьный портал (демо)', label: 'papa-login' },
+    },
+  ],
+};
+
 const TYPE_KEYS = new Set(['workType', 'workTypeRaw', 'lessonType']);
 const untyped = (key: string, value: unknown) => (TYPE_KEYS.has(key) ? null : value);
 
@@ -676,13 +744,18 @@ export function fakeApi(start: Partial<FakeState> = {}) {
   const state: FakeState = { signedIn: false, calls: [], urls: [], bodies: {}, ...start };
   const error = (status: number, code: string) => json({ error: { code, message: code } }, status);
   let matchesPending = false;
+  let familyGuidance = true;
+  let studentUiMode: 'full' | 'simple' = 'full';
+  const avatars: Record<string, unknown> = {};
   const lessonState = { ready: new Set<string>(), cancelled: new Set<string>(), homework: new Map<string, string>() };
   const json = (body: unknown, status = 200) =>
     new Response(status === 204 ? null : JSON.stringify(body, state.noTypes ? untyped : undefined), {
       status,
       headers: { 'content-type': 'application/json' },
     });
-  vi.stubGlobal('fetch', async (input: Request) => {
+  vi.stubGlobal('fetch', async (target: Request | string, init?: RequestInit) => {
+    // the API client sends a Request; an upload calls fetch(url, init) with its bytes
+    const input = typeof target === 'string' ? new Request(new URL(target, 'http://localhost'), init) : target;
     const url = new URL(input.url);
     const route = `${input.method} ${url.pathname}`;
     state.calls.push(route);
@@ -724,23 +797,80 @@ export function fakeApi(start: Partial<FakeState> = {}) {
           displayName: 'Родитель',
           locale: state.locale ?? 'ru',
           timezone: null,
-          uiMode: 'full',
+          uiMode: state.uiMode ?? 'full',
+          guidance: state.guidance ?? true,
+          appearance: {
+            theme: 'light',
+            background: 'color',
+            palette: 'sea',
+            wallpaper: 'cell',
+            opacity: 35,
+            font: 'manrope',
+            hasOwnWallpaper: false,
+            wallpaperVersion: null,
+            ...state.appearance,
+          },
         },
-        memberships: [{ familyId: 'f1', familyName: 'Семья', role: 'admin' }],
-        family: { id: 'f1', name: 'Семья', role: 'admin' },
-        students: KIDS,
+        memberships: [{ familyId: 'f1', familyName: 'Семья', role: state.role ?? 'admin' }],
+        family: { id: 'f1', name: 'Семья', role: state.role ?? 'admin' },
+        students: state.role === 'student' ? KIDS.slice(0, 1) : KIDS,
       });
     if (route === 'POST /api/auth/logout') {
       state.signedIn = false;
       return json(null, 204);
     }
-    if (route === 'GET /api/sync/status') return json({ accounts: [], students: [] });
+    if (route === 'GET /api/sync/status') return json(state.syncStatus ?? { accounts: [], students: [] });
+    if (route === 'GET /api/sync/runs') return json(state.syncRuns ?? []);
+    if (route === 'POST /api/sync/run')
+      return json({ started: false, reason: 'interval', retryAt: '2026-10-21T17:12:00Z' });
+    if (route === 'POST /api/sync/rescan')
+      return json({ started: false, reason: 'interval', retryAt: '2026-10-21T17:12:00Z', weeks: 7 });
     if (route === 'GET /api/students') return json(CARDS);
-    if (route === 'PATCH /api/me') return json({});
+    if (route === 'PUT /api/students/kid-milena/final-marks')
+      return json({ yearId: 'y0', count: (state.bodies[route] as { marks: unknown[] }).marks.length });
+    if (route === 'PATCH /api/me') {
+      state.uiMode = (state.bodies[route] as { uiMode?: 'full' | 'simple' }).uiMode ?? state.uiMode;
+      return json({});
+    }
+    if (route === 'PUT /api/family/members/u3/ui-mode') {
+      studentUiMode = (state.bodies[route] as { uiMode: 'full' | 'simple' }).uiMode;
+      return json(null, 204);
+    }
+    if (route === 'PATCH /api/me/settings') {
+      const body = state.bodies[route] as { guidance?: boolean; appearance?: Record<string, unknown> };
+      state.guidance = body.guidance ?? state.guidance;
+      if (body.appearance) state.appearance = { ...state.appearance, ...body.appearance };
+      return json({});
+    }
+    if (route === 'PUT /api/me/wallpaper') {
+      state.appearance = { ...state.appearance, hasOwnWallpaper: true, wallpaperVersion: 'v1' };
+      return json({ hasOwnWallpaper: true });
+    }
+    if (route === 'DELETE /api/me/wallpaper') {
+      state.appearance = { ...state.appearance, hasOwnWallpaper: false, wallpaperVersion: null, wallpaper: 'cell' };
+      return json({}, 204);
+    }
     if (route === 'GET /api/family')
       return json({
+        ...FAMILY,
+        family: { ...FAMILY.family, guidance: familyGuidance },
+        members: FAMILY.members.map((m) => (m.userId === 'u3' ? { ...m, uiMode: studentUiMode } : m)),
+        children: FAMILY.children.map((c) => ({ ...c, avatar: avatars[c.studentId] ?? null })),
         matches: matchesPending ? [{ accountId: 'acc-1', studentId: 'kid-shared', name: 'Марк' }] : [],
       });
+    if (route === 'PATCH /api/family') {
+      familyGuidance = (state.bodies[route] as { guidance?: boolean }).guidance ?? familyGuidance;
+      return json({});
+    }
+    if (/^PATCH \/api\/family\/join-requests\//.test(route)) return json(null, 204);
+    if (route === 'POST /api/family/invites')
+      return json({ code: 'K7M2Q9', url: '/join/K7M2Q9', expiresAt: '2026-10-23T16:12:00Z' }, 201);
+    const kidPatch = route.match(/^PATCH \/api\/students\/([^/]+)$/);
+    if (kidPatch) {
+      const traits = (state.bodies[route] as { avatar: unknown }).avatar;
+      avatars[kidPatch[1]!] = traits ? { kind: 'traits', traits } : null;
+      return json({ avatar: avatars[kidPatch[1]!] });
+    }
     if (route === 'POST /api/family/accounts/acc-1/matches/kid-shared') {
       matchesPending = false;
       return json({ outcome: 'followed' });
@@ -832,7 +962,7 @@ export function fakeApi(start: Partial<FakeState> = {}) {
     const kid = route.match(/^GET \/api\/students\/([^/]+)\/(overview|trend|events|school)$/);
     if (kid) {
       const [, id, what] = kid;
-      if (what === 'overview') return json(OVERVIEW[id!]);
+      if (what === 'overview') return json({ nearGoals: null, ...(OVERVIEW[id!] as object), ...state.overview });
       if (what === 'trend') return json(id === 'kid-milena' ? TREND : { period: PERIOD, buckets: [] });
       if (what === 'events')
         return json(

@@ -27,7 +27,11 @@ export function providerLabel(p: Provider, locale: string): string {
   return `${country} · ${p.name}`;
 }
 
-export function ConnectForm() {
+/**
+ * intoFamily: Семья → «Добавить дневник» (7.2): the same fields of the diary, no Marksy login (the person is signed in),
+ * the account goes into the current family; onDone gets the family's new view
+ */
+export function ConnectForm({ intoFamily }: { intoFamily?: { onDone: () => void } } = {}) {
   const t = useT();
   const navigate = useNavigate();
   const queries = useQueryClient();
@@ -56,6 +60,12 @@ export function ConnectForm() {
     setBusy(true);
     setError(null);
     try {
+      if (intoFamily) {
+        await data(api.POST('/api/family/accounts', { body: { providerId: provider.id, credentials: creds, role } }));
+        await queries.invalidateQueries();
+        intoFamily.onDone();
+        return;
+      }
       const res = await data(
         api.POST('/api/auth/connect', {
           body: { providerId: provider.id, credentials: creds, role, user, consentVersion: CONSENT_VERSION },
@@ -112,41 +122,45 @@ export function ConnectForm() {
           onChange={(e) => setCreds({ ...creds, [f.key]: e.target.value })}
         />
       ))}
-      <Field
-        label={t('connect.marksyLogin')}
-        autoComplete="username"
-        required
-        minLength={3}
-        value={user.login}
-        onChange={(e) => setUser({ ...user, login: e.target.value })}
-      />
-      <Field
-        label={t('connect.marksyPassword')}
-        type="password"
-        autoComplete="new-password"
-        placeholder={t('connect.marksyPassword.hint')}
-        required
-        minLength={8}
-        value={user.password}
-        onChange={(e) => setUser({ ...user, password: e.target.value })}
-      />
-      <Field
-        label={t('connect.displayName')}
-        placeholder={t('connect.displayName.hint')}
-        required
-        maxLength={60}
-        value={user.displayName}
-        onChange={(e) => setUser({ ...user, displayName: e.target.value })}
-      />
+      {!intoFamily && (
+        <>
+          <Field
+            label={t('connect.marksyLogin')}
+            autoComplete="username"
+            required
+            minLength={3}
+            value={user.login}
+            onChange={(e) => setUser({ ...user, login: e.target.value })}
+          />
+          <Field
+            label={t('connect.marksyPassword')}
+            type="password"
+            autoComplete="new-password"
+            placeholder={t('connect.marksyPassword.hint')}
+            required
+            minLength={8}
+            value={user.password}
+            onChange={(e) => setUser({ ...user, password: e.target.value })}
+          />
+          <Field
+            label={t('connect.displayName')}
+            placeholder={t('connect.displayName.hint')}
+            required
+            maxLength={60}
+            value={user.displayName}
+            onChange={(e) => setUser({ ...user, displayName: e.target.value })}
+          />
+        </>
+      )}
       {error && (
         <p role="alert" className="text-small text-band-critical-fg">
           {error}
         </p>
       )}
       <Button type="submit" disabled={busy || !provider}>
-        {busy ? t('connect.checking') : t('connect.submit')}
+        {busy ? t('connect.checking') : intoFamily ? t('family.addDiary') : t('connect.submit')}
       </Button>
-      <p className="text-small text-ink3">{t('connect.consent')}</p>
+      <p className="text-small text-ink3">{intoFamily ? t('family.addDiary.note') : t('connect.consent')}</p>
       <BottomSheet open={sheet} onClose={() => setSheet(false)} label={t('connect.provider')}>
         <span className="text-label text-ink3 uppercase">{t('connect.provider')}</span>
         {list.map((p) => (

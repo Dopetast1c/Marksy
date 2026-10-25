@@ -1,4 +1,5 @@
-import type { Request, Response, Router } from 'express';
+import express from 'express';
+import type { Request, RequestHandler, Response, Router } from 'express';
 import { z } from 'zod';
 import type { ZodType } from 'zod';
 import type { MemberRole } from '../family/rules';
@@ -34,6 +35,11 @@ export interface RouteSpec<B extends ZodType, Q extends ZodObjectLike, P extends
   /** The success status and its body (null: no body) */
   status?: 200 | 201 | 204;
   response: ZodType | null;
+  /**
+   * An uploaded picture (14.1): the body is the file's bytes, at most maxBytes, handed to the handler as a Buffer
+   * (input.upload); what it is the handler decides from the bytes, never from the declared type
+   */
+  upload?: { maxBytes: number };
   /** Other answers worth naming in the docs */
   errors?: Partial<Record<400 | 401 | 403 | 404 | 409 | 410 | 429 | 503, string>>;
 }
@@ -42,6 +48,8 @@ export interface Input<B extends ZodType, Q extends ZodObjectLike, P extends Zod
   body: z.infer<B>;
   query: z.infer<Q>;
   params: z.infer<P>;
+  /** the uploaded bytes of an upload route */
+  upload: Buffer;
 }
 
 const openApiPath = (path: string) => path.replace(/:(\w+)/g, '{$1}');
@@ -78,6 +86,9 @@ export function route<
       ...(spec.params && { params: spec.params }),
       ...(spec.query && { query: spec.query }),
       ...(spec.body && { body: { content: { 'application/json': { schema: spec.body } } } }),
+      ...(spec.upload && {
+        body: { content: { 'application/octet-stream': { schema: z.string().meta({ format: 'binary' }) } } },
+      }),
     },
     responses: {
       [status]: spec.response
@@ -97,7 +108,7 @@ function mount<B extends ZodType, Q extends ZodObjectLike, P extends ZodObjectLi
   handler: (req: Request, input: Input<B, Q, P>, res: Response) => Promise<unknown>,
   status: number,
 ): void {
-  router[spec.method](spec.path, async (req, res, next) => {
+  const guard: RequestHandler = (req, _res, next) => {
     try {
       if (spec.access === 'session') authOf(req);
       if (spec.access === 'member') memberOf(req);
@@ -105,10 +116,20 @@ function mount<B extends ZodType, Q extends ZodObjectLike, P extends ZodObjectLi
         const m = memberOf(req);
         if (!spec.access.roles.includes(m.role)) throw new HttpError(403, 'forbidden', 'Your role does not allow this');
       }
+      next();
+    } catch (err) {
+      next(err);
+    }
+  };
+  // an upload reads its bytes only after the access check, within its limit (413 above it)
+  const raw: RequestHandler[] = spec.upload ? [express.raw({ type: () => true, limit: spec.upload.maxBytes })] : [];
+  router[spec.method](spec.path, guard, ...raw, async (req, res, next) => {
+    try {
       const input = {
         body: spec.body ? spec.body.parse(req.body) : undefined,
         query: spec.query ? spec.query.parse(req.query) : {},
         params: spec.params ? spec.params.parse(req.params) : {},
+        upload: spec.upload && Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0),
       } as Input<B, Q, P>;
       const out = await handler(req, input, res);
       if (res.headersSent) return;

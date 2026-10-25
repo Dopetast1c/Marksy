@@ -1,14 +1,28 @@
 import { getProvider } from '@marksy/registry';
-import { and, desc, eq, gt, inArray, isNull, lt } from 'drizzle-orm';
+import { addDays } from '@marksy/core';
+import { and, desc, eq, gt, gte, inArray, isNull, lt, lte } from 'drizzle-orm';
 import { Router } from 'express';
 import { z } from 'zod';
-import { diaryAccounts, lessons, studentSources, syncRuns } from '../db/schema';
+import {
+  apiDriftAcks,
+  apiDriftEvents,
+  diaryAccounts,
+  lessons,
+  schoolYears,
+  studentSources,
+  syncCoverage,
+  syncRuns,
+  terms,
+} from '../db/schema';
 import { localTime } from '../sync/time';
 import type { AppDeps } from '../http/context';
-import { memberOf } from '../http/context';
+import { inBackground, memberOf } from '../http/context';
+import { HttpError } from '../http/errors';
+import { runSync } from '../sync/run';
 import { route } from '../http/route';
 import { registry } from '../openapi';
 import { readSyncConfig } from '../sync/config';
+import { syncPlanOf, syncPlanOut } from '../sync/status';
 import { visibleStudents } from './me';
 
 // Синхронизация (docs/design.md 9, 10.4): how fresh each diary account of the family is, «загружаем» while a run (the
@@ -73,6 +87,8 @@ export function syncRoutes(deps: AppDeps): Router {
               id: z.string(),
               providerId: z.string(),
               providerName: z.string(),
+              /** the diary login, as the family sees it in Семья; null for a student (design.md 7.6) */
+              label: z.string().nullable(),
               status: accountStatus,
               lastSuccessAt: z.date().nullable(),
               lastAttemptAt: z.date().nullable(),
@@ -90,6 +106,8 @@ export function syncRoutes(deps: AppDeps): Router {
               nextAllowedAt: z.date().nullable(),
               /** The children this login reads now */
               studentIds: z.array(z.string()),
+              /** the planner's view: window, next run and why, what it takes, re-scan, drift (status.ts) */
+              plan: syncPlanOut.nullable(),
             }),
           ),
           students: z.array(
@@ -118,6 +136,9 @@ export function syncRoutes(deps: AppDeps): Router {
             .orderBy(desc(syncRuns.startedAt))
         : [];
       const kids = (await visibleStudents(deps.db, m.userId, m.familyId)).map((k) => k.student.id);
+      const student = m.role === 'student';
+      const visiblePlan = (p: Awaited<ReturnType<typeof syncPlanOf>> | null) =>
+        p && { ...p, windowStudentIds: p.windowStudentIds.filter((id) => kids.includes(id)) };
       const active = kids.length
         ? await deps.db
             .select({
@@ -149,6 +170,11 @@ export function syncRoutes(deps: AppDeps): Router {
         const tz = getProvider(src.providerId)?.manifest.timezone ?? 'UTC';
         studentStale.set(id, await missedSchoolDay(deps, [id], src.lastSuccessAt, now, tz, cfg.catchupAfterMs));
       }
+      const plans = new Map<string, Awaited<ReturnType<typeof syncPlanOf>>>();
+      for (const a of accounts) {
+        const manifest = getProvider(a.providerId)?.manifest;
+        if (manifest) plans.set(a.id, await syncPlanOf(deps.db, a, manifest, cfg, now));
+      }
       return {
         accounts: accounts.map((a) => {
           const own = runs.filter((x) => x.diaryAccountId === a.id);
@@ -173,6 +199,7 @@ export function syncRoutes(deps: AppDeps): Router {
             id: a.id,
             providerId: a.providerId,
             providerName: manifest?.name ?? a.providerId,
+            label: student ? null : a.label,
             status,
             lastSuccessAt: a.lastSuccessAt,
             lastAttemptAt: a.lastAttemptAt,
@@ -188,7 +215,11 @@ export function syncRoutes(deps: AppDeps): Router {
             consecutiveFailures: a.consecutiveFailures,
             pausedUntil: a.pausedUntil,
             nextAllowedAt: lastLogin ? new Date(Math.max(lastLogin.getTime() + interval, now.getTime())) : null,
-            studentIds: active.filter((s) => s.accountId === a.id).map((s) => s.studentId),
+            // only the children this person sees; the planner view is the adults' (5.6)
+            studentIds: active
+              .filter((s) => s.accountId === a.id && kids.includes(s.studentId))
+              .map((s) => s.studentId),
+            plan: student ? null : visiblePlan(plans.get(a.id) ?? null),
           };
         }),
         students: kids.map((id) => {
@@ -249,6 +280,176 @@ export function syncRoutes(deps: AppDeps): Router {
         finishedAt: x.finishedAt,
         stats: x.stats,
       }));
+    },
+  );
+
+  /** The family's account by id, or 404 */
+  const accountOf = async (familyId: string, id: string) => {
+    const [a] = await deps.db
+      .select()
+      .from(diaryAccounts)
+      .where(and(eq(diaryAccounts.id, id), eq(diaryAccounts.familyId, familyId)));
+    if (!a) throw new HttpError(404, 'not_found', 'No such diary account');
+    return a;
+  };
+
+  /**
+   * «Обновить сейчас»: one run of the account, drawing from the same login budget as every other run (design.md 10.4).
+   * The run goes on after the answer; the answer says whether it starts, and when the next login is allowed if not.
+   */
+  const refresh = async (userId: string, a: typeof diaryAccounts.$inferSelect) => {
+    const now = deps.now?.() ?? new Date();
+    const interval = (getProvider(a.providerId)?.manifest.limits.minLoginIntervalMinutes ?? 60) * 60_000;
+    const last = [a.lastAttemptAt, a.lastLoginAt].filter((d): d is Date => !!d).sort((x, y) => +y - +x)[0];
+    const retryAt = last && last.getTime() + interval > now.getTime() ? new Date(last.getTime() + interval) : null;
+    // the run records its own decision (a skipped row for a manual try), so the log says what happened either way
+    inBackground(
+      deps,
+      runSync({
+        db: deps.db,
+        accountId: a.id,
+        trigger: `user:${userId}`,
+        config: config(),
+        credentialsKey: deps.credentialsKey,
+        ...(deps.transportFor?.(a.providerId) && { transport: deps.transportFor(a.providerId)! }),
+        ...(deps.now && { now: deps.now }),
+        ...(deps.sleep && { sleep: deps.sleep }),
+        ...(deps.log && { log: deps.log }),
+      }),
+    );
+    if (a.requiresAction) return { started: false, reason: 'action' as const, retryAt: null };
+    if (retryAt) return { started: false, reason: 'interval' as const, retryAt };
+    return { started: true, reason: null, retryAt: null };
+  };
+  const refreshOut = z.object({
+    started: z.boolean(),
+    /** interval: the login budget; action: the diary refused the login, a new password first */
+    reason: z.enum(['interval', 'action']).nullable(),
+    retryAt: z.date().nullable(),
+  });
+
+  route(
+    r,
+    {
+      method: 'post',
+      path: '/api/sync/run',
+      summary: '«Обновить сейчас»: one run of a diary account within its login budget (admin, parent)',
+      tags: ['sync'],
+      access: { roles: ['admin', 'parent'] },
+      body: z.object({ accountId: z.string().uuid() }),
+      response: refreshOut,
+      errors: { 404: 'No such diary account' },
+    },
+    async (req, { body }) => {
+      const m = memberOf(req);
+      return refresh(m.userId, await accountOf(m.familyId, body.accountId));
+    },
+  );
+
+  route(
+    r,
+    {
+      method: 'post',
+      path: '/api/sync/rescan',
+      summary:
+        '«Перепроверить»: the weeks of the current term or school year are read again by the next runs, then one run now',
+      tags: ['sync'],
+      access: { roles: ['admin', 'parent'] },
+      body: z.object({
+        accountId: z.string().uuid(),
+        /** none: every child the login reads */
+        studentIds: z.array(z.string().uuid()).optional(),
+        period: z.enum(['term', 'year']),
+      }),
+      response: refreshOut.extend({ weeks: z.number() }),
+      errors: { 404: 'No such diary account' },
+    },
+    async (req, { body }) => {
+      const m = memberOf(req);
+      const a = await accountOf(m.familyId, body.accountId);
+      const read = await deps.db
+        .select({ studentId: studentSources.studentId })
+        .from(studentSources)
+        .where(and(eq(studentSources.diaryAccountId, a.id), eq(studentSources.active, true)));
+      // only children this person sees (a parent may see some of the family's children)
+      const seen = new Set((await visibleStudents(deps.db, m.userId, m.familyId)).map((k) => k.student.id));
+      const kids = read
+        .map((x) => x.studentId)
+        .filter((id) => seen.has(id) && (!body.studentIds || body.studentIds.includes(id)));
+      // the weeks lose their check: the planner reads them again, the freshest first, as it reads any unverified
+      // week (design.md 10.4); history is never overwritten silently, a changed mark still becomes a mark event
+      let weeks = 0;
+      const tz = getProvider(a.providerId)?.manifest.timezone ?? 'UTC';
+      const today = localTime(deps.now?.() ?? new Date(), tz).date;
+      for (const studentId of kids) {
+        const [year] = await deps.db
+          .select()
+          .from(schoolYears)
+          .where(
+            and(
+              eq(schoolYears.studentId, studentId),
+              lte(schoolYears.startDate, today),
+              gte(schoolYears.endDate, today),
+            ),
+          );
+        if (!year) continue;
+        let from = year.startDate;
+        if (body.period === 'term') {
+          const [term] = await deps.db
+            .select()
+            .from(terms)
+            .where(and(eq(terms.schoolYearId, year.id), lte(terms.startDate, today), gte(terms.endDate, today)));
+          if (term) from = term.startDate;
+        }
+        const gone = await deps.db
+          .delete(syncCoverage)
+          .where(
+            and(
+              eq(syncCoverage.studentId, studentId),
+              gte(syncCoverage.weekStart, addDays(from, -6)),
+              lte(syncCoverage.weekStart, today),
+            ),
+          )
+          .returning();
+        weeks += gone.length;
+      }
+      return { ...(await refresh(m.userId, a)), weeks };
+    },
+  );
+
+  route(
+    r,
+    {
+      method: 'post',
+      path: '/api/sync/drift/:id/ack',
+      summary: '«Понятно, скрыть» for a change in the diary’s API (admin, parent)',
+      tags: ['sync'],
+      access: { roles: ['admin', 'parent'] },
+      params: z.object({ id: z.string().uuid() }),
+      status: 204,
+      response: null,
+      errors: { 404: 'No such change for the family’s diaries' },
+    },
+    async (req, { params }) => {
+      const m = memberOf(req);
+      const providers = (
+        await deps.db
+          .select({ p: diaryAccounts.providerId })
+          .from(diaryAccounts)
+          .where(eq(diaryAccounts.familyId, m.familyId))
+      ).map((x) => x.p);
+      const [event] = providers.length
+        ? await deps.db
+            .select({ id: apiDriftEvents.id })
+            .from(apiDriftEvents)
+            .where(and(eq(apiDriftEvents.id, params.id), inArray(apiDriftEvents.providerId, providers)))
+        : [];
+      if (!event) throw new HttpError(404, 'not_found', 'No such change');
+      // hidden for this family only
+      await deps.db
+        .insert(apiDriftAcks)
+        .values({ familyId: m.familyId, driftEventId: event.id, acknowledgedAt: deps.now?.() ?? new Date() })
+        .onConflictDoNothing();
     },
   );
 

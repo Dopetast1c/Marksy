@@ -276,11 +276,15 @@ async function insertStudent(
       })),
     )
     .returning();
-  await db
-    .insert(holidays)
-    .values(
-      cal.holidays.map((h) => ({ schoolYearId: yearId, startDate: h.from, endDate: h.to, note: h.note ?? null })),
-    );
+  await db.insert(holidays).values(
+    cal.holidays.map((h) => ({
+      schoolYearId: yearId,
+      startDate: h.from,
+      endDate: h.to,
+      note: h.note ?? null,
+      kind: h.kind,
+    })),
+  );
   await db.insert(studentYears).values({
     studentId,
     schoolYearId: yearId,

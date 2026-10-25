@@ -1,7 +1,9 @@
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import { and, eq } from 'drizzle-orm';
 import request from 'supertest';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { settle, testApp } from '../../test/app';
+import { settle, testApp, TEST_UPLOADS_DIR } from '../../test/app';
 import { agentWith, CONSENT, connectFamily, otherParentTransport } from '../../test/connect';
 import type { TestAgent } from '../../test/connect';
 import { resetDb, testDb } from '../../test/db';
@@ -19,6 +21,7 @@ import {
   users,
 } from '../db/schema';
 import { storeStudents } from '../sync/store-school';
+import { jpegWithGps } from '../../test/images';
 
 const db = testDb();
 
@@ -110,7 +113,13 @@ describe('family', () => {
     // asking twice is asking once
     expect((await ask()).body).toEqual({ outcome: 'requested' });
     const pending = (await mama.get('/api/family')).body.joinRequests;
-    expect(pending).toEqual([expect.objectContaining({ displayName: 'Папа' })]);
+    // who asks and with which diary: the admin decides whom to let in (D54's one exception)
+    expect(pending).toEqual([
+      expect.objectContaining({
+        displayName: 'Папа',
+        diary: { providerName: expect.any(String), label: 'other-diary-user' },
+      }),
+    ]);
     expect((await mama.patch(`/api/family/join-requests/${pending[0].id}`).send({ approve: true })).status).toBe(204);
     const [account] = await db.select().from(diaryAccounts).where(eq(diaryAccounts.id, body.connect.accountId));
     expect(account!.familyId).toBe(first.family.id);
@@ -149,6 +158,101 @@ describe('family', () => {
     expect(stale.body.error.code).toBe('request_stale');
     const [account] = await db.select().from(diaryAccounts).where(eq(diaryAccounts.id, body.connect.accountId));
     expect(account!.familyId).toBe(body.family.id);
+  });
+
+  it('the family’s «Подсказки» switch is the admin’s; advice shows only when it and the person’s own are on', async () => {
+    const mama = agentWith();
+    await connectFamily(mama);
+    expect((await mama.get('/api/family')).body.family.guidance).toBe(true);
+    const off = await mama.patch('/api/family').send({ guidance: false });
+    expect(off.status).toBe(200);
+    expect(off.body.family).toMatchObject({ guidance: false, parentsCanInvite: true });
+    // the person's own switch stays on: their own setting, the family's decides too
+    expect((await mama.get('/api/auth/me')).body.user.guidance).toBe(true);
+    const [family] = await db.select().from(families);
+    expect(family!.settings.guidance).toBe(false);
+    const code = await invite(mama, 'parent');
+    const papa = agentWith();
+    expect(
+      (
+        await papa
+          .post(`/api/invites/${code}/accept`)
+          .send({ login: 'papa2@example.com', password: 'correct horse battery', displayName: 'Папа' })
+      ).status,
+    ).toBe(200);
+    expect((await papa.patch('/api/family').send({ guidance: true })).status).toBe(403);
+  });
+
+  it('a child’s avatar: set by a parent, seen by every family that follows the child, never by a student’s hand', async () => {
+    const mama = agentWith();
+    await connectFamily(mama);
+    const { agent: papa, body } = await secondFamily();
+    const shared = body.connect.matches[0]!.studentId;
+    await papa.post(`/api/family/accounts/${body.connect.accountId}/matches/${shared}`).send({ action: 'follow' });
+    const traits = {
+      age: 'kid',
+      look: 'boy',
+      skin: 'light',
+      hair: 'dark',
+      style: 'short',
+      eyes: 'brown',
+      glasses: false,
+    };
+    const set = await mama.patch(`/api/students/${shared}`).send({ avatar: traits });
+    expect(set.body.avatar).toEqual({ kind: 'traits', traits });
+    const papaKid = (await papa.get('/api/auth/me')).body.students[0];
+    expect(papaKid.avatar).toEqual({ kind: 'traits', traits });
+    expect((await mama.patch(`/api/students/${shared}`).send({ avatar: { ...traits, hair: 'green' } })).status).toBe(
+      400,
+    );
+    expect((await mama.patch(`/api/students/${shared}`).send({ avatar: null })).body.avatar).toBeNull();
+    // a child of another family is not reachable
+    const own = (await mama.get('/api/auth/me')).body.students.map((x: { id: string }) => x.id);
+    const notPapas = own.find((x: string) => x !== shared);
+    expect((await papa.patch(`/api/students/${notPapas}`).send({ avatar: traits })).status).toBe(404);
+  });
+
+  it('a child’s photo: a JPEG with GPS in its EXIF is kept without it, served to both families, to nobody else', async () => {
+    const mama = agentWith();
+    await connectFamily(mama);
+    const { agent: papa, body } = await secondFamily();
+    const shared = body.connect.matches[0]!.studentId;
+    await papa.post(`/api/family/accounts/${body.connect.accountId}/matches/${shared}`).send({ action: 'follow' });
+    const put = await mama.put(`/api/students/${shared}/photo`).set('Content-Type', 'image/jpeg').send(jpegWithGps());
+    expect(put.status).toBe(200);
+    expect(put.body.avatar).toEqual({
+      kind: 'photo',
+      url: expect.stringContaining(`/api/students/${shared}/photo?v=`),
+    });
+    for (const agent of [mama, papa]) {
+      const got = await agent
+        .get(`/api/students/${shared}/photo`)
+        .buffer(true)
+        .parse((res, done) => {
+          const parts: Buffer[] = [];
+          res.on('data', (c: Buffer) => parts.push(c));
+          res.on('end', () => done(null, Buffer.concat(parts)));
+        });
+      expect(got.status).toBe(200);
+      expect(got.headers['content-type']).toBe('image/jpeg');
+      const text = (got.body as Buffer).toString('latin1');
+      expect(text).toContain('JFIF');
+      for (const gone of ['Exif', 'GPS', 'xmpmeta', 'taken at home']) expect(text).not.toContain(gone);
+    }
+    expect((await request(testApp()).get(`/api/students/${shared}/photo`)).status).toBe(401);
+    // the declared type means nothing: an SVG sent as a JPEG is refused; so is a picture larger than 512 px
+    const svg = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"><script/></svg>');
+    expect((await mama.put(`/api/students/${shared}/photo`).set('Content-Type', 'image/jpeg').send(svg)).status).toBe(
+      400,
+    );
+    expect(
+      (await mama.put(`/api/students/${shared}/photo`).set('Content-Type', 'image/jpeg').send(jpegWithGps(800, 800)))
+        .status,
+    ).toBe(400);
+    expect((await mama.put(`/api/students/${shared}/photo`).send(Buffer.alloc(2_100_000))).status).toBe(413);
+    // traits instead: the photo goes, the file too
+    await mama.patch(`/api/students/${shared}`).send({ avatar: null });
+    expect((await mama.get(`/api/students/${shared}/photo`)).status).toBe(404);
   });
 
   it('a student sees exactly one child: becoming a student needs that one child', async () => {
@@ -221,6 +325,13 @@ describe('family', () => {
     await secondFamily().then(({ agent, body }) =>
       agent.post(`/api/family/accounts/${body.connect.accountId}/matches/${shared.id}`).send({ action: 'follow' }),
     );
+    // a photo of the child whose data goes: the file goes at once, not with the next day's janitor
+    expect(
+      (await mama.put(`/api/students/${lonely.id}/photo`).set('Content-Type', 'image/jpeg').send(jpegWithGps())).status,
+    ).toBe(200);
+    const [before] = await db.select().from(students).where(eq(students.id, lonely.id));
+    const file = join(TEST_UPLOADS_DIR, (before!.avatar as { key: string }).key);
+    expect(existsSync(file)).toBe(true);
     for (const s of [lonely, shared]) await mama.delete(`/api/family/students/${s.id}`);
     expect(
       (await mama.delete(`/api/family/students/${shared.id}/data`).send({ confirm: shared.name })).body.error.code,
@@ -231,6 +342,7 @@ describe('family', () => {
     );
     expect(await db.select().from(students).where(eq(students.id, lonely.id))).toEqual([]);
     expect(await db.select().from(students).where(eq(students.id, shared.id))).toHaveLength(1);
+    expect(existsSync(file)).toBe(false);
   });
 
   it('invites: a hashed single-use code; a new person or a signed-in one (a second family)', async () => {
@@ -277,7 +389,18 @@ describe('family', () => {
     const [kidUser] = await db.select().from(users).where(eq(users.login, 'kid@example.com'));
     const rules = await db.select().from(alertRules).where(eq(alertRules.userId, kidUser!.id));
     expect(new Set(rules.map((r) => r.studentId))).toEqual(new Set([kid.id]));
+    // simple mode (5.7): a parent switches it for the student, the student for themselves; nobody else has it
+    expect((await mama.put(`/api/family/members/${kidUser!.id}/ui-mode`).send({ uiMode: 'simple' })).status).toBe(204);
+    expect((await student.get('/api/auth/me')).body.user.uiMode).toBe('simple');
+    const view = (await mama.get('/api/family')).body as { members: { userId: string; uiMode: string }[] };
+    expect(view.members.find((m) => m.userId === kidUser!.id)?.uiMode).toBe('simple');
+    expect((await student.patch('/api/me').send({ uiMode: 'full' })).status).toBeLessThan(300);
+    expect((await student.get('/api/auth/me')).body.user.uiMode).toBe('full');
     const [mamaUser] = await db.select().from(users).where(eq(users.login, 'parent@example.com'));
+    expect((await mama.put(`/api/family/members/${mamaUser!.id}/ui-mode`).send({ uiMode: 'simple' })).status).toBe(400);
+    expect((await student.put(`/api/family/members/${kidUser!.id}/ui-mode`).send({ uiMode: 'simple' })).status).toBe(
+      403,
+    );
     expect((await mama.delete(`/api/family/members/${mamaUser!.id}`)).body.error.code).toBe('last_admin');
     expect((await student.delete(`/api/family/members/${kidUser!.id}`)).status).toBe(204);
   });

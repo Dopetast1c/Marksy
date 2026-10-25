@@ -13,6 +13,7 @@ import type {
   WeekTemplate,
   WorkType,
 } from '@marksy/core';
+import { holidayKind } from '@marksy/core';
 import type {
   BellsRaw,
   FinalRow,
@@ -63,7 +64,10 @@ export function mapCalendar(y: YearResponse, check: DriftCheck): Calendar {
         end: p.till,
         ...remark(p.remark),
       })),
-    holidays: y.breaks.map((b) => ({ from: b.from, to: b.till, ...remark(b.remark) })),
+    holidays: y.breaks.map((b) => {
+      const kind = holidayKind.safeParse(b.kind);
+      return { from: b.from, to: b.till, ...remark(b.remark), ...(kind.success && { kind: kind.data }) };
+    }),
     ...(!y.graded && { gradingScaleId: null }),
   };
 }

@@ -20,7 +20,7 @@ import { childName, chooseMatch, decideJoin, deleteChildData, followAgain, stopF
 import { connectDiary } from '../family/connect';
 import { eraseFamily, exportFamily } from '../family/data';
 import { createInvite } from '../family/invites';
-import { changeMember, removeMember } from '../family/members';
+import { changeMember, removeMember, setStudentUiMode } from '../family/members';
 import type { AppDeps } from '../http/context';
 import { connectDepsOf, inBackground, memberOf } from '../http/context';
 import { HttpError } from '../http/errors';
@@ -29,6 +29,9 @@ import type { Limiters } from '../http/rate-limit';
 import { route } from '../http/route';
 import { diaryKey } from './auth';
 import { registry } from '../openapi';
+import { avatarOf, avatarOut } from '../students/avatar';
+import { familyPictureKeys, forgetPictures, pictureKeys } from '../uploads/forget';
+import { DEFAULT_UPLOADS_DIR } from '../uploads/store';
 import { studentScale } from '../students/scale';
 
 // Семья (docs/design.md 5.6, 7, 9, 14.1): members, diary accounts, the children the family follows, invites, join
@@ -43,9 +46,19 @@ const admin = { roles: ['admin'] as ('admin' | 'parent' | 'student')[] };
 const familyView = registry.register(
   'Family',
   z.object({
-    family: z.object({ id: z.string(), name: z.string(), parentsCanInvite: z.boolean() }),
+    /** guidance: the family's «Подсказки» switch (admin); advice shows when the person's own is on too */
+    family: z.object({ id: z.string(), name: z.string(), parentsCanInvite: z.boolean(), guidance: z.boolean() }),
     role,
-    members: z.array(z.object({ userId: z.string(), displayName: z.string(), role, studentIds: z.array(z.string()) })),
+    /** uiMode: a student member's simple mode (5.7), which the admin and parents may switch */
+    members: z.array(
+      z.object({
+        userId: z.string(),
+        displayName: z.string(),
+        role,
+        studentIds: z.array(z.string()),
+        uiMode: z.enum(['full', 'simple']),
+      }),
+    ),
     accounts: z.array(
       z.object({
         id: z.string(),
@@ -67,6 +80,7 @@ const familyView = registry.register(
         status: z.enum(['active', 'suspended', 'stopped']),
         /** «Также следит другая семья»: nothing more about that family */
         sharedWithOtherFamily: z.boolean(),
+        avatar: avatarOut,
         settings: z.object({
           lowMark: z.number().nullable(),
           dropStep: z.number().nullable(),
@@ -77,7 +91,15 @@ const familyView = registry.register(
     /** Children of the family's logins that another family follows: join or follow (design.md 7.2 step 3) */
     matches: z.array(z.object({ accountId: z.string(), studentId: z.string(), name: z.string() })),
     /** For the admin: people who asked to join with their diary login */
-    joinRequests: z.array(z.object({ id: z.string(), displayName: z.string(), createdAt: z.date() })),
+    joinRequests: z.array(
+      z.object({
+        id: z.string(),
+        displayName: z.string(),
+        createdAt: z.date(),
+        /** the diary they connected: its system and login, so the admin knows whom they let in (D54) */
+        diary: z.object({ providerName: z.string(), label: z.string() }).nullable(),
+      }),
+    ),
   }),
 );
 
@@ -85,7 +107,7 @@ async function viewFamily(db: Db, familyId: string, myRole: 'admin' | 'parent' |
   const [family] = await db.select().from(families).where(eq(families.id, familyId));
   if (!family) throw new HttpError(404, 'not_found', 'No such family');
   const people = await db
-    .select({ userId: users.id, displayName: users.displayName, role: memberships.role })
+    .select({ userId: users.id, displayName: users.displayName, role: memberships.role, uiMode: users.uiMode })
     .from(memberships)
     .innerJoin(users, eq(users.id, memberships.userId))
     .where(eq(memberships.familyId, familyId))
@@ -132,9 +154,16 @@ async function viewFamily(db: Db, familyId: string, myRole: 'admin' | 'parent' |
   const requests =
     myRole === 'admin'
       ? await db
-          .select({ id: joinRequests.id, displayName: users.displayName, createdAt: joinRequests.createdAt })
+          .select({
+            id: joinRequests.id,
+            displayName: users.displayName,
+            createdAt: joinRequests.createdAt,
+            providerId: diaryAccounts.providerId,
+            label: diaryAccounts.label,
+          })
           .from(joinRequests)
           .innerJoin(users, eq(users.id, joinRequests.fromUserId))
+          .leftJoin(diaryAccounts, eq(diaryAccounts.id, joinRequests.diaryAccountId))
           .where(and(eq(joinRequests.familyId, familyId), eq(joinRequests.status, 'pending')))
       : [];
   return {
@@ -142,6 +171,7 @@ async function viewFamily(db: Db, familyId: string, myRole: 'admin' | 'parent' |
       id: family.id,
       name: family.name,
       parentsCanInvite: family.settings.parents_can_invite ?? true,
+      guidance: family.settings.guidance !== false,
     },
     role: myRole,
     members: people.map((p) => ({
@@ -164,6 +194,7 @@ async function viewFamily(db: Db, familyId: string, myRole: 'admin' | 'parent' |
       schoolLabel: student.schoolLabel,
       status: link.status,
       sharedWithOtherFamily: shared.has(student.id),
+      avatar: avatarOf(student.avatar, student.id),
       settings: {
         lowMark: link.settings.low_mark ?? null,
         dropStep: link.settings.drop_step ?? null,
@@ -176,7 +207,10 @@ async function viewFamily(db: Db, familyId: string, myRole: 'admin' | 'parent' |
         const student = pending.find((p) => p.id === s.studentId)!;
         return { accountId: s.accountId, studentId: s.studentId, name: childName(student) };
       }),
-    joinRequests: requests,
+    joinRequests: requests.map(({ providerId, label, ...r }) => ({
+      ...r,
+      diary: providerId && label ? { providerName: getProvider(providerId)?.manifest.name ?? providerId, label } : null,
+    })),
   };
 }
 
@@ -411,7 +445,12 @@ export function familyRoutes(deps: AppDeps, limiters: Limiters): Router {
       response: null,
       errors: { 400: 'The typed name does not match', 409: 'Not stopped, or another family follows the child' },
     },
-    async (req, { params, body }) => deleteChildData(deps.db, memberOf(req).familyId, params.id, body.confirm),
+    async (req, { params, body }) => {
+      // the child's photo goes with the child's data, at once (10.4)
+      const keys = await pictureKeys(deps.db, { studentIds: [params.id] });
+      await deleteChildData(deps.db, memberOf(req).familyId, params.id, body.confirm);
+      await forgetPictures(deps.db, deps.uploadsDir ?? DEFAULT_UPLOADS_DIR, keys);
+    },
   );
 
   route(
@@ -456,6 +495,23 @@ export function familyRoutes(deps: AppDeps, limiters: Limiters): Router {
   route(
     r,
     {
+      method: 'put',
+      path: '/api/family/members/:id/ui-mode',
+      summary: "A student member's simple mode (5.7), switched by the admin or a parent",
+      tags: ['family'],
+      access: adults,
+      params: z.object({ id }),
+      body: z.object({ uiMode: z.enum(['full', 'simple']) }),
+      status: 204,
+      response: null,
+      errors: { 400: 'The member is not a student', 404: 'No such member' },
+    },
+    async (req, { params, body }) => setStudentUiMode(deps.db, memberOf(req).familyId, params.id, body.uiMode),
+  );
+
+  route(
+    r,
+    {
       method: 'delete',
       path: '/api/family/members/:id',
       summary: 'Remove a member (admin), or leave the family (yourself)',
@@ -490,6 +546,33 @@ export function familyRoutes(deps: AppDeps, limiters: Limiters): Router {
   route(
     r,
     {
+      method: 'patch',
+      path: '/api/family',
+      summary: 'The family’s switches (admin): «Подсказки» for everyone, whether parents may invite',
+      tags: ['family'],
+      access: admin,
+      body: z.object({ guidance: z.boolean().optional(), parentsCanInvite: z.boolean().optional() }),
+      response: familyView,
+    },
+    async (req, { body }) => {
+      const m = memberOf(req);
+      const [f] = await deps.db
+        .select({ settings: families.settings })
+        .from(families)
+        .where(eq(families.id, m.familyId));
+      const settings: FamilySettings = {
+        ...(f?.settings ?? {}),
+        ...(body.guidance !== undefined && { guidance: body.guidance }),
+        ...(body.parentsCanInvite !== undefined && { parents_can_invite: body.parentsCanInvite }),
+      };
+      await deps.db.update(families).set({ settings }).where(eq(families.id, m.familyId));
+      return viewFamily(deps.db, m.familyId, m.role);
+    },
+  );
+
+  route(
+    r,
+    {
       method: 'delete',
       path: '/api/family',
       summary: 'Erase the family (admin, typed confirmation: the family name)',
@@ -500,7 +583,13 @@ export function familyRoutes(deps: AppDeps, limiters: Limiters): Router {
       response: null,
       errors: { 400: 'The typed name does not match' },
     },
-    async (req, { body }) => eraseFamily(deps.db, memberOf(req).familyId, body.confirm),
+    async (req, { body }) => {
+      const familyId = memberOf(req).familyId;
+      // the children's photos and the members' wallpapers go with the family, unless a row elsewhere still has them
+      const keys = await familyPictureKeys(deps.db, familyId);
+      await eraseFamily(deps.db, familyId, body.confirm);
+      await forgetPictures(deps.db, deps.uploadsDir ?? DEFAULT_UPLOADS_DIR, keys);
+    },
   );
 
   return r;

@@ -4,11 +4,13 @@ import { getProvider } from '@marksy/registry';
 import { and, asc, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import type { Db } from '../db/client';
-import { families, familyStudents, memberships, students, userStudentAccess, users } from '../db/schema';
+import { families, familyStudents, memberships, students, userFiles, userStudentAccess, users } from '../db/schema';
 import { childName } from '../family/children';
 import type { Auth } from '../http/context';
 import { HttpError } from '../http/errors';
 import { registry } from '../openapi';
+import { avatarOf, avatarOut } from '../students/avatar';
+import { appearanceOf, appearanceOut } from '../family/appearance';
 import { studentScale } from '../students/scale';
 
 // Who is signed in and what they may see (docs/design.md 9, GET /api/auth/me): the person, their families, the current
@@ -30,6 +32,8 @@ export const studentSummary = registry.register(
     capabilities,
     /** null: a year without marks (ux-principles D49) */
     gradingScale: gradingScale.nullable(),
+    /** traits or a photo; null: the neutral look until the family sets one */
+    avatar: avatarOut,
   }),
 );
 
@@ -43,6 +47,10 @@ export const meResponse = registry.register(
       locale: z.string(),
       timezone: z.string().nullable(),
       uiMode: z.enum(['full', 'simple']),
+      /** The person's own «Подсказки» switch (users.settings.guidance); advice shows when the family's is on too */
+      guidance: z.boolean(),
+      /** Оформление (5.6a): personal, applied on every device the person signs in on */
+      appearance: appearanceOut,
     }),
     memberships: z.array(z.object({ familyId: z.string(), familyName: z.string(), role })),
     family: z.object({ id: z.string(), name: z.string(), role }).nullable(),
@@ -70,6 +78,11 @@ export async function visibleStudents(db: Db, userId: string, familyId: string) 
 
 export async function buildMe(db: Db, auth: Pick<Auth, 'userId' | 'familyId'>): Promise<z.infer<typeof meResponse>> {
   const [user] = await db.select().from(users).where(eq(users.id, auth.userId));
+  const [ownWallpaper] = await db
+    .select({ id: userFiles.id })
+    .from(userFiles)
+    .where(and(eq(userFiles.userId, auth.userId), eq(userFiles.kind, 'wallpaper')))
+    .limit(1);
   if (!user) throw new HttpError(401, 'unauthorized', 'Sign in first');
   const rows = await db
     .select({ familyId: memberships.familyId, familyName: families.name, role: memberships.role })
@@ -93,6 +106,7 @@ export async function buildMe(db: Db, auth: Pick<Auth, 'userId' | 'familyId'>): 
       providerId: student.providerId,
       capabilities: manifest.capabilities,
       gradingScale: await studentScale(db, student.id),
+      avatar: avatarOf(student.avatar, student.id),
     });
   }
   return {
@@ -103,6 +117,8 @@ export async function buildMe(db: Db, auth: Pick<Auth, 'userId' | 'familyId'>): 
       locale: user.locale,
       timezone: user.timezone,
       uiMode: user.uiMode,
+      guidance: user.settings.guidance !== false,
+      appearance: appearanceOf(user.settings, ownWallpaper?.id ?? null),
     },
     memberships: rows,
     family: current ? { id: current.familyId, name: current.familyName, role: current.role } : null,

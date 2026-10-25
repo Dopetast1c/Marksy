@@ -19,6 +19,8 @@ const FILL = {
 const SIZE = {
   normal: 'h-[30px] min-w-[30px] rounded-[9px] px-[7px] text-[14px]',
   small: 'h-6 min-w-6 rounded-[7px] px-[5px] text-[12px]',
+  // simple mode's «Сегодня» (5.7)
+  large: 'h-11 min-w-11 rounded-[12px] px-2 text-[20px]',
 } as const;
 
 const QUIET = 'border-[1.5px] border-line bg-transparent font-bold text-ink3';
@@ -26,10 +28,12 @@ const QUIET = 'border-[1.5px] border-line bg-transparent font-bold text-ink3';
 export function MarkChip({
   mark,
   small = false,
+  large = false,
   change,
 }: {
   mark: Mark;
   small?: boolean;
+  large?: boolean;
   /** the teacher corrected this mark (the row says what it was) or removed it */
   change?: 'changed' | 'removed';
 }) {
@@ -40,7 +44,7 @@ export function MarkChip({
       : 'bg-band-ok-bg text-band-ok-fg';
   return (
     <span
-      className={`inline-flex flex-none items-center justify-center font-extrabold tabular-nums ${SIZE[small ? 'small' : 'normal']} ${look}`}
+      className={`inline-flex flex-none items-center justify-center font-extrabold tabular-nums ${SIZE[small ? 'small' : large ? 'large' : 'normal']} ${look}`}
     >
       {mark.raw}
     </span>

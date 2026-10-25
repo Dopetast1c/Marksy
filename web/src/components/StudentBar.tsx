@@ -7,7 +7,7 @@ import { useMe, useStudentCards } from '../api/queries';
 import { useT } from '../i18n';
 import { AVATAR_SLOT_PX, fitAvatars, TITLE_MIN_PX } from '../lib/fit-bar';
 import { useDevice } from '../state/store';
-import { Avatar, defaultTraits } from './Avatar';
+import { StudentAvatar } from './ChildAvatar';
 import { BottomSheet, SheetOption } from './BottomSheet';
 
 // The child switcher in every student header (docs/design.md 4, ux-principles D8): avatars only, the family order,
@@ -99,7 +99,7 @@ export function StudentBar({ activeId }: { activeId: string }) {
             onClick={() => !on && switchTo(activeId, k.id)}
             className={`relative grid size-10 place-items-center rounded-pill transition-opacity after:absolute after:-inset-0.5 ${on ? 'opacity-100 outline-[2.5px] outline-offset-1 outline-accent outline-solid' : 'opacity-55 hover:opacity-90'}`}
           >
-            <Avatar traits={defaultTraits(k.grade)} index={i} />
+            <StudentAvatar studentId={k.id} index={i} />
             {alert && (
               <i className="absolute -top-0.5 -right-0.5 size-3 rounded-pill border-2 border-bg bg-band-critical-fg" />
             )}
@@ -121,7 +121,7 @@ export function StudentBar({ activeId }: { activeId: string }) {
         <span className="text-label text-ink3 uppercase">{t('header.students')}</span>
         {kids.map((k, i) => (
           <div key={k.id} className="flex items-center gap-3">
-            <Avatar traits={defaultTraits(k.grade)} index={i} size={40} />
+            <StudentAvatar studentId={k.id} index={i} size={40} />
             <SheetOption
               title={k.name}
               {...(k.classLabel ? { sub: k.classLabel } : {})}

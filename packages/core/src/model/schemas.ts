@@ -56,8 +56,12 @@ export const term = z.object({
 });
 export type Term = z.infer<typeof term>;
 
-/** A break in the school year; a range of days with an optional remark from the system */
-export const holiday = dateRange.extend({ note: z.string().optional() });
+/** Which holidays these are, when the system says so; the app names them from it ('Осенние каникулы'), never by month */
+export const holidayKind = z.enum(['autumn', 'winter', 'spring', 'summer', 'additional', 'other']);
+export type HolidayKind = z.infer<typeof holidayKind>;
+
+/** A break in the school year; a range of days with an optional remark and kind from the system */
+export const holiday = dateRange.extend({ note: z.string().optional(), kind: holidayKind.optional() });
 export type Holiday = z.infer<typeof holiday>;
 
 export const calendar = z.object({

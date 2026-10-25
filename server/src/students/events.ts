@@ -2,7 +2,7 @@ import { addDays, bandOf, compareSubjects, isLowMark, markBand, previousInstance
 import type { ISODate } from '@marksy/core';
 import { and, desc, eq, gte, lte } from 'drizzle-orm';
 import type { Db } from '../db/client';
-import { markEvents, marks, subjects } from '../db/schema';
+import { diaryAccounts, markEvents, marks, studentSources, subjects } from '../db/schema';
 import type { MarkDiff } from '../db/schema';
 import type { ChildContext, ResolvedPeriod } from './context';
 import { absencesIn, chipOf, factOf, marksIn, refOf, refOrNull, remarksIn, subjectsOf } from './data';
@@ -23,14 +23,20 @@ export interface ChildEvent {
     | 'average_down'
     | 'average_up'
     | 'teacher_comment'
-    | 'holidays_ahead';
+    | 'holidays_ahead'
+    | 'account_action';
   severity: EventSeverity;
   date: ISODate;
   subject: { id: string; name: string; color: string | null } | null;
   /** The facts the row shows; the app words them */
   facts: Record<string, unknown>;
   /** Where a tap goes */
-  link: { screen: 'subject' | 'schedule' | 'school'; subjectId?: string; lessonId?: string | null; date?: ISODate };
+  link: {
+    screen: 'subject' | 'schedule' | 'school' | 'sync';
+    subjectId?: string;
+    lessonId?: string | null;
+    date?: ISODate;
+  };
 }
 
 /** A teacher's comment is a fact for 7 days (design.md 5.2a, D56) */
@@ -155,6 +161,31 @@ export async function childEvents(db: Db, ctx: ChildContext, p: ResolvedPeriod):
     });
   }
 
+  // the diary account that reads the child needs a new password or a code: for the admin and parents of the family
+  // that owns it (5.2a); the diary refused the login, nothing is read until someone acts
+  if (ctx.role !== 'student' && (!p.instance || p.instance.offset === 0)) {
+    const [source] = await db
+      .select({ requiresAction: diaryAccounts.requiresAction, accountId: diaryAccounts.id })
+      .from(studentSources)
+      .innerJoin(diaryAccounts, eq(diaryAccounts.id, studentSources.diaryAccountId))
+      .where(
+        and(
+          eq(studentSources.studentId, ctx.student.id),
+          eq(studentSources.active, true),
+          eq(diaryAccounts.familyId, ctx.familyId),
+        ),
+      );
+    if (source?.requiresAction)
+      out.push({
+        kind: 'account_action',
+        severity: 'critical',
+        date: ctx.today,
+        subject: null,
+        facts: { action: source.requiresAction },
+        link: { screen: 'sync' },
+      });
+  }
+
   // holidays within 7 days: a fact about the future, only in the current instance (5.2a)
   if (!p.instance || p.instance.offset === 0) {
     const next = ctx.holidayRows.find((h) => h.start > ctx.today && h.start <= addDays(ctx.today, HOLIDAYS_AHEAD_DAYS));
@@ -164,7 +195,7 @@ export async function childEvents(db: Db, ctx: ChildContext, p: ResolvedPeriod):
         severity: 'neutral',
         date: next.start,
         subject: null,
-        facts: { start: next.start, end: next.end, note: next.note },
+        facts: { start: next.start, end: next.end, note: next.note, kind: next.kind },
         link: { screen: 'school' },
       });
   }

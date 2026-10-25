@@ -1669,7 +1669,7 @@ function renderHomeSimple() {
       ${today.length ? `<div class="bigchips">${today.map(m => `<button class="bigchip" data-subject="${m.subjectId}">${chip(m)}<span>${esc(m.subject)}</span></button>`).join('')}</div>` : '<div class="muted">Оценок сегодня нет</div>'}</div>
     ${todo.length ? `<div class="sect"><h2>Не забыть</h2></div><div class="list-card rows">${todo.map(w => `<div class="row"><span class="stripe ${w.cls}"></span><span class="main"><span class="t" style="white-space:normal">${w.tag.name}: ${esc(w.subject)}</span><span class="s">${w.when}</span></span></div>`).join('')}</div>` : ''}
     ${next.length ? `<div class="sect"><h2>${dayLabel(nextDate)}</h2><span class="muted small">${next.length} ${plural(next.length, 'урок', 'урока', 'уроков')}</span></div>
-    <div class="list-card">${next.map(l => `<div class="lesson"><div class="n"><b>${l.number}</b><span>${l.time}</span></div><div class="c"><div class="t"><button class="linkish" data-subject="${l.subjectId}">${esc(l.subject)}</button></div>${l.homework ? `<label class="hw" style="cursor:pointer"><input type="checkbox" style="margin:0 4px 0 0"> <span>${esc(l.homework)}</span></label>` : ''}</div><div></div></div>`).join('')}</div>` : ''}
+    <div class="list-card">${next.map(l => `<div class="lesson"><div class="n"><b>${l.number}</b><span>${l.time}</span></div><div class="c"><div class="t"><button class="linkish" data-subject="${l.subjectId}">${esc(l.subject)}</button></div>${l.homework ? `<div class="hw">${esc(l.homework)}</div>` : ''}<button class="btn" style="margin-top:8px;min-height:48px;font-size:16px" aria-pressed="false">Готово</button></div><div></div></div>`).join('')}</div>` : ''}
     <div class="sync-foot"><span>Обновлено сегодня в 12:17</span></div>
   </div>`;
 }

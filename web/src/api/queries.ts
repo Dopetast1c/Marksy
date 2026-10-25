@@ -260,6 +260,13 @@ export function useLessonActions(id: string) {
           }
         : d,
     );
+  // Главная's next day comes with the overview: its rows change at once too
+  const patchOverview = (lessonId: string, fn: (l: Lesson) => Lesson) =>
+    client.setQueriesData<Overview>({ queryKey: ['overview', id] }, (d) =>
+      d?.nextDay
+        ? { ...d, nextDay: { ...d.nextDay, lessons: d.nextDay.lessons.map((l) => (l.id === lessonId ? fn(l) : l)) } }
+        : d,
+    );
   const refresh = () =>
     client.invalidateQueries({ predicate: (q) => q.queryKey[1] === id || q.queryKey[0] === 'students' });
   const path = (lessonId: string) => ({ params: { path: { id, lessonId } } });
@@ -270,13 +277,13 @@ export function useLessonActions(id: string) {
           ? api.PUT('/api/students/{id}/lessons/{lessonId}/prep', path(lessonId))
           : api.DELETE('/api/students/{id}/lessons/{lessonId}/prep', path(lessonId)),
       ),
-    onMutate: ({ lessonId, done }) =>
-      patch(lessonId, (l) => ({
-        ...l,
-        ready: done
-          ? { at: new Date().toISOString(), by: { name: me.data?.user.displayName ?? null, otherFamily: false } }
-          : null,
-      })),
+    onMutate: ({ lessonId, done }) => {
+      const ready = done
+        ? { at: new Date().toISOString(), by: { name: me.data?.user.displayName ?? null, otherFamily: false } }
+        : null;
+      patch(lessonId, (l) => ({ ...l, ready }));
+      patchOverview(lessonId, (l) => ({ ...l, ready }));
+    },
     onSettled: refresh,
   });
   const cancel = useMutation({
@@ -309,3 +316,19 @@ export function useLessonActions(id: string) {
   });
   return { prep, cancel, homework };
 }
+
+export type FamilyView = Schemas['Family'];
+
+/** Семья (design.md 5.6): members, diaries, children, join requests; admin and parents */
+export const useFamily = () =>
+  useQuery({ queryKey: ['family'], queryFn: () => data(api.GET('/api/family')), staleTime: 30_000 });
+
+export type SyncStatus = Schemas['SyncStatus'];
+
+/** The run log of Синхронизация (design.md 5.6, 90 days kept) */
+export const useSyncRuns = () =>
+  useQuery({
+    queryKey: ['sync-runs'],
+    queryFn: () => data(api.GET('/api/sync/runs', { params: { query: { limit: 30 } } })),
+    staleTime: 30_000,
+  });

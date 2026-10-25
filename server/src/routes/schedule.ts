@@ -10,6 +10,7 @@ import { loadChild } from '../students/context';
 import { factOf, lessonsIn, marksIn, refOf, subjectsOf } from '../students/data';
 import { finalsOf, finalsState, lastYearFinals, termCell, termRef, yearCell } from '../students/finals';
 import { lessonNotes } from '../students/lesson-notes';
+import { manualFinalsIn, putManualFinals } from '../students/manual-finals';
 import {
   finalCellOut,
   finalsStateOut,
@@ -270,7 +271,17 @@ export function scheduleRoutes(deps: AppDeps): Router {
       access: 'member',
       params: z.object({ id }),
       response: z.object({
-        years: z.array(z.object({ id: z.string(), label: z.string(), current: z.boolean() })),
+        /** source: manual for a year typed in from the report card (6.1) */
+        years: z.array(
+          z.object({
+            id: z.string(),
+            label: z.string(),
+            current: z.boolean(),
+            source: z.enum(['api', 'manual']),
+            /** The calendar year it starts in: what PUT …/final-marks takes */
+            startYear: z.number(),
+          }),
+        ),
         rows: z.array(
           z.object({
             subjectName: z.string(),
@@ -316,7 +327,13 @@ export function scheduleRoutes(deps: AppDeps): Router {
       );
       const none = { kind: 'none' as const, raw: null, value: null, postedOn: null, source: null };
       return {
-        years: years.map((y) => ({ id: y.id, label: y.label, current: y.id === current?.id })),
+        years: years.map((y) => ({
+          id: y.id,
+          label: y.label,
+          current: y.id === current?.id,
+          source: y.source,
+          startYear: Number(y.startDate.slice(0, 4)),
+        })),
         rows: names.map((name) => {
           const s = subjectRows.find((x) => x.name === name);
           const cells = years.map((y) => {
@@ -338,6 +355,29 @@ export function scheduleRoutes(deps: AppDeps): Router {
           };
         }),
       };
+    },
+  );
+
+  route(
+    r,
+    {
+      method: 'put',
+      path: '/api/students/:id/final-marks',
+      summary: 'Year finals of a school year before Marksy, typed in from the report card (admin and parents)',
+      tags: ['students'],
+      access: { roles: ['admin', 'parent'] },
+      params: z.object({ id }),
+      body: manualFinalsIn,
+      response: z.object({ yearId: z.string().nullable(), count: z.number() }),
+      errors: {
+        400: 'Not a past year, a value off the scale, a subject twice, or a child without marks',
+        404: 'No such child',
+        409: 'The diary has this school year',
+      },
+    },
+    async (req, { params, body }) => {
+      const ctx = await loadChild(deps, req, params.id);
+      return putManualFinals(deps, ctx, ctx.userId, body);
     },
   );
 

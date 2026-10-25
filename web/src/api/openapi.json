@@ -43,6 +43,207 @@
           "error"
         ]
       },
+      "Appearance": {
+        "type": "object",
+        "properties": {
+          "theme": {
+            "type": "string",
+            "enum": [
+              "light",
+              "dark",
+              "system"
+            ]
+          },
+          "background": {
+            "type": "string",
+            "enum": [
+              "color",
+              "wallpaper"
+            ]
+          },
+          "palette": {
+            "type": "string",
+            "enum": [
+              "sea",
+              "forest",
+              "sky",
+              "plum",
+              "berry",
+              "amber",
+              "mint",
+              "graphite"
+            ]
+          },
+          "wallpaper": {
+            "type": "string",
+            "enum": [
+              "cell",
+              "line",
+              "dots",
+              "doodle",
+              "waves",
+              "own"
+            ]
+          },
+          "opacity": {
+            "type": "integer",
+            "minimum": 10,
+            "maximum": 100
+          },
+          "font": {
+            "type": "string",
+            "enum": [
+              "manrope",
+              "nunito",
+              "ptsans",
+              "inter",
+              "rubik"
+            ]
+          },
+          "hasOwnWallpaper": {
+            "type": "boolean"
+          },
+          "wallpaperVersion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "theme",
+          "background",
+          "palette",
+          "wallpaper",
+          "opacity",
+          "font",
+          "hasOwnWallpaper",
+          "wallpaperVersion"
+        ]
+      },
+      "AvatarTraits": {
+        "type": "object",
+        "properties": {
+          "age": {
+            "type": "string",
+            "enum": [
+              "kid",
+              "preteen",
+              "teen",
+              "adult"
+            ]
+          },
+          "look": {
+            "type": "string",
+            "enum": [
+              "boy",
+              "girl",
+              "neutral"
+            ]
+          },
+          "skin": {
+            "type": "string",
+            "enum": [
+              "pale",
+              "light",
+              "medium",
+              "tan",
+              "brown",
+              "dark"
+            ]
+          },
+          "hair": {
+            "type": "string",
+            "enum": [
+              "black",
+              "dark",
+              "brown",
+              "lightbrown",
+              "blond",
+              "red",
+              "grey"
+            ]
+          },
+          "style": {
+            "type": "string",
+            "enum": [
+              "buzz",
+              "short",
+              "medium",
+              "long",
+              "ponytail",
+              "bob",
+              "curly",
+              "braids"
+            ]
+          },
+          "eyes": {
+            "type": "string",
+            "enum": [
+              "brown",
+              "hazel",
+              "green",
+              "blue",
+              "grey"
+            ]
+          },
+          "glasses": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "age",
+          "look",
+          "skin",
+          "hair",
+          "style",
+          "eyes",
+          "glasses"
+        ]
+      },
+      "Avatar": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "traits"
+                ]
+              },
+              "traits": {
+                "$ref": "#/components/schemas/AvatarTraits"
+              }
+            },
+            "required": [
+              "kind",
+              "traits"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "photo"
+                ]
+              },
+              "url": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "url"
+            ]
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
       "StudentSummary": {
         "type": "object",
         "properties": {
@@ -494,6 +695,9 @@
               "yearRule",
               "distribution"
             ]
+          },
+          "avatar": {
+            "$ref": "#/components/schemas/Avatar"
           }
         },
         "required": [
@@ -505,7 +709,8 @@
           "timezone",
           "providerId",
           "capabilities",
-          "gradingScale"
+          "gradingScale",
+          "avatar"
         ]
       },
       "Me": {
@@ -538,6 +743,12 @@
                   "full",
                   "simple"
                 ]
+              },
+              "guidance": {
+                "type": "boolean"
+              },
+              "appearance": {
+                "$ref": "#/components/schemas/Appearance"
               }
             },
             "required": [
@@ -546,7 +757,9 @@
               "displayName",
               "locale",
               "timezone",
-              "uiMode"
+              "uiMode",
+              "guidance",
+              "appearance"
             ]
           },
           "memberships": {
@@ -631,12 +844,16 @@
               },
               "parentsCanInvite": {
                 "type": "boolean"
+              },
+              "guidance": {
+                "type": "boolean"
               }
             },
             "required": [
               "id",
               "name",
-              "parentsCanInvite"
+              "parentsCanInvite",
+              "guidance"
             ]
           },
           "role": {
@@ -671,13 +888,21 @@
                   "items": {
                     "type": "string"
                   }
+                },
+                "uiMode": {
+                  "type": "string",
+                  "enum": [
+                    "full",
+                    "simple"
+                  ]
                 }
               },
               "required": [
                 "userId",
                 "displayName",
                 "role",
-                "studentIds"
+                "studentIds",
+                "uiMode"
               ]
             }
           },
@@ -771,6 +996,9 @@
                 "sharedWithOtherFamily": {
                   "type": "boolean"
                 },
+                "avatar": {
+                  "$ref": "#/components/schemas/Avatar"
+                },
                 "settings": {
                   "type": "object",
                   "properties": {
@@ -807,6 +1035,7 @@
                 "schoolLabel",
                 "status",
                 "sharedWithOtherFamily",
+                "avatar",
                 "settings"
               ]
             }
@@ -847,12 +1076,31 @@
                 "createdAt": {
                   "type": "string",
                   "format": "date-time"
+                },
+                "diary": {
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "properties": {
+                    "providerName": {
+                      "type": "string"
+                    },
+                    "label": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "providerName",
+                    "label"
+                  ]
                 }
               },
               "required": [
                 "id",
                 "displayName",
-                "createdAt"
+                "createdAt",
+                "diary"
               ]
             }
           }
@@ -1151,7 +1399,8 @@
               "average_down",
               "average_up",
               "teacher_comment",
-              "holidays_ahead"
+              "holidays_ahead",
+              "account_action"
             ]
           },
           "severity": {
@@ -1203,7 +1452,8 @@
                 "enum": [
                   "subject",
                   "schedule",
-                  "school"
+                  "school",
+                  "sync"
                 ]
               },
               "subjectId": {
@@ -2931,6 +3181,12 @@
                 "providerName": {
                   "type": "string"
                 },
+                "label": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
                 "status": {
                   "type": "string",
                   "enum": [
@@ -3017,12 +3273,154 @@
                   "items": {
                     "type": "string"
                   }
+                },
+                "plan": {
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "properties": {
+                    "window": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "from": {
+                          "type": "string"
+                        },
+                        "to": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "from",
+                        "to"
+                      ]
+                    },
+                    "windowStudentIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "next": {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "now",
+                            "soon",
+                            "at",
+                            "nextSchoolDay",
+                            "action",
+                            "offline",
+                            "paused"
+                          ]
+                        },
+                        "at": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "at"
+                      ]
+                    },
+                    "sets": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "number"
+                      }
+                    },
+                    "maxRequestsPerRun": {
+                      "type": "number"
+                    },
+                    "rescan": {
+                      "type": "object",
+                      "properties": {
+                        "lastFullAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "date-time"
+                        },
+                        "oldestVerifiedAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "lastFullAt",
+                        "oldestVerifiedAt"
+                      ]
+                    },
+                    "drift": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "endpoint": {
+                            "type": "string"
+                          },
+                          "kind": {
+                            "type": "string"
+                          },
+                          "path": {
+                            "type": "string"
+                          },
+                          "firstSeenAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "lastSeenAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "count": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "endpoint",
+                          "kind",
+                          "path",
+                          "firstSeenAt",
+                          "lastSeenAt",
+                          "count"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "window",
+                    "windowStudentIds",
+                    "next",
+                    "sets",
+                    "maxRequestsPerRun",
+                    "rescan",
+                    "drift"
+                  ]
                 }
               },
               "required": [
                 "id",
                 "providerId",
                 "providerName",
+                "label",
                 "status",
                 "lastSuccessAt",
                 "lastAttemptAt",
@@ -3030,7 +3428,8 @@
                 "consecutiveFailures",
                 "pausedUntil",
                 "nextAllowedAt",
-                "studentIds"
+                "studentIds",
+                "plan"
               ]
             }
           },
@@ -3269,6 +3668,114 @@
           },
           "404": {
             "description": "Not a member of that family",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/me/settings": {
+      "patch": {
+        "summary": "Your own settings: «Подсказки» (design.md 5.6) and Оформление (5.6a), any part of it",
+        "tags": [
+          "auth"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "guidance": {
+                    "type": "boolean"
+                  },
+                  "appearance": {
+                    "type": "object",
+                    "properties": {
+                      "theme": {
+                        "type": "string",
+                        "enum": [
+                          "light",
+                          "dark",
+                          "system"
+                        ]
+                      },
+                      "background": {
+                        "type": "string",
+                        "enum": [
+                          "color",
+                          "wallpaper"
+                        ]
+                      },
+                      "palette": {
+                        "type": "string",
+                        "enum": [
+                          "sea",
+                          "forest",
+                          "sky",
+                          "plum",
+                          "berry",
+                          "amber",
+                          "mint",
+                          "graphite"
+                        ]
+                      },
+                      "wallpaper": {
+                        "type": "string",
+                        "enum": [
+                          "cell",
+                          "line",
+                          "dots",
+                          "doodle",
+                          "waves",
+                          "own"
+                        ]
+                      },
+                      "opacity": {
+                        "type": "integer",
+                        "minimum": 10,
+                        "maximum": 100
+                      },
+                      "font": {
+                        "type": "string",
+                        "enum": [
+                          "manrope",
+                          "nunito",
+                          "ptsans",
+                          "inter",
+                          "rubik"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Me"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session",
             "content": {
               "application/json": {
                 "schema": {
@@ -3524,6 +4031,56 @@
             "session": []
           }
         ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Family"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "The family’s switches (admin): «Подсказки» for everyone, whether parents may invite",
+        "tags": [
+          "family"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "guidance": {
+                    "type": "boolean"
+                  },
+                  "parentsCanInvite": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "OK",
@@ -4476,6 +5033,86 @@
         }
       }
     },
+    "/api/family/members/{id}/ui-mode": {
+      "put": {
+        "summary": "A student member's simple mode (5.7), switched by the admin or a parent",
+        "tags": [
+          "family"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "uiMode": {
+                    "type": "string",
+                    "enum": [
+                      "full",
+                      "simple"
+                    ]
+                  }
+                },
+                "required": [
+                  "uiMode"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Done"
+          },
+          "400": {
+            "description": "The member is not a student",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such member",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/family/export": {
       "get": {
         "summary": "Everything the family owns and the data of the children it follows, as JSON (admin)",
@@ -5318,6 +5955,70 @@
                     },
                     "now": {
                       "$ref": "#/components/schemas/NowLine"
+                    },
+                    "nearGoals": {
+                      "type": [
+                        "array",
+                        "null"
+                      ],
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "subject": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "color": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "name",
+                              "color"
+                            ]
+                          },
+                          "target": {
+                            "type": "number"
+                          },
+                          "average": {
+                            "type": "number"
+                          },
+                          "need": {
+                            "type": "number"
+                          },
+                          "plan": {
+                            "type": "object",
+                            "properties": {
+                              "value": {
+                                "type": "number"
+                              },
+                              "count": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "value",
+                              "count"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "subject",
+                          "target",
+                          "average",
+                          "need",
+                          "plan"
+                        ]
+                      }
                     }
                   },
                   "required": [
@@ -5337,7 +6038,8 @@
                     "attention",
                     "attentionTotal",
                     "nextDay",
-                    "now"
+                    "now",
+                    "nearGoals"
                   ]
                 }
               }
@@ -6105,12 +6807,28 @@
                               "string",
                               "null"
                             ]
+                          },
+                          "kind": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "enum": [
+                              "autumn",
+                              "winter",
+                              "spring",
+                              "summer",
+                              "additional",
+                              "other",
+                              null
+                            ]
                           }
                         },
                         "required": [
                           "from",
                           "to",
-                          "note"
+                          "note",
+                          "kind"
                         ]
                       }
                     },
@@ -7569,12 +8287,24 @@
                           },
                           "current": {
                             "type": "boolean"
+                          },
+                          "source": {
+                            "type": "string",
+                            "enum": [
+                              "api",
+                              "manual"
+                            ]
+                          },
+                          "startYear": {
+                            "type": "number"
                           }
                         },
                         "required": [
                           "id",
                           "label",
-                          "current"
+                          "current",
+                          "source",
+                          "startYear"
                         ]
                       }
                     },
@@ -7659,6 +8389,138 @@
           },
           "404": {
             "description": "No such child",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/students/{id}/final-marks": {
+      "put": {
+        "summary": "Year finals of a school year before Marksy, typed in from the report card (admin and parents)",
+        "tags": [
+          "students"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "startYear": {
+                    "type": "integer"
+                  },
+                  "marks": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "subjectName": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 80
+                        },
+                        "raw": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 8
+                        }
+                      },
+                      "required": [
+                        "subjectName",
+                        "raw"
+                      ]
+                    },
+                    "maxItems": 40
+                  }
+                },
+                "required": [
+                  "startYear",
+                  "marks"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "yearId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "count": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "yearId",
+                    "count"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Not a past year, a value off the scale, a subject twice, or a child without marks",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such child",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The diary has this school year",
             "content": {
               "application/json": {
                 "schema": {
@@ -8367,6 +9229,370 @@
         }
       }
     },
+    "/api/students/{id}": {
+      "patch": {
+        "summary": "The child’s avatar (admin, parent): traits to draw, or null for the neutral look",
+        "tags": [
+          "students"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "avatar": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/components/schemas/AvatarTraits"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "avatar"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "avatar": {
+                      "$ref": "#/components/schemas/Avatar"
+                    }
+                  },
+                  "required": [
+                    "avatar"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A student does not set avatars",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such child",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/students/{id}/photo": {
+      "put": {
+        "summary": "A photo as the child’s avatar (admin, parent): JPEG, PNG or WebP up to 512 px, metadata removed (14.1)",
+        "tags": [
+          "students"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "avatar": {
+                      "$ref": "#/components/schemas/Avatar"
+                    }
+                  },
+                  "required": [
+                    "avatar"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Not a JPEG, PNG or WebP, or larger than 512 px",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A student does not set avatars",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such child",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "The child’s photo, to the families that follow the child (D54)",
+        "tags": [
+          "students"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Done"
+          },
+          "401": {
+            "description": "No session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such child or no photo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/me/wallpaper": {
+      "put": {
+        "summary": "Your own wallpaper: JPEG, PNG or WebP up to 1600 px and 5 MB, metadata removed (14.1); only you see it",
+        "tags": [
+          "auth"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "hasOwnWallpaper": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "hasOwnWallpaper"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Not a JPEG, PNG or WebP, or larger than 1600 px",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Your own wallpaper, to you only",
+        "tags": [
+          "auth"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Done"
+          },
+          "401": {
+            "description": "No session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No wallpaper of your own",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Remove your own wallpaper (the picture is deleted)",
+        "tags": [
+          "auth"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Done"
+          },
+          "401": {
+            "description": "No session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/sync/status": {
       "get": {
         "summary": "How fresh the data is: per diary account of the family, and per child",
@@ -8495,6 +9721,256 @@
           },
           "401": {
             "description": "No session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sync/run": {
+      "post": {
+        "summary": "«Обновить сейчас»: one run of a diary account within its login budget (admin, parent)",
+        "tags": [
+          "sync"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "accountId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "required": [
+                  "accountId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "started": {
+                      "type": "boolean"
+                    },
+                    "reason": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "enum": [
+                        "interval",
+                        "action",
+                        null
+                      ]
+                    },
+                    "retryAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "started",
+                    "reason",
+                    "retryAt"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such diary account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sync/rescan": {
+      "post": {
+        "summary": "«Перепроверить»: the weeks of the current term or school year are read again by the next runs, then one run now",
+        "tags": [
+          "sync"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "accountId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "studentIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "period": {
+                    "type": "string",
+                    "enum": [
+                      "term",
+                      "year"
+                    ]
+                  }
+                },
+                "required": [
+                  "accountId",
+                  "period"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "started": {
+                      "type": "boolean"
+                    },
+                    "reason": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "enum": [
+                        "interval",
+                        "action",
+                        null
+                      ]
+                    },
+                    "retryAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "date-time"
+                    },
+                    "weeks": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "started",
+                    "reason",
+                    "retryAt",
+                    "weeks"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such diary account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sync/drift/{id}/ack": {
+      "post": {
+        "summary": "«Понятно, скрыть» for a change in the diary’s API (admin, parent)",
+        "tags": [
+          "sync"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Done"
+          },
+          "401": {
+            "description": "No session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such change for the family’s diaries",
             "content": {
               "application/json": {
                 "schema": {

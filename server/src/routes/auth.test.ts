@@ -7,6 +7,7 @@ import { diaryAccounts, families, sessions, syncRuns } from '../db/schema';
 import type { TransportRequest } from '@marksy/core';
 import { demoFullTransport } from '@marksy/registry';
 import { SESSION_COOKIE } from '../http/session';
+import { jpegWithGps } from '../../test/images';
 
 const db = testDb();
 const cookieOf = (res: request.Response) =>
@@ -210,10 +211,82 @@ describe('auth: connect, login, logout, me', () => {
     expect((await agent.patch('/api/me').send({ timezone: 'Mars/Base' })).status).toBe(400);
   });
 
+  it('PATCH /api/me/settings: the person’s own «Подсказки» switch, on until turned off, other settings kept', async () => {
+    const agent = agentWith();
+    await connectFamily(agent);
+    expect((await agent.get('/api/auth/me')).body.user.guidance).toBe(true);
+    const off = await agent.patch('/api/me/settings').send({ guidance: false });
+    expect(off.status).toBe(200);
+    expect(off.body.user.guidance).toBe(false);
+    expect((await agent.patch('/api/me/settings').send({})).body.user.guidance).toBe(false);
+    expect((await agent.patch('/api/me/settings').send({ guidance: 'no' })).status).toBe(400);
+    expect((await request(testApp()).patch('/api/me/settings').send({ guidance: true })).status).toBe(401);
+  });
+
   it('lists the diary systems a family can connect, with their fields', async () => {
     const res = await request(testApp({ allowDemoProviders: false })).get('/api/providers');
     expect(res.status).toBe(200);
     expect(res.body.every((p: { status: string }) => ['stable', 'beta'].includes(p.status))).toBe(true);
     for (const p of res.body) expect(p.auth.fields.length).toBeGreaterThan(0);
+  });
+});
+
+describe('Оформление', () => {
+  beforeEach(() => resetDb(db));
+  afterEach(settle);
+
+  it('personal, any part at a time; a wallpaper of one’s own is seen by its owner only', async () => {
+    const mama = agentWith();
+    await connectFamily(mama);
+    expect((await mama.get('/api/auth/me')).body.user.appearance).toMatchObject({
+      theme: 'light',
+      palette: 'sea',
+      background: 'color',
+      font: 'manrope',
+      opacity: 35,
+      hasOwnWallpaper: false,
+    });
+    const set = await mama.patch('/api/me/settings').send({ appearance: { palette: 'forest', font: 'nunito' } });
+    expect(set.body.user.appearance).toMatchObject({ palette: 'forest', font: 'nunito', theme: 'light' });
+    expect(
+      (await mama.patch('/api/me/settings').send({ appearance: { theme: 'dark' } })).body.user.appearance,
+    ).toMatchObject({
+      palette: 'forest',
+      theme: 'dark',
+    });
+    expect((await mama.patch('/api/me/settings').send({ appearance: { palette: 'neon' } })).status).toBe(400);
+    expect((await mama.patch('/api/me/settings').send({ appearance: { opacity: 5 } })).status).toBe(400);
+
+    const put = await mama.put('/api/me/wallpaper').set('Content-Type', 'image/jpeg').send(jpegWithGps(1200, 900));
+    expect(put.body).toEqual({ hasOwnWallpaper: true });
+    const got = await mama
+      .get('/api/me/wallpaper')
+      .buffer(true)
+      .parse((res, done) => {
+        const parts: Buffer[] = [];
+        res.on('data', (c: Buffer) => parts.push(c));
+        res.on('end', () => done(null, Buffer.concat(parts)));
+      });
+    expect(got.status).toBe(200);
+    expect((got.body as Buffer).toString('latin1')).not.toContain('GPS');
+    await mama.patch('/api/me/settings').send({ appearance: { background: 'wallpaper', wallpaper: 'own' } });
+    const first = (await mama.get('/api/auth/me')).body.user.appearance;
+    expect(first).toMatchObject({ wallpaper: 'own', hasOwnWallpaper: true, wallpaperVersion: expect.any(String) });
+    // another picture, another version: the address changes, so no cached old picture is shown
+    await mama.put('/api/me/wallpaper').set('Content-Type', 'image/jpeg').send(jpegWithGps(800, 600));
+    expect((await mama.get('/api/auth/me')).body.user.appearance.wallpaperVersion).not.toBe(first.wallpaperVersion);
+    // another person has no wallpaper of their own, and sees nobody else's
+    const other = agentWith();
+    await connectFamily(other, 'other@example.com', 'demo-minimal');
+    expect((await other.get('/api/me/wallpaper')).status).toBe(404);
+    expect(
+      (await mama.put('/api/me/wallpaper').set('Content-Type', 'image/jpeg').send(jpegWithGps(2000, 900))).status,
+    ).toBe(400);
+    expect((await mama.delete('/api/me/wallpaper')).status).toBe(204);
+    expect((await mama.get('/api/me/wallpaper')).status).toBe(404);
+    expect((await mama.get('/api/auth/me')).body.user.appearance).toMatchObject({
+      wallpaper: 'cell',
+      hasOwnWallpaper: false,
+    });
   });
 });

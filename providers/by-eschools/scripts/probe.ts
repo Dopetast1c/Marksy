@@ -53,6 +53,8 @@ async function main(): Promise<number> {
     root,
     fixturesDir,
     saveRaw: true,
+    // a real run replaces the regular fixtures; fixtures/cases/ is never written
+    writeFixtures: true,
     out: (line) => console.log(line),
     err: (line) => console.error(line),
   });

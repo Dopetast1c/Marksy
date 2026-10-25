@@ -40,7 +40,20 @@ export const PROTOTYPE_STATES = [
   ['schedule-1', 'lessons', 'k', { lkind: 'day' }],
   ['schedule-week', 'lessons', 'k', { lkind: 'week' }],
   ['schedule-2', 'lessons', 'm', { lkind: 'day' }],
+  ['more', 'more', 'k'],
+  ['family', 'family', 'k'],
+  ['sync', 'sync', 'k'],
+  ['look', 'look', 'k'],
+  ['avatar', 'avatarEdit', 'k', { avatarFor: 'm' }],
+  ['school-bells', 'school', 'k', { schoolTab: 'bells' }],
+  ['school-year', 'school', 'k', { schoolTab: 'year' }],
+  // last: they leave the prototype in student mode
+  ['student-home', 'home', 'k', { role: 'student', uiMode: 'full' }],
+  ['student-simple-home', 'home', 'k', { role: 'student', uiMode: 'simple' }],
 ];
+
+/** The demo's student login (server/src/seed/seed.ts), for student mode and simple mode */
+const SEED_STUDENT = { login: 'student@example.com', password: 'marksy-demo' };
 
 /** The demo family is fictional and its password is published (server/src/seed/seed.ts) */
 const SEED = { key: 'seed', login: 'parent@example.com', password: 'marksy-demo' };
@@ -104,6 +117,23 @@ async function shootApp(browser, base, family, device, dir, log) {
     const kids = me.students ?? [];
     log.push(`    ${family.key}/${device}: signed in, ${kids.length} children`);
     if (page.url().endsWith('/pick')) await shot('pick');
+    await page.goto(`${base}/more`);
+    await shot('more');
+    await page.goto(`${base}/more/sync`);
+    await shot('sync');
+    await page.goto(`${base}/more/look`);
+    await shot('look');
+    // Семья for the admin and parents, and the first child's avatar screen
+    const view = await page.request.get(`${base}/api/family`);
+    if (view.ok()) {
+      await page.goto(`${base}/more/family`);
+      await shot('family');
+      const first = (await view.json()).children?.[0]?.studentId;
+      if (first) {
+        await page.goto(`${base}/more/family/child/${first}`);
+        await shot('avatar');
+      }
+    }
     for (const [i, kid] of kids.entries()) {
       await page.goto(`${base}/s/${kid.id}`);
       await shot(`home-${i + 1}`);
@@ -145,6 +175,13 @@ async function shootApp(browser, base, family, device, dir, log) {
         await page.getByRole('button', { name: /^(Неделя|Week)$/ }).click();
         await shot('schedule-week');
       }
+      // Школа of the first child: its bells and its school year
+      if (i === 0) {
+        await page.goto(`${base}/s/${kid.id}/school`);
+        await shot('school-bells');
+        await page.goto(`${base}/s/${kid.id}/school?tab=year`);
+        await shot('school-year');
+      }
       // Итоги of the first child with marks (a year without marks has none)
       if (kid.gradingScale && kid === kids.find((k) => k.gradingScale)) {
         await page.goto(`${base}/s/${kid.id}/finals`);
@@ -159,6 +196,41 @@ async function shootApp(browser, base, family, device, dir, log) {
   } catch (err) {
     log.push(`BAD ${family.key}/${device}: ${err.name}`);
   } finally {
+    await context.close();
+  }
+}
+
+/**
+ * The demo's student: Главная in student mode («Близко к цели»), then simple mode's Главная and Расписание. Simple mode
+ * is switched on through the API for the shots and back off afterwards, so the seed stays as it was.
+ */
+async function shootStudent(browser, base, device, dir, log) {
+  const context = await browser.newContext({ ...DEVICES[device], locale: 'ru-RU' });
+  const page = await context.newPage();
+  const settle = trackRequests(page);
+  const shot = async (name) => {
+    await settle();
+    await page.screenshot({ path: join(dir, `app-seed-${device}-${name}.png`), fullPage: true });
+    log.push(`ok  seed/${device}/${name}`);
+  };
+  let simple = false;
+  try {
+    await page.goto(`${base}/login`);
+    await page.getByLabel(/Логин Marksy|Marksy login/).fill(SEED_STUDENT.login);
+    await page.getByLabel(/^Пароль$|^Password$/).fill(SEED_STUDENT.password);
+    await page.getByRole('button', { name: /Войти|Sign in/ }).click();
+    await page.waitForURL(/\/s\/[^/]+$/, { timeout: 15_000 });
+    const kid = new URL(page.url()).pathname.split('/')[2];
+    await shot('student-home');
+    simple = (await page.request.patch(`${base}/api/me`, { data: { uiMode: 'simple' } })).ok();
+    await page.goto(`${base}/s/${kid}`);
+    await shot('student-simple-home');
+    await page.goto(`${base}/s/${kid}/schedule`);
+    await shot('student-simple-schedule');
+  } catch (err) {
+    log.push(`BAD seed/${device}/student: ${err.name}`);
+  } finally {
+    if (simple) await page.request.patch(`${base}/api/me`, { data: { uiMode: 'full' } });
     await context.close();
   }
 }
@@ -226,6 +298,7 @@ async function main() {
     for (const device of Object.keys(DEVICES)) {
       await shootPrototype(browser, device, dir, log);
       for (const family of chosen) await shootApp(browser, base, family, device, dir, log);
+      if (chosen.some((f) => f.key === 'seed')) await shootStudent(browser, base, device, dir, log);
     }
   } finally {
     await browser.close();

@@ -1,8 +1,12 @@
+import { mkdir, mkdtemp, readdir, rm, utimes, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { resetDb, testDb } from '../test/db';
 import { createAccount } from '../test/factories';
 import {
+  apiDriftAcks,
   apiDriftEvents,
   families,
   familyStudents,
@@ -196,15 +200,29 @@ describe('retention janitor', () => {
       .insert(notifications)
       .values({ userId: admin!.id, eventKey: 'k', severity: 'info', title: 't', createdAt: ago(181) });
     const drift = { providerId: 'demo-full', endpoint: 'diary', kind: 'unknown_field', firstSeenAt: ago(400) };
-    await db.insert(apiDriftEvents).values([
-      { ...drift, path: 'a', lastSeenAt: ago(300), acknowledgedAt: ago(250) },
-      { ...drift, path: 'b', lastSeenAt: ago(1), acknowledgedAt: ago(250) },
-      { ...drift, path: 'c', lastSeenAt: ago(300) },
-    ]);
+    const events = await db
+      .insert(apiDriftEvents)
+      .values([
+        { ...drift, path: 'a', lastSeenAt: ago(300) },
+        { ...drift, path: 'b', lastSeenAt: ago(1) },
+        { ...drift, path: 'c', lastSeenAt: ago(300) },
+        // a provider no family's diary uses any more
+        { ...drift, providerId: 'demo-minimal', path: 'd', lastSeenAt: ago(300) },
+      ])
+      .returning();
+    // the family hid a and b; c, old as it is, still waits for it
+    await db
+      .insert(apiDriftAcks)
+      .values(
+        events
+          .filter((e) => e.path === 'a' || e.path === 'b')
+          .map((e) => ({ familyId: w.family.id, driftEventId: e.id, acknowledgedAt: ago(250) })),
+      );
     await applyRetention(db, RETENTION_DEFAULTS, NOW);
     expect((await db.select().from(markEvents)).map((e) => e.kind)).toEqual(['changed']);
     expect(await db.select().from(notifications)).toEqual([]);
     expect((await db.select().from(apiDriftEvents)).map((d) => d.path).sort()).toEqual(['b', 'c']);
+    expect(await db.select().from(apiDriftAcks)).toHaveLength(1);
     expect(await db.select().from(marks)).toHaveLength(1);
   });
 
@@ -263,5 +281,35 @@ describe('retention janitor', () => {
     expect(await db.select().from(students)).toHaveLength(0);
     expect(await db.select().from(schoolYears)).toHaveLength(0);
     expect(await db.select().from(terms)).toHaveLength(0);
+  });
+});
+
+describe('retention: uploaded pictures', () => {
+  beforeEach(() => resetDb(db));
+
+  it('a picture no row points at goes; one a child still shows, and one just uploaded, stay', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'marksy-sweep-'));
+    try {
+      await mkdir(join(dir, 'avatars'), { recursive: true });
+      const shown = 'avatars/11111111-1111-4111-8111-111111111111.jpg';
+      const orphan = 'avatars/22222222-2222-4222-8222-222222222222.jpg';
+      const fresh = 'avatars/33333333-3333-4333-8333-333333333333.jpg';
+      for (const key of [shown, orphan, fresh]) await writeFile(join(dir, key), 'x');
+      // the orphan has lain there for a day
+      const dayAgo = new Date(Date.now() - 86_400_000);
+      await utimes(join(dir, orphan), dayAgo, dayAgo);
+      await utimes(join(dir, shown), dayAgo, dayAgo);
+      await db.insert(students).values({
+        providerId: 'demo-full',
+        externalId: 'p-9',
+        fullName: 'Ученик Б',
+        avatar: { kind: 'photo', key: shown, mime: 'image/jpeg', bytes: 1 },
+      });
+      const report = await applyRetention(db, RETENTION_DEFAULTS, new Date(), dir);
+      expect(report.uploads_orphaned).toBe(1);
+      expect((await readdir(join(dir, 'avatars'))).sort()).toEqual([shown, fresh].map((k) => k.slice(8)).sort());
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
   });
 });

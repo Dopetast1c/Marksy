@@ -103,7 +103,8 @@ describe('calendar', () => {
       ['q1', 1, '2026-09-01', '2026-10-31'],
       ['q2', 2, '2026-11-09', '2026-12-24'],
     ]);
-    expect(c.holidays).toEqual([{ from: '2026-11-01', to: '2026-11-08' }]);
+    // the kind from the title: the app names them («Осенние каникулы»), never by month
+    expect(c.holidays).toEqual([{ from: '2026-11-01', to: '2026-11-08', kind: 'autumn' }]);
     expect(c.schoolYear).toEqual({ externalId: 'y', label: '2026/2027', start: '2026-09-01', end: '2027-05-31' });
     expect(c.gradingScaleId).toBeUndefined();
   });
@@ -131,7 +132,9 @@ describe('calendar', () => {
     const all = [...activities, extra];
     const feb = (grade: number | undefined) =>
       mapCalendar(year, all, { grade }, TZ, check).holidays!.filter((h) => h.from === '2027-02-15');
-    expect(feb(1)).toEqual([{ from: '2027-02-15', to: '2027-02-21', note: 'для учащихся 1-2 классов' }]);
+    expect(feb(1)).toEqual([
+      { from: '2027-02-15', to: '2027-02-21', note: 'для учащихся 1-2 классов', kind: 'additional' },
+    ]);
     expect(feb(2)).toHaveLength(1);
     expect(feb(3)).toEqual([]);
     expect(feb(7)).toEqual([]);
@@ -145,13 +148,28 @@ describe('calendar', () => {
     const summer = ta('h5', 'HOLIDAYS', 'SUMMER_HOLIDAYS', '2027-06-01', '2027-08-31', '  ');
     const c = mapCalendar(year, [q4, summer], { grade: 7 }, TZ, check);
     expect(c.terms[0]).toMatchObject({ index: 4, label: 'FOURTH_QUARTER', note: 'для 9 и 11 классов: 30.03 – 25.05' });
-    expect(c.holidays).toEqual([{ from: '2027-06-01', to: '2027-08-31' }]);
+    expect(c.holidays).toEqual([{ from: '2027-06-01', to: '2027-08-31', kind: 'summer' }]);
   });
 
   it('a first grader has no grading scale this year', () => {
     const { check } = setup();
     expect(mapCalendar(year, activities, { grade: 1 }, TZ, check).gradingScaleId).toBeNull();
     expect(mapCalendar(year, activities, { grade: 3 }, TZ, check).gradingScaleId).toBeUndefined();
+  });
+
+  it('an unknown holidays title is kind other and drift, the holidays stay', () => {
+    const { drift, check } = setup();
+    const c = mapCalendar(
+      year,
+      [ta('h9', 'HOLIDAYS', 'EXTRA_BREAK', '2027-01-04', '2027-01-06')],
+      { grade: 7 },
+      TZ,
+      check,
+    );
+    expect(c.holidays).toEqual([{ from: '2027-01-04', to: '2027-01-06', kind: 'other' }]);
+    expect(drift.events).toContainEqual(
+      expect.objectContaining({ kind: 'new_enum_value', path: 'time_activities[].title', sample: 'EXTRA_BREAK' }),
+    );
   });
 
   it('records a new activity type as drift and leaves it out', () => {
@@ -330,8 +348,16 @@ describe('lessons and marks', () => {
     const { drift, check } = setup();
     const lessons = mapLessonsWeek(
       week([
+        // the real shape (2026-10-23, api-spec 7.2): kind, mark, type and summary all null, only a comment
         slot({
-          lesson_mark: mark({ uuid: 'm-c', kind: null, mark: '', type: null, comment: ' Нет домашнего задания ' }),
+          lesson_mark: mark({
+            uuid: 'm-c',
+            kind: null,
+            mark: null,
+            type: null,
+            summary: null,
+            comment: ' Нет домашнего задания ',
+          }),
         }),
         slot({ lesson_uuid: 'l-2', number: 3, lesson_mark: mark({ uuid: 'm-e', kind: null, mark: '', comment: '' }) }),
       ]),

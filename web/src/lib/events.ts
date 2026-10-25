@@ -3,6 +3,7 @@ import type { GradingScale, ShortDateStyle } from '@marksy/core';
 import type { TFunction } from 'i18next';
 import type { ChildEvent } from '../api/queries';
 import type { Kind } from './period';
+import { holidaysFrom } from './holidays';
 import { numbers } from './numbers';
 
 // The words of a Внимание row (docs/design.md 5.2a, ux-principles D43, D56): the API sends facts only (a mark, a
@@ -65,12 +66,15 @@ export function eventText(
         }),
         sub: t('event.quote', { text: String(f.text ?? '') }),
       };
+    case 'account_action':
+      // the diary refused the login: nothing is read until someone acts (5.2a)
+      return { title: t(`event.account.${String(f.action)}`), sub: t('event.account.sub') };
     case 'holidays_ahead': {
       const start = String(f.start);
       const end = String(f.end);
       const days = daysBetween(start, end) + 1;
       return {
-        title: t('event.holidays', { date: shortDate(start, ctx.ds) }),
+        title: holidaysFrom(t, f.kind as string | null, shortDate(start, ctx.ds)),
         // the provider's remark about the dates (which grades) stays a quiet note in Школа, not a fact here (D51)
         sub: [t('event.holidaysUntil', { date: shortDate(end, ctx.ds) }), t('days.count', { count: days })].join(' · '),
       };

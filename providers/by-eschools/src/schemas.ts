@@ -71,6 +71,14 @@ export const timeActivity = z.looseObject({
 });
 export type TimeActivity = z.infer<typeof timeActivity>;
 export const TIME_ACTIVITY_TYPES = ['QUARTER', 'HOLIDAYS'] as const;
+/** The holidays' titles seen in real responses (2026-10-25), mapped to Holiday.kind; any other is "other" and drift */
+export const HOLIDAY_KINDS = {
+  AUTUMN_HOLIDAYS: 'autumn',
+  WINTER_HOLIDAYS: 'winter',
+  SPRING_HOLIDAYS: 'spring',
+  SUMMER_HOLIDAYS: 'summer',
+  ADDITIONAL_HOLIDAYS: 'additional',
+} as const;
 export const QUARTER_TITLES = ['FIRST_QUARTER', 'SECOND_QUARTER', 'THIRD_QUARTER', 'FOURTH_QUARTER'] as const;
 /** A half year as a timetable's period (6.10.2): FIRST_HALF_YEAR seen in real responses, SECOND_HALF_YEAR assumed */
 export const HALF_YEAR_TITLES = ['FIRST_HALF_YEAR', 'SECOND_HALF_YEAR'] as const;

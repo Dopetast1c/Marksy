@@ -33,6 +33,8 @@ export interface ProbeRunOptions {
   fixturesDir: string;
   /** Write the raw responses to data/probe/<time>/ (a real run) */
   saveRaw: boolean;
+  /** Replace the regular fixtures: a real run always, offline only with --write-fixtures; fixtures/cases/ never */
+  writeFixtures: boolean;
   out: (line: string) => void;
   err: (line: string) => void;
 }
@@ -256,17 +258,27 @@ export async function runProbe(o: ProbeRunOptions): Promise<number> {
     for (const from of leaks) o.err(`  ${from}`);
     return 1;
   }
-  // replace the fixture set: old top-level fixtures go, denylist.json and the folders stay
-  for (const f of readdirSync(o.fixturesDir)) {
-    if (f.endsWith('.json') && f !== 'denylist.json') rmSync(join(o.fixturesDir, f));
+  if (!o.writeFixtures) {
+    o.out('Fixtures not written (offline; --write-fixtures writes them). fixtures/cases/ is never written.');
+    return 0;
   }
-  for (const s of sanitised)
-    writeFileSync(join(o.fixturesDir, `${s.name}.json`), `${JSON.stringify(s.value, null, 2)}\n`);
-  writeFileSync(
-    join(o.fixturesDir, 'routes.json'),
-    `${JSON.stringify(Object.fromEntries(sanitised.map((s) => [s.route, s.name])), null, 2)}\n`,
-  );
+  writeFixtureSet(o.fixturesDir, sanitised);
   o.out(`Sanitised fixtures: providers/by-eschools/fixtures/ (${sanitised.length} files and routes.json)`);
   o.out('Next: MARKSY_UPDATE_EXPECTED=1 pnpm test:provider by-eschools, then pnpm privacy, then review git diff.');
   return 0;
+}
+
+/**
+ * Replaces the regular fixture set: old top-level fixtures go; denylist.json and the folders stay, among them cases/, the
+ * rare response shapes kept by hand (docs/providers.md 8), which a probe never writes.
+ */
+export function writeFixtureSet(dir: string, files: readonly { name: string; route: string; value: unknown }[]): void {
+  for (const f of readdirSync(dir, { withFileTypes: true })) {
+    if (f.isFile() && f.name.endsWith('.json') && f.name !== 'denylist.json') rmSync(join(dir, f.name));
+  }
+  for (const s of files) writeFileSync(join(dir, `${s.name}.json`), `${JSON.stringify(s.value, null, 2)}\n`);
+  writeFileSync(
+    join(dir, 'routes.json'),
+    `${JSON.stringify(Object.fromEntries(files.map((s) => [s.route, s.name])), null, 2)}\n`,
+  );
 }

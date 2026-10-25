@@ -15,6 +15,7 @@ import { PeriodBar, PeriodNav } from '../../components/PeriodControls';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { ListCard, Note } from '../../components/Section';
 import { SubjectRow } from '../../components/SubjectRow';
+import { useSimpleMode } from '../../hooks/useSimpleMode';
 import { useScale, useSchoolTz } from '../../hooks/useStudent';
 import { dateStyle, intlLocale, useT } from '../../i18n';
 import { forPeriod, roman } from '../../lib/period';
@@ -45,7 +46,10 @@ export function SubjectsScreen() {
   const scale = useScale(studentId);
   const tz = useSchoolTz(studentId);
   const { kind, offset } = usePeriod();
-  const { sort, setSort } = useSubjectSort();
+  const { sort: chosen, setSort } = useSubjectSort();
+  // simple mode (5.7): subjects as a plain list, by name, without the order control
+  const simple = useSimpleMode();
+  const sort = simple ? 'alpha' : chosen;
   const filter = useMarkFilterFor(studentId);
   const list = useSubjects(studentId, { period: kind, offset }, filter.query, scale ? sort : 'alpha');
   const periods = usePeriods(studentId);
@@ -162,18 +166,20 @@ export function SubjectsScreen() {
   else
     body = (
       <>
-        <div className="flex justify-end">
-          <button
-            type="button"
-            aria-haspopup="dialog"
-            aria-label={t('subjects.sort.label')}
-            onClick={() => setSheet(true)}
-            className="relative flex min-h-9 items-center gap-1 px-0.5 text-[13px] font-bold text-accent after:absolute after:inset-x-0 after:-inset-y-1"
-          >
-            {t(`subjects.sort.${sort}`)}
-            <DownIcon size={14} />
-          </button>
-        </div>
+        {!simple && (
+          <div className="flex justify-end">
+            <button
+              type="button"
+              aria-haspopup="dialog"
+              aria-label={t('subjects.sort.label')}
+              onClick={() => setSheet(true)}
+              className="relative flex min-h-9 items-center gap-1 px-0.5 text-[13px] font-bold text-accent after:absolute after:inset-x-0 after:-inset-y-1"
+            >
+              {t(`subjects.sort.${sort}`)}
+              <DownIcon size={14} />
+            </button>
+          </div>
+        )}
         <ListCard>{rows.map(marksRow)}</ListCard>
         <Note>{t(`subjects.arrowNote.${termKind ?? 'other'}`)}</Note>
         <BottomSheet open={sheet} onClose={() => setSheet(false)} label={t('subjects.sort.label')}>

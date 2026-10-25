@@ -3,6 +3,7 @@ import {
   availableKinds,
   compareSubjects,
   comparePeriods,
+  holidayKind,
   listInstances,
   movers,
   periodInstance,
@@ -32,6 +33,7 @@ import {
 } from '../students/data';
 import { childEvents } from '../students/events';
 import { finalsOf, finalsState } from '../students/finals';
+import { nearGoalOut, nearGoals } from '../students/goals';
 import { feedItem, feedItems, lastSeen } from '../students/feed';
 import { nowLine } from '../students/now';
 import { trendOf, trendResponse } from '../students/trend';
@@ -282,6 +284,8 @@ export function studentRoutes(deps: AppDeps): Router {
         /** The next school day after today with its lessons as Расписание has them (the compact LessonRow) */
         nextDay: z.object({ date: z.string(), lessons: z.array(lessonOut) }).nullable(),
         now: nowLineSchema.nullable(),
+        /** «Близко к цели» (5.7): subjects one step from their goal, for a student's Главная; null with guidance off */
+        nearGoals: z.array(nearGoalOut).nullable(),
       }),
       errors: { 404: 'No such child or period' },
     },
@@ -366,6 +370,7 @@ export function studentRoutes(deps: AppDeps): Router {
           localTime(ctx.now, ctx.timezone).minutes,
           nextDate ? { date: nextDate, lessons: nextLessons } : null,
         ),
+        nearGoals: await nearGoals(deps, ctx),
       };
     },
   );
@@ -514,7 +519,10 @@ export function studentRoutes(deps: AppDeps): Router {
             note: z.string().nullable(),
           }),
         ),
-        holidays: z.array(z.object({ from: z.string(), to: z.string(), note: z.string().nullable() })),
+        /** kind names them in the app («Осенние каникулы»); null when the diary does not say */
+        holidays: z.array(
+          z.object({ from: z.string(), to: z.string(), note: z.string().nullable(), kind: holidayKind.nullable() }),
+        ),
         bells: z.array(
           z.object({
             label: z.string().nullable(),
@@ -545,7 +553,7 @@ export function studentRoutes(deps: AppDeps): Router {
           to: t.endDate,
           note: t.note,
         })),
-        holidays: ctx.holidayRows.map((h) => ({ from: h.start, to: h.end, note: h.note })),
+        holidays: ctx.holidayRows.map((h) => ({ from: h.start, to: h.end, note: h.note, kind: h.kind })),
         bells: bells.map((b) => ({ label: b.label, days: b.days, periods: b.periods })),
       };
     },

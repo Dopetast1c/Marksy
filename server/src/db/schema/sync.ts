@@ -177,7 +177,24 @@ export const apiDriftEvents = pgTable(
     firstSeenAt: ts('first_seen_at').notNull(),
     lastSeenAt: ts('last_seen_at').notNull(),
     count: integer('count').notNull().default(1),
-    acknowledgedAt: ts('acknowledged_at'),
   },
   (t) => [unique('api_drift_events_key').on(t.providerId, t.endpoint, t.kind, t.path)],
+);
+
+/**
+ * «Понятно, скрыть» on a drift notice (design.md 5.6): per family, so one family hiding it never hides it from another
+ * family whose diaries use the same provider. Goes with the event (retention: 10.4).
+ */
+export const apiDriftAcks = pgTable(
+  'api_drift_acks',
+  {
+    familyId: uuid('family_id')
+      .notNull()
+      .references(() => families.id, { onDelete: 'cascade' }),
+    driftEventId: uuid('drift_event_id')
+      .notNull()
+      .references(() => apiDriftEvents.id, { onDelete: 'cascade' }),
+    acknowledgedAt: ts('acknowledged_at').notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.familyId, t.driftEventId] })],
 );

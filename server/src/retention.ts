@@ -1,4 +1,5 @@
 import { sql } from 'drizzle-orm';
+import { DEFAULT_UPLOADS_DIR, sweepUploads } from './uploads/store';
 import type { Db } from './db/client';
 
 // Retention of operational data (docs/design.md 10.4, "Retention"). Marks and mark_history are kept for the student's
@@ -58,7 +59,13 @@ export function readRetention(env: Record<string, string | undefined> = process.
 export type RetentionReport = Record<string, number>;
 
 /** Applies every limit once; safe to run again. Returns the rows touched per table. */
-export async function applyRetention(db: Db, limits: RetentionLimits, now = new Date()): Promise<RetentionReport> {
+export async function applyRetention(
+  db: Db,
+  limits: RetentionLimits,
+  now = new Date(),
+  /** UPLOADS_DIR: pictures no row points at any more are swept */
+  uploadsDir?: string,
+): Promise<RetentionReport> {
   const report: RetentionReport = {};
   const days = (n: number) => new Date(now.getTime() - n * 86_400_000);
   const run = async (name: string, q: ReturnType<typeof sql>) => {
@@ -102,7 +109,10 @@ export async function applyRetention(db: Db, limits: RetentionLimits, now = new 
   const drift = days(limits.driftAckedDays);
   await run(
     'api_drift_events',
-    sql`delete from api_drift_events where acknowledged_at < ${drift} and last_seen_at < ${drift}`,
+    // gone once it has not occurred for the limit and every family whose diaries use the provider has hidden it
+    sql`delete from api_drift_events e where e.last_seen_at < ${drift} and not exists (
+      select 1 from diary_accounts a where a.provider_id = e.provider_id and not exists (
+        select 1 from api_drift_acks k where k.drift_event_id = e.id and k.family_id = a.family_id))`,
   );
   await run('lesson_tag_hits', sql`delete from lesson_tag_hits where due_date < ${days(limits.tagHitsDays)}::date`);
   await run('sessions', sql`delete from sessions where expires_at < ${now}`);
@@ -156,16 +166,29 @@ export async function applyRetention(db: Db, limits: RetentionLimits, now = new 
           where r.student_id = x.student_id and y.id = x.school_year_id and y.end_date < ${cutoff}`,
     );
   }
+  // pictures no row points at any more: a child's photo goes with the child, a wallpaper with its row (14.1)
+  if (uploadsDir) {
+    const keys = await db.execute<{ key: string }>(
+      sql`select avatar->>'key' as key from students where avatar->>'kind' = 'photo'
+          union select storage_key from user_files`,
+    );
+    report.uploads_orphaned = await sweepUploads(uploadsDir, new Set(keys.rows.map((r) => r.key)));
+  }
   return report;
 }
 
 /** Runs the janitor once per day: the scheduler calls this after every tick. */
-export function dailyJanitor(db: Db, limits: RetentionLimits, onReport?: (r: RetentionReport) => void) {
+export function dailyJanitor(
+  db: Db,
+  limits: RetentionLimits,
+  onReport?: (r: RetentionReport) => void,
+  uploadsDir: string = DEFAULT_UPLOADS_DIR,
+) {
   let lastDay = '';
   return async () => {
     const today = new Date().toISOString().slice(0, 10);
     if (today === lastDay) return;
     lastDay = today;
-    onReport?.(await applyRetention(db, limits));
+    onReport?.(await applyRetention(db, limits, new Date(), uploadsDir));
   };
 }

@@ -36,7 +36,7 @@ function routesOf(opts: ConformanceOptions): Record<string, string> {
   return readJson(path) as Record<string, string>;
 }
 
-const KNOWN_FOLDERS = new Set(['expected', 'unsanitised', 'raw']);
+const KNOWN_FOLDERS = new Set(['expected', 'unsanitised', 'raw', 'cases']);
 
 /** Every string in a JSON value with its path: "children[0].first_name". */
 function stringLeaves(value: unknown, path = ''): [string, string][] {
@@ -172,6 +172,9 @@ export function defineConformanceSuite(opts: ConformanceOptions): void {
   // Fictional responses before sanitising, to prove sanitize() works. Not "raw/": that name is gitignored because it
   // holds real responses on the owner's machine.
   const unsanitised = loadFixtures(fixturesDir, 'unsanitised');
+  // Rare response shapes kept by hand ({endpoint, response, ...}; docs/providers.md 8): never written by a probe, tested
+  // by the provider's own case test, held to the same denylist as the fixtures here
+  const cases = loadFixtures(fixturesDir, 'cases') as Record<string, { endpoint?: string; response?: unknown }>;
   const denyPath = join(fixturesDir, 'denylist.json');
   const deny: Denylist = existsSync(denyPath) ? (readJson(denyPath) as Denylist) : {};
   const expectedPath = join(fixturesDir, 'expected', 'canonical.json');
@@ -330,6 +333,14 @@ export function defineConformanceSuite(opts: ConformanceOptions): void {
           kept.map(([path]) => path),
           `sanitize(unsanitised/${name}.json) left these strings unchanged`,
         ).toEqual([]);
+      }
+      for (const [name, c] of Object.entries(cases)) {
+        expect(denylistHits(c, deny), `cases/${name}.json`).toEqual([]);
+        expect(typeof c.endpoint, `cases/${name}.json names its endpoint`).toBe('string');
+        expect(
+          provider.sanitize(c.endpoint!, c.response),
+          `sanitize() changes the sanitised cases/${name}.json`,
+        ).toEqual(c.response);
       }
       const routesPath = join(fixturesDir, 'routes.json');
       if (existsSync(routesPath)) expect(denylistHits(readJson(routesPath), deny), 'fixtures/routes.json').toEqual([]);

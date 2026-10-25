@@ -4,6 +4,11 @@
 :root {
   --font-display: "Fraunces", Georgia, serif;
   --font-body: "Manrope", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-option-manrope: "Manrope", system-ui, sans-serif;
+  --font-option-nunito: "Nunito", system-ui, sans-serif;
+  --font-option-ptsans: "PT Sans", system-ui, sans-serif;
+  --font-option-inter: "Inter", system-ui, sans-serif;
+  --font-option-rubik: "Rubik", system-ui, sans-serif;
   --r-sm: 8px;
   --r-md: 14px;
   --r-lg: 20px;
@@ -130,6 +135,323 @@
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.3);
   --subj-text-l: 74%;
   --subj-on: #0F1420;
+}
+
+[data-swatch="sea"] {
+  --sw-bg: #F6F7FB;
+  --sw-accent: #1D6B7A;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) [data-swatch="sea"] {
+    --sw-bg: #0F1420;
+    --sw-accent: #5FB8CB;
+  }
+}
+
+:root[data-theme="dark"] [data-swatch="sea"] {
+  --sw-bg: #0F1420;
+  --sw-accent: #5FB8CB;
+}
+
+[data-swatch="forest"] {
+  --sw-bg: #F3F8F2;
+  --sw-accent: #2F7A4A;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) [data-swatch="forest"] {
+    --sw-bg: #0E1612;
+    --sw-accent: #6FCF97;
+  }
+}
+
+:root[data-theme="dark"] [data-swatch="forest"] {
+  --sw-bg: #0E1612;
+  --sw-accent: #6FCF97;
+}
+
+[data-swatch="sky"] {
+  --sw-bg: #F2F6FC;
+  --sw-accent: #2563B0;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) [data-swatch="sky"] {
+    --sw-bg: #0D1320;
+    --sw-accent: #7FB2F0;
+  }
+}
+
+:root[data-theme="dark"] [data-swatch="sky"] {
+  --sw-bg: #0D1320;
+  --sw-accent: #7FB2F0;
+}
+
+[data-swatch="plum"] {
+  --sw-bg: #F8F5FB;
+  --sw-accent: #6D4AA8;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) [data-swatch="plum"] {
+    --sw-bg: #14111C;
+    --sw-accent: #B79CF0;
+  }
+}
+
+:root[data-theme="dark"] [data-swatch="plum"] {
+  --sw-bg: #14111C;
+  --sw-accent: #B79CF0;
+}
+
+[data-swatch="berry"] {
+  --sw-bg: #FBF5F7;
+  --sw-accent: #B0305C;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) [data-swatch="berry"] {
+    --sw-bg: #1A1015;
+    --sw-accent: #F08AAE;
+  }
+}
+
+:root[data-theme="dark"] [data-swatch="berry"] {
+  --sw-bg: #1A1015;
+  --sw-accent: #F08AAE;
+}
+
+[data-swatch="amber"] {
+  --sw-bg: #FBF8F0;
+  --sw-accent: #9A5C0B;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) [data-swatch="amber"] {
+    --sw-bg: #18140D;
+    --sw-accent: #F2B866;
+  }
+}
+
+:root[data-theme="dark"] [data-swatch="amber"] {
+  --sw-bg: #18140D;
+  --sw-accent: #F2B866;
+}
+
+[data-swatch="mint"] {
+  --sw-bg: #F1F9F7;
+  --sw-accent: #0F766E;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) [data-swatch="mint"] {
+    --sw-bg: #0C1715;
+    --sw-accent: #5ED6C3;
+  }
+}
+
+:root[data-theme="dark"] [data-swatch="mint"] {
+  --sw-bg: #0C1715;
+  --sw-accent: #5ED6C3;
+}
+
+[data-swatch="graphite"] {
+  --sw-bg: #F4F4F5;
+  --sw-accent: #3C4454;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) [data-swatch="graphite"] {
+    --sw-bg: #111214;
+    --sw-accent: #C3CAD8;
+  }
+}
+
+:root[data-theme="dark"] [data-swatch="graphite"] {
+  --sw-bg: #111214;
+  --sw-accent: #C3CAD8;
+}
+
+:root[data-palette="forest"] {
+  --bg: #F3F8F2;
+  --accent: #2F7A4A;
+  --accent-soft: #DCEFE2;
+  --accent-ink: #FFFFFF;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-palette="forest"]:not([data-theme="light"]) {
+    --bg: #0E1612;
+    --accent: #6FCF97;
+    --accent-soft: #173A26;
+    --accent-ink: #0E1612;
+  }
+}
+
+:root[data-palette="forest"][data-theme="dark"] {
+  --bg: #0E1612;
+  --accent: #6FCF97;
+  --accent-soft: #173A26;
+  --accent-ink: #0E1612;
+}
+
+:root[data-palette="sky"] {
+  --bg: #F2F6FC;
+  --accent: #2563B0;
+  --accent-soft: #DCE8F8;
+  --accent-ink: #FFFFFF;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-palette="sky"]:not([data-theme="light"]) {
+    --bg: #0D1320;
+    --accent: #7FB2F0;
+    --accent-soft: #182C47;
+    --accent-ink: #0D1320;
+  }
+}
+
+:root[data-palette="sky"][data-theme="dark"] {
+  --bg: #0D1320;
+  --accent: #7FB2F0;
+  --accent-soft: #182C47;
+  --accent-ink: #0D1320;
+}
+
+:root[data-palette="plum"] {
+  --bg: #F8F5FB;
+  --accent: #6D4AA8;
+  --accent-soft: #E9E1F5;
+  --accent-ink: #FFFFFF;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-palette="plum"]:not([data-theme="light"]) {
+    --bg: #14111C;
+    --accent: #B79CF0;
+    --accent-soft: #2C2342;
+    --accent-ink: #14111C;
+  }
+}
+
+:root[data-palette="plum"][data-theme="dark"] {
+  --bg: #14111C;
+  --accent: #B79CF0;
+  --accent-soft: #2C2342;
+  --accent-ink: #14111C;
+}
+
+:root[data-palette="berry"] {
+  --bg: #FBF5F7;
+  --accent: #B0305C;
+  --accent-soft: #F6DDE6;
+  --accent-ink: #FFFFFF;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-palette="berry"]:not([data-theme="light"]) {
+    --bg: #1A1015;
+    --accent: #F08AAE;
+    --accent-soft: #3D1A28;
+    --accent-ink: #1A1015;
+  }
+}
+
+:root[data-palette="berry"][data-theme="dark"] {
+  --bg: #1A1015;
+  --accent: #F08AAE;
+  --accent-soft: #3D1A28;
+  --accent-ink: #1A1015;
+}
+
+:root[data-palette="amber"] {
+  --bg: #FBF8F0;
+  --accent: #9A5C0B;
+  --accent-soft: #F6E7CC;
+  --accent-ink: #FFFFFF;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-palette="amber"]:not([data-theme="light"]) {
+    --bg: #18140D;
+    --accent: #F2B866;
+    --accent-soft: #3B2B12;
+    --accent-ink: #18140D;
+  }
+}
+
+:root[data-palette="amber"][data-theme="dark"] {
+  --bg: #18140D;
+  --accent: #F2B866;
+  --accent-soft: #3B2B12;
+  --accent-ink: #18140D;
+}
+
+:root[data-palette="mint"] {
+  --bg: #F1F9F7;
+  --accent: #0F766E;
+  --accent-soft: #D5F0EA;
+  --accent-ink: #FFFFFF;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-palette="mint"]:not([data-theme="light"]) {
+    --bg: #0C1715;
+    --accent: #5ED6C3;
+    --accent-soft: #13362F;
+    --accent-ink: #0C1715;
+  }
+}
+
+:root[data-palette="mint"][data-theme="dark"] {
+  --bg: #0C1715;
+  --accent: #5ED6C3;
+  --accent-soft: #13362F;
+  --accent-ink: #0C1715;
+}
+
+:root[data-palette="graphite"] {
+  --bg: #F4F4F5;
+  --accent: #3C4454;
+  --accent-soft: #E3E5EA;
+  --accent-ink: #FFFFFF;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-palette="graphite"]:not([data-theme="light"]) {
+    --bg: #111214;
+    --accent: #C3CAD8;
+    --accent-soft: #2A2E36;
+    --accent-ink: #111214;
+  }
+}
+
+:root[data-palette="graphite"][data-theme="dark"] {
+  --bg: #111214;
+  --accent: #C3CAD8;
+  --accent-soft: #2A2E36;
+  --accent-ink: #111214;
+}
+
+:root[data-font="manrope"] {
+  --font-body: "Manrope", system-ui, sans-serif;
+}
+
+:root[data-font="nunito"] {
+  --font-body: "Nunito", system-ui, sans-serif;
+}
+
+:root[data-font="ptsans"] {
+  --font-body: "PT Sans", system-ui, sans-serif;
+}
+
+:root[data-font="inter"] {
+  --font-body: "Inter", system-ui, sans-serif;
+}
+
+:root[data-font="rubik"] {
+  --font-body: "Rubik", system-ui, sans-serif;
 }
 
 @theme inline {

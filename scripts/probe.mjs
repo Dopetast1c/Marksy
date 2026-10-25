@@ -3,7 +3,8 @@
 // the real diary with the logins in .env, after the login guard allowed it (the provider's probe asks it itself,
 // server/src/cli/login-guard.ts and mode.ts: one login per account per interval, 10 minutes in development and the
 // manifest's in production, where Claude Code also has three runs a day, 07:00 to 20:00).
-// pnpm probe --offline [run] re-runs the provider's probe on saved raw responses in data/probe/ without a login.
+// pnpm probe --offline [run] [--write-fixtures] re-runs the provider's probe on saved raw responses in data/probe/
+// without a login; it rewrites the regular fixtures only with --write-fixtures. No probe ever writes fixtures/cases/.
 // Without --provider it picks the only provider that has a probe.
 import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
@@ -43,11 +44,17 @@ function onlineOptions(xs) {
   }
   return true;
 }
-const known = offline
-  ? rest.length === 1 || (rest.length === 2 && /^\d{4}-\d{2}-\d{2}T[\d-]+Z$/.test(rest[1]))
-  : onlineOptions(rest);
+/** a run folder and --write-fixtures, each at most once, in any order */
+function offlineOptions(xs) {
+  const runs = xs.filter((x) => /^\d{4}-\d{2}-\d{2}T[\d-]+Z$/.test(x));
+  const writes = xs.filter((x) => x === '--write-fixtures');
+  return runs.length <= 1 && writes.length <= 1 && runs.length + writes.length === xs.length;
+}
+const known = offline ? offlineOptions(rest.slice(1)) : onlineOptions(rest);
 if (!known) {
-  console.error('options: --provider <id>, --weeks <1-8>, --next, or --offline [the run folder in data/probe/]');
+  console.error(
+    'options: --provider <id>, --weeks <1-8>, --next, or --offline [the run folder in data/probe/] [--write-fixtures]',
+  );
   process.exit(2);
 }
 const command = offline

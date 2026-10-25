@@ -238,6 +238,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/me/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Your own settings: «Подсказки» (design.md 5.6) and Оформление (5.6a), any part of it */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        guidance?: boolean;
+                        appearance?: {
+                            /** @enum {string} */
+                            theme?: "light" | "dark" | "system";
+                            /** @enum {string} */
+                            background?: "color" | "wallpaper";
+                            /** @enum {string} */
+                            palette?: "sea" | "forest" | "sky" | "plum" | "berry" | "amber" | "mint" | "graphite";
+                            /** @enum {string} */
+                            wallpaper?: "cell" | "line" | "dots" | "doodle" | "waves" | "own";
+                            opacity?: number;
+                            /** @enum {string} */
+                            font?: "manrope" | "nunito" | "ptsans" | "inter" | "rubik";
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Me"];
+                    };
+                };
+                /** @description No session */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
     "/api/me": {
         parameters: {
             query?: never;
@@ -466,7 +530,43 @@ export interface paths {
         };
         options?: never;
         head?: never;
-        patch?: never;
+        /** The family’s switches (admin): «Подсказки» for everyone, whether parents may invite */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        guidance?: boolean;
+                        parentsCanInvite?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Family"];
+                    };
+                };
+                /** @description No session */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
         trace?: never;
     };
     "/api/family/accounts": {
@@ -1182,6 +1282,76 @@ export interface paths {
         };
         trace?: never;
     };
+    "/api/family/members/{id}/ui-mode": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** A student member's simple mode (5.7), switched by the admin or a parent */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        uiMode: "full" | "simple";
+                    };
+                };
+            };
+            responses: {
+                /** @description Done */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description The member is not a student */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No session */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such member */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/family/export": {
         parameters: {
             query?: never;
@@ -1651,6 +1821,20 @@ export interface paths {
                                 lessons: components["schemas"]["Lesson"][];
                             } | null;
                             now: components["schemas"]["NowLine"];
+                            nearGoals: {
+                                subject: {
+                                    id: string;
+                                    name: string;
+                                    color: string | null;
+                                };
+                                target: number;
+                                average: number;
+                                need: number;
+                                plan: {
+                                    value: number;
+                                    count: number;
+                                };
+                            }[] | null;
                         };
                     };
                 };
@@ -2002,6 +2186,8 @@ export interface paths {
                                 from: string;
                                 to: string;
                                 note: string | null;
+                                /** @enum {string|null} */
+                                kind: "autumn" | "winter" | "spring" | "summer" | "additional" | "other" | null;
                             }[];
                             bells: {
                                 label: string | null;
@@ -2659,6 +2845,9 @@ export interface paths {
                                 id: string;
                                 label: string;
                                 current: boolean;
+                                /** @enum {string} */
+                                source: "api" | "manual";
+                                startYear: number;
                             }[];
                             rows: {
                                 subjectName: string;
@@ -2694,6 +2883,93 @@ export interface paths {
             };
         };
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/students/{id}/final-marks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Year finals of a school year before Marksy, typed in from the report card (admin and parents) */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        startYear: number;
+                        marks: {
+                            subjectName: string;
+                            raw: string;
+                        }[];
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            yearId: string | null;
+                            count: number;
+                        };
+                    };
+                };
+                /** @description Not a past year, a value off the scale, a subject twice, or a child without marks */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No session */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such child */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description The diary has this school year */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
         post?: never;
         delete?: never;
         options?: never;
@@ -3159,6 +3435,320 @@ export interface paths {
         };
         trace?: never;
     };
+    "/api/students/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** The child’s avatar (admin, parent): traits to draw, or null for the neutral look */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        avatar: components["schemas"]["AvatarTraits"] | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            avatar: components["schemas"]["Avatar"];
+                        };
+                    };
+                };
+                /** @description No session */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description A student does not set avatars */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such child */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/students/{id}/photo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The child’s photo, to the families that follow the child (D54) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Done */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description No session */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such child or no photo */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        /** A photo as the child’s avatar (admin, parent): JPEG, PNG or WebP up to 512 px, metadata removed (14.1) */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/octet-stream": string;
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            avatar: components["schemas"]["Avatar"];
+                        };
+                    };
+                };
+                /** @description Not a JPEG, PNG or WebP, or larger than 512 px */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No session */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description A student does not set avatars */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such child */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me/wallpaper": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Your own wallpaper, to you only */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Done */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description No session */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No wallpaper of your own */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        /** Your own wallpaper: JPEG, PNG or WebP up to 1600 px and 5 MB, metadata removed (14.1); only you see it */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/octet-stream": string;
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            hasOwnWallpaper: boolean;
+                        };
+                    };
+                };
+                /** @description Not a JPEG, PNG or WebP, or larger than 1600 px */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No session */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        /** Remove your own wallpaper (the picture is deleted) */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Done */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description No session */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/sync/status": {
         parameters: {
             query?: never;
@@ -3266,6 +3856,198 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sync/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** «Обновить сейчас»: one run of a diary account within its login budget (admin, parent) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        accountId: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            started: boolean;
+                            /** @enum {string|null} */
+                            reason: "interval" | "action" | null;
+                            /** Format: date-time */
+                            retryAt: string | null;
+                        };
+                    };
+                };
+                /** @description No session */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such diary account */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sync/rescan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** «Перепроверить»: the weeks of the current term or school year are read again by the next runs, then one run now */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        accountId: string;
+                        studentIds?: string[];
+                        /** @enum {string} */
+                        period: "term" | "year";
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            started: boolean;
+                            /** @enum {string|null} */
+                            reason: "interval" | "action" | null;
+                            /** Format: date-time */
+                            retryAt: string | null;
+                            weeks: number;
+                        };
+                    };
+                };
+                /** @description No session */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such diary account */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sync/drift/{id}/ack": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** «Понятно, скрыть» for a change in the diary’s API (admin, parent) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Done */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description No session */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such change for the family’s diaries */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -3277,6 +4059,45 @@ export interface components {
                 details?: unknown;
             };
         };
+        Appearance: {
+            /** @enum {string} */
+            theme: "light" | "dark" | "system";
+            /** @enum {string} */
+            background: "color" | "wallpaper";
+            /** @enum {string} */
+            palette: "sea" | "forest" | "sky" | "plum" | "berry" | "amber" | "mint" | "graphite";
+            /** @enum {string} */
+            wallpaper: "cell" | "line" | "dots" | "doodle" | "waves" | "own";
+            opacity: number;
+            /** @enum {string} */
+            font: "manrope" | "nunito" | "ptsans" | "inter" | "rubik";
+            hasOwnWallpaper: boolean;
+            wallpaperVersion: string | null;
+        };
+        AvatarTraits: {
+            /** @enum {string} */
+            age: "kid" | "preteen" | "teen" | "adult";
+            /** @enum {string} */
+            look: "boy" | "girl" | "neutral";
+            /** @enum {string} */
+            skin: "pale" | "light" | "medium" | "tan" | "brown" | "dark";
+            /** @enum {string} */
+            hair: "black" | "dark" | "brown" | "lightbrown" | "blond" | "red" | "grey";
+            /** @enum {string} */
+            style: "buzz" | "short" | "medium" | "long" | "ponytail" | "bob" | "curly" | "braids";
+            /** @enum {string} */
+            eyes: "brown" | "hazel" | "green" | "blue" | "grey";
+            glasses: boolean;
+        };
+        Avatar: {
+            /** @enum {string} */
+            kind: "traits";
+            traits: components["schemas"]["AvatarTraits"];
+        } | {
+            /** @enum {string} */
+            kind: "photo";
+            url: string;
+        } | null;
         StudentSummary: {
             id: string;
             name: string;
@@ -3377,6 +4198,7 @@ export interface components {
                     width: number;
                 };
             } | null;
+            avatar: components["schemas"]["Avatar"];
         };
         Me: {
             user: {
@@ -3387,6 +4209,8 @@ export interface components {
                 timezone: string | null;
                 /** @enum {string} */
                 uiMode: "full" | "simple";
+                guidance: boolean;
+                appearance: components["schemas"]["Appearance"];
             };
             memberships: {
                 familyId: string;
@@ -3407,6 +4231,7 @@ export interface components {
                 id: string;
                 name: string;
                 parentsCanInvite: boolean;
+                guidance: boolean;
             };
             /** @enum {string} */
             role: "admin" | "parent" | "student";
@@ -3416,6 +4241,8 @@ export interface components {
                 /** @enum {string} */
                 role: "admin" | "parent" | "student";
                 studentIds: string[];
+                /** @enum {string} */
+                uiMode: "full" | "simple";
             }[];
             accounts: {
                 id: string;
@@ -3436,6 +4263,7 @@ export interface components {
                 /** @enum {string} */
                 status: "active" | "suspended" | "stopped";
                 sharedWithOtherFamily: boolean;
+                avatar: components["schemas"]["Avatar"];
                 settings: {
                     lowMark: number | null;
                     dropStep: number | null;
@@ -3452,6 +4280,10 @@ export interface components {
                 displayName: string;
                 /** Format: date-time */
                 createdAt: string;
+                diary: {
+                    providerName: string;
+                    label: string;
+                } | null;
             }[];
         };
         Provider: {
@@ -3513,7 +4345,7 @@ export interface components {
         };
         ChildEvent: {
             /** @enum {string} */
-            kind: "low_mark" | "mark_changed" | "mark_removed" | "absence" | "average_down" | "average_up" | "teacher_comment" | "holidays_ahead";
+            kind: "low_mark" | "mark_changed" | "mark_removed" | "absence" | "average_down" | "average_up" | "teacher_comment" | "holidays_ahead" | "account_action";
             /** @enum {string} */
             severity: "critical" | "low" | "neutral" | "good";
             date: string;
@@ -3527,7 +4359,7 @@ export interface components {
             };
             link: {
                 /** @enum {string} */
-                screen: "subject" | "schedule" | "school";
+                screen: "subject" | "schedule" | "school" | "sync";
                 subjectId?: string;
                 lessonId?: string | null;
                 date?: string;
@@ -3870,6 +4702,7 @@ export interface components {
                 id: string;
                 providerId: string;
                 providerName: string;
+                label: string | null;
                 /** @enum {string} */
                 status: "loading" | "ok" | "stale" | "paused" | "auth_failed" | "blocked" | "needs_2fa";
                 /** Format: date-time */
@@ -3891,6 +4724,40 @@ export interface components {
                 /** Format: date-time */
                 nextAllowedAt: string | null;
                 studentIds: string[];
+                plan: {
+                    window: {
+                        from: string;
+                        to: string;
+                    } | null;
+                    windowStudentIds: string[];
+                    next: {
+                        /** @enum {string} */
+                        kind: "now" | "soon" | "at" | "nextSchoolDay" | "action" | "offline" | "paused";
+                        /** Format: date-time */
+                        at: string | null;
+                    };
+                    sets: {
+                        [key: string]: number;
+                    };
+                    maxRequestsPerRun: number;
+                    rescan: {
+                        /** Format: date-time */
+                        lastFullAt: string | null;
+                        /** Format: date-time */
+                        oldestVerifiedAt: string | null;
+                    };
+                    drift: {
+                        id: string;
+                        endpoint: string;
+                        kind: string;
+                        path: string;
+                        /** Format: date-time */
+                        firstSeenAt: string;
+                        /** Format: date-time */
+                        lastSeenAt: string;
+                        count: number;
+                    }[];
+                } | null;
             }[];
             students: {
                 id: string;

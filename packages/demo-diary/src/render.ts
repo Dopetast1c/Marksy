@@ -65,7 +65,7 @@ export function renderFixtures(student: SeedStudent, cal: SeedCalendar, opts: Re
         till: t.end,
         ...(t.note && { remark: t.note }),
       })),
-      breaks: cal.holidays.map((h) => ({ from: h.from, till: h.to, ...(h.note && { remark: h.note }) })),
+      breaks: cal.holidays.map((h) => ({ from: h.from, till: h.to, kind: h.kind, ...(h.note && { remark: h.note }) })),
       graded: student.scale !== null,
     },
     'subjects-1': student.subjects.map((s) => ({

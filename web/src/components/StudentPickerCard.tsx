@@ -4,7 +4,7 @@ import type { StudentSummary, useStudentCards } from '../api/queries';
 import { intlLocale, useT } from '../i18n';
 import { nowLineText } from '../lib/now';
 import { todayIn } from '../lib/time';
-import { Avatar, defaultTraits } from './Avatar';
+import { StudentAvatar } from './ChildAvatar';
 import { ChangeArrow } from './ChangeArrow';
 import { ClockIcon } from './icons';
 import { numbers } from '../lib/numbers';
@@ -118,7 +118,7 @@ export function StudentPickerCard({
       className="flex w-full flex-col gap-3.5 rounded-lg bg-surface p-4 text-left shadow-card"
     >
       <div className="flex items-center gap-3.5">
-        <Avatar traits={defaultTraits(card.grade)} index={index} size={56} />
+        <StudentAvatar studentId={card.id} index={index} size={56} />
         <div className="flex min-w-0 flex-col gap-0.5">
           <b className="truncate text-[20px] tracking-[-0.01em]">{card.name}</b>
           <span className="truncate text-small text-ink3">
