@@ -238,6 +238,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/me/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Your own settings: «Подсказки» (design.md 5.6); appearance comes with Оформление (5.6a) */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        guidance?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Me"];
+                    };
+                };
+                /** @description No session */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
     "/api/me": {
         parameters: {
             query?: never;
@@ -3389,6 +3440,7 @@ export interface components {
                 timezone: string | null;
                 /** @enum {string} */
                 uiMode: "full" | "simple";
+                guidance: boolean;
             };
             memberships: {
                 familyId: string;

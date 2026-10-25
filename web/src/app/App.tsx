@@ -12,6 +12,7 @@ import { EventsScreen } from '../features/overview/EventsScreen';
 import { HomeScreen } from '../features/overview/HomeScreen';
 import { PickScreen } from '../features/pick/PickScreen';
 import { ScheduleScreen } from '../features/schedule/ScheduleScreen';
+import { SchoolScreen } from '../features/school/SchoolScreen';
 import { RequireAuth, RequireChild, Start } from './guards';
 
 // Routes (docs/design.md 4). Everything but the login needs a session; every /s/:studentId screen needs a child this
@@ -39,6 +40,7 @@ export const routes: RouteObject[] = [
           { path: 'subjects', element: <SubjectsScreen /> },
           { path: 'subjects/:subjectId', element: <SubjectScreen /> },
           { path: 'schedule', element: <ScheduleScreen /> },
+          { path: 'school', element: <SchoolScreen /> },
         ],
       },
       { path: '*', element: <Start /> },

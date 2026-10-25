@@ -25,7 +25,6 @@ export function TabBar({ studentId }: { studentId: string | null }) {
   const tabs = TABS.filter((tab) => tab.key !== 'schedule' || lessons);
   const look = (active: boolean) =>
     `relative flex min-w-0 flex-col items-center gap-[3px] rounded-sm py-1.5 text-[10.5px] font-bold whitespace-nowrap ${active ? 'text-accent' : 'text-ink3'}`;
-  const cls = ({ isActive }: { isActive: boolean }) => look(isActive);
   return (
     <nav
       aria-label={t('tabs.label')}
@@ -42,7 +41,8 @@ export function TabBar({ studentId }: { studentId: string | null }) {
           {t(`tabs.${key}`)}
         </NavLink>
       ))}
-      <NavLink to="/more" className={cls}>
+      {/* Школа is reached from Ещё and belongs to its tab */}
+      <NavLink to="/more" className={({ isActive }) => look(isActive || /^\/s\/[^/]+\/school$/.test(pathname))}>
         <MoreTabIcon size={22} />
         {t('tabs.more')}
       </NavLink>

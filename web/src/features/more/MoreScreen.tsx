@@ -1,67 +1,170 @@
 import { useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { api } from '../../api/client';
+import { api, data } from '../../api/client';
 import type { Locale } from '../../api/client';
 import { meKey, useMe } from '../../api/queries';
 import { Frame } from '../../app/Frame';
-import { ChevIcon, OutIcon, UsersIcon } from '../../components/icons';
-import { LanguagePicker } from '../../components/LanguagePicker';
-import { setLanguage, useT } from '../../i18n';
 import { useContinueChild } from '../../app/guards';
+import { Avatar, defaultTraits } from '../../components/Avatar';
+import { BottomSheet, SheetOption } from '../../components/BottomSheet';
+import { BulbIcon, OutIcon, SchoolIcon, UsersIcon } from '../../components/icons';
+import { LanguagePicker } from '../../components/LanguagePicker';
+import { MenuCard, MenuRow } from '../../components/MenuRow';
+import { Switch } from '../../components/Switch';
+import { setLanguage, useT } from '../../i18n';
+import { useDevice } from '../../state/store';
 
-// Ещё (docs/design.md 5.6) opens without a picked child. While nobody is picked it starts with «Ученик не выбран»,
-// which leads back to the choice (design 4). The language is saved to the user at once. Семья, Синхронизация, Теги,
-// Оформление and the rest come with M5d.
+// Ещё (docs/design.md 5.6) opens without a picked child. Order, from the most important down: who is signed in; what
+// the app does for the family (Семья, Школа, Синхронизация; Настройки уведомлений with M9, Теги with M6); how the app
+// looks and behaves (Оформление, Простой режим, Подсказки, Всегда начинать с последнего, Язык, Сменить семью); last
+// and apart, Выйти. While nobody is picked it starts with «Ученик не выбран», which leads back to the choice (design 4).
 
 export function MoreScreen() {
   const t = useT();
   const navigate = useNavigate();
   const queries = useQueryClient();
   const me = useMe();
+  const alwaysLast = useDevice((s) => s.alwaysLast);
+  const setAlwaysLast = useDevice((s) => s.setAlwaysLast);
+  const [families, setFamilies] = useState(false);
   // the child this device continues with under the 12-hour rule: an old pick does not open from a tab (D7)
   const continueWith = useContinueChild();
+  const user = me.data?.user;
+  const family = me.data?.family ?? null;
   const kids = me.data?.students ?? [];
-  const picked = !!continueWith;
+  const parent = family?.role !== 'student';
+  const child = kids.find((k) => k.id === continueWith) ?? null;
   const signOut = async () => {
     await api.POST('/api/auth/logout');
     queries.clear();
     navigate('/login', { replace: true });
   };
-  const row = 'flex w-full items-center gap-3 rounded-lg bg-surface px-3.5 py-2.5 text-left shadow-card';
-  const icon = 'grid size-8 flex-none place-items-center rounded-[9px] bg-accent-soft text-accent';
+  // Школа is the selected child's (5.9): shown when the provider has bells or terms, for the child or, before a pick,
+  // for any child; without a pick it asks for the child first
+  const hasSchool = (k: (typeof kids)[number]) => !!k.capabilities.bellSchedule || k.capabilities.terms !== 'none';
+  const school = child ? hasSchool(child) : kids.some(hasSchool);
+  const guidance = async (on: boolean) => {
+    await data(api.PATCH('/api/me/settings', { body: { guidance: on } }));
+    // advice comes and goes on every child's screen
+    await queries.invalidateQueries();
+  };
+  const switchFamily = async (familyId: string) => {
+    setFamilies(false);
+    await data(api.POST('/api/auth/family', { body: { familyId } }));
+    // another family: other children, tags, rules; start from the choice again
+    queries.clear();
+    useDevice.getState().forget();
+    navigate('/', { replace: true });
+  };
+
   return (
     <Frame studentId={continueWith}>
       <header className="px-5 pt-1.5 pb-3">
         <h1 className="text-h1">{t('screen.more')}</h1>
       </header>
       <main className="flex flex-col gap-3.5 px-5 pb-5">
-        {!picked && kids.length > 1 && (
-          <button type="button" onClick={() => navigate('/pick')} className={row}>
-            <span className={icon}>
-              <UsersIcon />
-            </span>
-            <span className="flex min-w-0 flex-1 flex-col">
-              <b className="text-[14px]">{t('more.unpicked')}</b>
-              <span className="text-[12.5px] text-ink3">{t('more.unpicked.text')}</span>
-            </span>
-            <ChevIcon className="text-ink3" />
-          </button>
+        {!continueWith && kids.length > 1 && (
+          <MenuCard>
+            <MenuRow
+              icon={<UsersIcon />}
+              title={t('more.unpicked')}
+              sub={t('more.unpicked.text')}
+              onClick={() => navigate('/pick')}
+            />
+          </MenuCard>
         )}
-        <LanguagePicker
-          variant="row"
-          onPick={async (lng) => {
-            await setLanguage(lng);
-            await api.PATCH('/api/me', { body: { locale: lng as Locale } });
-            await queries.invalidateQueries({ queryKey: meKey });
-          }}
-        />
-        <button type="button" onClick={signOut} className={row}>
-          <span className={icon}>
-            <OutIcon />
-          </span>
-          <b className="text-[14px]">{t('more.signOut')}</b>
-        </button>
+        {user && (
+          <div className="flex items-center gap-3 rounded-lg bg-surface px-3.5 py-3 shadow-card">
+            <Avatar
+              traits={{ ...defaultTraits(null), age: parent ? 'adult' : 'preteen' }}
+              index={parent ? kids.length : kids.findIndex((k) => k.id === child?.id)}
+              size={44}
+            />
+            <span className="flex min-w-0 flex-1 flex-col">
+              <b className="text-[15px]">
+                {t('more.who', { name: user.displayName, role: t(`role.${family?.role ?? 'parent'}`) })}
+              </b>
+              <span className="text-[12.5px] text-ink3">
+                {parent || !kids[0]
+                  ? t('more.who.family', { family: family?.name ?? '', count: kids.length })
+                  : [kids[0].classLabel, kids[0].schoolLabel].filter(Boolean).join(' · ')}
+              </span>
+            </span>
+          </div>
+        )}
+        {school && (
+          <MenuCard>
+            <MenuRow
+              icon={<SchoolIcon />}
+              title={t('more.school')}
+              sub={child ? t('more.school.subFor', { name: child.name }) : t('more.school.sub')}
+              onClick={() => navigate(child ? `/s/${child.id}/school` : '/pick')}
+            />
+          </MenuCard>
+        )}
+        <MenuCard>
+          <MenuRow
+            icon={<BulbIcon />}
+            title={t('more.guidance')}
+            sub={t('more.guidance.sub')}
+            control={
+              <Switch
+                checked={user?.guidance ?? true}
+                onChange={(on) => void guidance(on)}
+                label={t('more.guidance')}
+              />
+            }
+          />
+          {parent && (
+            <MenuRow
+              icon={<UsersIcon />}
+              title={t('pick.alwaysLast')}
+              sub={alwaysLast ? t('more.alwaysLast.on') : t('more.alwaysLast.off')}
+              control={<Switch checked={alwaysLast} onChange={setAlwaysLast} label={t('pick.alwaysLast')} />}
+            />
+          )}
+          <LanguagePicker
+            variant="row"
+            onPick={async (lng) => {
+              await setLanguage(lng);
+              await api.PATCH('/api/me', { body: { locale: lng as Locale } });
+              await queries.invalidateQueries({ queryKey: meKey });
+            }}
+          />
+          {(me.data?.memberships.length ?? 0) > 1 && (
+            <MenuRow
+              icon={<UsersIcon />}
+              title={t('more.switchFamily')}
+              sub={family?.name}
+              onClick={() => setFamilies(true)}
+            />
+          )}
+        </MenuCard>
+        <MenuCard>
+          <MenuRow
+            icon={<OutIcon />}
+            tone="quiet"
+            title={t('more.signOut')}
+            sub={t('more.signOut.sub')}
+            onClick={() => void signOut()}
+            chevron={false}
+          />
+        </MenuCard>
+        <p className="m-0 text-center text-small text-ink3">{t('more.readOnly')}</p>
       </main>
+      <BottomSheet open={families} onClose={() => setFamilies(false)} label={t('more.switchFamily')}>
+        <span className="text-label text-ink3 uppercase">{t('more.switchFamily')}</span>
+        {me.data?.memberships.map((m) => (
+          <SheetOption
+            key={m.familyId}
+            title={m.familyName}
+            sub={t(`role.${m.role}`)}
+            selected={m.familyId === family?.id}
+            onSelect={() => void switchFamily(m.familyId)}
+          />
+        ))}
+      </BottomSheet>
     </Frame>
   );
 }

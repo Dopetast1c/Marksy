@@ -210,6 +210,18 @@ describe('auth: connect, login, logout, me', () => {
     expect((await agent.patch('/api/me').send({ timezone: 'Mars/Base' })).status).toBe(400);
   });
 
+  it('PATCH /api/me/settings: the person’s own «Подсказки» switch, on until turned off, other settings kept', async () => {
+    const agent = agentWith();
+    await connectFamily(agent);
+    expect((await agent.get('/api/auth/me')).body.user.guidance).toBe(true);
+    const off = await agent.patch('/api/me/settings').send({ guidance: false });
+    expect(off.status).toBe(200);
+    expect(off.body.user.guidance).toBe(false);
+    expect((await agent.patch('/api/me/settings').send({})).body.user.guidance).toBe(false);
+    expect((await agent.patch('/api/me/settings').send({ guidance: 'no' })).status).toBe(400);
+    expect((await request(testApp()).patch('/api/me/settings').send({ guidance: true })).status).toBe(401);
+  });
+
   it('lists the diary systems a family can connect, with their fields', async () => {
     const res = await request(testApp({ allowDemoProviders: false })).get('/api/providers');
     expect(res.status).toBe(200);

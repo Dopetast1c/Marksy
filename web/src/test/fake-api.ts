@@ -23,6 +23,8 @@ export interface FakeState {
   subject?: unknown;
   /** the lesson menu's actions answer 409 with this code (lesson_passed, diary_has_lesson) */
   lessonRefuses?: string;
+  /** the person's own «Подсказки» switch */
+  guidance?: boolean;
   /** the school's today for Расписание's days (a weekend, to see where День opens) */
   scheduleToday?: string;
 }
@@ -308,8 +310,11 @@ const TREND = {
 const SCHOOL = {
   timezone: 'Europe/Minsk',
   year: { label: '2026/27', from: '2026-09-01', to: '2027-05-31' },
-  terms: [],
-  holidays: [],
+  terms: [
+    { id: 'q1', kind: 'quarter', index: 1, label: '1', from: '2026-09-01', to: '2026-10-31', note: null },
+    { id: 'q2', kind: 'quarter', index: 2, label: '2', from: '2026-11-09', to: '2026-12-24', note: null },
+  ],
+  holidays: [{ from: '2026-11-01', to: '2026-11-08', note: null, kind: 'autumn' }],
   bells: [
     {
       label: null,
@@ -725,6 +730,7 @@ export function fakeApi(start: Partial<FakeState> = {}) {
           locale: state.locale ?? 'ru',
           timezone: null,
           uiMode: 'full',
+          guidance: state.guidance ?? true,
         },
         memberships: [{ familyId: 'f1', familyName: 'Семья', role: 'admin' }],
         family: { id: 'f1', name: 'Семья', role: 'admin' },
@@ -737,6 +743,10 @@ export function fakeApi(start: Partial<FakeState> = {}) {
     if (route === 'GET /api/sync/status') return json({ accounts: [], students: [] });
     if (route === 'GET /api/students') return json(CARDS);
     if (route === 'PATCH /api/me') return json({});
+    if (route === 'PATCH /api/me/settings') {
+      state.guidance = (state.bodies[route] as { guidance?: boolean }).guidance ?? state.guidance;
+      return json({});
+    }
     if (route === 'GET /api/family')
       return json({
         matches: matchesPending ? [{ accountId: 'acc-1', studentId: 'kid-shared', name: 'Марк' }] : [],

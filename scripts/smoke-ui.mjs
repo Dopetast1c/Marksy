@@ -40,6 +40,9 @@ export const PROTOTYPE_STATES = [
   ['schedule-1', 'lessons', 'k', { lkind: 'day' }],
   ['schedule-week', 'lessons', 'k', { lkind: 'week' }],
   ['schedule-2', 'lessons', 'm', { lkind: 'day' }],
+  ['more', 'more', 'k'],
+  ['school-bells', 'school', 'k', { schoolTab: 'bells' }],
+  ['school-year', 'school', 'k', { schoolTab: 'year' }],
 ];
 
 /** The demo family is fictional and its password is published (server/src/seed/seed.ts) */
@@ -104,6 +107,8 @@ async function shootApp(browser, base, family, device, dir, log) {
     const kids = me.students ?? [];
     log.push(`    ${family.key}/${device}: signed in, ${kids.length} children`);
     if (page.url().endsWith('/pick')) await shot('pick');
+    await page.goto(`${base}/more`);
+    await shot('more');
     for (const [i, kid] of kids.entries()) {
       await page.goto(`${base}/s/${kid.id}`);
       await shot(`home-${i + 1}`);
@@ -144,6 +149,13 @@ async function shootApp(browser, base, family, device, dir, log) {
         }
         await page.getByRole('button', { name: /^(Неделя|Week)$/ }).click();
         await shot('schedule-week');
+      }
+      // Школа of the first child: its bells and its school year
+      if (i === 0) {
+        await page.goto(`${base}/s/${kid.id}/school`);
+        await shot('school-bells');
+        await page.goto(`${base}/s/${kid.id}/school?tab=year`);
+        await shot('school-year');
       }
       // Итоги of the first child with marks (a year without marks has none)
       if (kid.gradingScale && kid === kids.find((k) => k.gradingScale)) {

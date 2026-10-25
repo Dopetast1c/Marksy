@@ -126,6 +126,20 @@ export const PenNoteIcon = line(
     <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
   </>,
 );
+export const BulbIcon = line(
+  <>
+    <path d="M9 18h6M10 21h4" />
+    <path d="M12 3a6 6 0 0 0-4 10.5c.8.8 1.3 1.6 1.5 2.5h5c.2-.9.7-1.7 1.5-2.5A6 6 0 0 0 12 3z" />
+  </>,
+);
+export const PaletteIcon = line(
+  <>
+    <path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.6-.8 1.6-1.6 0-.5-.2-.8-.4-1.1-.3-.3-.4-.7-.4-1.1 0-.9.7-1.6 1.6-1.6H16a5 5 0 0 0 5-5C21 6.4 17 3 12 3z" />
+    <circle cx="7.5" cy="11" r="1" />
+    <circle cx="10" cy="7" r="1" />
+    <circle cx="14.5" cy="7" r="1" />
+  </>,
+);
 export const AvgNoteIcon = line(<path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />);
 export const BookNoteIcon = line(
   <>

@@ -21,6 +21,7 @@ export function EventRow({ studentId, event, termWord }: { studentId: string; ev
     const l = event.link;
     if (l.screen === 'subject' && l.subjectId) navigate(`/s/${studentId}/subjects/${l.subjectId}`);
     else if (l.screen === 'schedule') navigate(`/s/${studentId}/schedule${l.date ? `?day=${l.date}` : ''}`);
+    else if (l.screen === 'school') navigate(`/s/${studentId}/school?tab=year`);
     else navigate('/more');
   };
   return (

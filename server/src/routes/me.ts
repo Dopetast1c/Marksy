@@ -43,6 +43,8 @@ export const meResponse = registry.register(
       locale: z.string(),
       timezone: z.string().nullable(),
       uiMode: z.enum(['full', 'simple']),
+      /** The person's own «Подсказки» switch (users.settings.guidance); advice shows when the family's is on too */
+      guidance: z.boolean(),
     }),
     memberships: z.array(z.object({ familyId: z.string(), familyName: z.string(), role })),
     family: z.object({ id: z.string(), name: z.string(), role }).nullable(),
@@ -103,6 +105,7 @@ export async function buildMe(db: Db, auth: Pick<Auth, 'userId' | 'familyId'>): 
       locale: user.locale,
       timezone: user.timezone,
       uiMode: user.uiMode,
+      guidance: user.settings.guidance !== false,
     },
     memberships: rows,
     family: current ? { id: current.familyId, name: current.familyName, role: current.role } : null,

@@ -1,6 +1,7 @@
 import { LANGUAGES } from '@marksy/i18n';
 import { useState } from 'react';
 import { i18n, useT } from '../i18n';
+import { MenuRow } from './MenuRow';
 import { BottomSheet, SheetOption } from './BottomSheet';
 import { DownIcon, GlobeIcon } from './icons';
 
@@ -32,20 +33,7 @@ export function LanguagePicker({
           <DownIcon size={16} className="text-ink3" />
         </button>
       ) : (
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          aria-haspopup="dialog"
-          className="flex w-full items-center gap-3 rounded-lg bg-surface px-3.5 py-2.5 text-left shadow-card"
-        >
-          <span className="grid size-8 place-items-center rounded-[9px] bg-accent-soft text-accent">
-            <GlobeIcon />
-          </span>
-          <span className="flex-1">
-            <b className="block text-[14px]">{t('lang.title')}</b>
-            <span className="text-[12.5px] text-ink3">{current.nativeName}</span>
-          </span>
-        </button>
+        <MenuRow icon={<GlobeIcon />} title={t('lang.title')} sub={current.nativeName} onClick={() => setOpen(true)} />
       )}
       <BottomSheet open={open} onClose={() => setOpen(false)} label={t('lang.choose')}>
         <span className="text-label text-ink3 uppercase">{t('lang.choose')}</span>

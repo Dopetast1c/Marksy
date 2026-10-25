@@ -134,6 +134,28 @@ export function authRoutes(deps: AppDeps, limiters: Limiters): Router {
     r,
     {
       method: 'patch',
+      path: '/api/me/settings',
+      summary: 'Your own settings: «Подсказки» (design.md 5.6); appearance comes with Оформление (5.6a)',
+      tags: ['auth'],
+      access: 'session',
+      body: z.object({ guidance: z.boolean().optional() }),
+      response: meResponse,
+    },
+    async (req, { body }) => {
+      const auth = authOf(req);
+      const [u] = await deps.db.select({ settings: users.settings }).from(users).where(eq(users.id, auth.userId));
+      await deps.db
+        .update(users)
+        .set({ settings: { ...(u?.settings ?? {}), ...body } })
+        .where(eq(users.id, auth.userId));
+      return buildMe(deps.db, auth);
+    },
+  );
+
+  route(
+    r,
+    {
+      method: 'patch',
       path: '/api/me',
       summary: 'Change your own name, language or time zone',
       tags: ['auth'],
