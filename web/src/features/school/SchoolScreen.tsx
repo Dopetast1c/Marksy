@@ -159,7 +159,9 @@ function Year({ school }: { school: School }) {
     const [y, mo] = m.split('-').map(Number);
     m = mo === 12 ? `${y! + 1}-01-01` : `${y}-${String(mo! + 1).padStart(2, '0')}-01`;
   }
+  // the language's own short months («сен», «ноя») where it has them, as every short date of the app
   const monthName = (m: string) =>
+    ds.months?.[Number(m.slice(5, 7)) - 1] ??
     new Intl.DateTimeFormat(ds.locale, { timeZone: 'UTC', month: 'short' }).format(new Date(`${m}T12:00:00Z`));
   const termWord = t(`term.${terms[0]?.kind ?? 'other'}.plural`).toLocaleLowerCase(ds.locale);
   const left = current ? daysBetween(today, current.to) + 1 : 0;
