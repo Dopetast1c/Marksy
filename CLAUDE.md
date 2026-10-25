@@ -83,7 +83,7 @@ docker-compose.yml      postgres:16
 - Small commits with clear messages; one logical change per commit.
 - Feature work on branches, merge to `main` when it works.
 - Update `docs/api-spec.md`, `docs/design.md`, `docs/providers.md`, `docs/i18n.md`, `docs/ux-principles.md` (decision log) and `README.md` in place when a detail is verified, a decision changes or setup changes (no changelog sections).
-- `.env.example` lists every variable the code reads, with a comment; adding a variable to the code without adding it there is a bug.
+- `.env.example` lists every variable the code reads, with a comment; adding a variable to the code without adding it there is a bug. It is the public template: read and edit it freely. `.env` and the secret `.env.*` files (`.env.local`, `.env.development`, `.env.production`, `.env.test`, `.env.*.local`) stay closed, by the deny rules in `.claude/settings.json`.
 - Public-facing copy (README, the GitHub description, release notes) is positive and generic: it describes what Marksy builds on top of a school diary's API, names no country or specific diary system, and does not criticise any existing diary. Technical docs (`docs/api-spec.md`, `docs/providers.md`, provider READMEs) may name the systems they describe.
 - The licence is PolyForm Noncommercial 1.0.0 (`LICENSE`, `"license": "PolyForm-Noncommercial-1.0.0"` in every `package.json`). Never call the project "open source" or "open-source" in public copy; say "source-available" and "free for personal and other non-commercial use". A new package gets the same `license` field.
 - External pull requests are not accepted; contributions come only as Issues (bugs, ideas, sanitised diary responses when an API changes). Docs never invite a pull request.

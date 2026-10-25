@@ -15,7 +15,7 @@ The order in which Marksy is built with Claude Code, what each milestone must de
 | M5a | Web: tokens, shell, login, student pick, Главная, Внимание | `m5a-shell` | done |
 | M5b | Web: Оценки, Итоги, Предметы, Предмет | `m5b-marks` | done |
 | M5c | Web: Расписание, lesson menu, ready ticks, own homework | `m5c-schedule` | done |
-| M5d | Web: Ещё, Семья, Синхронизация, Оформление | `m5d-more` | todo |
+| M5d | Web: Ещё, Семья, Синхронизация, Оформление | `m5d-more` | in progress |
 | M5e | Translations: the ten other interface languages | `m5e-i18n` | todo |
 | M6 | Tags | `m6-tags` | todo |
 | M7 | Study time | `m7-study` | todo |
