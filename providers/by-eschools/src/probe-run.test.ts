@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import unsanitisedMe from '../fixtures/unsanitised/me.json';
 import { denyValues } from './deny';
 import { findRun, loadRun, replayTransport, timeOfRun } from './probe-replay';
-import { KEPT_RUNS, keepLatestRuns, runProbe } from './probe-run';
+import { KEPT_RUNS, keepLatestRuns, runProbe, writeFixtureSet } from './probe-run';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixtures = resolve(here, '../fixtures');
@@ -31,6 +31,56 @@ let tmp: string | undefined;
 afterEach(() => tmp && rmSync(tmp, { recursive: true, force: true }));
 
 describe('pnpm probe --offline', () => {
+  /** The committed fixtures replayed as a saved run into an empty fixtures folder that holds one hand-kept case */
+  async function replayed(writeFixtures: boolean) {
+    tmp = mkdtempSync(join(tmpdir(), 'marksy-probe-'));
+    const weeks = JSON.parse(readFileSync(join(fixtures, 'week_activities.json'), 'utf8')) as { start_ts: number }[];
+    const read = readdirSync(fixtures)
+      .map((f) => Number(/^lessons-1-w(\d+)\.json$/.exec(f)?.[1] ?? 0))
+      .filter((n) => n > 0);
+    const clock = new Date(weeks[Math.max(...read) - 1]!.start_ts + 2 * 86_400_000);
+    savedRunOf(tmp, clock.toISOString().replace(/[:.]/g, '-'));
+    const run = loadRun(findRun(join(tmp, 'data', 'probe'))!);
+    const fixturesOut = join(tmp, 'fixtures');
+    mkdirSync(join(fixturesOut, 'cases'), { recursive: true });
+    writeFileSync(join(fixturesOut, 'cases', 'kept.json'), '{"kept":true}\n');
+    writeFileSync(join(fixturesOut, 'old.json'), '{}\n');
+    const code = await runProbe({
+      transport: replayTransport(run).transport,
+      credentials: { login: 'offline', password: 'offline' },
+      clock: () => run.startedAt,
+      sleep: async () => undefined,
+      weeks: run.weeks,
+      root: tmp,
+      fixturesDir: fixturesOut,
+      saveRaw: false,
+      writeFixtures,
+      out: () => undefined,
+      err: () => undefined,
+    });
+    return { code, fixturesOut };
+  }
+
+  it('offline without --write-fixtures writes no fixture', async () => {
+    // the committed fixtures replayed as raw ones always trip the deny-list (code 1); either way nothing is written
+    const { code, fixturesOut } = await replayed(false);
+    expect([0, 1]).toContain(code);
+    expect(readdirSync(fixturesOut).sort()).toEqual(['cases', 'old.json']);
+  });
+
+  it('writing fixtures replaces the regular ones; denylist.json and cases/ stay as they are', () => {
+    tmp = mkdtempSync(join(tmpdir(), 'marksy-probe-'));
+    mkdirSync(join(tmp, 'cases'));
+    writeFileSync(join(tmp, 'cases', 'kept.json'), '{"kept":true}\n');
+    writeFileSync(join(tmp, 'denylist.json'), '[]\n');
+    writeFileSync(join(tmp, 'old.json'), '{}\n');
+    writeFixtureSet(tmp, [{ name: 'me', route: 'GET /me', value: { a: 1 } }]);
+    expect(readdirSync(tmp).sort()).toEqual(['cases', 'denylist.json', 'me.json', 'routes.json']);
+    expect(readdirSync(join(tmp, 'cases'))).toEqual(['kept.json']);
+    expect(readFileSync(join(tmp, 'cases', 'kept.json'), 'utf8')).toBe('{"kept":true}\n');
+    expect(JSON.parse(readFileSync(join(tmp, 'routes.json'), 'utf8'))).toEqual({ 'GET /me': 'me' });
+  });
+
   it('replays a saved run by name: every request is answered, nothing reaches the network', async () => {
     tmp = mkdtempSync(join(tmpdir(), 'marksy-probe-'));
     // the fixtures hold the most recent weeks of a probe run: "today" is in the newest of them
@@ -57,6 +107,7 @@ describe('pnpm probe --offline', () => {
       root: tmp,
       fixturesDir: fixturesOut,
       saveRaw: false,
+      writeFixtures: false,
       out: (l) => out.push(l),
       err: (l) => out.push(l),
     });

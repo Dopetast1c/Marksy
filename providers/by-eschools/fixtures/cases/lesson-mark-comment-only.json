@@ -1,0 +1,48 @@
+{
+  "about": "A teacher's comment on a lesson without a mark: kind, mark, type and summary null, only a comment. A remark on the lesson (lesson_comment), never a mark.",
+  "seen": "2026-10-23",
+  "endpoint": "lessons",
+  "apiSpec": "7.2",
+  "response": [
+    {
+      "day_of_week": 5,
+      "date": 1792702800000,
+      "slots": [
+        {
+          "lesson_uuid": "00000000-0000-4000-8000-07b53654e151",
+          "lesson_template_id": "00000000-0000-4000-8000-b5a367051478",
+          "subject_id": "00000000-0000-4000-8000-360134c6237b",
+          "subject_title": "Английский язык",
+          "teacher_id": "00000000-0000-4000-8000-f57c80460859",
+          "type": null,
+          "number": 2,
+          "topic": "Тема урока",
+          "homework": "Домашнее задание",
+          "message": "",
+          "start_time": "08:55:00",
+          "has_attachments_or_links": false,
+          "homework_source_id": "00000000-0000-4000-8000-a1e5820949eb",
+          "lesson_mark": {
+            "uuid": "00000000-0000-4000-8000-197c34d7af22",
+            "summary": null,
+            "type": null,
+            "mark": null,
+            "kind": null,
+            "comment": "Комментарий",
+            "author": "00000000-0000-4000-8000-f57c80460859"
+          },
+          "substitution": null
+        }
+      ]
+    }
+  ],
+  "expect": {
+    "lessons": 1,
+    "marks": 0,
+    "attendance": 0,
+    "behaviour": [
+      "lesson_comment"
+    ],
+    "drift": []
+  }
+}

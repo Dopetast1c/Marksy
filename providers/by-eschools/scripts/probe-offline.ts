@@ -1,7 +1,7 @@
-// pnpm probe --offline [run]: the probe on the saved raw responses of a run in data/probe/ (the newest, or the folder
-// named), without a login: schemas, sanitize(), the drift checks, the deny-list and the fixture writing (CLAUDE.md
-// "Real diary runs"). It reads no credentials and touches no network: the package script loads no .env, and the only
-// transport is the replay of src/probe-replay.ts.
+// pnpm probe --offline [run] [--write-fixtures]: the probe on the saved raw responses of a run in data/probe/ (the newest,
+// or the folder named), without a login: schemas, sanitize(), the drift checks and the deny-list (CLAUDE.md "Real diary
+// runs"). The regular fixtures are replaced only with --write-fixtures; fixtures/cases/ never. It reads no credentials
+// and touches no network: the package script loads no .env, and the only transport is the replay of src/probe-replay.ts.
 
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -32,6 +32,7 @@ async function main(): Promise<number> {
       root,
       fixturesDir,
       saveRaw: false,
+      writeFixtures: process.argv.includes('--write-fixtures'),
       out: (line) => console.log(line),
       err: (line) => console.error(line),
     });
