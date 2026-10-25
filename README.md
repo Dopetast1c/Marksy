@@ -106,7 +106,7 @@ To connect a new system you write one provider: a manifest (credentials, scale, 
 - **Gentle.** One sign-in per hour per account at most, one request at a time with pauses, backoff on errors, a cap per run. Manual refresh shares the same budget.
 - **Resilient.** Every attempt and every verified week is recorded. Outages on either side are caught up automatically; after repeated failures syncing pauses and the family admin is told once. A wrong password stops syncing until it is fixed, so the real account is never locked.
 - **Network-aware.** Some diary systems answer best from their own region or without a VPN. Each provider declares its network needs, and the collector runs on a machine at home that meets them: a PC, a mini PC, a Raspberry Pi, a NAS.
-- **Tidy.** Marks and their history are kept for as long as the child is in the family; operational data (sync logs, raw responses, event feeds) is kept for weeks or months and then compacted. Limits are in `.env.example` under `RETENTION_*`.
+- **Tidy.** Marks and their history are kept for as long as the child is in the family; operational data (sync logs, raw responses, event feeds) is kept for weeks or months and then compacted. Limits are in `env.example` under `RETENTION_*`.
 
 ## Privacy
 
@@ -159,7 +159,7 @@ Vite prints a `Network:` address such as `http://192.168.1.20:5173`; open it on 
 
 ## Configuration
 
-All configuration is in `.env` (created by `pnpm setup:env` from `.env.example`). Secrets never go into the repository.
+All configuration is in `.env` (created by `pnpm setup:env` from `env.example`). Secrets never go into the repository.
 
 | Variable | Purpose |
 |---|---|
@@ -175,7 +175,7 @@ All configuration is in `.env` (created by `pnpm setup:env` from `.env.example`)
 | `RETENTION_*` | How long operational data is kept (sync log, raw responses, event feeds, coverage) |
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Web Push keys |
 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET` | Telegram bot (optional) |
-| `MARKSY_ENV`, `DEV_MIN_LOGIN_INTERVAL_MINUTES` | Limits of the manual diary commands (`pnpm probe`, `pnpm sync:once`, `pnpm dev:connect`). `development` (set in `.env.example`): one sign-in per account every 10 minutes or more, at any hour. Anything else, a missing value included, and any build with `NODE_ENV=production`: the diary system's own interval (an hour for most). `pnpm env:dev` adds the two development lines to an older `.env` that lacks them, without touching values already set. Scheduled syncs follow the school-day rules in both |
+| `MARKSY_ENV`, `DEV_MIN_LOGIN_INTERVAL_MINUTES` | Limits of the manual diary commands (`pnpm probe`, `pnpm sync:once`, `pnpm dev:connect`). `development` (set in `env.example`): one sign-in per account every 10 minutes or more, at any hour. Anything else, a missing value included, and any build with `NODE_ENV=production`: the diary system's own interval (an hour for most). `pnpm env:dev` adds the two development lines to an older `.env` that lacks them, without touching values already set. Scheduled syncs follow the school-day rules in both |
 | `MARKSY_RUNNER` | Leave empty. Set to `claude` for Claude Code by `.claude/settings.json`: in production its real sign-ins are limited to three a day in school hours |
 | `DIARY_LOGIN`, `DIARY_PASSWORD`, `MARKSY_DEV_EMAIL`, `MARKSY_DEV_PASSWORD` | Development only: your own diary login for `pnpm probe`, `pnpm sync:once` and `pnpm dev:connect`, and the Marksy login `dev:connect` creates. The app itself keeps diary credentials in the database, encrypted |
 | `TZ` | Time zone of the school (IANA name) |

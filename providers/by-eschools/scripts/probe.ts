@@ -38,7 +38,7 @@ async function main(): Promise<number> {
   const login = process.env.DIARY_LOGIN;
   const password = process.env.DIARY_PASSWORD;
   if (!login || !password) {
-    console.error('Set DIARY_LOGIN and DIARY_PASSWORD in .env (see .env.example), then run pnpm probe again.');
+    console.error('Set DIARY_LOGIN and DIARY_PASSWORD in .env (see env.example), then run pnpm probe again.');
     return 2;
   }
   // the guard records the login before it happens; a refusal names the next allowed time (exit 3)

@@ -4,7 +4,7 @@ import type { Db } from './db/client';
 
 // Retention of operational data (docs/design.md 10.4, "Retention"). Marks and mark_history are kept for the student's
 // lifetime in the family; everything else here grows with time and is trimmed once a day. Every limit has a RETENTION_*
-// override in .env.example. Deleting a family, an account or a student cascades at once and does not wait for this; a
+// override in env.example. Deleting a family, an account or a student cascades at once and does not wait for this; a
 // child goes with the last family that follows them (the trigger of migration 0004).
 
 export interface RetentionLimits {

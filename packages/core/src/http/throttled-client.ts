@@ -44,7 +44,7 @@ export interface ThrottledClientOptions {
   manifest: Pick<ProviderManifest, 'network' | 'limits' | 'readOnlyAllowList'> & {
     auth: Pick<ProviderManifest['auth'], 'loginRequest'>;
   };
-  /** Stricter limits from the environment (docs: .env.example); they can only tighten the manifest's. */
+  /** Stricter limits from the environment (docs: env.example); they can only tighten the manifest's. */
   stricter?: { requestDelayMs?: [number, number]; maxRequestsPerRun?: number };
   transport?: Transport;
   sleep?: (ms: number) => Promise<void>;

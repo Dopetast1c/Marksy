@@ -19,6 +19,9 @@ describe('pre-commit guard', () => {
       'data/deny-list.json',
       '.env',
       'server/.env.local',
+      '.env.example',
+      '.env.prod',
+      '.env - Copy',
       'backup.sql.gz',
       'dump.sql',
       'server/drizzle/meta/../dump.sql',
@@ -28,7 +31,7 @@ describe('pre-commit guard', () => {
     ])
       expect(forbiddenPath(p), p).not.toBeNull();
     for (const p of [
-      '.env.example',
+      'env.example',
       'server/drizzle/0005_cli_logins.sql',
       'providers/demo-full/fixtures/subjects-1.json',
       'server/drizzle/meta/0005_snapshot.json',

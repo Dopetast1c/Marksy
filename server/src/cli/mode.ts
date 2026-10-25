@@ -4,7 +4,7 @@ import { CLAUDE_HOURS, CLAUDE_RUNS_PER_DAY } from './login-guard';
 import type { LoginPolicy } from './login-guard';
 
 // Two modes for the manual real runs (`pnpm probe`, `pnpm sync:once`, `pnpm dev:connect`; CLAUDE.md "Real diary
-// runs"). Development (MARKSY_ENV=development exactly, the default in .env.example): one login per account every
+// runs"). Development (MARKSY_ENV=development exactly, the default in env.example): one login per account every
 // DEV_MIN_LOGIN_INTERVAL_MINUTES (10, which it can only raise), at any hour, no daily cap. Production is everything
 // else, fail closed: MARKSY_ENV=production, a missing or misspelt value, and always a production build
 // (NODE_ENV=production, whatever MARKSY_ENV says). It keeps the manifest's interval, and for Claude Code at most three

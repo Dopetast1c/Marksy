@@ -2,7 +2,7 @@ import type { ProviderManifest } from '@marksy/core';
 import { narrowWindow } from './plan';
 import type { EffectiveLimits } from './plan';
 
-// The collector's settings from the environment (.env.example, "Collector"). The provider manifest sets the limits;
+// The collector's settings from the environment (env.example, "Collector"). The provider manifest sets the limits;
 // the environment can only make them stricter (docs/design.md 10.2).
 
 export interface SyncConfig {

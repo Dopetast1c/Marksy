@@ -13,7 +13,7 @@ export class CredentialsKeyError extends Error {}
 
 /** CREDENTIALS_KEY as 32 bytes; throws with a hint when it is missing or malformed (the value itself is never shown). */
 export function masterKey(value = process.env.CREDENTIALS_KEY): Buffer {
-  if (!value) throw new CredentialsKeyError('CREDENTIALS_KEY is not set (.env.example: openssl rand -base64 32)');
+  if (!value) throw new CredentialsKeyError('CREDENTIALS_KEY is not set (env.example: openssl rand -base64 32)');
   const key = Buffer.from(value, 'base64');
   if (key.length !== 32) throw new CredentialsKeyError('CREDENTIALS_KEY must be 32 bytes, base64');
   return key;

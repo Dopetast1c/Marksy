@@ -1,7 +1,6 @@
 # Secrets
-.env
-.env.*
-!.env.example
+# every .env* file; the public template is env.example, without the dot
+.env*
 
 # Local data: DB, raw API responses, HAR exports (contain personal data and tokens)
 data/
