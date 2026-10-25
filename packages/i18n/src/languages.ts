@@ -9,24 +9,33 @@ export interface Language {
   dir: 'ltr' | 'rtl';
   /** BCP 47 tag for Intl (dates, numbers, plural rules) */
   intl: string;
+  /**
+   * How far the strings can be trusted (locales/STATUS.md, a test keeps the two in step): source (en), reviewed by a
+   * native speaker, machine translation, or todo (no file yet, English key by key). Ещё says so for anything but the
+   * first two (design.md 5.6).
+   */
+  status: 'source' | 'reviewed' | 'machine' | 'todo';
 }
 
 export const LANGUAGES: readonly Language[] = [
-  { code: 'ru', name: 'Russian', nativeName: 'Русский', dir: 'ltr', intl: 'ru-RU' },
-  { code: 'be', name: 'Belarusian', nativeName: 'Беларуская', dir: 'ltr', intl: 'be-BY' },
-  { code: 'uk', name: 'Ukrainian', nativeName: 'Українська', dir: 'ltr', intl: 'uk-UA' },
-  { code: 'kk', name: 'Kazakh', nativeName: 'Қазақша', dir: 'ltr', intl: 'kk-KZ' },
-  { code: 'en', name: 'English', nativeName: 'English', dir: 'ltr', intl: 'en-GB' },
-  { code: 'pl', name: 'Polish', nativeName: 'Polski', dir: 'ltr', intl: 'pl-PL' },
-  { code: 'de', name: 'German', nativeName: 'Deutsch', dir: 'ltr', intl: 'de-DE' },
-  { code: 'es', name: 'Spanish', nativeName: 'Español', dir: 'ltr', intl: 'es-ES' },
-  { code: 'pt', name: 'Portuguese', nativeName: 'Português', dir: 'ltr', intl: 'pt-PT' },
-  { code: 'fr', name: 'French', nativeName: 'Français', dir: 'ltr', intl: 'fr-FR' },
-  { code: 'nl', name: 'Dutch', nativeName: 'Nederlands', dir: 'ltr', intl: 'nl-NL' },
-  { code: 'ro', name: 'Romanian', nativeName: 'Română', dir: 'ltr', intl: 'ro-RO' },
+  { code: 'ru', name: 'Russian', nativeName: 'Русский', dir: 'ltr', intl: 'ru-RU', status: 'reviewed' },
+  { code: 'be', name: 'Belarusian', nativeName: 'Беларуская', dir: 'ltr', intl: 'be-BY', status: 'todo' },
+  { code: 'uk', name: 'Ukrainian', nativeName: 'Українська', dir: 'ltr', intl: 'uk-UA', status: 'todo' },
+  { code: 'kk', name: 'Kazakh', nativeName: 'Қазақша', dir: 'ltr', intl: 'kk-KZ', status: 'todo' },
+  { code: 'en', name: 'English', nativeName: 'English', dir: 'ltr', intl: 'en-GB', status: 'source' },
+  { code: 'pl', name: 'Polish', nativeName: 'Polski', dir: 'ltr', intl: 'pl-PL', status: 'todo' },
+  { code: 'de', name: 'German', nativeName: 'Deutsch', dir: 'ltr', intl: 'de-DE', status: 'todo' },
+  { code: 'es', name: 'Spanish', nativeName: 'Español', dir: 'ltr', intl: 'es-ES', status: 'todo' },
+  { code: 'pt', name: 'Portuguese', nativeName: 'Português', dir: 'ltr', intl: 'pt-PT', status: 'todo' },
+  { code: 'fr', name: 'French', nativeName: 'Français', dir: 'ltr', intl: 'fr-FR', status: 'todo' },
+  { code: 'nl', name: 'Dutch', nativeName: 'Nederlands', dir: 'ltr', intl: 'nl-NL', status: 'todo' },
+  { code: 'ro', name: 'Romanian', nativeName: 'Română', dir: 'ltr', intl: 'ro-RO', status: 'todo' },
 ];
 
 export const SOURCE_LANGUAGE = 'en';
+
+/** A language whose strings someone has checked: the source or a reviewed translation */
+export const isReviewed = (l: Language) => l.status === 'source' || l.status === 'reviewed';
 
 export function languageOf(code: string): Language | undefined {
   return LANGUAGES.find((l) => l.code === code);

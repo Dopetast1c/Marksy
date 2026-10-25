@@ -1,14 +1,29 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
   CATALOGS,
   checkCatalogs,
   createT,
   formatList,
+  isReviewed,
   LANGUAGES,
   pickerOrder,
   resolveLanguage,
   translator,
 } from './index';
+
+describe('translation status', () => {
+  it('every language has the status locales/STATUS.md gives it; only a language with a file can be checked', () => {
+    const table = readFileSync(fileURLToPath(new URL('./locales/STATUS.md', import.meta.url)), 'utf8');
+    const rows = new Map([...table.matchAll(/^\| (\w{2}) \| [^|]+ \| (\w+)/gm)].map((m) => [m[1]!, m[2]!] as const));
+    expect([...rows.keys()].sort()).toEqual(LANGUAGES.map((l) => l.code).sort());
+    for (const l of LANGUAGES) {
+      expect(l.status, l.code).toBe(rows.get(l.code));
+      if (isReviewed(l)) expect(CATALOGS[l.code], l.code).toBeDefined();
+    }
+  });
+});
 
 describe('catalogs', () => {
   it('en and ru have every key, plural form and placeholder', () => {

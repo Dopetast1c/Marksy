@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { api, data } from '../../api/client';
 import type { Locale } from '../../api/client';
-import { meKey, useMe } from '../../api/queries';
+import { meKey, useFamily, useMe, useSyncStatus } from '../../api/queries';
 import { Frame } from '../../app/Frame';
 import { useContinueChild } from '../../app/guards';
 import { Avatar, defaultTraits } from '../../components/Avatar';
@@ -14,6 +14,7 @@ import { LanguagePicker } from '../../components/LanguagePicker';
 import { MenuCard, MenuRow } from '../../components/MenuRow';
 import { Switch } from '../../components/Switch';
 import { lookSummary } from '../look/LookScreen';
+import { familyLine, schoolLine, syncLine } from './summaries';
 import { setLanguage, useT } from '../../i18n';
 import { useDevice } from '../../state/store';
 
@@ -37,6 +38,9 @@ export function MoreScreen() {
   const kids = me.data?.students ?? [];
   const parent = family?.role !== 'student';
   const child = kids.find((k) => k.id === continueWith) ?? null;
+  // the live lines of Семья and Синхронизация are the adults' (a student has neither row)
+  const view = useFamily(parent).data;
+  const sync = useSyncStatus();
   const signOut = async () => {
     await api.POST('/api/auth/logout');
     queries.clear();
@@ -106,7 +110,7 @@ export function MoreScreen() {
             <MenuRow
               icon={<UsersIcon />}
               title={t('family.title')}
-              sub={t('more.family.sub', { count: kids.length })}
+              sub={view ? familyLine(t, view) : undefined}
               onClick={() => navigate('/more/family')}
             />
           )}
@@ -114,7 +118,11 @@ export function MoreScreen() {
             <MenuRow
               icon={<SchoolIcon />}
               title={t('more.school')}
-              sub={child ? t('more.school.subFor', { name: child.name }) : t('more.school.sub')}
+              sub={schoolLine(
+                t,
+                (child ?? kids.find(hasSchool) ?? kids[0])?.capabilities.terms ?? 'none',
+                child?.name ?? null,
+              )}
               onClick={() => navigate(child ? `/s/${child.id}/school` : '/pick')}
             />
           )}
@@ -122,7 +130,13 @@ export function MoreScreen() {
             <MenuRow
               icon={<SyncIcon />}
               title={t('sync.title')}
-              sub={t('more.sync.sub')}
+              sub={
+                syncLine(
+                  t,
+                  parent ? sync.data : undefined,
+                  (a) => kids.find((k) => a.studentIds.includes(k.id))?.timezone ?? kids[0]?.timezone ?? 'UTC',
+                ) ?? undefined
+              }
               onClick={() => navigate('/more/sync')}
             />
           )}
@@ -197,7 +211,7 @@ export function MoreScreen() {
             chevron={false}
           />
         </MenuCard>
-        <p className="m-0 text-center text-small text-ink3">{t('more.readOnly')}</p>
+        <p className="m-0 text-center text-small text-ink3">{t('more.readOnly', { version: __MARKSY_VERSION__ })}</p>
       </main>
       <BottomSheet open={families} onClose={() => setFamilies(false)} label={t('more.switchFamily')}>
         <span className="text-label text-ink3 uppercase">{t('more.switchFamily')}</span>

@@ -2734,7 +2734,7 @@ function renderMore() {
     <!-- Order (design.md 5.6): what the app does for the family first (Семья on top: everything else depends on it); then how the app looks
          and behaves; leaving last and apart. -->
     <div class="list-card">
-      ${parent ? item('family', ICONS.users, 'Семья', '4 участника · Милена, Марк · 1 аккаунт дневника') : ''}
+      ${parent ? item('family', ICONS.users, 'Семья', '4 участника · Милена, Марк · 1 дневник') : ''}
       ${schoolHas() ? item('school', ICONS.school, 'Школа', `${state.unpicked ? '' : esc(cur().name) + ': '}звонки, четверти и каникулы`) : ''}
       ${item('notifications', ICONS.bell, 'Настройки уведомлений', 'Push, Telegram, правила, тихие часы')}
       ${item('tags', ICONS.tag, 'Теги', `${TAGS.filter(t => t.on).length} включено · ${TAGS.filter(t => t.on).slice(0, 3).map(t => t.name.toLowerCase()).join(', ')}`)}
@@ -2743,9 +2743,9 @@ function renderMore() {
     <div class="list-card">
       ${item('look', ICONS.palette, 'Оформление', lookSummary())}
       ${state.role === 'student' ? `<div class="menu"><span class="ic">${ICONS.school}</span><span class="main"><b>Простой режим</b><span>Для младших: сегодня, завтра, что сделать, без аналитики</span></span>${sw(state.uiMode === 'simple').replace('class="switch"', 'class="switch" data-opt-global="uiMode"')}</div>` : ''}
-      <div class="menu"><span class="ic">${ICONS.bulb}</span><span class="main"><b>Подсказки</b><span>Советы в «Обратить внимание» и под уроками. Только факты, если выключить</span></span>${sw(state.guidance).replace('class="switch"', 'class="switch" data-opt-global="guidance"')}</div>
-      ${parent ? `<div class="menu"><span class="ic">${ICONS.users}</span><span class="main"><b>Всегда начинать с последнего ребёнка</b><span>${state.alwaysLast ? 'Экран «С кого начнём?» не показывается' : 'Экран «С кого начнём?» после 12 часов без приложения'}</span></span>${sw(state.alwaysLast).replace('class="switch"', 'class="switch" data-opt-global="alwaysLast"')}</div>` : ''}
-      <div class="menu"><span class="ic">${ICONS.globe}</span><span class="main"><b>Язык</b><span>Русский · проверен носителем</span></span>${langSelect('langMore')}</div>
+      <div class="menu"><span class="ic">${ICONS.bulb}</span><span class="main"><b>Подсказки</b><span>Советы в «Обратить внимание» и под уроками; без них остаются только факты</span></span>${sw(state.guidance).replace('class="switch"', 'class="switch" data-opt-global="guidance"')}</div>
+      ${parent ? `<div class="menu"><span class="ic">${ICONS.users}</span><span class="main"><b>Всегда начинать с последнего</b><span>${state.alwaysLast ? 'Экран «С кого начнём?» не показывается' : 'Экран «С кого начнём?» после 12 часов без приложения'}</span></span>${sw(state.alwaysLast).replace('class="switch"', 'class="switch" data-opt-global="alwaysLast"')}</div>` : ''}
+      <div class="menu"><span class="ic">${ICONS.globe}</span><span class="main"><b>Язык</b><span>Русский</span></span>${langSelect('langMore')}</div>
     </div>
     <div class="list-card">
       <button class="menu"><span class="ic">${ICONS.out}</span><span class="main"><b>Выйти</b><span>Дневник останется подключённым, оценки продолжат собираться</span></span></button>

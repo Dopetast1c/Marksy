@@ -37,7 +37,9 @@ export function lookSummary(t: ReturnType<typeof useT>, a: Appearance): string {
     t(`look.theme.${a.theme}`),
     a.background === 'color'
       ? t('look.summary.palette', { name: t(`look.palette.${a.palette}`) })
-      : t('look.summary.wallpaper', { name: t(`look.wallpaper.${a.wallpaper}`) }),
+      : a.wallpaper === 'own'
+        ? t('look.summary.wallpaperOwn')
+        : t('look.summary.wallpaper', { name: t(`look.wallpaper.${a.wallpaper}`) }),
     t(`look.font.${a.font}`),
   ].join(' · ');
 }

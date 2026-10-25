@@ -1,5 +1,6 @@
 {
   "name": "marksy",
+  "version": "0.1.0",
   "private": true,
   "description": "Family PWA for school marks from the e-diary",
   "license": "PolyForm-Noncommercial-1.0.0",
