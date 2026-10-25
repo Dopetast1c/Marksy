@@ -1282,6 +1282,76 @@ export interface paths {
         };
         trace?: never;
     };
+    "/api/family/members/{id}/ui-mode": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** A student member's simple mode (5.7), switched by the admin or a parent */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        uiMode: "full" | "simple";
+                    };
+                };
+            };
+            responses: {
+                /** @description Done */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description The member is not a student */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No session */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such member */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/family/export": {
         parameters: {
             query?: never;
@@ -4080,6 +4150,8 @@ export interface components {
                 /** @enum {string} */
                 role: "admin" | "parent" | "student";
                 studentIds: string[];
+                /** @enum {string} */
+                uiMode: "full" | "simple";
             }[];
             accounts: {
                 id: string;

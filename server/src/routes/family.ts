@@ -20,7 +20,7 @@ import { childName, chooseMatch, decideJoin, deleteChildData, followAgain, stopF
 import { connectDiary } from '../family/connect';
 import { eraseFamily, exportFamily } from '../family/data';
 import { createInvite } from '../family/invites';
-import { changeMember, removeMember } from '../family/members';
+import { changeMember, removeMember, setStudentUiMode } from '../family/members';
 import type { AppDeps } from '../http/context';
 import { connectDepsOf, inBackground, memberOf } from '../http/context';
 import { HttpError } from '../http/errors';
@@ -47,7 +47,16 @@ const familyView = registry.register(
     /** guidance: the family's «Подсказки» switch (admin); advice shows when the person's own is on too */
     family: z.object({ id: z.string(), name: z.string(), parentsCanInvite: z.boolean(), guidance: z.boolean() }),
     role,
-    members: z.array(z.object({ userId: z.string(), displayName: z.string(), role, studentIds: z.array(z.string()) })),
+    /** uiMode: a student member's simple mode (5.7), which the admin and parents may switch */
+    members: z.array(
+      z.object({
+        userId: z.string(),
+        displayName: z.string(),
+        role,
+        studentIds: z.array(z.string()),
+        uiMode: z.enum(['full', 'simple']),
+      }),
+    ),
     accounts: z.array(
       z.object({
         id: z.string(),
@@ -96,7 +105,7 @@ async function viewFamily(db: Db, familyId: string, myRole: 'admin' | 'parent' |
   const [family] = await db.select().from(families).where(eq(families.id, familyId));
   if (!family) throw new HttpError(404, 'not_found', 'No such family');
   const people = await db
-    .select({ userId: users.id, displayName: users.displayName, role: memberships.role })
+    .select({ userId: users.id, displayName: users.displayName, role: memberships.role, uiMode: users.uiMode })
     .from(memberships)
     .innerJoin(users, eq(users.id, memberships.userId))
     .where(eq(memberships.familyId, familyId))
@@ -474,6 +483,23 @@ export function familyRoutes(deps: AppDeps, limiters: Limiters): Router {
       errors: { 404: 'No such member or child', 409: 'The family needs another admin first' },
     },
     async (req, { params, body }) => changeMember(deps.db, memberOf(req).familyId, params.id, body),
+  );
+
+  route(
+    r,
+    {
+      method: 'put',
+      path: '/api/family/members/:id/ui-mode',
+      summary: "A student member's simple mode (5.7), switched by the admin or a parent",
+      tags: ['family'],
+      access: adults,
+      params: z.object({ id }),
+      body: z.object({ uiMode: z.enum(['full', 'simple']) }),
+      status: 204,
+      response: null,
+      errors: { 400: 'The member is not a student', 404: 'No such member' },
+    },
+    async (req, { params, body }) => setStudentUiMode(deps.db, memberOf(req).familyId, params.id, body.uiMode),
   );
 
   route(

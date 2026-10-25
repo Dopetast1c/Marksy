@@ -185,6 +185,31 @@ export function ChildScreen() {
           </div>
         </section>
         <p className="m-0 text-small text-ink3">{t('family.child.note')}</p>
+        {/* simple mode (5.7) belongs to the child's own login: one switch per student member who is this child */}
+        {(view?.members ?? [])
+          .filter((m) => m.role === 'student' && m.studentIds.includes(studentId))
+          .map((m) => (
+            <section key={m.userId} className="flex items-center gap-3 rounded-lg bg-surface p-4 shadow-card">
+              <span className="flex min-w-0 flex-1 flex-col">
+                <b className="text-[14px]">{t('more.simple')}</b>
+                <span className="text-small text-ink3">{t('family.child.simpleSub', { name: m.displayName })}</span>
+              </span>
+              <Switch
+                checked={m.uiMode === 'simple'}
+                onChange={(on) =>
+                  void done(() =>
+                    data(
+                      api.PUT('/api/family/members/{id}/ui-mode', {
+                        params: { path: { id: m.userId } },
+                        body: { uiMode: on ? 'simple' : 'full' },
+                      }),
+                    ),
+                  )
+                }
+                label={t('more.simple')}
+              />
+            </section>
+          ))}
         {admin && (
           <section className="flex flex-col gap-2 rounded-lg bg-surface p-4 shadow-card">
             {child.status === 'stopped' ? (

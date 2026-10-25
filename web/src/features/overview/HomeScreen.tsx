@@ -18,6 +18,8 @@ import { dateStyle, useT } from '../../i18n';
 import { subjectStyle } from '../../lib/subject-color';
 import { todayIn } from '../../lib/time';
 import { usePeriod } from '../../state/store';
+import { useSimpleMode } from '../../hooks/useSimpleMode';
+import { HomeSimple } from './HomeSimple';
 import { NearGoals } from './NearGoals';
 import { NextDay } from './NextDay';
 
@@ -30,9 +32,14 @@ import { NextDay } from './NextDay';
 const FIVE = 5;
 
 export function HomeScreen() {
+  const { studentId = '' } = useParams();
+  // simple mode (5.7) has a Главная of its own
+  return useSimpleMode() ? <HomeSimple studentId={studentId} /> : <HomeFull studentId={studentId} />;
+}
+
+function HomeFull({ studentId }: { studentId: string }) {
   const t = useT();
   const navigate = useNavigate();
-  const { studentId = '' } = useParams();
   const scale = useScale(studentId);
   const caps = useCapabilities(studentId);
   const tz = useSchoolTz(studentId);

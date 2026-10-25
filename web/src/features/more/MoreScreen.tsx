@@ -50,6 +50,11 @@ export function MoreScreen() {
     // advice comes and goes on every child's screen
     await queries.invalidateQueries();
   };
+  // simple mode (5.7) is the student's own; a parent switches it on the child's screen in Семья
+  const simple = async (on: boolean) => {
+    await data(api.PATCH('/api/me', { body: { uiMode: on ? 'simple' : 'full' } }));
+    await queries.invalidateQueries();
+  };
   const switchFamily = async (familyId: string) => {
     setFamilies(false);
     await data(api.POST('/api/auth/family', { body: { familyId } }));
@@ -127,6 +132,20 @@ export function MoreScreen() {
               title={t('look.title')}
               sub={lookSummary(t, user.appearance)}
               onClick={() => navigate('/more/look')}
+            />
+          )}
+          {!parent && (
+            <MenuRow
+              icon={<SchoolIcon />}
+              title={t('more.simple')}
+              sub={t('more.simple.sub')}
+              control={
+                <Switch
+                  checked={user?.uiMode === 'simple'}
+                  onChange={(on) => void simple(on)}
+                  label={t('more.simple')}
+                />
+              }
             />
           )}
           <MenuRow

@@ -881,13 +881,21 @@
                   "items": {
                     "type": "string"
                   }
+                },
+                "uiMode": {
+                  "type": "string",
+                  "enum": [
+                    "full",
+                    "simple"
+                  ]
                 }
               },
               "required": [
                 "userId",
                 "displayName",
                 "role",
-                "studentIds"
+                "studentIds",
+                "uiMode"
               ]
             }
           },
@@ -5004,6 +5012,86 @@
           },
           "409": {
             "description": "The family needs another admin first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/family/members/{id}/ui-mode": {
+      "put": {
+        "summary": "A student member's simple mode (5.7), switched by the admin or a parent",
+        "tags": [
+          "family"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "uiMode": {
+                    "type": "string",
+                    "enum": [
+                      "full",
+                      "simple"
+                    ]
+                  }
+                },
+                "required": [
+                  "uiMode"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Done"
+          },
+          "400": {
+            "description": "The member is not a student",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such member",
             "content": {
               "application/json": {
                 "schema": {

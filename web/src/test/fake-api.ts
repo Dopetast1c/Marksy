@@ -34,6 +34,8 @@ export interface FakeState {
   role?: 'admin' | 'parent' | 'student';
   /** fields laid over every child's /overview answer */
   overview?: Record<string, unknown>;
+  /** the signed-in person's simple mode (5.7); the student member's in Семья follows PUT …/ui-mode */
+  uiMode?: 'full' | 'simple';
   /** the school's today for Расписание's days (a weekend, to see where День opens) */
   scheduleToday?: string;
 }
@@ -685,13 +687,14 @@ const SCHEDULE_ATTENTION = [
   },
 ];
 
-/** Семья of the demo: a request to join, two members, two children, one diary */
+/** Семья of the demo: a request to join, three members (Милена has her own login), two children, one diary */
 const FAMILY = {
   family: { id: 'f1', name: 'Семья', parentsCanInvite: true, guidance: true },
   role: 'admin',
   members: [
-    { userId: 'u1', displayName: 'Родитель', role: 'admin', studentIds: [] },
-    { userId: 'u2', displayName: 'Бабушка', role: 'parent', studentIds: ['kid-mark'] },
+    { userId: 'u1', displayName: 'Родитель', role: 'admin', studentIds: [], uiMode: 'full' },
+    { userId: 'u2', displayName: 'Бабушка', role: 'parent', studentIds: ['kid-mark'], uiMode: 'full' },
+    { userId: 'u3', displayName: 'Милена', role: 'student', studentIds: ['kid-milena'], uiMode: 'full' },
   ],
   accounts: [
     {
@@ -742,6 +745,7 @@ export function fakeApi(start: Partial<FakeState> = {}) {
   const error = (status: number, code: string) => json({ error: { code, message: code } }, status);
   let matchesPending = false;
   let familyGuidance = true;
+  let studentUiMode: 'full' | 'simple' = 'full';
   const avatars: Record<string, unknown> = {};
   const lessonState = { ready: new Set<string>(), cancelled: new Set<string>(), homework: new Map<string, string>() };
   const json = (body: unknown, status = 200) =>
@@ -793,7 +797,7 @@ export function fakeApi(start: Partial<FakeState> = {}) {
           displayName: 'Родитель',
           locale: state.locale ?? 'ru',
           timezone: null,
-          uiMode: 'full',
+          uiMode: state.uiMode ?? 'full',
           guidance: state.guidance ?? true,
           appearance: {
             theme: 'light',
@@ -821,7 +825,14 @@ export function fakeApi(start: Partial<FakeState> = {}) {
     if (route === 'POST /api/sync/rescan')
       return json({ started: false, reason: 'interval', retryAt: '2026-10-21T17:12:00Z', weeks: 7 });
     if (route === 'GET /api/students') return json(CARDS);
-    if (route === 'PATCH /api/me') return json({});
+    if (route === 'PATCH /api/me') {
+      state.uiMode = (state.bodies[route] as { uiMode?: 'full' | 'simple' }).uiMode ?? state.uiMode;
+      return json({});
+    }
+    if (route === 'PUT /api/family/members/u3/ui-mode') {
+      studentUiMode = (state.bodies[route] as { uiMode: 'full' | 'simple' }).uiMode;
+      return json(null, 204);
+    }
     if (route === 'PATCH /api/me/settings') {
       const body = state.bodies[route] as { guidance?: boolean; appearance?: Record<string, unknown> };
       state.guidance = body.guidance ?? state.guidance;
@@ -840,6 +851,7 @@ export function fakeApi(start: Partial<FakeState> = {}) {
       return json({
         ...FAMILY,
         family: { ...FAMILY.family, guidance: familyGuidance },
+        members: FAMILY.members.map((m) => (m.userId === 'u3' ? { ...m, uiMode: studentUiMode } : m)),
         children: FAMILY.children.map((c) => ({ ...c, avatar: avatars[c.studentId] ?? null })),
         matches: matchesPending ? [{ accountId: 'acc-1', studentId: 'kid-shared', name: 'Марк' }] : [],
       });

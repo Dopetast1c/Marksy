@@ -559,6 +559,12 @@
   "more.guidance": "Tips",
   "more.guidance.sub": "Advice in “Worth a look” and under lessons; without it only the facts remain",
 
+  "more.simple": "Simple mode",
+  "more.simple.sub": "For younger children: today, tomorrow, what to do, no analytics",
+  "family.child.simpleSub": "{{name}}: today, tomorrow, what to do, no analytics",
+  "home.simple.noMarks": "No marks today",
+  "lesson.simple.ready": "Ready",
+
   "look.title": "Appearance",
   "look.theme": "Theme",
   "look.theme.light": "Light",

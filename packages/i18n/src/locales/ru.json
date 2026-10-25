@@ -603,6 +603,12 @@
   "more.guidance": "Подсказки",
   "more.guidance.sub": "Советы в «Обратить внимание» и под уроками; без них остаются только факты",
 
+  "more.simple": "Простой режим",
+  "more.simple.sub": "Для младших: сегодня, завтра, что сделать, без аналитики",
+  "family.child.simpleSub": "{{name}}: сегодня, завтра, что сделать, без аналитики",
+  "home.simple.noMarks": "Оценок сегодня нет",
+  "lesson.simple.ready": "Готово",
+
   "look.title": "Оформление",
   "look.theme": "Тема",
   "look.theme.light": "Светлая",

@@ -379,7 +379,18 @@ describe('family', () => {
     const [kidUser] = await db.select().from(users).where(eq(users.login, 'kid@example.com'));
     const rules = await db.select().from(alertRules).where(eq(alertRules.userId, kidUser!.id));
     expect(new Set(rules.map((r) => r.studentId))).toEqual(new Set([kid.id]));
+    // simple mode (5.7): a parent switches it for the student, the student for themselves; nobody else has it
+    expect((await mama.put(`/api/family/members/${kidUser!.id}/ui-mode`).send({ uiMode: 'simple' })).status).toBe(204);
+    expect((await student.get('/api/auth/me')).body.user.uiMode).toBe('simple');
+    const view = (await mama.get('/api/family')).body as { members: { userId: string; uiMode: string }[] };
+    expect(view.members.find((m) => m.userId === kidUser!.id)?.uiMode).toBe('simple');
+    expect((await student.patch('/api/me').send({ uiMode: 'full' })).status).toBeLessThan(300);
+    expect((await student.get('/api/auth/me')).body.user.uiMode).toBe('full');
     const [mamaUser] = await db.select().from(users).where(eq(users.login, 'parent@example.com'));
+    expect((await mama.put(`/api/family/members/${mamaUser!.id}/ui-mode`).send({ uiMode: 'simple' })).status).toBe(400);
+    expect((await student.put(`/api/family/members/${kidUser!.id}/ui-mode`).send({ uiMode: 'simple' })).status).toBe(
+      403,
+    );
     expect((await mama.delete(`/api/family/members/${mamaUser!.id}`)).body.error.code).toBe('last_admin');
     expect((await student.delete(`/api/family/members/${kidUser!.id}`)).status).toBe(204);
   });

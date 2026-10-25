@@ -2,8 +2,10 @@ import { bandOf, lessonNow, lessonPassed, shortDate, weekdayOf } from '@marksy/c
 import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
+import { useLessonActions } from '../api/queries';
 import type { Lesson, ScheduleLesson } from '../api/queries';
 import { useClock } from '../hooks/useClock';
+import { useSimpleMode } from '../hooks/useSimpleMode';
 import { useScale } from '../hooks/useStudent';
 import { dateStyle, intlLocale, useT } from '../i18n';
 import { hintText } from '../lib/hints';
@@ -115,6 +117,7 @@ export function LessonRow({
   const scale = useScale(studentId);
   const now = useClock();
   const [menu, setMenu] = useState(false);
+  const simple = useSimpleMode();
   const locale = intlLocale();
   const ds = dateStyle();
   const subject = subjectStyle(lesson.subjectName, lesson.subjectColor);
@@ -360,9 +363,41 @@ export function LessonRow({
             {dots}
           </div>
           {notes.length > 0 && <div className="mt-1.5 flex flex-col gap-1">{notes}</div>}
+          {simple && !passed && <ReadyButton studentId={studentId} lesson={lesson} />}
         </div>
       </div>
       {menuSheet}
+    </>
+  );
+}
+
+/**
+ * The large «готово» of simple mode (D41's one exception, design.md 5.7): the same lesson_prep tick as the menu's first
+ * action, as a button a first-grader finds; pressed when the lesson is ready, a second press takes it back.
+ */
+function ReadyButton({ studentId, lesson }: { studentId: string; lesson: RowLesson }) {
+  const t = useT();
+  const { prep } = useLessonActions(studentId);
+  const [failed, setFailed] = useState(false);
+  const ready = !!lesson.ready;
+  return (
+    <>
+      <button
+        type="button"
+        aria-pressed={ready}
+        onClick={(e) => {
+          e.stopPropagation();
+          setFailed(false);
+          prep.mutate({ lessonId: lesson.id, done: !ready }, { onError: () => setFailed(true) });
+        }}
+        className={`mt-2 flex min-h-12 items-center justify-center gap-2 rounded-md text-[16px] font-extrabold ${
+          ready ? 'bg-band-good-bg text-band-good-fg' : 'bg-accent text-accent-ink'
+        }`}
+      >
+        {ready && <CheckIcon size={20} />}
+        {t('lesson.simple.ready')}
+      </button>
+      {failed && <span className="mt-1 text-small text-band-critical-fg">{t('lessonMenu.failed')}</span>}
     </>
   );
 }
