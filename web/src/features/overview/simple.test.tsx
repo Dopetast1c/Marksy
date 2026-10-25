@@ -54,6 +54,13 @@ describe('Простой режим', () => {
     expect(screen.getAllByRole('button', { name: 'Действия с уроком' }).length).toBe(ready.length);
   });
 
+  it('Расписание: the large «Готово», and no statistics or advice under the lessons', async () => {
+    fakeApi({ signedIn: true, role: 'student', uiMode: 'simple' });
+    render(<App at={`/s/${milena.id}/schedule?day=2026-10-22`} />);
+    expect((await screen.findAllByRole('button', { name: 'Готово' })).length).toBeGreaterThan(0);
+    expect(screen.queryByText('Средняя оценка:')).toBeNull();
+  });
+
   it('Оценки without the filter row; the stored choice filters nothing', async () => {
     useMarkFilter.setState({ comments: true });
     const api = fakeApi({ signedIn: true, role: 'student', uiMode: 'simple' });

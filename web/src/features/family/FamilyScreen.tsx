@@ -194,6 +194,7 @@ export function FamilyScreen() {
                 <MenuRow
                   key={c.studentId}
                   icon={<ChildAvatar avatar={c.avatar} index={i} size={36} />}
+                  tone="avatar"
                   title={c.name}
                   sub={
                     <>
@@ -217,9 +218,23 @@ export function FamilyScreen() {
                   key={a.id}
                   icon={<SyncIcon />}
                   title={a.label}
-                  sub={[a.providerName, names(a.studentIds), t(`family.status.${a.status}`)]
+                  sub={[
+                    a.providerName,
+                    // the school of the children it reads (5.6): one, or the first of several
+                    view.children.find((c) => a.studentIds.includes(c.studentId) && c.schoolLabel)?.schoolLabel,
+                    names(a.studentIds),
+                  ]
                     .filter(Boolean)
                     .join(' · ')}
+                  // the state at the right, a dot and a word, so a refused login stands out (colour never alone)
+                  aside={
+                    <span
+                      className={`flex flex-none items-center gap-1.5 text-[12.5px] font-bold ${a.status === 'ok' ? 'text-band-good-fg' : 'text-band-critical-fg'}`}
+                    >
+                      <i className="size-2 rounded-pill bg-current" />
+                      {t(`family.status.${a.status}`)}
+                    </span>
+                  }
                   {...(admin ? { onClick: () => setAccount(a) } : {})}
                 />
               ))}

@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { resetDb, testDb } from '../test/db';
 import { createAccount } from '../test/factories';
 import {
+  apiDriftAcks,
   apiDriftEvents,
   families,
   familyStudents,
@@ -199,15 +200,29 @@ describe('retention janitor', () => {
       .insert(notifications)
       .values({ userId: admin!.id, eventKey: 'k', severity: 'info', title: 't', createdAt: ago(181) });
     const drift = { providerId: 'demo-full', endpoint: 'diary', kind: 'unknown_field', firstSeenAt: ago(400) };
-    await db.insert(apiDriftEvents).values([
-      { ...drift, path: 'a', lastSeenAt: ago(300), acknowledgedAt: ago(250) },
-      { ...drift, path: 'b', lastSeenAt: ago(1), acknowledgedAt: ago(250) },
-      { ...drift, path: 'c', lastSeenAt: ago(300) },
-    ]);
+    const events = await db
+      .insert(apiDriftEvents)
+      .values([
+        { ...drift, path: 'a', lastSeenAt: ago(300) },
+        { ...drift, path: 'b', lastSeenAt: ago(1) },
+        { ...drift, path: 'c', lastSeenAt: ago(300) },
+        // a provider no family's diary uses any more
+        { ...drift, providerId: 'demo-minimal', path: 'd', lastSeenAt: ago(300) },
+      ])
+      .returning();
+    // the family hid a and b; c, old as it is, still waits for it
+    await db
+      .insert(apiDriftAcks)
+      .values(
+        events
+          .filter((e) => e.path === 'a' || e.path === 'b')
+          .map((e) => ({ familyId: w.family.id, driftEventId: e.id, acknowledgedAt: ago(250) })),
+      );
     await applyRetention(db, RETENTION_DEFAULTS, NOW);
     expect((await db.select().from(markEvents)).map((e) => e.kind)).toEqual(['changed']);
     expect(await db.select().from(notifications)).toEqual([]);
     expect((await db.select().from(apiDriftEvents)).map((d) => d.path).sort()).toEqual(['b', 'c']);
+    expect(await db.select().from(apiDriftAcks)).toHaveLength(1);
     expect(await db.select().from(marks)).toHaveLength(1);
   });
 

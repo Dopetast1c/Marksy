@@ -262,7 +262,8 @@ export function LessonRow({
         </LessonNote>,
       );
   }
-  const n = !passed && !compact ? lesson.notes : null;
+  // simple mode (5.7) has no statistics or advice: its rows carry what a compact row carries
+  const n = !passed && !compact && !simple ? lesson.notes : null;
   if (n && scale) {
     const fmt = numbers(scale);
     if (n.hint) {
@@ -385,12 +386,13 @@ function ReadyButton({ studentId, lesson }: { studentId: string; lesson: RowLess
       <button
         type="button"
         aria-pressed={ready}
+        disabled={prep.isPending}
         onClick={(e) => {
           e.stopPropagation();
           setFailed(false);
           prep.mutate({ lessonId: lesson.id, done: !ready }, { onError: () => setFailed(true) });
         }}
-        className={`mt-2 flex min-h-12 items-center justify-center gap-2 rounded-md text-[16px] font-extrabold ${
+        className={`mt-2 flex min-h-12 items-center justify-center gap-2 rounded-md text-[16px] font-extrabold disabled:opacity-70 ${
           ready ? 'bg-band-good-bg text-band-good-fg' : 'bg-accent text-accent-ink'
         }`}
       >

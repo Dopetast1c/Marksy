@@ -13,7 +13,7 @@ import { dateStyle, intlLocale, useT } from '../../i18n';
 import { finalsStateText, schoolYearLabel } from '../../lib/finals';
 import { roman } from '../../lib/period';
 import { todayIn } from '../../lib/time';
-import { ManualFinals } from './ManualFinals';
+import { ManualFinals, manualYears } from './ManualFinals';
 
 // Итоги (docs/design.md 5.3b): the marks a teacher sets at the end of a term or a year, on their own screen. Четверти:
 // subject × I–IV and Год for the current year; Годы: subject × school year with the arrow against last year. A posted
@@ -112,7 +112,8 @@ function YearsView({ studentId, termKind }: { studentId: string; termKind: strin
   const years = q.data.years.slice(-YEARS_SHOWN);
   const rows = q.data.rows.map((r) => ({ ...r, cells: r.cells.slice(-YEARS_SHOWN) }));
   const manual = rows.some((r) => r.cells.some((c) => c.source === 'manual'));
-  const cols = { gridTemplateColumns: `minmax(0,1fr) repeat(${years.length}, 60px) 28px` };
+  // a chip is 30 px: 48 px columns leave the subject's name room for two lines at 360 px
+  const cols = { gridTemplateColumns: `minmax(0,1fr) repeat(${years.length}, 48px) 28px` };
   return (
     <>
       <Note>
@@ -169,7 +170,9 @@ function YearsView({ studentId, termKind }: { studentId: string; termKind: strin
           );
         })}
       </ListCard>
-      {adult && scale && <MoreButton onClick={() => setEntering(true)}>{t('finals.manual.button')}</MoreButton>}
+      {adult && scale && manualYears(q.data).length > 0 && (
+        <MoreButton onClick={() => setEntering(true)}>{t('finals.manual.button')}</MoreButton>
+      )}
       {entering && scale && (
         <ManualFinals studentId={studentId} years={q.data} scale={scale} onClose={() => setEntering(false)} />
       )}

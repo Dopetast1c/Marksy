@@ -24,7 +24,8 @@ export function sniff(b: Buffer): ImageType | null {
 const bad = (why: string) => new HttpError(400, 'bad_image', why);
 
 // ---------------------------------------------------------------------------------------------------------------
-// JPEG: SOI, then segments FF xx [length] until SOS, then entropy-coded data to EOI (kept as it is)
+// JPEG: SOI, then segments FF xx [length]; each SOS is followed by entropy-coded data up to the next marker (a
+// progressive file has several scans with tables between them); EOI ends the picture and nothing after it is kept
 
 /** APPn segments that carry no metadata and that decoders may need: JFIF (APP0), an ICC profile (APP2), Adobe (APP14) */
 function keepJpegApp(marker: number, data: Buffer): boolean {
@@ -38,6 +39,7 @@ function jpeg(b: Buffer): { width: number; height: number; clean: Buffer } {
   const out: Buffer[] = [b.subarray(0, 2)];
   let i = 2;
   let size: { width: number; height: number } | null = null;
+  let ended = false;
   while (i < b.length) {
     if (b[i] !== 0xff) throw bad('A JPEG segment does not start where it should');
     // fill bytes before a marker
@@ -46,6 +48,7 @@ function jpeg(b: Buffer): { width: number; height: number; clean: Buffer } {
     if (marker === undefined) throw bad('The JPEG ends inside a marker');
     if (marker === 0xd9) {
       out.push(b.subarray(i, i + 2));
+      ended = true;
       break;
     }
     // markers without a length
@@ -60,59 +63,103 @@ function jpeg(b: Buffer): { width: number; height: number; clean: Buffer } {
     const data = b.subarray(i + 4, i + 2 + len);
     const isSof = marker >= 0xc0 && marker <= 0xcf && marker !== 0xc4 && marker !== 0xc8 && marker !== 0xcc;
     if (isSof) {
+      if (size) throw bad('The JPEG has a second frame header');
       if (data.length < 5) throw bad('The JPEG frame header is too short');
       size = { height: data.readUInt16BE(1), width: data.readUInt16BE(3) };
     }
-    const metadata = (marker >= 0xe1 && marker <= 0xef && !keepJpegApp(marker, data)) || marker === 0xfe;
+    const metadata = (marker >= 0xe0 && marker <= 0xef && !keepJpegApp(marker, data)) || marker === 0xfe;
     if (!metadata) out.push(b.subarray(i, i + 2 + len));
     i += 2 + len;
-    // start of scan: the image data follows up to the end, kept byte for byte
+    // start of scan: the entropy-coded data runs to the next marker that is neither a stuffed byte (FF 00), a restart
+    // (FF D0-D7) nor fill; then segments again, still without metadata
     if (marker === 0xda) {
-      out.push(b.subarray(i));
-      break;
+      const start = i;
+      while (i < b.length) {
+        if (b[i] !== 0xff) {
+          i++;
+          continue;
+        }
+        const m = b[i + 1];
+        if (m === 0x00 || (m !== undefined && m >= 0xd0 && m <= 0xd7)) i += 2;
+        else if (m === 0xff) i++;
+        else break;
+      }
+      out.push(b.subarray(start, i));
+      if (i >= b.length) throw bad('The JPEG ends inside its image data');
     }
   }
   if (!size) throw bad('The JPEG has no frame header');
+  if (!ended) throw bad('The JPEG has no end');
   return { ...size, clean: Buffer.concat(out) };
 }
 
 // ---------------------------------------------------------------------------------------------------------------
-// PNG: signature, then chunks [length][type][data][crc]; IHDR first
+// PNG: signature, then chunks [length][type][data][crc]; IHDR first. Only the chunks a picture needs are kept (an
+// allow-list: text, EXIF, time and any private or unknown chunk go), and nothing after IEND
 
-const PNG_METADATA = new Set(['tEXt', 'zTXt', 'iTXt', 'eXIf', 'tIME']);
+const PNG_KEEP = new Set([
+  'IHDR',
+  'PLTE',
+  'IDAT',
+  'IEND',
+  'tRNS',
+  'cHRM',
+  'gAMA',
+  'iCCP',
+  'sBIT',
+  'sRGB',
+  'bKGD',
+  'pHYs',
+  // an animated PNG
+  'acTL',
+  'fcTL',
+  'fdAT',
+]);
 
 function png(b: Buffer): { width: number; height: number; clean: Buffer } {
   const out: Buffer[] = [PNG_SIGNATURE];
   let i = 8;
   let size: { width: number; height: number } | null = null;
+  let ended = false;
   while (i < b.length) {
     if (i + 12 > b.length) throw bad('The PNG ends inside a chunk');
     const len = b.readUInt32BE(i);
     const type = b.toString('latin1', i + 4, i + 8);
     const end = i + 12 + len;
     if (end > b.length) throw bad('A PNG chunk is longer than the file');
+    if ((i === 8) !== (type === 'IHDR')) throw bad('The PNG header chunk is not the first and only one');
     if (type === 'IHDR') size = { width: b.readUInt32BE(i + 8), height: b.readUInt32BE(i + 12) };
-    if (!PNG_METADATA.has(type)) out.push(b.subarray(i, end));
+    if (PNG_KEEP.has(type)) out.push(b.subarray(i, end));
     i = end;
-    if (type === 'IEND') break;
+    if (type === 'IEND') {
+      ended = true;
+      break;
+    }
   }
   if (!size) throw bad('The PNG has no header chunk');
+  if (!ended) throw bad('The PNG has no end');
   return { ...size, clean: Buffer.concat(out) };
 }
 
 // ---------------------------------------------------------------------------------------------------------------
-// WebP: RIFF, size, WEBP, then chunks [fourcc][size LE][data, padded to even]
+// WebP: RIFF, size, WEBP, then chunks [fourcc][size LE][data, padded to even] up to the RIFF size. Only the chunks a
+// picture needs are kept (an allow-list: EXIF, XMP and any other chunk go)
+
+const WEBP_KEEP = new Set(['VP8 ', 'VP8L', 'VP8X', 'ALPH', 'ANIM', 'ANMF', 'ICCP']);
 
 function webp(b: Buffer): { width: number; height: number; clean: Buffer } {
   const chunks: Buffer[] = [];
   let i = 12;
   let size: { width: number; height: number } | null = null;
   let vp8x: Buffer | null = null;
-  while (i + 8 <= b.length) {
+  // what follows the RIFF container is not the picture's
+  const riffEnd = 8 + b.readUInt32LE(4);
+  if (riffEnd > b.length) throw bad('The WebP is shorter than it says');
+  while (i + 8 <= riffEnd) {
     const fourcc = b.toString('latin1', i, i + 4);
     const len = b.readUInt32LE(i + 4);
     const end = i + 8 + len + (len % 2);
-    if (i + 8 + len > b.length) throw bad('A WebP chunk is longer than the file');
+    if (i + 8 + len > riffEnd) throw bad('A WebP chunk is longer than the file');
     const data = b.subarray(i + 8, i + 8 + len);
     if (fourcc === 'VP8X' && len >= 10) {
       size = { width: data.readUIntLE(4, 3) + 1, height: data.readUIntLE(7, 3) + 1 };
@@ -122,8 +169,8 @@ function webp(b: Buffer): { width: number; height: number; clean: Buffer } {
       const bits = data.readUInt32LE(1);
       size = { width: (bits & 0x3fff) + 1, height: ((bits >>> 14) & 0x3fff) + 1 };
     }
-    if (fourcc !== 'EXIF' && fourcc !== 'XMP ') {
-      const chunk = Buffer.from(b.subarray(i, Math.min(end, b.length)));
+    if (WEBP_KEEP.has(fourcc)) {
+      const chunk = Buffer.from(b.subarray(i, Math.min(end, riffEnd)));
       if (fourcc === 'VP8X') vp8x = chunk;
       chunks.push(chunk);
     }

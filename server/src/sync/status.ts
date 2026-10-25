@@ -2,7 +2,15 @@ import type { ProviderManifest } from '@marksy/core';
 import { and, eq, gte, inArray, isNull, lte, min, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import type { Db } from '../db/client';
-import { apiDriftEvents, diaryAccounts, schoolYears, syncCoverage, termRescans, terms } from '../db/schema';
+import {
+  apiDriftAcks,
+  apiDriftEvents,
+  diaryAccounts,
+  schoolYears,
+  syncCoverage,
+  termRescans,
+  terms,
+} from '../db/schema';
 import { accountPlan } from './account-plan';
 import type { SyncConfig } from './config';
 import { fromLocal } from './time';
@@ -137,7 +145,12 @@ export async function syncPlanOf(
       count: apiDriftEvents.count,
     })
     .from(apiDriftEvents)
-    .where(and(eq(apiDriftEvents.providerId, account.providerId), isNull(apiDriftEvents.acknowledgedAt)));
+    .leftJoin(
+      apiDriftAcks,
+      and(eq(apiDriftAcks.driftEventId, apiDriftEvents.id), eq(apiDriftAcks.familyId, account.familyId)),
+    )
+    // what this family has hidden; another family's «Понятно» hides nothing here
+    .where(and(eq(apiDriftEvents.providerId, account.providerId), isNull(apiDriftAcks.familyId)));
   return {
     window,
     windowStudentIds: today.children.filter((c) => c.window.window).map((c) => c.studentId),

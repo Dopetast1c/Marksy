@@ -67,24 +67,36 @@ export function SyncScreen() {
   const locale = intlLocale();
   const nameOf = (id: string) => kids.find((k) => k.id === id)?.name ?? '';
   const names = (ids: readonly string[]) => ids.map(nameOf).filter(Boolean).join(', ');
-  const at = (d: string | Date | null) => (d ? whenText(t, d, tz) : t('sync.never'));
+  // a diary's times in its own children's time zone (a family's diaries may be in different countries)
+  const tzOf = (a: Account) => kids.find((k) => a.studentIds.includes(k.id))?.timezone ?? tz;
+  const at = (d: string | Date | null, zone = tz) => (d ? whenText(t, d, zone) : t('sync.never'));
   const reload = () =>
     queries.invalidateQueries({ predicate: (q) => q.queryKey[0] === 'sync-status' || q.queryKey[0] === 'sync-runs' });
 
   const refresh = async (a: Account) => {
     setMessage(null);
-    const res = await data(api.POST('/api/sync/run', { body: { accountId: a.id } }));
+    let res;
+    try {
+      res = await data(api.POST('/api/sync/run', { body: { accountId: a.id } }));
+    } catch {
+      setMessage(t('sync.failed'));
+      return;
+    }
     setMessage(
       res.started
         ? t('sync.refresh.started')
         : res.reason === 'interval' && res.retryAt
-          ? t('sync.refresh.later', { at: formatTime(res.retryAt, tz, locale) })
+          ? t('sync.refresh.later', { at: formatTime(res.retryAt, tzOf(a), locale) })
           : t('sync.refresh.action'),
     );
     await reload();
   };
   const ack = async (id: string) => {
-    await data(api.POST('/api/sync/drift/{id}/ack', { params: { path: { id } } }));
+    try {
+      await data(api.POST('/api/sync/drift/{id}/ack', { params: { path: { id } } }));
+    } catch {
+      setMessage(t('sync.failed'));
+    }
     await reload();
   };
 
@@ -97,9 +109,9 @@ export function SyncScreen() {
       case 'soon':
         return t('sync.next.soon');
       case 'at':
-        return n.at ? t('sync.next.at', { when: at(n.at) }) : '—';
+        return n.at ? t('sync.next.at', { when: at(n.at, tzOf(a)) }) : '—';
       case 'paused':
-        return n.at ? t('sync.next.paused', { when: at(n.at) }) : t('sync.next.pausedPlain');
+        return n.at ? t('sync.next.paused', { when: at(n.at, tzOf(a)) }) : t('sync.next.pausedPlain');
       case 'action':
         return t('sync.next.action');
       case 'offline':
@@ -111,6 +123,7 @@ export function SyncScreen() {
 
   const block = (a: Account) => {
     const p = a.plan;
+    const zone = tzOf(a);
     const refused = a.status === 'auth_failed' || a.status === 'blocked' || a.status === 'needs_2fa';
     const allowedAt = a.nextAllowedAt && new Date(a.nextAllowedAt) > new Date() ? a.nextAllowedAt : null;
     const weeks = Object.entries(p?.sets ?? {}).filter(([, n]) => n > 0);
@@ -127,10 +140,10 @@ export function SyncScreen() {
           title={t('sync.state')}
           aside={<b className={`text-[13px] ${TONE[a.status]}`}>{t(`sync.status.${a.status}`)}</b>}
         >
-          <Kv label={t('sync.lastData')}>{at(a.lastSuccessAt)}</Kv>
+          <Kv label={t('sync.lastData')}>{at(a.lastSuccessAt, zone)}</Kv>
           <Kv label={t('sync.lastAttempt')}>
             {a.lastRun
-              ? `${at(a.lastRun.startedAt)} · ${t(`sync.outcome.${a.lastRun.status}`, { defaultValue: a.lastRun.status })}`
+              ? `${at(a.lastRun.startedAt, zone)} · ${t(`sync.outcome.${a.lastRun.status}`, { defaultValue: a.lastRun.status })}`
               : t('sync.never')}
           </Kv>
           {a.consecutiveFailures > 0 && <Kv label={t('sync.failures')}>{a.consecutiveFailures}</Kv>}
@@ -158,8 +171,10 @@ export function SyncScreen() {
         )}
         {p && (
           <Card title={t('sync.rescan')} aside={<span className="text-small text-ink3">{t('sync.rescan.when')}</span>}>
-            <Kv label={t('sync.rescan.lastFull')}>{p.rescan.lastFullAt ? at(p.rescan.lastFullAt) : '—'}</Kv>
-            <Kv label={t('sync.rescan.oldest')}>{p.rescan.oldestVerifiedAt ? at(p.rescan.oldestVerifiedAt) : '—'}</Kv>
+            <Kv label={t('sync.rescan.lastFull')}>{p.rescan.lastFullAt ? at(p.rescan.lastFullAt, zone) : '—'}</Kv>
+            <Kv label={t('sync.rescan.oldest')}>
+              {p.rescan.oldestVerifiedAt ? at(p.rescan.oldestVerifiedAt, zone) : '—'}
+            </Kv>
             <span className="pt-1 text-small text-ink3">{t('sync.rescan.note')}</span>
           </Card>
         )}
@@ -175,7 +190,7 @@ export function SyncScreen() {
                   <code className="text-[12.5px]">{d.path}</code>
                 </b>
                 <span className="text-small text-ink3">
-                  {t('sync.drift.seen', { endpoint: d.endpoint, when: at(d.firstSeenAt), count: d.count })}
+                  {t('sync.drift.seen', { endpoint: d.endpoint, when: at(d.firstSeenAt, zone), count: d.count })}
                 </span>
                 <button
                   type="button"
@@ -194,7 +209,7 @@ export function SyncScreen() {
           </Button>
         ) : (
           <Button type="button" ghost={!!allowedAt} onClick={() => void refresh(a)}>
-            {allowedAt ? t('sync.refresh.allowedAt', { at: formatTime(allowedAt, tz, locale) }) : t('sync.refresh')}
+            {allowedAt ? t('sync.refresh.allowedAt', { at: formatTime(allowedAt, zone, locale) }) : t('sync.refresh')}
           </Button>
         )}
         {!refused && (
@@ -298,12 +313,16 @@ function RescanSheet({
   const [who, setWho] = useState<string | null>(null);
   const [period, setPeriod] = useState<'term' | 'year'>('term');
   const go = async () => {
-    const res = await data(
-      api.POST('/api/sync/rescan', {
-        body: { accountId: account.id, period, ...(who ? { studentIds: [who] } : {}) },
-      }),
-    );
-    onDone(t('sync.rescan.queued', { count: res.weeks }));
+    try {
+      const res = await data(
+        api.POST('/api/sync/rescan', {
+          body: { accountId: account.id, period, ...(who ? { studentIds: [who] } : {}) },
+        }),
+      );
+      onDone(t('sync.rescan.queued', { count: res.weeks }));
+    } catch {
+      onDone(t('sync.failed'));
+    }
   };
   return (
     <BottomSheet open onClose={onClose} label={t('sync.rescan.button')}>

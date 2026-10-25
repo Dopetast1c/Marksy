@@ -270,10 +270,11 @@ describe('Оформление', () => {
     expect(got.status).toBe(200);
     expect((got.body as Buffer).toString('latin1')).not.toContain('GPS');
     await mama.patch('/api/me/settings').send({ appearance: { background: 'wallpaper', wallpaper: 'own' } });
-    expect((await mama.get('/api/auth/me')).body.user.appearance).toMatchObject({
-      wallpaper: 'own',
-      hasOwnWallpaper: true,
-    });
+    const first = (await mama.get('/api/auth/me')).body.user.appearance;
+    expect(first).toMatchObject({ wallpaper: 'own', hasOwnWallpaper: true, wallpaperVersion: expect.any(String) });
+    // another picture, another version: the address changes, so no cached old picture is shown
+    await mama.put('/api/me/wallpaper').set('Content-Type', 'image/jpeg').send(jpegWithGps(800, 600));
+    expect((await mama.get('/api/auth/me')).body.user.appearance.wallpaperVersion).not.toBe(first.wallpaperVersion);
     // another person has no wallpaper of their own, and sees nobody else's
     const other = agentWith();
     await connectFamily(other, 'other@example.com', 'demo-minimal');

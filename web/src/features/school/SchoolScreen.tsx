@@ -10,7 +10,8 @@ import { ScreenHeader } from '../../components/ScreenHeader';
 import { SegmentedControl } from '../../components/SegmentedControl';
 import { useClock } from '../../hooks/useClock';
 import { useCapabilities, useStudent } from '../../hooks/useStudent';
-import { dateStyle, useT } from '../../i18n';
+import { dateStyle, monthAlone, useT } from '../../i18n';
+import { schoolYearLabel } from '../../lib/finals';
 import { holidayName } from '../../lib/holidays';
 import { roman } from '../../lib/period';
 
@@ -50,7 +51,8 @@ function Bells({ school, className }: { school: School; className: string | null
       {school.bells.map((b, i) => {
         const P = [...b.periods].sort((x, y) => x.slot - y.slot);
         if (!P.length) return null;
-        const live = b.days.includes(today);
+        // the child's holidays have no lesson in progress, whatever the weekday
+        const live = b.days.includes(today) && !school.holidays.some((h) => h.from <= now.date && now.date <= h.to);
         const at = (from: string, to: string) =>
           live && now.minutes >= clockMinutes(from) && now.minutes < clockMinutes(to);
         return (
@@ -159,10 +161,8 @@ function Year({ school }: { school: School }) {
     const [y, mo] = m.split('-').map(Number);
     m = mo === 12 ? `${y! + 1}-01-01` : `${y}-${String(mo! + 1).padStart(2, '0')}-01`;
   }
-  // the language's own short months («сен», «ноя») where it has them, as every short date of the app
-  const monthName = (m: string) =>
-    ds.months?.[Number(m.slice(5, 7)) - 1] ??
-    new Intl.DateTimeFormat(ds.locale, { timeZone: 'UTC', month: 'short' }).format(new Date(`${m}T12:00:00Z`));
+  // a month on its own («май», not the «мая» of a date), the language's own short form where it has one
+  const monthName = (m: string) => monthAlone(Number(m.slice(5, 7)));
   const termWord = t(`term.${terms[0]?.kind ?? 'other'}.plural`).toLocaleLowerCase(ds.locale);
   const left = current ? daysBetween(today, current.to) + 1 : 0;
   return (
@@ -193,14 +193,24 @@ function Year({ school }: { school: School }) {
             .map((x) => (
               <i
                 key={`${x.type}-${x.from}`}
-                className={`absolute inset-y-0 grid place-items-center text-[10px] font-bold not-italic ${x.type === 'holiday' ? 'z-[1] bg-holiday-fill' : 'bg-accent text-accent-ink'}`}
+                className={`absolute inset-y-0 ${x.type === 'holiday' ? 'z-[1] bg-holiday-fill' : 'bg-accent'}`}
+                style={{ left: pct(x.from), width: width(x.from, x.to) } as CSSProperties}
+              />
+            ))}
+          {/* the terms' numerals above the holidays inside them (the extra February week of grades 1 and 2) */}
+          {items.map((x) =>
+            x.type === 'term' && x.from <= y1 ? (
+              <span
+                key={`n-${x.from}`}
+                className="absolute inset-y-0 z-[2] grid place-items-center text-[10px] font-bold text-accent-ink"
                 style={{ left: pct(x.from), width: width(x.from, x.to) } as CSSProperties}
               >
-                {x.type === 'term' ? roman(x.index) : ''}
-              </i>
-            ))}
+                {roman(x.index)}
+              </span>
+            ) : null,
+          )}
           {today >= y0 && today <= y1 && (
-            <span className="absolute inset-y-[-2px] z-[2] w-[2px] bg-ink" style={{ left: pct(today) }} />
+            <span className="absolute inset-y-[-2px] z-[3] w-[2px] bg-ink" style={{ left: pct(today) }} />
           )}
         </div>
         <div className="relative h-4 text-[10px] text-ink3" aria-hidden="true">
@@ -222,7 +232,7 @@ function Year({ school }: { school: School }) {
         </div>
       </section>
       <div className="flex items-baseline justify-between gap-2">
-        <h2 className="text-h2">{school.year?.label ?? ''}</h2>
+        <h2 className="text-h2">{school.year ? schoolYearLabel(school.year.label) : ''}</h2>
         <span className="text-small text-ink3">{t('school.yearSub', { terms: termWord })}</span>
       </div>
       <div className="flex flex-col gap-2">

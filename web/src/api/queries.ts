@@ -260,6 +260,13 @@ export function useLessonActions(id: string) {
           }
         : d,
     );
+  // Главная's next day comes with the overview: its rows change at once too
+  const patchOverview = (lessonId: string, fn: (l: Lesson) => Lesson) =>
+    client.setQueriesData<Overview>({ queryKey: ['overview', id] }, (d) =>
+      d?.nextDay
+        ? { ...d, nextDay: { ...d.nextDay, lessons: d.nextDay.lessons.map((l) => (l.id === lessonId ? fn(l) : l)) } }
+        : d,
+    );
   const refresh = () =>
     client.invalidateQueries({ predicate: (q) => q.queryKey[1] === id || q.queryKey[0] === 'students' });
   const path = (lessonId: string) => ({ params: { path: { id, lessonId } } });
@@ -270,13 +277,13 @@ export function useLessonActions(id: string) {
           ? api.PUT('/api/students/{id}/lessons/{lessonId}/prep', path(lessonId))
           : api.DELETE('/api/students/{id}/lessons/{lessonId}/prep', path(lessonId)),
       ),
-    onMutate: ({ lessonId, done }) =>
-      patch(lessonId, (l) => ({
-        ...l,
-        ready: done
-          ? { at: new Date().toISOString(), by: { name: me.data?.user.displayName ?? null, otherFamily: false } }
-          : null,
-      })),
+    onMutate: ({ lessonId, done }) => {
+      const ready = done
+        ? { at: new Date().toISOString(), by: { name: me.data?.user.displayName ?? null, otherFamily: false } }
+        : null;
+      patch(lessonId, (l) => ({ ...l, ready }));
+      patchOverview(lessonId, (l) => ({ ...l, ready }));
+    },
     onSettled: refresh,
   });
   const cancel = useMutation({

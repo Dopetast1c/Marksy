@@ -7,6 +7,7 @@ import type { Schemas } from '../../api/client';
 import { meKey, useMe, useSubjects } from '../../api/queries';
 import type { SubjectInfo } from '../../api/queries';
 import { Frame } from '../../app/Frame';
+import { ownWallpaperUrl } from '../../app/Appearance';
 import { useContinueChild } from '../../app/guards';
 import { BottomSheet } from '../../components/BottomSheet';
 import { Button } from '../../components/Field';
@@ -244,7 +245,7 @@ export function LookScreen() {
                         label={t('look.wallpaper.own')}
                         sample={{
                           className: 'bg-cover bg-center',
-                          style: { backgroundImage: 'url("/api/me/wallpaper")' },
+                          style: { backgroundImage: `url("${ownWallpaperUrl(a)}")` },
                         }}
                       />
                     ) : (

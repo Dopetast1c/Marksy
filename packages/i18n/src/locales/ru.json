@@ -306,6 +306,8 @@
   "more.sync.sub": "состояние, следующий запуск, журнал",
   "home.refresh": "Обновить",
   "sync.title": "Синхронизация",
+
+  "sync.failed": "Не получилось. Проверьте связь и попробуйте ещё раз.",
   "sync.never": "ещё не было",
   "sync.refresh": "Обновить сейчас",
   "sync.refresh.allowedAt": "Обновить можно в {{at}}",
@@ -703,6 +705,19 @@
   "date.monthShort.11": "ноя",
   "date.monthShort.12": "дек",
 
+  "date.monthAlone.1": "янв",
+  "date.monthAlone.2": "фев",
+  "date.monthAlone.3": "мар",
+  "date.monthAlone.4": "апр",
+  "date.monthAlone.5": "май",
+  "date.monthAlone.6": "июн",
+  "date.monthAlone.7": "июл",
+  "date.monthAlone.8": "авг",
+  "date.monthAlone.9": "сен",
+  "date.monthAlone.10": "окт",
+  "date.monthAlone.11": "ноя",
+  "date.monthAlone.12": "дек",
+
   "time.todayAt": "сегодня в {{time}}",
   "time.dayAt": "{{day}}, {{time}}",
 
@@ -789,7 +804,7 @@
   "finals.manual.add": "Добавить",
   "finals.manual.save": "Сохранить",
   "finals.manual.failed": "Не удалось сохранить. Проверьте связь и попробуйте ещё раз.",
-  "finals.manual.legend": "Карандашом отмечены итоги, введённые вручную.",
+  "finals.manual.legend": "Значком ручки отмечены итоги, введённые вручную.",
   "finals.manual.cell": "введено вручную",
   "finals.year": "Год",
   "finals.all": "Все итоги",

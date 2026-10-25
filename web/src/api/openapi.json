@@ -102,6 +102,12 @@
           },
           "hasOwnWallpaper": {
             "type": "boolean"
+          },
+          "wallpaperVersion": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "required": [
@@ -111,7 +117,8 @@
           "wallpaper",
           "opacity",
           "font",
-          "hasOwnWallpaper"
+          "hasOwnWallpaper",
+          "wallpaperVersion"
         ]
       },
       "AvatarTraits": {
@@ -3175,7 +3182,10 @@
                   "type": "string"
                 },
                 "label": {
-                  "type": "string"
+                  "type": [
+                    "string",
+                    "null"
+                  ]
                 },
                 "status": {
                   "type": "string",

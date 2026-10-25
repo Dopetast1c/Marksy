@@ -132,20 +132,33 @@ describe('Итоги', () => {
     const api = fakeApi({ signedIn: true });
     const user = userEvent.setup();
     render(<App at={`/s/${milena.id}/finals?mode=years`} />);
-    expect(await screen.findByText(/Карандашом отмечены итоги, введённые вручную/)).toBeTruthy();
+    expect(await screen.findByText(/Значком ручки отмечены итоги, введённые вручную/)).toBeTruthy();
     expect(screen.getAllByText('введено вручную').length).toBe(2);
     await user.click(screen.getByRole('button', { name: 'Ввести итоги прошлого года' }));
     const sheet = await screen.findByRole('dialog', { name: 'Итоги прошлого года' });
-    // the diary's own year is not offered; the year typed in before opens with its values
+    // the diary's own year is not offered, only as many years back as Годы shows; the year typed in opens with its
+    // values
     const years = within(sheet).getByRole('group', { name: 'Учебный год' });
     expect(
       within(years)
         .getAllByRole('button')
         .map((b) => b.textContent),
-    ).toEqual(['2025/26', '2024/25', '2023/24']);
-    expect(within(sheet).getByRole('combobox', { name: 'Алгебра' })).toHaveProperty('value', '7');
-    await user.selectOptions(within(sheet).getByRole('combobox', { name: 'Геометрия' }), '9');
-    await user.selectOptions(within(sheet).getByRole('combobox', { name: 'Природоведение' }), '');
+    ).toEqual(['2025/26', '2024/25']);
+    // a subject opens the scale's values under it: no native select (D32)
+    expect(within(sheet).queryByRole('combobox')).toBeNull();
+    const pick = async (subject: string, value: string) => {
+      await user.click(within(sheet).getByRole('button', { name: new RegExp(`^${subject}`) }));
+      await user.click(
+        within(within(sheet).getByRole('group', { name: subject })).getByRole('button', { name: value }),
+      );
+    };
+    await user.click(within(sheet).getByRole('button', { name: /^Алгебра/ }));
+    expect(
+      within(within(sheet).getByRole('group', { name: 'Алгебра' })).getByRole('button', { pressed: true }).textContent,
+    ).toBe('7');
+    await user.click(within(sheet).getByRole('button', { name: /^Алгебра/ }));
+    await pick('Геометрия', '9');
+    await pick('Природоведение', '—');
     await user.click(within(sheet).getByRole('button', { name: 'Сохранить' }));
     expect(api.bodies['PUT /api/students/kid-milena/final-marks']).toEqual({
       startYear: 2025,

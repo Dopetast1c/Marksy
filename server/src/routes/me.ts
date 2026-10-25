@@ -118,7 +118,7 @@ export async function buildMe(db: Db, auth: Pick<Auth, 'userId' | 'familyId'>): 
       timezone: user.timezone,
       uiMode: user.uiMode,
       guidance: user.settings.guidance !== false,
-      appearance: appearanceOf(user.settings, !!ownWallpaper),
+      appearance: appearanceOf(user.settings, ownWallpaper?.id ?? null),
     },
     memberships: rows,
     family: current ? { id: current.familyId, name: current.familyName, role: current.role } : null,

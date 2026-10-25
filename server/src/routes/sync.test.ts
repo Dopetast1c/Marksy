@@ -1,10 +1,14 @@
+import { getProvider } from '@marksy/registry';
 import { eq } from 'drizzle-orm';
 import request from 'supertest';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { settle, testApp } from '../../test/app';
 import { agentWith, connectFamily } from '../../test/connect';
 import { resetDb, testDb } from '../../test/db';
+import { createAccount } from '../../test/factories';
 import { apiDriftEvents, diaryAccounts, syncCoverage, syncRuns } from '../db/schema';
+import { readSyncConfig } from '../sync/config';
+import { syncPlanOf } from '../sync/status';
 
 const db = testDb();
 // Wednesday 15 October 2025, 10:00 at the demo school: a school day, inside the window
@@ -29,6 +33,17 @@ describe('Синхронизация', () => {
     });
     // the connect run used this hour's login: the next one waits for the interval
     expect(plan.next.kind).toBe('at');
+
+    // a student of the family: the freshness of their own data, never the diary login or the planner's view
+    const kid = status.students[0].id as string;
+    const code = (await mama.post('/api/family/invites').send({ role: 'student', studentIds: [kid] })).body.code;
+    const student = agentWith({ now: () => NOW });
+    await student
+      .post(`/api/invites/${code}/accept`)
+      .send({ login: 'kid@example.com', password: 'correct horse battery', displayName: 'Ребёнок' });
+    const seen = (await student.get('/api/sync/status')).body;
+    expect(seen.accounts[0]).toMatchObject({ label: null, plan: null, studentIds: [kid] });
+    expect(seen.students.map((s: { id: string }) => s.id)).toEqual([kid]);
   });
 
   it('«Обновить сейчас» within the login budget: right after a run it says when; never for a student or another family', async () => {
@@ -96,7 +111,12 @@ describe('Синхронизация', () => {
     expect(JSON.stringify(drift)).not.toContain('a value');
     expect((await mama.post(`/api/sync/drift/${theirs!.id}/ack`)).status).toBe(404);
     expect((await mama.post(`/api/sync/drift/${ours!.id}/ack`)).status).toBe(204);
+    expect((await mama.post(`/api/sync/drift/${ours!.id}/ack`)).status).toBe(204);
     expect((await mama.get('/api/sync/status')).body.accounts[0].plan.drift).toEqual([]);
+    // another family whose diary is on the same provider still sees it
+    const { account } = await createAccount(db, 'demo-full');
+    const theirsPlan = await syncPlanOf(db, account, getProvider('demo-full')!.manifest, readSyncConfig(), NOW);
+    expect(theirsPlan.drift).toEqual([expect.objectContaining({ id: ours!.id })]);
   });
 });
 

@@ -26,7 +26,7 @@ export function NearGoals({ studentId, rows, scale }: { studentId: string; rows:
           key={r.subject.id}
           type="button"
           onClick={() => navigate(`/s/${studentId}/subjects/${r.subject.id}`)}
-          className="text-left text-[14px]"
+          className="min-h-11 text-left text-[14px]"
         >
           <b>{r.subject.name}</b>{' '}
           <span className="text-ink2">

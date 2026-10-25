@@ -107,7 +107,7 @@ pnpm privacy            scripts/privacy-check.mjs: secrets, forbidden files, per
 pnpm db:migrate         applies server/drizzle to DATABASE_URL (pnpm --filter @marksy/server db:generate writes a new migration)
 pnpm db:seed [--reset]  the fictional demo family on demo-full, with demo logins; --reset replaces only that family
 pnpm db:studio          Drizzle Studio on DATABASE_URL
-pnpm db:read [--tuples] "<sql>" ...  read-only queries (and \d) on marksy: anything but a query is refused, psql runs read-only
+pnpm db:read [--tuples] "<sql>" ...  read-only queries (and \d) on marksy as marksy_read, a SELECT-only role; anything but one query per argument is refused
 pnpm db:backup          pg_dump of marksy into data/backups/ (last five kept), verified by a restore into marksy_restore_check
 pnpm db:restore <f> --yes  puts a dump back into marksy (the owner's; stop pnpm dev first)
 pnpm sync:plan          the planner's dry run on marksy: each child's window today, what waits, whether a run would start; never logs in

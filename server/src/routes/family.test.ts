@@ -1,7 +1,9 @@
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import { and, eq } from 'drizzle-orm';
 import request from 'supertest';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { settle, testApp } from '../../test/app';
+import { settle, testApp, TEST_UPLOADS_DIR } from '../../test/app';
 import { agentWith, CONSENT, connectFamily, otherParentTransport } from '../../test/connect';
 import type { TestAgent } from '../../test/connect';
 import { resetDb, testDb } from '../../test/db';
@@ -323,6 +325,13 @@ describe('family', () => {
     await secondFamily().then(({ agent, body }) =>
       agent.post(`/api/family/accounts/${body.connect.accountId}/matches/${shared.id}`).send({ action: 'follow' }),
     );
+    // a photo of the child whose data goes: the file goes at once, not with the next day's janitor
+    expect(
+      (await mama.put(`/api/students/${lonely.id}/photo`).set('Content-Type', 'image/jpeg').send(jpegWithGps())).status,
+    ).toBe(200);
+    const [before] = await db.select().from(students).where(eq(students.id, lonely.id));
+    const file = join(TEST_UPLOADS_DIR, (before!.avatar as { key: string }).key);
+    expect(existsSync(file)).toBe(true);
     for (const s of [lonely, shared]) await mama.delete(`/api/family/students/${s.id}`);
     expect(
       (await mama.delete(`/api/family/students/${shared.id}/data`).send({ confirm: shared.name })).body.error.code,
@@ -333,6 +342,7 @@ describe('family', () => {
     );
     expect(await db.select().from(students).where(eq(students.id, lonely.id))).toEqual([]);
     expect(await db.select().from(students).where(eq(students.id, shared.id))).toHaveLength(1);
+    expect(existsSync(file)).toBe(false);
   });
 
   it('invites: a hashed single-use code; a new person or a signed-in one (a second family)', async () => {

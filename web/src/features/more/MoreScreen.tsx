@@ -7,6 +7,7 @@ import { meKey, useMe } from '../../api/queries';
 import { Frame } from '../../app/Frame';
 import { useContinueChild } from '../../app/guards';
 import { Avatar, defaultTraits } from '../../components/Avatar';
+import { ChildAvatar } from '../../components/ChildAvatar';
 import { BottomSheet, SheetOption } from '../../components/BottomSheet';
 import { BulbIcon, OutIcon, PaletteIcon, SchoolIcon, SyncIcon, UsersIcon } from '../../components/icons';
 import { LanguagePicker } from '../../components/LanguagePicker';
@@ -82,11 +83,12 @@ export function MoreScreen() {
         )}
         {user && (
           <div className="flex items-center gap-3 rounded-lg bg-surface px-3.5 py-3 shadow-card">
-            <Avatar
-              traits={{ ...defaultTraits(), age: parent ? 'adult' : 'preteen' }}
-              index={parent ? kids.length : kids.findIndex((k) => k.id === child?.id)}
-              size={44}
-            />
+            {/* a student is the child: their own avatar, as on the pick card and in the student bar */}
+            {!parent && kids[0] ? (
+              <ChildAvatar avatar={kids[0].avatar} index={0} size={44} />
+            ) : (
+              <Avatar traits={{ ...defaultTraits(), age: 'adult' }} index={kids.length} size={44} />
+            )}
             <span className="flex min-w-0 flex-1 flex-col">
               <b className="text-[15px]">
                 {t('more.who', { name: user.displayName, role: t(`role.${family?.role ?? 'parent'}`) })}

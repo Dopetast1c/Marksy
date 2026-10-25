@@ -15,7 +15,7 @@ import { TEST_CREDENTIALS_KEY } from './factories';
 const inFlight: Promise<unknown>[] = [];
 /** A random key per test run, like the credentials key */
 const TEST_SESSION_SECRET = randomBytes(32).toString('hex');
-const TEST_UPLOADS_DIR = join(tmpdir(), `marksy-test-uploads-${randomBytes(6).toString('hex')}`);
+export const TEST_UPLOADS_DIR = join(tmpdir(), `marksy-test-uploads-${randomBytes(6).toString('hex')}`);
 
 export const settle = () => Promise.allSettled(inFlight.splice(0));
 

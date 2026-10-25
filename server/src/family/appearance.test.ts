@@ -12,8 +12,9 @@ describe('appearance', () => {
   });
 
   it('unknown or old values fall back one by one; an own picture that is gone shows the first pattern', () => {
-    const a = appearanceOf({ appearance: { theme: 'dark', palette: 'neon', opacity: 500, wallpaper: 'own' } }, false);
-    expect(a).toEqual({ ...DEFAULT_APPEARANCE, theme: 'dark', hasOwnWallpaper: false });
-    expect(appearanceOf({ appearance: { wallpaper: 'own' } }, true).wallpaper).toBe('own');
+    const a = appearanceOf({ appearance: { theme: 'dark', palette: 'neon', opacity: 500, wallpaper: 'own' } }, null);
+    expect(a).toEqual({ ...DEFAULT_APPEARANCE, theme: 'dark', hasOwnWallpaper: false, wallpaperVersion: null });
+    const own = appearanceOf({ appearance: { wallpaper: 'own' } }, '0f3a9c12-0000-4000-8000-000000000000');
+    expect(own).toMatchObject({ wallpaper: 'own', hasOwnWallpaper: true, wallpaperVersion: '0f3a9c12' });
   });
 });

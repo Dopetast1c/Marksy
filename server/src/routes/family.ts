@@ -30,6 +30,8 @@ import { route } from '../http/route';
 import { diaryKey } from './auth';
 import { registry } from '../openapi';
 import { avatarOf, avatarOut } from '../students/avatar';
+import { familyPictureKeys, forgetPictures, pictureKeys } from '../uploads/forget';
+import { DEFAULT_UPLOADS_DIR } from '../uploads/store';
 import { studentScale } from '../students/scale';
 
 // Семья (docs/design.md 5.6, 7, 9, 14.1): members, diary accounts, the children the family follows, invites, join
@@ -443,7 +445,12 @@ export function familyRoutes(deps: AppDeps, limiters: Limiters): Router {
       response: null,
       errors: { 400: 'The typed name does not match', 409: 'Not stopped, or another family follows the child' },
     },
-    async (req, { params, body }) => deleteChildData(deps.db, memberOf(req).familyId, params.id, body.confirm),
+    async (req, { params, body }) => {
+      // the child's photo goes with the child's data, at once (10.4)
+      const keys = await pictureKeys(deps.db, { studentIds: [params.id] });
+      await deleteChildData(deps.db, memberOf(req).familyId, params.id, body.confirm);
+      await forgetPictures(deps.db, deps.uploadsDir ?? DEFAULT_UPLOADS_DIR, keys);
+    },
   );
 
   route(
@@ -576,7 +583,13 @@ export function familyRoutes(deps: AppDeps, limiters: Limiters): Router {
       response: null,
       errors: { 400: 'The typed name does not match' },
     },
-    async (req, { body }) => eraseFamily(deps.db, memberOf(req).familyId, body.confirm),
+    async (req, { body }) => {
+      const familyId = memberOf(req).familyId;
+      // the children's photos and the members' wallpapers go with the family, unless a row elsewhere still has them
+      const keys = await familyPictureKeys(deps.db, familyId);
+      await eraseFamily(deps.db, familyId, body.confirm);
+      await forgetPictures(deps.db, deps.uploadsDir ?? DEFAULT_UPLOADS_DIR, keys);
+    },
   );
 
   return r;

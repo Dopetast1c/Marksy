@@ -77,6 +77,57 @@ describe('checkImage', () => {
     expect(w.bytes[20]! & 0x0c).toBe(0);
   });
 
+  it('nothing hides between scans or after the end: a progressive JPEG, an appended EXIF, a private PNG chunk', () => {
+    const seg = (marker: number, data: Buffer) => {
+      const head = Buffer.from([0xff, marker, 0, 0]);
+      head.writeUInt16BE(data.length + 2, 2);
+      return Buffer.concat([head, data]);
+    };
+    const base = jpegWithGps();
+    const eoi = base.length - 2;
+    // a second scan with a comment and an EXIF block before it, then an appended picture with its own EXIF (MPF style)
+    const progressive = Buffer.concat([
+      base.subarray(0, eoi),
+      seg(0xfe, Buffer.from('second comment', 'latin1')),
+      seg(0xe1, Buffer.from('Exif\0\0GPSLatitude 53.9', 'latin1')),
+      seg(0xc4, Buffer.from([0, 1, 2])),
+      seg(0xda, Buffer.from([1, 1, 0, 0, 0x3f, 0])),
+      Buffer.from([0xab, 0xff, 0xd3, 0xcd]),
+      Buffer.from([0xff, 0xd9]),
+      Buffer.from([0xff, 0xd8]),
+      seg(0xe1, Buffer.from('Exif\0\0GPSLongitude 27.56', 'latin1')),
+      Buffer.from('anything at all', 'latin1'),
+    ]);
+    const j = checkImage(progressive, LIMITS).bytes.toString('latin1');
+    for (const gone of ['GPS', 'second comment', 'anything at all']) expect(j).not.toContain(gone);
+    // the second scan's data and its restart marker are kept, the file ends at its EOI
+    expect(j).toContain('\xab\xff\xd3\xcd');
+    expect(j.endsWith('\xff\xd9')).toBe(true);
+    expect(() => checkImage(Buffer.concat([base.subarray(0, eoi), seg(0xc0, Buffer.alloc(6))]), LIMITS)).toThrow(
+      /second frame header/,
+    );
+
+    const p = pngWithText();
+    const end = p.length - 12;
+    const withPrivate = Buffer.concat([
+      p.subarray(0, end),
+      chunk('prIv', Buffer.from('GPS 53.9', 'latin1')),
+      p.subarray(end),
+    ]);
+    expect(checkImage(withPrivate, LIMITS).bytes.toString('latin1')).not.toMatch(/prIv|GPS/);
+    const trailing = Buffer.concat([p, Buffer.from('GPS after IEND', 'latin1')]);
+    expect(checkImage(trailing, LIMITS).bytes.toString('latin1')).not.toContain('GPS');
+    const twoHeaders = Buffer.concat([p.subarray(0, 33), p.subarray(8)]);
+    expect(() => checkImage(twoHeaders, LIMITS)).toThrow(/header chunk/);
+
+    // a WebP chunk the picture does not need, and bytes after the RIFF container
+    const w = webpWithExif();
+    const odd = Buffer.concat([w, Buffer.from('GPS after RIFF', 'latin1')]);
+    const out = checkImage(odd, LIMITS);
+    expect(out.bytes.toString('latin1')).not.toContain('GPS');
+    expect(out.bytes.readUInt32LE(4)).toBe(out.bytes.length - 8);
+  });
+
   it('trusts nothing it is told: the type from the bytes, the size from the header', () => {
     expect(() => checkImage(Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"/>'), LIMITS)).toThrow(/JPEG, PNG/);
     expect(() => checkImage(Buffer.from('GIF89a........'), LIMITS)).toThrow(/JPEG, PNG/);

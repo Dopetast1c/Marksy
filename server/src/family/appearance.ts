@@ -24,15 +24,17 @@ export const appearanceOut = registry.register(
     font: z.enum(FONTS),
     /** the person has uploaded a picture of their own */
     hasOwnWallpaper: z.boolean(),
+    /** changes with every new picture: GET /api/me/wallpaper?v=… shows the new one at once, never a cached old one */
+    wallpaperVersion: z.string().nullable(),
   }),
 );
 export type Appearance = z.infer<typeof appearanceOut>;
 
 /** What PATCH /api/me/settings accepts: any part of it */
-export const appearanceIn = appearanceOut.omit({ hasOwnWallpaper: true }).partial();
+export const appearanceIn = appearanceOut.omit({ hasOwnWallpaper: true, wallpaperVersion: true }).partial();
 
 /** A new user and the login screen: light, the sea palette, Manrope, wallpaper at 35 % (tokens: wallpaper.defaultOpacity) */
-export const DEFAULT_APPEARANCE: Omit<Appearance, 'hasOwnWallpaper'> = {
+export const DEFAULT_APPEARANCE: Omit<Appearance, 'hasOwnWallpaper' | 'wallpaperVersion'> = {
   theme: 'light',
   background: 'color',
   palette: 'sea',
@@ -42,7 +44,8 @@ export const DEFAULT_APPEARANCE: Omit<Appearance, 'hasOwnWallpaper'> = {
 };
 
 /** The stored settings as the app gets them: unknown or old values fall back to the defaults, one by one */
-export function appearanceOf(settings: Record<string, unknown>, hasOwnWallpaper: boolean): Appearance {
+export function appearanceOf(settings: Record<string, unknown>, ownWallpaperId: string | null): Appearance {
+  const hasOwnWallpaper = !!ownWallpaperId;
   const stored = (settings.appearance ?? {}) as Record<string, unknown>;
   const out: Record<string, unknown> = { ...DEFAULT_APPEARANCE };
   const shape = appearanceIn.shape;
@@ -52,5 +55,9 @@ export function appearanceOf(settings: Record<string, unknown>, hasOwnWallpaper:
   }
   // an own picture that is gone shows the first pattern
   if (out.wallpaper === 'own' && !hasOwnWallpaper) out.wallpaper = DEFAULT_APPEARANCE.wallpaper;
-  return { ...(out as Omit<Appearance, 'hasOwnWallpaper'>), hasOwnWallpaper };
+  return {
+    ...(out as Omit<Appearance, 'hasOwnWallpaper' | 'wallpaperVersion'>),
+    hasOwnWallpaper,
+    wallpaperVersion: ownWallpaperId?.slice(0, 8) ?? null,
+  };
 }

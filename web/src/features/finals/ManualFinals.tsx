@@ -1,4 +1,4 @@
-import { scaleValues } from '@marksy/core';
+import { bandOf, scaleValues } from '@marksy/core';
 import type { GradingScale } from '@marksy/core';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
@@ -6,6 +6,7 @@ import { api, data } from '../../api/client';
 import type { useYearFinals } from '../../api/queries';
 import { BottomSheet } from '../../components/BottomSheet';
 import { Button } from '../../components/Field';
+import { MarkChip } from '../../components/MarkChip';
 import { SegmentedControl } from '../../components/SegmentedControl';
 import { useT } from '../../i18n';
 import { schoolYearLabel } from '../../lib/finals';
@@ -17,8 +18,19 @@ import { numbers } from '../../lib/numbers';
 
 type Years = NonNullable<ReturnType<typeof useYearFinals>['data']>;
 
-/** How many years back are offered: the ones a report card at home is likely to cover */
-const YEARS_BACK = 3;
+/** How many years back are offered: as many as Годы shows next to the current one (its YEARS_SHOWN less one) */
+const YEARS_BACK = 2;
+
+/** The past years that may be typed in: the ones before the current year the diary does not send */
+export function manualYears(years: Years): number[] {
+  const current = years.years.find((y) => y.current);
+  if (!current) return [];
+  const fromDiary = new Set(years.years.filter((y) => y.source === 'api').map((y) => y.startYear));
+  return Array.from({ length: YEARS_BACK }, (_, i) => current.startYear - 1 - i).filter((y) => !fromDiary.has(y));
+}
+
+/** A year's name from its first calendar year, in Годы' own short form («2024/25») */
+const yearLabel = (y: number) => schoolYearLabel(`${y}-${y + 1}`);
 
 export function ManualFinals({
   studentId,
@@ -33,15 +45,12 @@ export function ManualFinals({
 }) {
   const t = useT();
   const queries = useQueryClient();
-  const current = years.years.find((y) => y.current);
-  const fromDiary = new Set(years.years.filter((y) => y.source === 'api').map((y) => y.startYear));
-  const choices = current
-    ? Array.from({ length: YEARS_BACK }, (_, i) => current.startYear - 1 - i).filter((y) => !fromDiary.has(y))
-    : [];
+  const choices = manualYears(years);
   const [startYear, setStartYear] = useState(choices[0] ?? null);
   const [extra, setExtra] = useState<string[]>([]);
   const [other, setOther] = useState('');
   const [error, setError] = useState(false);
+  const [editing, setEditing] = useState<string | null>(null);
   const typedIn = (year: number | null) => {
     const y = years.years.find((x) => x.startYear === year && x.source === 'manual');
     const out = new Map<string, string>();
@@ -53,15 +62,14 @@ export function ManualFinals({
     return out;
   };
   const [values, setValues] = useState(() => typedIn(startYear));
-  if (!current || startYear == null) return null;
+  if (startYear == null) return null;
 
   const n = numbers(scale);
   const marks = scaleValues(scale);
   const names = [
     ...new Set([...years.rows.filter((r) => r.subjectId).map((r) => r.subjectName), ...values.keys(), ...extra]),
   ].sort((a, b) => a.localeCompare(b));
-  const label = (y: number) =>
-    schoolYearLabel(current.label.replace(/\d{4}/g, (d) => String(Number(d) - (current.startYear - y))));
+  const label = yearLabel;
   const pickYear = (y: number) => {
     setStartYear(y);
     setValues(typedIn(y));
@@ -96,28 +104,65 @@ export function ManualFinals({
       {choices.length === 1 && <b className="text-[15px]">{label(startYear)}</b>}
       <span className="text-small text-ink3">{t('finals.manual.note')}</span>
       <div className="flex max-h-[45vh] flex-col overflow-y-auto">
-        {names.map((name) => (
-          <label key={name} className="flex min-h-11 items-center gap-3 border-t border-line py-1.5 first:border-t-0">
-            <span className="min-w-0 flex-1 truncate text-[14px] font-bold">{name}</span>
-            <select
-              value={values.get(name) ?? ''}
-              onChange={(e) => {
-                const next = new Map(values);
-                if (e.target.value) next.set(name, e.target.value);
-                else next.delete(name);
-                setValues(next);
-              }}
-              className="min-h-9 w-20 rounded-sm border border-line bg-surface px-2 text-center font-extrabold"
-            >
-              <option value="">{t('finals.manual.none')}</option>
-              {marks.map((v) => (
-                <option key={v} value={String(v)}>
-                  {n.value(v)}
-                </option>
-              ))}
-            </select>
-          </label>
-        ))}
+        {names.map((name) => {
+          const value = values.get(name) ?? null;
+          const pick = (raw: string | null) => {
+            const next = new Map(values);
+            if (raw) next.set(name, raw);
+            else next.delete(name);
+            setValues(next);
+            setEditing(null);
+          };
+          return (
+            <div key={name} className="border-t border-line first:border-t-0">
+              {/* a row opens the scale's values under it, the way the goal grid does (D32: no native select) */}
+              <button
+                type="button"
+                aria-expanded={editing === name}
+                onClick={() => setEditing(editing === name ? null : name)}
+                className="flex min-h-11 w-full items-center gap-3 py-1.5 text-left"
+              >
+                <span className="min-w-0 flex-1 truncate text-[14px] font-bold">{name}</span>
+                {value != null ? (
+                  <MarkChip
+                    mark={{
+                      id: '',
+                      values: [Number(value)],
+                      raw: n.value(Number(value)),
+                      kind: 'numeric',
+                      band: bandOf(scale, Number(value)),
+                    }}
+                  />
+                ) : (
+                  <span className="w-[30px] text-center font-semibold text-ink3">{t('finals.manual.none')}</span>
+                )}
+              </button>
+              {editing === name && (
+                <div role="group" aria-label={name} className="grid grid-cols-6 gap-1.5 pb-2.5">
+                  {marks.map((v) => (
+                    <button
+                      key={v}
+                      type="button"
+                      aria-pressed={value === String(v)}
+                      onClick={() => pick(String(v))}
+                      className="min-h-11 rounded-md bg-surface2 font-extrabold aria-pressed:bg-accent aria-pressed:text-accent-ink"
+                    >
+                      {n.value(v)}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    aria-pressed={value == null}
+                    onClick={() => pick(null)}
+                    className="min-h-11 rounded-md bg-surface2 font-extrabold text-ink3 aria-pressed:bg-accent aria-pressed:text-accent-ink"
+                  >
+                    {t('finals.manual.none')}
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
       <form
         className="flex gap-2"

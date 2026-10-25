@@ -109,7 +109,10 @@ export async function applyRetention(
   const drift = days(limits.driftAckedDays);
   await run(
     'api_drift_events',
-    sql`delete from api_drift_events where acknowledged_at < ${drift} and last_seen_at < ${drift}`,
+    // gone once it has not occurred for the limit and every family whose diaries use the provider has hidden it
+    sql`delete from api_drift_events e where e.last_seen_at < ${drift} and not exists (
+      select 1 from diary_accounts a where a.provider_id = e.provider_id and not exists (
+        select 1 from api_drift_acks k where k.drift_event_id = e.id and k.family_id = a.family_id))`,
   );
   await run('lesson_tag_hits', sql`delete from lesson_tag_hits where due_date < ${days(limits.tagHitsDays)}::date`);
   await run('sessions', sql`delete from sessions where expires_at < ${now}`);

@@ -28,7 +28,13 @@ export function SyncFooter({ studentId }: { studentId: string }) {
   const parent = me.data?.family?.role !== 'student';
   const refresh = async () => {
     if (!account) return;
-    const res = await data(api.POST('/api/sync/run', { body: { accountId: account.id } }));
+    let res;
+    try {
+      res = await data(api.POST('/api/sync/run', { body: { accountId: account.id } }));
+    } catch {
+      setSaid(t('sync.failed'));
+      return;
+    }
     setSaid(
       res.started
         ? t('sync.refresh.started')

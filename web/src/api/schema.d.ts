@@ -4072,6 +4072,7 @@ export interface components {
             /** @enum {string} */
             font: "manrope" | "nunito" | "ptsans" | "inter" | "rubik";
             hasOwnWallpaper: boolean;
+            wallpaperVersion: string | null;
         };
         AvatarTraits: {
             /** @enum {string} */
@@ -4701,7 +4702,7 @@ export interface components {
                 id: string;
                 providerId: string;
                 providerName: string;
-                label: string;
+                label: string | null;
                 /** @enum {string} */
                 status: "loading" | "ok" | "stale" | "paused" | "auth_failed" | "blocked" | "needs_2fa";
                 /** Format: date-time */

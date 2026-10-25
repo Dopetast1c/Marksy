@@ -4,6 +4,7 @@ import { and, desc, eq, gt, gte, inArray, isNull, lt, lte } from 'drizzle-orm';
 import { Router } from 'express';
 import { z } from 'zod';
 import {
+  apiDriftAcks,
   apiDriftEvents,
   diaryAccounts,
   lessons,
@@ -86,8 +87,8 @@ export function syncRoutes(deps: AppDeps): Router {
               id: z.string(),
               providerId: z.string(),
               providerName: z.string(),
-              /** the diary login, as the family sees it in Семья */
-              label: z.string(),
+              /** the diary login, as the family sees it in Семья; null for a student (design.md 7.6) */
+              label: z.string().nullable(),
               status: accountStatus,
               lastSuccessAt: z.date().nullable(),
               lastAttemptAt: z.date().nullable(),
@@ -135,6 +136,9 @@ export function syncRoutes(deps: AppDeps): Router {
             .orderBy(desc(syncRuns.startedAt))
         : [];
       const kids = (await visibleStudents(deps.db, m.userId, m.familyId)).map((k) => k.student.id);
+      const student = m.role === 'student';
+      const visiblePlan = (p: Awaited<ReturnType<typeof syncPlanOf>> | null) =>
+        p && { ...p, windowStudentIds: p.windowStudentIds.filter((id) => kids.includes(id)) };
       const active = kids.length
         ? await deps.db
             .select({
@@ -195,7 +199,7 @@ export function syncRoutes(deps: AppDeps): Router {
             id: a.id,
             providerId: a.providerId,
             providerName: manifest?.name ?? a.providerId,
-            label: a.label,
+            label: student ? null : a.label,
             status,
             lastSuccessAt: a.lastSuccessAt,
             lastAttemptAt: a.lastAttemptAt,
@@ -211,8 +215,11 @@ export function syncRoutes(deps: AppDeps): Router {
             consecutiveFailures: a.consecutiveFailures,
             pausedUntil: a.pausedUntil,
             nextAllowedAt: lastLogin ? new Date(Math.max(lastLogin.getTime() + interval, now.getTime())) : null,
-            studentIds: active.filter((s) => s.accountId === a.id).map((s) => s.studentId),
-            plan: plans.get(a.id) ?? null,
+            // only the children this person sees; the planner view is the adults' (5.6)
+            studentIds: active
+              .filter((s) => s.accountId === a.id && kids.includes(s.studentId))
+              .map((s) => s.studentId),
+            plan: student ? null : visiblePlan(plans.get(a.id) ?? null),
           };
         }),
         students: kids.map((id) => {
@@ -364,7 +371,11 @@ export function syncRoutes(deps: AppDeps): Router {
         .select({ studentId: studentSources.studentId })
         .from(studentSources)
         .where(and(eq(studentSources.diaryAccountId, a.id), eq(studentSources.active, true)));
-      const kids = read.map((x) => x.studentId).filter((id) => !body.studentIds || body.studentIds.includes(id));
+      // only children this person sees (a parent may see some of the family's children)
+      const seen = new Set((await visibleStudents(deps.db, m.userId, m.familyId)).map((k) => k.student.id));
+      const kids = read
+        .map((x) => x.studentId)
+        .filter((id) => seen.has(id) && (!body.studentIds || body.studentIds.includes(id)));
       // the weeks lose their check: the planner reads them again, the freshest first, as it reads any unverified
       // week (design.md 10.4); history is never overwritten silently, a changed mark still becomes a mark event
       let weeks = 0;
@@ -427,14 +438,18 @@ export function syncRoutes(deps: AppDeps): Router {
           .from(diaryAccounts)
           .where(eq(diaryAccounts.familyId, m.familyId))
       ).map((x) => x.p);
-      const done = providers.length
+      const [event] = providers.length
         ? await deps.db
-            .update(apiDriftEvents)
-            .set({ acknowledgedAt: deps.now?.() ?? new Date() })
+            .select({ id: apiDriftEvents.id })
+            .from(apiDriftEvents)
             .where(and(eq(apiDriftEvents.id, params.id), inArray(apiDriftEvents.providerId, providers)))
-            .returning()
         : [];
-      if (!done.length) throw new HttpError(404, 'not_found', 'No such change');
+      if (!event) throw new HttpError(404, 'not_found', 'No such change');
+      // hidden for this family only
+      await deps.db
+        .insert(apiDriftAcks)
+        .values({ familyId: m.familyId, driftEventId: event.id, acknowledgedAt: deps.now?.() ?? new Date() })
+        .onConflictDoNothing();
     },
   );
 

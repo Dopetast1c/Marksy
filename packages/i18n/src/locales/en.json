@@ -300,6 +300,8 @@
   "more.sync.sub": "state, the next run, the log",
   "home.refresh": "Refresh",
   "sync.title": "Sync",
+
+  "sync.failed": "That did not work. Check the connection and try again.",
   "sync.never": "not yet",
   "sync.refresh": "Refresh now",
   "sync.refresh.allowedAt": "Refresh possible at {{at}}",
@@ -653,6 +655,19 @@
   "date.monthShort.11": "Nov",
   "date.monthShort.12": "Dec",
 
+  "date.monthAlone.1": "Jan",
+  "date.monthAlone.2": "Feb",
+  "date.monthAlone.3": "Mar",
+  "date.monthAlone.4": "Apr",
+  "date.monthAlone.5": "May",
+  "date.monthAlone.6": "Jun",
+  "date.monthAlone.7": "Jul",
+  "date.monthAlone.8": "Aug",
+  "date.monthAlone.9": "Sep",
+  "date.monthAlone.10": "Oct",
+  "date.monthAlone.11": "Nov",
+  "date.monthAlone.12": "Dec",
+
   "time.todayAt": "today at {{time}}",
   "time.dayAt": "{{day}}, {{time}}",
 
@@ -737,7 +752,7 @@
   "finals.manual.add": "Add",
   "finals.manual.save": "Save",
   "finals.manual.failed": "Could not save. Check the connection and try again.",
-  "finals.manual.legend": "The pen marks finals entered by hand.",
+  "finals.manual.legend": "The pen sign marks finals entered by hand.",
   "finals.manual.cell": "entered by hand",
   "finals.year": "Year",
   "finals.all": "All finals",

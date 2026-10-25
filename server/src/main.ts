@@ -33,20 +33,24 @@ createApp({
 
 // The collector runs in the same process (docs/design.md 10.1); SYNC_ENABLED=false keeps a copy away from every diary.
 const config = readSyncConfig();
+const jobs = createDb();
+// the retention janitor runs once a day (docs/design.md 10.4): after the first tick of the day while the collector is
+// on, on its own hourly check while it is off, so old data and orphaned pictures go either way
+const janitor = dailyJanitor(
+  jobs,
+  readRetention(),
+  (report) => {
+    // one line per table under safe keys: table names like raw_responses would be redacted as keys
+    for (const [kind, count] of Object.entries(report)) if (count) log.info('retention', { kind, count });
+  },
+  process.env.UPLOADS_DIR?.trim() || undefined,
+);
 if (config.enabled) {
-  const db = createDb();
-  // the retention janitor runs after the first tick of each day (docs/design.md 10.4)
-  const janitor = dailyJanitor(
-    db,
-    readRetention(),
-    (report) => {
-      // one line per table under safe keys: table names like raw_responses would be redacted as keys
-      for (const [kind, count] of Object.entries(report)) if (count) log.info('retention', { kind, count });
-    },
-    process.env.UPLOADS_DIR?.trim() || undefined,
-  );
-  createScheduler({ db, config, log, afterTick: janitor });
+  createScheduler({ db: jobs, config, log, afterTick: janitor });
   log.info('collector scheduler on', { count: config.tickMinutes });
 } else {
   log.info('collector scheduler off (SYNC_ENABLED=false)');
+  const tidy = () => void janitor().catch(() => log.warn('retention failed'));
+  setTimeout(tidy, 60_000).unref();
+  setInterval(tidy, 3_600_000).unref();
 }

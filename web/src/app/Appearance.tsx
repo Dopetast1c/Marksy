@@ -2,6 +2,10 @@ import { useEffect } from 'react';
 import { useMe } from '../api/queries';
 import { loadFont } from '../lib/fonts';
 
+/** The person's own picture, with its version: a new picture is a new address, so the old one is never shown */
+export const ownWallpaperUrl = (a: { wallpaperVersion: string | null }) =>
+  `/api/me/wallpaper?v=${a.wallpaperVersion ?? ''}`;
+
 // Оформление applied (docs/design.md 5.6a, D46): the person's theme, palette, body font and wallpaper go on <html> as
 // data attributes the generated tokens answer to (tokens.css: data-theme, data-palette, data-font) and as the
 // wallpaper layer's picture and opacity (base.css: data-wall). Before sign-in, and on the login screen, the defaults:
@@ -23,7 +27,7 @@ export function Appearance() {
     if (wall) {
       root.style.setProperty(
         '--wall-image',
-        wall === 'own' ? 'url("/api/me/wallpaper")' : `url("/wallpapers/${wall}.svg")`,
+        wall === 'own' ? `url("${ownWallpaperUrl(a!)}")` : `url("/wallpapers/${wall}.svg")`,
       );
       root.style.setProperty('--wall-op', String(a!.opacity / 100));
     } else {

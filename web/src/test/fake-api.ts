@@ -807,6 +807,7 @@ export function fakeApi(start: Partial<FakeState> = {}) {
             opacity: 35,
             font: 'manrope',
             hasOwnWallpaper: false,
+            wallpaperVersion: null,
             ...state.appearance,
           },
         },
@@ -842,11 +843,11 @@ export function fakeApi(start: Partial<FakeState> = {}) {
       return json({});
     }
     if (route === 'PUT /api/me/wallpaper') {
-      state.appearance = { ...state.appearance, hasOwnWallpaper: true };
+      state.appearance = { ...state.appearance, hasOwnWallpaper: true, wallpaperVersion: 'v1' };
       return json({ hasOwnWallpaper: true });
     }
     if (route === 'DELETE /api/me/wallpaper') {
-      state.appearance = { ...state.appearance, hasOwnWallpaper: false, wallpaper: 'cell' };
+      state.appearance = { ...state.appearance, hasOwnWallpaper: false, wallpaperVersion: null, wallpaper: 'cell' };
       return json({}, 204);
     }
     if (route === 'GET /api/family')
