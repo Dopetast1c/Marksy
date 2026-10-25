@@ -614,12 +614,15 @@
   "more.sync.nextOn": "следующая {{when}}",
   "more.sync.nextSoon": "следующая скоро",
   "more.sync.nextSchoolDay": "следующая в учебный день",
+
+  "more.sync.nextAfterHolidays": "следующая после каникул, {{when}}",
+  "more.sync.reading": "Читаем дневник",
+  "sync.next.afterHolidays": "после каникул, {{when}}",
   "more.sync.problem.auth_failed": "нужен новый пароль",
   "more.sync.problem.blocked": "дневник заблокировал вход",
   "more.sync.problem.needs_2fa": "дневник просит код",
   "more.sync.problem.paused": "дневник не отвечает",
   "more.sync.problem.stale": "данные устарели",
-  "more.sync.problem.loading": "читаем дневник",
   "lang.unreviewed": "{{language}} · перевод не проверен",
   "look.summary.wallpaperOwn": "обои «свои»",
   "more.guidance": "Подсказки",
@@ -739,7 +742,7 @@
   "date.monthAlone.12": "дек",
 
   "time.todayAt": "сегодня в {{time}}",
-  "time.dayAt": "{{day}}, {{time}}",
+  "time.dayAt": "{{day}} в {{time}}",
 
   "fresh.loading": "Дневник загружается впервые. Данные от {{when}}.",
   "fresh.loading.never": "Дневник загружается впервые, оценки появятся через несколько минут.",

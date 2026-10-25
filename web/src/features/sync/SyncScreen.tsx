@@ -1,3 +1,4 @@
+import { shortDate } from '@marksy/core';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
@@ -10,7 +11,7 @@ import { BottomSheet, SheetOption } from '../../components/BottomSheet';
 import { Button } from '../../components/Field';
 import { BackIcon } from '../../components/icons';
 import { SegmentedControl } from '../../components/SegmentedControl';
-import { intlLocale, useT } from '../../i18n';
+import { dateStyle, intlLocale, useT } from '../../i18n';
 import { formatTime } from '../../lib/time';
 import { whenText } from '../../lib/when';
 
@@ -116,8 +117,13 @@ export function SyncScreen() {
         return t('sync.next.action');
       case 'offline':
         return t('sync.next.offline');
-      default:
-        return t('sync.next.nextSchoolDay');
+      default: {
+        // the next school day: its date (and time) when the planner knows it, the general words only when not
+        if (!n.date) return t('sync.next.nextSchoolDay');
+        const day = shortDate(n.date, dateStyle(), { weekday: true });
+        if (n.afterHolidays) return t('sync.next.afterHolidays', { when: day });
+        return n.at ? t('sync.next.at', { when: at(n.at, tzOf(a)) }) : day;
+      }
     }
   };
 

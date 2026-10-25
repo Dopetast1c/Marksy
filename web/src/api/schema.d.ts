@@ -4735,6 +4735,8 @@ export interface components {
                         kind: "now" | "soon" | "at" | "nextSchoolDay" | "action" | "offline" | "paused";
                         /** Format: date-time */
                         at: string | null;
+                        date: string | null;
+                        afterHolidays: boolean;
                     };
                     sets: {
                         [key: string]: number;

@@ -42,7 +42,7 @@ export async function planReport(
       lines.push(`account ${account.id}: provider ${account.providerId} not found`);
       continue;
     }
-    const { local, sourceCheck, readable, sourced, today, decision } = await accountPlan(
+    const { local, sourceCheck, readable, sourced, today, decision, nextSchoolDay } = await accountPlan(
       db,
       account,
       manifest,
@@ -63,6 +63,10 @@ export async function planReport(
       lines.push(`  child ${c.studentId}: today ${local.date} ${w}; weeks waiting: ${sets || 'none stored yet'}`);
     }
     lines.push(`  account window today: ${today.windows.map(formatWindow).join(', ') || 'none'}`);
+    const nsd = nextSchoolDay;
+    lines.push(
+      `  next school day: ${nsd ? `${nsd.date}${nsd.from != null ? ` from ${hhmm(nsd.from)}` : ''}${nsd.afterHolidays ? ' (after holidays)' : ''}` : 'unknown'}`,
+    );
     const at = `${local.date} ${hhmm(local.minutes)}`;
     lines.push(
       decision.start

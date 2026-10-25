@@ -568,12 +568,15 @@
   "more.sync.nextOn": "next {{when}}",
   "more.sync.nextSoon": "next soon",
   "more.sync.nextSchoolDay": "next on a school day",
+
+  "more.sync.nextAfterHolidays": "next after the holidays, {{when}}",
+  "more.sync.reading": "Reading the diary",
+  "sync.next.afterHolidays": "after the holidays, {{when}}",
   "more.sync.problem.auth_failed": "a new password is needed",
   "more.sync.problem.blocked": "the diary blocked the login",
   "more.sync.problem.needs_2fa": "the diary asks for a code",
   "more.sync.problem.paused": "the diary does not answer",
   "more.sync.problem.stale": "the data is out of date",
-  "more.sync.problem.loading": "reading the diary",
   "lang.unreviewed": "{{language}} · translation not checked",
   "look.summary.wallpaperOwn": "own wallpaper",
   "more.guidance": "Tips",
@@ -687,7 +690,7 @@
   "date.monthAlone.12": "Dec",
 
   "time.todayAt": "today at {{time}}",
-  "time.dayAt": "{{day}}, {{time}}",
+  "time.dayAt": "{{day}} at {{time}}",
 
   "fresh.loading": "The diary is loading for the first time. Data as of {{when}}.",
   "fresh.loading.never": "The diary is loading for the first time; marks will appear in a few minutes.",

@@ -33,6 +33,10 @@ export const syncPlanOut = z.object({
   next: z.object({
     kind: z.enum(['now', 'soon', 'at', 'nextSchoolDay', 'action', 'offline', 'paused']),
     at: z.date().nullable(),
+    /** nextSchoolDay: the day, when known (at is its window's opening when that is known too) */
+    date: z.string().nullable(),
+    /** nextSchoolDay: holidays come first («следующая после каникул, пн, 9 ноя») */
+    afterHolidays: z.boolean(),
   }),
   /** weeks waiting per set (standing, gap, rescan, post_term, backfill), all children together */
   sets: z.record(z.string(), z.number()),
@@ -65,31 +69,39 @@ export async function syncPlanOf(
   const { today, decision, local } = plan;
   const windows = today.windows;
   const window = windows.length ? { from: hhmm(windows[0]![0]), to: hhmm(windows.at(-1)![1]) } : null;
-  let next: z.infer<typeof syncPlanOut>['next'];
-  if (decision.start) next = { kind: 'now', at: null };
+  type Next = z.infer<typeof syncPlanOut>['next'];
+  const mk = (kind: Next['kind'], at: Date | null = null): Next => ({ kind, at, date: null, afterHolidays: false });
+  let next: Next;
+  if (decision.start) next = mk('now');
   else
     switch (decision.reason) {
       case 'interval':
-        next = { kind: 'at', at: decision.retryAt ?? null };
+        next = mk('at', decision.retryAt ?? null);
         break;
       case 'paused':
-        next = { kind: 'paused', at: decision.retryAt ?? null };
+        next = mk('paused', decision.retryAt ?? null);
         break;
       case 'requires_action':
-        next = { kind: 'action', at: null };
+        next = mk('action');
         break;
       case 'offline_retry':
-        next = { kind: 'offline', at: null };
+        next = mk('offline');
         break;
       case 'jitter':
-        next = { kind: 'soon', at: null };
+        next = mk('soon');
         break;
       default: {
         // outside the window: today's opens later, or the next school day's
         const later = windows.find((w) => w[0] > local.minutes);
+        const day = plan.nextSchoolDay;
         next = later
-          ? { kind: 'at', at: fromLocal(local.date, later[0], manifest.timezone) }
-          : { kind: 'nextSchoolDay', at: null };
+          ? mk('at', fromLocal(local.date, later[0], manifest.timezone))
+          : {
+              kind: 'nextSchoolDay',
+              at: day && day.from != null ? fromLocal(day.date, day.from, manifest.timezone) : null,
+              date: day?.date ?? null,
+              afterHolidays: day?.afterHolidays ?? false,
+            };
       }
     }
   const sets: Record<string, number> = {};

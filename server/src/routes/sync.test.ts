@@ -1,3 +1,4 @@
+import { addDays } from '@marksy/core';
 import { getProvider } from '@marksy/registry';
 import { eq } from 'drizzle-orm';
 import request from 'supertest';
@@ -6,8 +7,9 @@ import { settle, testApp } from '../../test/app';
 import { agentWith, connectFamily } from '../../test/connect';
 import { resetDb, testDb } from '../../test/db';
 import { createAccount } from '../../test/factories';
-import { apiDriftEvents, diaryAccounts, syncCoverage, syncRuns } from '../db/schema';
+import { apiDriftEvents, diaryAccounts, holidays, syncCoverage, syncRuns } from '../db/schema';
 import { readSyncConfig } from '../sync/config';
+import { accountPlan } from '../sync/account-plan';
 import { syncPlanOf } from '../sync/status';
 
 const db = testDb();
@@ -44,6 +46,29 @@ describe('Синхронизация', () => {
     const seen = (await student.get('/api/sync/status')).body;
     expect(seen.accounts[0]).toMatchObject({ label: null, plan: null, studentIds: [kid] });
     expect(seen.students.map((s: { id: string }) => s.id)).toEqual([kid]);
+  });
+
+  it('after today’s window: the next school day with its time; across holidays it says so', async () => {
+    const mama = agentWith({ now: () => NOW });
+    const { connect } = await connectFamily(mama);
+    await settle();
+    const [account] = await db.select().from(diaryAccounts).where(eq(diaryAccounts.id, connect.accountId));
+    const manifest = getProvider('demo-full')!.manifest;
+    const next = async (at: string) =>
+      (await accountPlan(db, account!, manifest, readSyncConfig(), new Date(at))).nextSchoolDay;
+    // Friday evening, a school week ahead: the next school day
+    const friday = await next('2025-10-17T18:00:00Z');
+    // the demo's Monday has no lessons stored and its manifest no window: the day is known, its time is not
+    expect(friday).toMatchObject({ afterHolidays: false, from: null });
+    expect(friday!.date > '2025-10-17' && friday!.date < '2025-10-21').toBe(true);
+    // the evening before the autumn holidays, as the diary gave them: the first school day after them
+    const autumn = (await db.select().from(holidays)).find(
+      (h) => h.endDate >= '2025-10-31' && h.startDate <= '2025-11-15',
+    )!;
+    const before = await next(`${addDays(autumn.startDate, -1)}T18:00:00Z`);
+    expect(before).toMatchObject({ afterHolidays: true });
+    expect(before!.date > autumn.endDate).toBe(true);
+    expect(before!.date <= addDays(autumn.endDate, 3)).toBe(true);
   });
 
   it('«Обновить сейчас» within the login budget: right after a run it says when; never for a student or another family', async () => {

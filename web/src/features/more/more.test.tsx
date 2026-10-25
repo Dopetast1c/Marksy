@@ -86,8 +86,46 @@ describe('Ещё', () => {
       signedIn: true,
       syncStatus: { accounts: [{ id: 'acc-1', status: 'auth_failed', studentIds: ['kid-milena'] }], students: [] },
     });
-    render(<App at="/more" />);
-    expect(await screen.findByText('Нужен новый пароль')).toBeTruthy();
+    const { unmount: done } = render(<App at="/more" />);
+    // a problem in the warning colour
+    expect((await screen.findByText('Нужен новый пароль')).className).toContain('text-band-critical-fg');
+    done();
+  });
+
+  it('the next run on another day: its date and time; across holidays «после каникул»; a run in progress is neutral', async () => {
+    const account = (next: object, status = 'ok') => ({
+      signedIn: true,
+      syncStatus: {
+        accounts: [
+          {
+            id: 'acc-1',
+            status,
+            studentIds: ['kid-milena'],
+            lastSuccessAt: '2026-10-21T09:17:00Z',
+            plan: { next: { at: null, date: null, afterHolidays: false, ...next } },
+          },
+        ],
+        students: [],
+      },
+    });
+    const shown = async (state: ReturnType<typeof account>, text: RegExp) => {
+      fakeApi(state);
+      const view = render(<App at="/more" />);
+      const found = await screen.findByText(text);
+      view.unmount();
+      return found;
+    };
+    await shown(
+      account({ kind: 'nextSchoolDay', date: '2026-10-26', at: '2026-10-26T05:13:00Z' }),
+      /^Сегодня в 12:17 · следующая пн, 26 окт в 08:13$/,
+    );
+    await shown(
+      account({ kind: 'nextSchoolDay', date: '2026-11-09', afterHolidays: true }),
+      /^Сегодня в 12:17 · следующая после каникул, пн, 9 ноя$/,
+    );
+    await shown(account({ kind: 'nextSchoolDay' }), /^Сегодня в 12:17 · следующая в учебный день$/);
+    const reading = await shown(account({ kind: 'now' }, 'loading'), /^Читаем дневник$/);
+    expect(reading.className).not.toContain('band');
   });
 });
 

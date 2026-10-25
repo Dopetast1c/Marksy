@@ -23,6 +23,8 @@ import { useDevice } from '../../state/store';
 // looks and behaves (Оформление, Простой режим, Подсказки, Всегда начинать с последнего, Язык, Сменить семью); last
 // and apart, Выйти. While nobody is picked it starts with «Ученик не выбран», which leads back to the choice (design 4).
 
+const SYNC_TONE = { low: 'font-semibold text-band-low-fg', critical: 'font-semibold text-band-critical-fg' } as const;
+
 export function MoreScreen() {
   const t = useT();
   const navigate = useNavigate();
@@ -41,6 +43,14 @@ export function MoreScreen() {
   // the live lines of Семья and Синхронизация are the adults' (a student has neither row)
   const view = useFamily(parent).data;
   const sync = useSyncStatus();
+  const line = syncLine(
+    t,
+    parent ? sync.data : undefined,
+    (a) => kids.find((k) => a.studentIds.includes(k.id))?.timezone ?? kids[0]?.timezone ?? 'UTC',
+  );
+  // a problem in its warning colour; the times, «нет дневников» and a run in progress stay neutral
+  const syncSub =
+    line && (line.tone === 'neutral' ? line.text : <span className={SYNC_TONE[line.tone]}>{line.text}</span>);
   const signOut = async () => {
     await api.POST('/api/auth/logout');
     queries.clear();
@@ -127,18 +137,7 @@ export function MoreScreen() {
             />
           )}
           {parent && (
-            <MenuRow
-              icon={<SyncIcon />}
-              title={t('sync.title')}
-              sub={
-                syncLine(
-                  t,
-                  parent ? sync.data : undefined,
-                  (a) => kids.find((k) => a.studentIds.includes(k.id))?.timezone ?? kids[0]?.timezone ?? 'UTC',
-                ) ?? undefined
-              }
-              onClick={() => navigate('/more/sync')}
-            />
+            <MenuRow icon={<SyncIcon />} title={t('sync.title')} sub={syncSub} onClick={() => navigate('/more/sync')} />
           )}
         </MenuCard>
         <MenuCard>

@@ -7,8 +7,8 @@ import type { SyncConfig } from './config';
 import { decideStart } from './plan';
 import type { GateDecision } from './plan';
 import { readableStudents, sourcedStudents } from './readers';
-import { accountToday, lastAheadOf, weekContext } from './state';
-import type { AccountToday } from './state';
+import { accountToday, lastAheadOf, nextSchoolDayOf, weekContext } from './state';
+import type { AccountToday, NextSchoolDay } from './state';
 import { localTime } from './time';
 import type { LocalTime } from './time';
 
@@ -26,6 +26,8 @@ export interface AccountPlan {
   today: AccountToday;
   decision: GateDecision;
   maxRequestsPerRun: number;
+  /** The next school day after today, for «следующая пн, 9 ноя в 08:13» when today's windows are over */
+  nextSchoolDay: NextSchoolDay | null;
 }
 
 export async function accountPlan(
@@ -71,5 +73,15 @@ export async function accountPlan(
     lastOfflineAt: lastOffline?.startedAt ?? null,
     seed: account.id,
   });
-  return { local, sourceCheck, readable, sourced, today, decision, maxRequestsPerRun: limits.maxRequestsPerRun };
+  const nextSchoolDay = await nextSchoolDayOf(db, sourceCheck ? sourced : readable, ctx, limits);
+  return {
+    local,
+    sourceCheck,
+    readable,
+    sourced,
+    today,
+    decision,
+    maxRequestsPerRun: limits.maxRequestsPerRun,
+    nextSchoolDay,
+  };
 }
