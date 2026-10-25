@@ -3546,6 +3546,198 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sync/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** «Обновить сейчас»: one run of a diary account within its login budget (admin, parent) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        accountId: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            started: boolean;
+                            /** @enum {string|null} */
+                            reason: "interval" | "action" | null;
+                            /** Format: date-time */
+                            retryAt: string | null;
+                        };
+                    };
+                };
+                /** @description No session */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such diary account */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sync/rescan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** «Перепроверить»: the weeks of the current term or school year are read again by the next runs, then one run now */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        accountId: string;
+                        studentIds?: string[];
+                        /** @enum {string} */
+                        period: "term" | "year";
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            started: boolean;
+                            /** @enum {string|null} */
+                            reason: "interval" | "action" | null;
+                            /** Format: date-time */
+                            retryAt: string | null;
+                            weeks: number;
+                        };
+                    };
+                };
+                /** @description No session */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such diary account */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sync/drift/{id}/ack": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** «Понятно, скрыть» for a change in the diary’s API (admin, parent) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Done */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description No session */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such change for the family’s diaries */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -3825,7 +4017,7 @@ export interface components {
         };
         ChildEvent: {
             /** @enum {string} */
-            kind: "low_mark" | "mark_changed" | "mark_removed" | "absence" | "average_down" | "average_up" | "teacher_comment" | "holidays_ahead";
+            kind: "low_mark" | "mark_changed" | "mark_removed" | "absence" | "average_down" | "average_up" | "teacher_comment" | "holidays_ahead" | "account_action";
             /** @enum {string} */
             severity: "critical" | "low" | "neutral" | "good";
             date: string;
@@ -3839,7 +4031,7 @@ export interface components {
             };
             link: {
                 /** @enum {string} */
-                screen: "subject" | "schedule" | "school";
+                screen: "subject" | "schedule" | "school" | "sync";
                 subjectId?: string;
                 lessonId?: string | null;
                 date?: string;
@@ -4182,6 +4374,7 @@ export interface components {
                 id: string;
                 providerId: string;
                 providerName: string;
+                label: string;
                 /** @enum {string} */
                 status: "loading" | "ok" | "stale" | "paused" | "auth_failed" | "blocked" | "needs_2fa";
                 /** Format: date-time */
@@ -4203,6 +4396,40 @@ export interface components {
                 /** Format: date-time */
                 nextAllowedAt: string | null;
                 studentIds: string[];
+                plan: {
+                    window: {
+                        from: string;
+                        to: string;
+                    } | null;
+                    windowStudentIds: string[];
+                    next: {
+                        /** @enum {string} */
+                        kind: "now" | "soon" | "at" | "nextSchoolDay" | "action" | "offline" | "paused";
+                        /** Format: date-time */
+                        at: string | null;
+                    };
+                    sets: {
+                        [key: string]: number;
+                    };
+                    maxRequestsPerRun: number;
+                    rescan: {
+                        /** Format: date-time */
+                        lastFullAt: string | null;
+                        /** Format: date-time */
+                        oldestVerifiedAt: string | null;
+                    };
+                    drift: {
+                        id: string;
+                        endpoint: string;
+                        kind: string;
+                        path: string;
+                        /** Format: date-time */
+                        firstSeenAt: string;
+                        /** Format: date-time */
+                        lastSeenAt: string;
+                        count: number;
+                    }[];
+                } | null;
             }[];
             students: {
                 id: string;

@@ -10,6 +10,7 @@ import { LoginScreen } from '../features/auth/LoginScreen';
 import { ChildScreen } from '../features/family/ChildScreen';
 import { FamilyScreen } from '../features/family/FamilyScreen';
 import { MoreScreen } from '../features/more/MoreScreen';
+import { SyncScreen } from '../features/sync/SyncScreen';
 import { EventsScreen } from '../features/overview/EventsScreen';
 import { HomeScreen } from '../features/overview/HomeScreen';
 import { PickScreen } from '../features/pick/PickScreen';
@@ -32,6 +33,7 @@ export const routes: RouteObject[] = [
       { path: '/pick', element: <PickScreen /> },
       { path: '/more', element: <MoreScreen /> },
       { path: '/more/family', element: <FamilyScreen /> },
+      { path: '/more/sync', element: <SyncScreen /> },
       { path: '/more/family/child/:studentId', element: <ChildScreen /> },
       {
         path: '/s/:studentId',

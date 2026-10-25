@@ -23,6 +23,9 @@ export interface FakeState {
   subject?: unknown;
   /** the lesson menu's actions answer 409 with this code (lesson_passed, diary_has_lesson) */
   lessonRefuses?: string;
+  /** /api/sync/status and /api/sync/runs, when a test needs them */
+  syncStatus?: unknown;
+  syncRuns?: unknown;
   /** the person's own «Подсказки» switch */
   guidance?: boolean;
   /** the school's today for Расписание's days (a weekend, to see where День opens) */
@@ -793,7 +796,12 @@ export function fakeApi(start: Partial<FakeState> = {}) {
       state.signedIn = false;
       return json(null, 204);
     }
-    if (route === 'GET /api/sync/status') return json({ accounts: [], students: [] });
+    if (route === 'GET /api/sync/status') return json(state.syncStatus ?? { accounts: [], students: [] });
+    if (route === 'GET /api/sync/runs') return json(state.syncRuns ?? []);
+    if (route === 'POST /api/sync/run')
+      return json({ started: false, reason: 'interval', retryAt: '2026-10-21T17:12:00Z' });
+    if (route === 'POST /api/sync/rescan')
+      return json({ started: false, reason: 'interval', retryAt: '2026-10-21T17:12:00Z', weeks: 7 });
     if (route === 'GET /api/students') return json(CARDS);
     if (route === 'PATCH /api/me') return json({});
     if (route === 'PATCH /api/me/settings') {

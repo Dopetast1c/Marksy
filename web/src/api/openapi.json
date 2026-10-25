@@ -1309,7 +1309,8 @@
               "average_down",
               "average_up",
               "teacher_comment",
-              "holidays_ahead"
+              "holidays_ahead",
+              "account_action"
             ]
           },
           "severity": {
@@ -1361,7 +1362,8 @@
                 "enum": [
                   "subject",
                   "schedule",
-                  "school"
+                  "school",
+                  "sync"
                 ]
               },
               "subjectId": {
@@ -3089,6 +3091,9 @@
                 "providerName": {
                   "type": "string"
                 },
+                "label": {
+                  "type": "string"
+                },
                 "status": {
                   "type": "string",
                   "enum": [
@@ -3175,12 +3180,154 @@
                   "items": {
                     "type": "string"
                   }
+                },
+                "plan": {
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "properties": {
+                    "window": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "from": {
+                          "type": "string"
+                        },
+                        "to": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "from",
+                        "to"
+                      ]
+                    },
+                    "windowStudentIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "next": {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "now",
+                            "soon",
+                            "at",
+                            "nextSchoolDay",
+                            "action",
+                            "offline",
+                            "paused"
+                          ]
+                        },
+                        "at": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "at"
+                      ]
+                    },
+                    "sets": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "number"
+                      }
+                    },
+                    "maxRequestsPerRun": {
+                      "type": "number"
+                    },
+                    "rescan": {
+                      "type": "object",
+                      "properties": {
+                        "lastFullAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "date-time"
+                        },
+                        "oldestVerifiedAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "lastFullAt",
+                        "oldestVerifiedAt"
+                      ]
+                    },
+                    "drift": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "endpoint": {
+                            "type": "string"
+                          },
+                          "kind": {
+                            "type": "string"
+                          },
+                          "path": {
+                            "type": "string"
+                          },
+                          "firstSeenAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "lastSeenAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "count": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "endpoint",
+                          "kind",
+                          "path",
+                          "firstSeenAt",
+                          "lastSeenAt",
+                          "count"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "window",
+                    "windowStudentIds",
+                    "next",
+                    "sets",
+                    "maxRequestsPerRun",
+                    "rescan",
+                    "drift"
+                  ]
                 }
               },
               "required": [
                 "id",
                 "providerId",
                 "providerName",
+                "label",
                 "status",
                 "lastSuccessAt",
                 "lastAttemptAt",
@@ -3188,7 +3335,8 @@
                 "consecutiveFailures",
                 "pausedUntil",
                 "nextAllowedAt",
-                "studentIds"
+                "studentIds",
+                "plan"
               ]
             }
           },
@@ -9007,6 +9155,256 @@
           },
           "401": {
             "description": "No session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sync/run": {
+      "post": {
+        "summary": "«Обновить сейчас»: one run of a diary account within its login budget (admin, parent)",
+        "tags": [
+          "sync"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "accountId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "required": [
+                  "accountId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "started": {
+                      "type": "boolean"
+                    },
+                    "reason": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "enum": [
+                        "interval",
+                        "action",
+                        null
+                      ]
+                    },
+                    "retryAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "started",
+                    "reason",
+                    "retryAt"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such diary account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sync/rescan": {
+      "post": {
+        "summary": "«Перепроверить»: the weeks of the current term or school year are read again by the next runs, then one run now",
+        "tags": [
+          "sync"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "accountId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "studentIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "period": {
+                    "type": "string",
+                    "enum": [
+                      "term",
+                      "year"
+                    ]
+                  }
+                },
+                "required": [
+                  "accountId",
+                  "period"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "started": {
+                      "type": "boolean"
+                    },
+                    "reason": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "enum": [
+                        "interval",
+                        "action",
+                        null
+                      ]
+                    },
+                    "retryAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "date-time"
+                    },
+                    "weeks": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "started",
+                    "reason",
+                    "retryAt",
+                    "weeks"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such diary account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sync/drift/{id}/ack": {
+      "post": {
+        "summary": "«Понятно, скрыть» for a change in the diary’s API (admin, parent)",
+        "tags": [
+          "sync"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Done"
+          },
+          "401": {
+            "description": "No session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such change for the family’s diaries",
             "content": {
               "application/json": {
                 "schema": {

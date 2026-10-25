@@ -315,3 +315,13 @@ export type FamilyView = Schemas['Family'];
 /** Семья (design.md 5.6): members, diaries, children, join requests; admin and parents */
 export const useFamily = () =>
   useQuery({ queryKey: ['family'], queryFn: () => data(api.GET('/api/family')), staleTime: 30_000 });
+
+export type SyncStatus = Schemas['SyncStatus'];
+
+/** The run log of Синхронизация (design.md 5.6, 90 days kept) */
+export const useSyncRuns = () =>
+  useQuery({
+    queryKey: ['sync-runs'],
+    queryFn: () => data(api.GET('/api/sync/runs', { params: { query: { limit: 30 } } })),
+    staleTime: 30_000,
+  });

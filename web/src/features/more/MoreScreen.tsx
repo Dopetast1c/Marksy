@@ -8,7 +8,7 @@ import { Frame } from '../../app/Frame';
 import { useContinueChild } from '../../app/guards';
 import { Avatar, defaultTraits } from '../../components/Avatar';
 import { BottomSheet, SheetOption } from '../../components/BottomSheet';
-import { BulbIcon, OutIcon, SchoolIcon, UsersIcon } from '../../components/icons';
+import { BulbIcon, OutIcon, SchoolIcon, SyncIcon, UsersIcon } from '../../components/icons';
 import { LanguagePicker } from '../../components/LanguagePicker';
 import { MenuCard, MenuRow } from '../../components/MenuRow';
 import { Switch } from '../../components/Switch';
@@ -108,6 +108,14 @@ export function MoreScreen() {
               title={t('more.school')}
               sub={child ? t('more.school.subFor', { name: child.name }) : t('more.school.sub')}
               onClick={() => navigate(child ? `/s/${child.id}/school` : '/pick')}
+            />
+          )}
+          {parent && (
+            <MenuRow
+              icon={<SyncIcon />}
+              title={t('sync.title')}
+              sub={t('more.sync.sub')}
+              onClick={() => navigate('/more/sync')}
             />
           )}
         </MenuCard>

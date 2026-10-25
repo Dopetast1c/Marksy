@@ -883,13 +883,15 @@ GET  /api/sync/status                                          -> per diary acco
                                                                    drift events. /api/me carries the same
                                                                    `status` + lastSuccessAt per student so
                                                                    the FreshnessBanner needs no extra call
-POST /api/sync/run                                             -> one planner run now (10.4), all
-                                                                   students; 409 with nextAllowedAt
-                                                                   when the login budget is used or
-                                                                   the account requires action
-POST /api/sync/rescan             {studentIds?, period: quarter|year|{weekIds}} -> queued run
+POST /api/sync/run {accountId}                                 -> «Обновить сейчас» (admin, parent): {started, reason: interval|action|null,
+                                                                   retryAt}; the run goes on after the answer and records its
+                                                                   own decision (a skipped row for a try inside the interval)
+POST /api/sync/rescan {accountId, studentIds?, period: term|year} -> the period's weeks lose their check, so the planner reads them
+                                                                   again as unverified weeks (freshest first, a catch-up allowed),
+                                                                   then the same as /run; {weeks} says how many
 GET  /api/sync/runs?limit=                                     -> history with stats
-POST /api/sync/drift/:id/ack
+POST /api/sync/drift/:id/ack                                   -> «Понятно, скрыть» for a change on one of the family's diary
+                                                                   systems (kind and place only; samples never leave the server)
 
 GET  /api/notifications?before=<cursor>                         -> inbox, newest first, {items, unread, next}
 POST /api/notifications/read                                   -> {ids} or {all: true}

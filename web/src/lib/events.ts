@@ -66,6 +66,9 @@ export function eventText(
         }),
         sub: t('event.quote', { text: String(f.text ?? '') }),
       };
+    case 'account_action':
+      // the diary refused the login: nothing is read until someone acts (5.2a)
+      return { title: t(`event.account.${String(f.action)}`), sub: t('event.account.sub') };
     case 'holidays_ahead': {
       const start = String(f.start);
       const end = String(f.end);
