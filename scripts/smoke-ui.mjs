@@ -47,7 +47,13 @@ export const PROTOTYPE_STATES = [
   ['avatar', 'avatarEdit', 'k', { avatarFor: 'm' }],
   ['school-bells', 'school', 'k', { schoolTab: 'bells' }],
   ['school-year', 'school', 'k', { schoolTab: 'year' }],
+  // last: they leave the prototype in student mode
+  ['student-home', 'home', 'k', { role: 'student', uiMode: 'full' }],
+  ['student-simple-home', 'home', 'k', { role: 'student', uiMode: 'simple' }],
 ];
+
+/** The demo's student login (server/src/seed/seed.ts), for student mode and simple mode */
+const SEED_STUDENT = { login: 'student@example.com', password: 'marksy-demo' };
 
 /** The demo family is fictional and its password is published (server/src/seed/seed.ts) */
 const SEED = { key: 'seed', login: 'parent@example.com', password: 'marksy-demo' };
@@ -194,6 +200,41 @@ async function shootApp(browser, base, family, device, dir, log) {
   }
 }
 
+/**
+ * The demo's student: Главная in student mode («Близко к цели»), then simple mode's Главная and Расписание. Simple mode
+ * is switched on through the API for the shots and back off afterwards, so the seed stays as it was.
+ */
+async function shootStudent(browser, base, device, dir, log) {
+  const context = await browser.newContext({ ...DEVICES[device], locale: 'ru-RU' });
+  const page = await context.newPage();
+  const settle = trackRequests(page);
+  const shot = async (name) => {
+    await settle();
+    await page.screenshot({ path: join(dir, `app-seed-${device}-${name}.png`), fullPage: true });
+    log.push(`ok  seed/${device}/${name}`);
+  };
+  let simple = false;
+  try {
+    await page.goto(`${base}/login`);
+    await page.getByLabel(/Логин Marksy|Marksy login/).fill(SEED_STUDENT.login);
+    await page.getByLabel(/^Пароль$|^Password$/).fill(SEED_STUDENT.password);
+    await page.getByRole('button', { name: /Войти|Sign in/ }).click();
+    await page.waitForURL(/\/s\/[^/]+$/, { timeout: 15_000 });
+    const kid = new URL(page.url()).pathname.split('/')[2];
+    await shot('student-home');
+    simple = (await page.request.patch(`${base}/api/me`, { data: { uiMode: 'simple' } })).ok();
+    await page.goto(`${base}/s/${kid}`);
+    await shot('student-simple-home');
+    await page.goto(`${base}/s/${kid}/schedule`);
+    await shot('student-simple-schedule');
+  } catch (err) {
+    log.push(`BAD seed/${device}/student: ${err.name}`);
+  } finally {
+    if (simple) await page.request.patch(`${base}/api/me`, { data: { uiMode: 'full' } });
+    await context.close();
+  }
+}
+
 async function shootPrototype(browser, device, dir, log) {
   const context = await browser.newContext({ ...DEVICES[device], locale: 'ru-RU' });
   const page = await context.newPage();
@@ -257,6 +298,7 @@ async function main() {
     for (const device of Object.keys(DEVICES)) {
       await shootPrototype(browser, device, dir, log);
       for (const family of chosen) await shootApp(browser, base, family, device, dir, log);
+      if (chosen.some((f) => f.key === 'seed')) await shootStudent(browser, base, device, dir, log);
     }
   } finally {
     await browser.close();
