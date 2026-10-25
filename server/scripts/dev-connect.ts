@@ -17,7 +17,7 @@ const providerId = at >= 0 ? args[at + 1] : listProviders()[0]?.manifest.id;
 const env = (k: string) => process.env[k]?.trim() ?? '';
 const missing = ['DIARY_LOGIN', 'DIARY_PASSWORD', 'MARKSY_DEV_EMAIL', 'MARKSY_DEV_PASSWORD'].filter((k) => !env(k));
 if (!providerId || missing.length) {
-  console.error(`dev:connect needs ${missing.join(', ') || 'a provider'} in .env (see .env.example)`);
+  console.error(`dev:connect needs ${missing.join(', ') || 'a provider'} in .env (see env.example)`);
   process.exit(2);
 }
 

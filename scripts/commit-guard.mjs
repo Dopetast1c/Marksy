@@ -1,5 +1,5 @@
 // The pre-commit guard (CLAUDE.md "Real diary runs"; .githooks/pre-commit, installed by `pnpm install`). Refuses a
-// commit that stages anything under data/, an environment file other than .env.example, an SQL dump, a raw response;
+// commit that stages anything under data/, an environment file other than env.example, an SQL dump, a raw response;
 // runs the privacy check on the staged files; and checks them against the local deny-list that `pnpm probe` builds
 // from the latest raw responses (data/deny-list.json: the children's and teachers' names, the account's and school's
 // ids). A hit names the file and the line, never the value. The commit-msg hook checks the message the same way
@@ -11,7 +11,8 @@ import { fileURLToPath } from 'node:url';
 
 const FORBIDDEN = [
   { re: /^data\//, why: 'the local data folder (real responses, dumps, the deny-list)' },
-  { re: /(^|\/)\.env$|(^|\/)\.env\.(?!example$)[^/]+$/, why: 'an environment file with secrets' },
+  // every .env* (.env, .env.local, .env.prod, «.env - Copy»): the public template is env.example, without the dot
+  { re: /(^|\/)\.env[^/]*$/, why: 'an environment file with secrets' },
   { re: /\.sql\.gz$|\.(dump|backup)$/i, why: 'a database dump' },
   // migrations are the only SQL in the repository
   { re: /^(?!server\/drizzle\/\d{4}_[a-z0-9_]+\.sql$).*\.sql$/i, why: 'an SQL file outside server/drizzle (a dump?)' },

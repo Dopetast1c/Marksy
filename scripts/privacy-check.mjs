@@ -49,7 +49,8 @@ function listFiles() {
 }
 
 const FORBIDDEN_FILES = [
-  { re: /(^|\/)\.env$|(^|\/)\.env\.(?!example$)[^/]+$/, why: 'environment file with secrets' },
+  // every .env*; the public template is env.example, without the dot
+  { re: /(^|\/)\.env[^/]*$/, why: 'environment file with secrets' },
   { re: /\.har$/i, why: 'HAR export (contains tokens and personal data)' },
   { re: /\.(dump|sqlite3?|db|sql\.gz)$/i, why: 'database dump' },
   { re: /^data\//, why: 'local data folder' },
@@ -80,7 +81,7 @@ const PROVIDER_ALLOWED = [
   /^docs\//,
   /^README\.md$/,
   /^CLAUDE\.md$/,
-  /^\.env\.example$/,
+  /^env\.example$/,
   /^scripts\/privacy-check\.mjs$/,
   /^scripts\/init-env\.mjs$/,
   /^\.claude\//,

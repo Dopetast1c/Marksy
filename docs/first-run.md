@@ -15,7 +15,7 @@ Move `_setup/claude` to `.claude` and `_setup/vscode` to `.vscode`, then delete 
 
 ## 3. Environment
 
-Run `pnpm setup:env`. It creates `.env` from `.env.example` and generates `SESSION_SECRET` and `CREDENTIALS_KEY`, printing no values. Do not open `.env`. Tell the owner which lines are left for them (the diary login and the dev Marksy login, needed from M2).
+Run `pnpm setup:env`. It creates `.env` from `env.example` and generates `SESSION_SECRET` and `CREDENTIALS_KEY`, printing no values. Do not open `.env`. Tell the owner which lines are left for them (the diary login and the dev Marksy login, needed from M2).
 
 ## 4. Install and verify
 

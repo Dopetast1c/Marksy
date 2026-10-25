@@ -111,7 +111,7 @@ async function main() {
   const login = process.env.MARKSY_DEV_EMAIL?.trim();
   const password = process.env.MARKSY_DEV_PASSWORD ?? '';
   if (!login || !password) {
-    console.error('smoke:lan needs MARKSY_DEV_EMAIL and MARKSY_DEV_PASSWORD in .env (see .env.example)');
+    console.error('smoke:lan needs MARKSY_DEV_EMAIL and MARKSY_DEV_PASSWORD in .env (see env.example)');
     return 2;
   }
   if (!host) {
