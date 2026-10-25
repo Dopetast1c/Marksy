@@ -203,11 +203,15 @@ export async function storeCalendar(
     // holidays are replaced as a whole: the calendar is the source
     await tx.delete(holidays).where(eq(holidays.schoolYearId, schoolYearId));
     if (calendar.holidays?.length) {
-      await tx
-        .insert(holidays)
-        .values(
-          calendar.holidays.map((h) => ({ schoolYearId, startDate: h.from, endDate: h.to, note: h.note ?? null })),
-        );
+      await tx.insert(holidays).values(
+        calendar.holidays.map((h) => ({
+          schoolYearId,
+          startDate: h.from,
+          endDate: h.to,
+          note: h.note ?? null,
+          kind: h.kind ?? null,
+        })),
+      );
     }
     const gradingScaleId = scaleIdOf(manifest, calendar);
     const yearValues = { classLabel: student.classLabel, grade: student.grade, gradingScaleId };

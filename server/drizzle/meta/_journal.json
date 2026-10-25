@@ -78,6 +78,13 @@
       "when": 1792866130803,
       "tag": "0010_final_first_seen",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792910929736,
+      "tag": "0011_holiday_kind",
+      "breakpoints": true
     }
   ]
 }

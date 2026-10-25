@@ -223,7 +223,9 @@ export interface StudentRef {
 export interface Calendar {
   schoolYear: { externalId: string; label: string; start: ISODate; end: ISODate };
   terms: Term[];                                   // ordered
-  holidays?: (DateRange & { note?: string })[];  // note: the system's remark, e.g. dates that differ for some grades
+  holidays?: (DateRange & { note?: string; kind?: 'autumn' | 'winter' | 'spring' | 'summer' | 'additional' | 'other' })[];
+  // note: the system's remark, e.g. dates that differ for some grades; kind: which holidays, only when the system says
+  // so (the app names them from it; never derive it from the month)
   gradingScaleId?: string | null;                  // this student's scale this year; null = no marks this year (5.3); absent = manifest default
 }
 export interface Term { externalId: string; kind: 'quarter' | 'trimester' | 'semester' | 'other'; index: number; label: string; start: ISODate; end: ISODate; note?: string }

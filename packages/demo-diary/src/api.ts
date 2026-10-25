@@ -30,7 +30,7 @@ export const yearResponse = z.looseObject({
   periods: z.array(
     z.looseObject({ code: z.string(), kind: z.string(), n: z.number().int(), ...span, remark: z.string().optional() }),
   ),
-  breaks: z.array(z.looseObject({ ...span, remark: z.string().optional() })),
+  breaks: z.array(z.looseObject({ ...span, remark: z.string().optional(), kind: z.string().optional() })),
   /** false: no marks this year (the youngest classes) */
   graded: z.boolean(),
 });

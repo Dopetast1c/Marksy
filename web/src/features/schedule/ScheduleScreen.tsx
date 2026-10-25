@@ -16,6 +16,7 @@ import { useCapabilities, useSchoolTz } from '../../hooks/useStudent';
 import { dateStyle, intlLocale, useT } from '../../i18n';
 import type { TFunction } from 'i18next';
 import { dayCaption } from '../../lib/days';
+import { holidayName } from '../../lib/holidays';
 import { todayIn } from '../../lib/time';
 import { useScheduleView } from '../../state/store';
 import type { ScheduleKind } from '../../state/store';
@@ -28,7 +29,7 @@ import type { ScheduleKind } from '../../state/store';
 // school day of the manifest's calendar (and any other day with lessons); a day in the child's holidays is a holiday
 // card, a week whose school days are all holidays is one card.
 
-type Holiday = { from: string; to: string; note: string | null };
+type Holiday = { from: string; to: string; note: string | null; kind: string | null };
 const holidayOn = (hs: readonly Holiday[] | undefined, d: string) => hs?.find((h) => h.from <= d && d <= h.to) ?? null;
 
 function HolidayCard({ h }: { h: Holiday }) {
@@ -38,7 +39,7 @@ function HolidayCard({ h }: { h: Holiday }) {
   return (
     <div className="flex flex-col items-center gap-1.5 rounded-lg bg-holiday-bg px-4 py-6 text-center text-holiday-fg">
       <SunIcon size={28} />
-      <b className="text-h2">{t('schedule.holidays')}</b>
+      <b className="text-h2">{holidayName(t, h.kind)}</b>
       <span className="text-[14px]">
         {shortRange(h.from, h.to, ds)} · {t('days.count', { count: n })}
       </span>

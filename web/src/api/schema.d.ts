@@ -2002,6 +2002,8 @@ export interface paths {
                                 from: string;
                                 to: string;
                                 note: string | null;
+                                /** @enum {string|null} */
+                                kind: "autumn" | "winter" | "spring" | "summer" | "additional" | "other" | null;
                             }[];
                             bells: {
                                 label: string | null;

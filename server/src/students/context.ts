@@ -3,6 +3,7 @@ import type {
   Capabilities,
   FamilyRules,
   GradingScale,
+  HolidayKind,
   ISODate,
   PeriodContext,
   PeriodInstance,
@@ -56,7 +57,7 @@ export interface ChildContext {
   /** The current school year (the one containing today, else the latest), null before the first sync */
   year: YearRow | null;
   termRows: TermRow[];
-  holidayRows: { start: ISODate; end: ISODate; note: string | null }[];
+  holidayRows: { start: ISODate; end: ISODate; note: string | null; kind: HolidayKind | null }[];
   period: PeriodContext;
   /** The family's subject colours (6.6): a palette key per subject; a subject not in the map is «авто» */
   colors: Map<string, string | null>;
@@ -164,11 +165,11 @@ async function calendarOf(db: Db, studentId: string, today: ISODate) {
   const holidayRows = year
     ? (
         await db
-          .select({ start: holidays.startDate, end: holidays.endDate, note: holidays.note })
+          .select({ start: holidays.startDate, end: holidays.endDate, note: holidays.note, kind: holidays.kind })
           .from(holidays)
           .where(inArray(holidays.schoolYearId, [year.id]))
           .orderBy(asc(holidays.startDate))
-      ).map((h) => ({ start: h.start, end: h.end, note: h.note }))
+      ).map((h) => ({ start: h.start, end: h.end, note: h.note, kind: h.kind }))
     : [];
   return { year, past, termRows, holidayRows };
 }

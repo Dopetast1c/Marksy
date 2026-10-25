@@ -13,6 +13,7 @@ import type {
   Subject,
   Term,
   WorkType,
+  HolidayKind,
 } from '@marksy/core';
 import { ProviderSchemaError } from '@marksy/core';
 import { dayRange, toISODate } from './dates';
@@ -21,6 +22,7 @@ import {
   finalMarkCell,
   LESSON_TYPES,
   MARK_KINDS,
+  HOLIDAY_KINDS,
   QUARTER_TITLES,
   slot as slotSchema,
   TIME_ACTIVITY_TYPES,
@@ -130,6 +132,14 @@ export function mapAccount(me: MeResponse, classes: ReadonlyMap<string, SchoolCl
   };
 }
 
+/** The kind of a holidays item from its title (api-spec 6.4); an unknown title is "other" and recorded as drift */
+function holidayKindOf(title: string, check: DriftCheck): HolidayKind {
+  const known = Object.keys(HOLIDAY_KINDS);
+  return check.known(title, known, 'time_activities[].title')
+    ? HOLIDAY_KINDS[title as keyof typeof HOLIDAY_KINDS]
+    : 'other';
+}
+
 export function mapCalendar(
   year: SchoolYearResponse,
   activities: readonly TimeActivity[],
@@ -159,7 +169,7 @@ export function mapCalendar(
   const youngest = student.grade != null && student.grade <= LAST_GRADE_WITH_ADDITIONAL_HOLIDAYS;
   const holidays = activities
     .filter((a) => a.type === 'HOLIDAYS' && (a.title !== ADDITIONAL_HOLIDAYS || youngest))
-    .map((a) => ({ ...range(a), ...noteOf(a) }));
+    .map((a) => ({ ...range(a), ...noteOf(a), kind: holidayKindOf(a.title, check) }));
   const yearRange = dayRange({ start: year.start_ts, end: year.end_ts }, timeZone);
   return {
     schoolYear: {

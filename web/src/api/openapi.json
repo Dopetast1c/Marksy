@@ -6105,12 +6105,28 @@
                               "string",
                               "null"
                             ]
+                          },
+                          "kind": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "enum": [
+                              "autumn",
+                              "winter",
+                              "spring",
+                              "summer",
+                              "additional",
+                              "other",
+                              null
+                            ]
                           }
                         },
                         "required": [
                           "from",
                           "to",
-                          "note"
+                          "note",
+                          "kind"
                         ]
                       }
                     },

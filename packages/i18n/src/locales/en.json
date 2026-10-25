@@ -194,6 +194,17 @@
   "event.holidays": "Holidays from {{date}}",
   "event.holidaysUntil": "until {{date}}",
 
+  "holiday.name.autumn": "Autumn holidays",
+  "holiday.name.winter": "Winter holidays",
+  "holiday.name.spring": "Spring holidays",
+  "holiday.name.summer": "Summer holidays",
+  "holiday.name.additional": "Extra holidays",
+  "holiday.from.autumn": "Autumn holidays from {{date}}",
+  "holiday.from.winter": "Winter holidays from {{date}}",
+  "holiday.from.spring": "Spring holidays from {{date}}",
+  "holiday.from.summer": "Summer holidays from {{date}}",
+  "holiday.from.additional": "Extra holidays from {{date}}",
+
   "events.count_one": "{{count}} item",
   "events.count_other": "{{count}} items",
   "events.calm": "All calm",

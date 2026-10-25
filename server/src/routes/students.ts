@@ -3,6 +3,7 @@ import {
   availableKinds,
   compareSubjects,
   comparePeriods,
+  holidayKind,
   listInstances,
   movers,
   periodInstance,
@@ -514,7 +515,10 @@ export function studentRoutes(deps: AppDeps): Router {
             note: z.string().nullable(),
           }),
         ),
-        holidays: z.array(z.object({ from: z.string(), to: z.string(), note: z.string().nullable() })),
+        /** kind names them in the app («Осенние каникулы»); null when the diary does not say */
+        holidays: z.array(
+          z.object({ from: z.string(), to: z.string(), note: z.string().nullable(), kind: holidayKind.nullable() }),
+        ),
         bells: z.array(
           z.object({
             label: z.string().nullable(),
@@ -545,7 +549,7 @@ export function studentRoutes(deps: AppDeps): Router {
           to: t.endDate,
           note: t.note,
         })),
-        holidays: ctx.holidayRows.map((h) => ({ from: h.start, to: h.end, note: h.note })),
+        holidays: ctx.holidayRows.map((h) => ({ from: h.start, to: h.end, note: h.note, kind: h.kind })),
         bells: bells.map((b) => ({ label: b.label, days: b.days, periods: b.periods })),
       };
     },

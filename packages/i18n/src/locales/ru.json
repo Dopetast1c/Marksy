@@ -196,6 +196,17 @@
   "event.holidays": "С {{date}} каникулы",
   "event.holidaysUntil": "до {{date}}",
 
+  "holiday.name.autumn": "Осенние каникулы",
+  "holiday.name.winter": "Зимние каникулы",
+  "holiday.name.spring": "Весенние каникулы",
+  "holiday.name.summer": "Летние каникулы",
+  "holiday.name.additional": "Дополнительные каникулы",
+  "holiday.from.autumn": "С {{date}} осенние каникулы",
+  "holiday.from.winter": "С {{date}} зимние каникулы",
+  "holiday.from.spring": "С {{date}} весенние каникулы",
+  "holiday.from.summer": "С {{date}} летние каникулы",
+  "holiday.from.additional": "С {{date}} дополнительные каникулы",
+
   "events.count_one": "{{count}} событие",
   "events.count_few": "{{count}} события",
   "events.count_many": "{{count}} событий",

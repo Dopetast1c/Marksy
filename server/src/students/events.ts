@@ -164,7 +164,7 @@ export async function childEvents(db: Db, ctx: ChildContext, p: ResolvedPeriod):
         severity: 'neutral',
         date: next.start,
         subject: null,
-        facts: { start: next.start, end: next.end, note: next.note },
+        facts: { start: next.start, end: next.end, note: next.note, kind: next.kind },
         link: { screen: 'school' },
       });
   }

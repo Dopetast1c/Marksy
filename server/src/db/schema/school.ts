@@ -53,6 +53,8 @@ export const holidays = pgTable(
     startDate: day('start_date').notNull(),
     endDate: day('end_date').notNull(),
     note: text('note'),
+    /** autumn | winter | spring | summer | additional | other (Holiday.kind); null when the diary does not say */
+    kind: text('kind', { enum: ['autumn', 'winter', 'spring', 'summer', 'additional', 'other'] }),
   },
   (t) => [unique('holidays_year_range_key').on(t.schoolYearId, t.startDate, t.endDate)],
 );
