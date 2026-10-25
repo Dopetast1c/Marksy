@@ -348,8 +348,16 @@ describe('lessons and marks', () => {
     const { drift, check } = setup();
     const lessons = mapLessonsWeek(
       week([
+        // the real shape (2026-10-23, api-spec 7.2): kind, mark, type and summary all null, only a comment
         slot({
-          lesson_mark: mark({ uuid: 'm-c', kind: null, mark: '', type: null, comment: ' Нет домашнего задания ' }),
+          lesson_mark: mark({
+            uuid: 'm-c',
+            kind: null,
+            mark: null,
+            type: null,
+            summary: null,
+            comment: ' Нет домашнего задания ',
+          }),
         }),
         slot({ lesson_uuid: 'l-2', number: 3, lesson_mark: mark({ uuid: 'm-e', kind: null, mark: '', comment: '' }) }),
       ]),
