@@ -1,4 +1,4 @@
-import { LANGUAGES } from '@marksy/i18n';
+import { isReviewed, LANGUAGES } from '@marksy/i18n';
 import { useState } from 'react';
 import { i18n, useT } from '../i18n';
 import { MenuRow } from './MenuRow';
@@ -33,7 +33,12 @@ export function LanguagePicker({
           <DownIcon size={16} className="text-ink3" />
         </button>
       ) : (
-        <MenuRow icon={<GlobeIcon />} title={t('lang.title')} sub={current.nativeName} onClick={() => setOpen(true)} />
+        <MenuRow
+          icon={<GlobeIcon />}
+          title={t('lang.title')}
+          sub={isReviewed(current) ? current.nativeName : t('lang.unreviewed', { language: current.nativeName })}
+          onClick={() => setOpen(true)}
+        />
       )}
       <BottomSheet open={open} onClose={() => setOpen(false)} label={t('lang.choose')}>
         <span className="text-label text-ink3 uppercase">{t('lang.choose')}</span>

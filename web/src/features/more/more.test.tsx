@@ -53,8 +53,41 @@ describe('Ещё', () => {
     useDevice.setState({ pick: { id: milena.id, lastActive: FIXTURE_NOW.getTime() }, alwaysLast: false });
     fakeApi({ signedIn: true });
     render(<App at="/more" />);
-    await userEvent.setup().click(await screen.findByText('Милена: звонки, учебный год и каникулы'));
+    // the periods' word comes from the provider's term kind
+    await userEvent.setup().click(await screen.findByText('Милена: звонки, четверти и каникулы'));
     expect(await screen.findByRole('button', { name: 'Звонки' })).toBeTruthy();
+  });
+
+  it('live lines: the family, the diaries’ state or its problem, the language’s review, the version', async () => {
+    const at = (iso: string) => iso;
+    fakeApi({
+      signedIn: true,
+      syncStatus: {
+        accounts: [
+          {
+            id: 'acc-1',
+            status: 'ok',
+            studentIds: ['kid-milena'],
+            lastSuccessAt: at('2026-10-21T09:17:00Z'),
+            plan: { next: { kind: 'at', at: at('2026-10-21T17:00:00Z') } },
+          },
+        ],
+        students: [],
+      },
+    });
+    const { unmount } = render(<App at="/more" />);
+    expect(await screen.findByText('3 участника · Милена, Марк · 1 дневник')).toBeTruthy();
+    expect(await screen.findByText(/^Сегодня в 12:17 · следующая около 20:00$/)).toBeTruthy();
+    expect(screen.getByText('Русский')).toBeTruthy();
+    expect(screen.getByText(/^Marksy \d+\.\d+\.\d+ · дневник только читается/)).toBeTruthy();
+    unmount();
+    // a problem says itself instead of the times
+    fakeApi({
+      signedIn: true,
+      syncStatus: { accounts: [{ id: 'acc-1', status: 'auth_failed', studentIds: ['kid-milena'] }], students: [] },
+    });
+    render(<App at="/more" />);
+    expect(await screen.findByText('Нужен новый пароль')).toBeTruthy();
   });
 });
 
