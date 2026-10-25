@@ -485,8 +485,8 @@ export const TERM_FINALS = {
 };
 export const YEAR_FINALS = {
   years: [
-    { id: 'y0', label: '2025-2026', current: false },
-    { id: 'y1', label: '2026-2027', current: true },
+    { id: 'y0', label: '2025-2026', current: false, source: 'manual', startYear: 2025 },
+    { id: 'y1', label: '2026-2027', current: true, source: 'api', startYear: 2026 },
   ],
   rows: [
     {
@@ -504,7 +504,7 @@ export const YEAR_FINALS = {
       subjectId: null,
       isNew: false,
       cells: [
-        { yearId: 'y0', ...cell('final', 9) },
+        { yearId: 'y0', ...cell('final', 9), source: 'manual' },
         { yearId: 'y1', ...cell('none', null) },
       ],
       trend: null,
@@ -825,6 +825,8 @@ export function fakeApi(start: Partial<FakeState> = {}) {
     if (route === 'POST /api/sync/rescan')
       return json({ started: false, reason: 'interval', retryAt: '2026-10-21T17:12:00Z', weeks: 7 });
     if (route === 'GET /api/students') return json(CARDS);
+    if (route === 'PUT /api/students/kid-milena/final-marks')
+      return json({ yearId: 'y0', count: (state.bodies[route] as { marks: unknown[] }).marks.length });
     if (route === 'PATCH /api/me') {
       state.uiMode = (state.bodies[route] as { uiMode?: 'full' | 'simple' }).uiMode ?? state.uiMode;
       return json({});

@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../../app/App';
 import { initI18n } from '../../i18n';
-import { useMarkFilter, usePeriod } from '../../state/store';
+import { useDevice, useMarkFilter, usePeriod } from '../../state/store';
 import { fakeApi, KIDS } from '../../test/fake-api';
 
 beforeAll(() => {
@@ -126,5 +126,41 @@ describe('Итоги', () => {
     expect(screen.getByText('новый предмет')).toBeTruthy();
     expect(screen.getByText('2025/26')).toBeTruthy();
     expect(screen.getByText('лучше')).toBeTruthy();
+  });
+
+  it('Годы: a past year typed in from the report card, marked «введено вручную», saved as a whole', async () => {
+    const api = fakeApi({ signedIn: true });
+    const user = userEvent.setup();
+    render(<App at={`/s/${milena.id}/finals?mode=years`} />);
+    expect(await screen.findByText(/Карандашом отмечены итоги, введённые вручную/)).toBeTruthy();
+    expect(screen.getAllByText('введено вручную').length).toBe(2);
+    await user.click(screen.getByRole('button', { name: 'Ввести итоги прошлого года' }));
+    const sheet = await screen.findByRole('dialog', { name: 'Итоги прошлого года' });
+    // the diary's own year is not offered; the year typed in before opens with its values
+    const years = within(sheet).getByRole('group', { name: 'Учебный год' });
+    expect(
+      within(years)
+        .getAllByRole('button')
+        .map((b) => b.textContent),
+    ).toEqual(['2025/26', '2024/25', '2023/24']);
+    expect(within(sheet).getByRole('combobox', { name: 'Алгебра' })).toHaveProperty('value', '7');
+    await user.selectOptions(within(sheet).getByRole('combobox', { name: 'Геометрия' }), '9');
+    await user.selectOptions(within(sheet).getByRole('combobox', { name: 'Природоведение' }), '');
+    await user.click(within(sheet).getByRole('button', { name: 'Сохранить' }));
+    expect(api.bodies['PUT /api/students/kid-milena/final-marks']).toEqual({
+      startYear: 2025,
+      marks: [
+        { subjectName: 'Алгебра', raw: '7' },
+        { subjectName: 'Геометрия', raw: '9' },
+      ],
+    });
+  });
+
+  it('a student sees the years but types nothing in', async () => {
+    useDevice.setState({ pick: { id: milena.id, lastActive: Date.now() }, alwaysLast: false });
+    fakeApi({ signedIn: true, role: 'student' });
+    render(<App at={`/s/${milena.id}/finals?mode=years`} />);
+    expect(await screen.findByText('в этом году нет')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Ввести итоги прошлого года' })).toBeNull();
   });
 });

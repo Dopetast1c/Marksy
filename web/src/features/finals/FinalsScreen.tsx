@@ -1,17 +1,19 @@
 import { useNavigate, useParams, useSearchParams } from 'react-router';
-import { useTermFinals, useYearFinals } from '../../api/queries';
+import { useState } from 'react';
+import { useMe, useTermFinals, useYearFinals } from '../../api/queries';
 import { Body, Frame } from '../../app/Frame';
 import { ChangeArrow } from '../../components/ChangeArrow';
 import { EmptyState } from '../../components/EmptyState';
 import { FinalCellView } from '../../components/FinalCell';
 import { ScreenHeader } from '../../components/ScreenHeader';
-import { ListCard, Note } from '../../components/Section';
+import { ListCard, MoreButton, Note } from '../../components/Section';
 import { SegmentedControl } from '../../components/SegmentedControl';
 import { useCapabilities, useScale, useSchoolTz, useStudent } from '../../hooks/useStudent';
 import { dateStyle, intlLocale, useT } from '../../i18n';
 import { finalsStateText, schoolYearLabel } from '../../lib/finals';
 import { roman } from '../../lib/period';
 import { todayIn } from '../../lib/time';
+import { ManualFinals } from './ManualFinals';
 
 // Итоги (docs/design.md 5.3b): the marks a teacher sets at the end of a term or a year, on their own screen. Четверти:
 // subject × I–IV and Год for the current year; Годы: subject × school year with the arrow against last year. A posted
@@ -103,14 +105,19 @@ function YearsView({ studentId, termKind }: { studentId: string; termKind: strin
   const navigate = useNavigate();
   const scale = useScale(studentId);
   const q = useYearFinals(studentId);
+  // years before Marksy are typed in by the admin or a parent (6.1)
+  const adult = useMe().data?.family?.role !== 'student';
+  const [entering, setEntering] = useState(false);
   if (!q.data) return <EmptyState title={q.isError ? t('app.error') : t('app.loading')} />;
   const years = q.data.years.slice(-YEARS_SHOWN);
   const rows = q.data.rows.map((r) => ({ ...r, cells: r.cells.slice(-YEARS_SHOWN) }));
+  const manual = rows.some((r) => r.cells.some((c) => c.source === 'manual'));
   const cols = { gridTemplateColumns: `minmax(0,1fr) repeat(${years.length}, 60px) 28px` };
   return (
     <>
       <Note>
         {t(`finals.legend.years.${termKind}`)} {t(`finals.legend.yearsPast.${termKind}`)}
+        {manual && ` ${t('finals.manual.legend')}`}
       </Note>
       <ListCard>
         <div
@@ -162,6 +169,10 @@ function YearsView({ studentId, termKind }: { studentId: string; termKind: strin
           );
         })}
       </ListCard>
+      {adult && scale && <MoreButton onClick={() => setEntering(true)}>{t('finals.manual.button')}</MoreButton>}
+      {entering && scale && (
+        <ManualFinals studentId={studentId} years={q.data} scale={scale} onClose={() => setEntering(false)} />
+      )}
     </>
   );
 }

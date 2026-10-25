@@ -352,4 +352,71 @@ describe('Итоги', () => {
     const fresh = (await mama.get(`/api/students/${milena.id}/subjects/${otherId}`)).body;
     expect(fresh.lastYear).toEqual({ label: '2025-2026', raw: null, value: null });
   });
+
+  it('a past year typed in: on the scale, «введено вручную», replaced as a whole, never over the diary’s years', async () => {
+    const { milena, mark, signIn } = await setUp(IN_TERM);
+    const mama = await signIn(DEMO_LOGINS.parent);
+    const url = `/api/students/${milena.id}/final-marks`;
+    const put = await mama.put(url).send({
+      startYear: 2024,
+      marks: [
+        { subjectName: 'Алгебра', raw: '7' },
+        { subjectName: 'Природоведение', raw: '9' },
+      ],
+    });
+    expect(put.status).toBe(200);
+    expect(put.body.count).toBe(2);
+    const years = (await mama.get(`/api/students/${milena.id}/finals/years`)).body;
+    // the label and the dates in the current year's own form, two years back
+    expect(years.years.map((y: { label: string }) => y.label)).toEqual(['2024-2025', '2026-2027']);
+    const [row] = await db.select().from(schoolYears).where(eq(schoolYears.id, put.body.yearId));
+    expect(row).toMatchObject({ source: 'manual', startDate: '2024-09-01' });
+    const algebra = years.rows.find((r: { subjectName: string }) => r.subjectName === 'Алгебра');
+    expect(algebra.cells[0]).toMatchObject({ kind: 'final', raw: '7', value: 7, source: 'manual' });
+    const [saved] = await db
+      .select()
+      .from(finalMarks)
+      .where(and(eq(finalMarks.schoolYearId, put.body.yearId), eq(finalMarks.subjectName, 'Алгебра')));
+    expect(saved!.enteredBy).not.toBeNull();
+
+    // the whole year as it should be: Природоведение goes, Алгебра changes
+    await mama.put(url).send({ startYear: 2024, marks: [{ subjectName: 'Алгебра', raw: '8' }] });
+    const again = (await mama.get(`/api/students/${milena.id}/finals/years`)).body;
+    expect(again.rows.find((r: { subjectName: string }) => r.subjectName === 'Природоведение')).toBeUndefined();
+    // an empty list removes the year
+    expect((await mama.put(url).send({ startYear: 2024, marks: [] })).body).toEqual({ yearId: null, count: 0 });
+    expect((await mama.get(`/api/students/${milena.id}/finals/years`)).body.years).toHaveLength(1);
+
+    const refused = async (body: object) => (await mama.put(url).send(body)).body.error?.code;
+    expect(await refused({ startYear: 2026, marks: [{ subjectName: 'Алгебра', raw: '7' }] })).toBe('not_a_past_year');
+    expect(await refused({ startYear: 2010, marks: [{ subjectName: 'Алгебра', raw: '7' }] })).toBe('not_a_past_year');
+    expect(await refused({ startYear: 2024, marks: [{ subjectName: 'Алгебра', raw: '11' }] })).toBe('not_on_scale');
+    expect(await refused({ startYear: 2024, marks: [{ subjectName: 'Алгебра', raw: '7,5' }] })).toBe('not_on_scale');
+    expect(
+      await refused({
+        startYear: 2024,
+        marks: [
+          { subjectName: 'Алгебра', raw: '7' },
+          { subjectName: 'алгебра', raw: '8' },
+        ],
+      }),
+    ).toBe('duplicate_subject');
+    // a year without marks has nothing to type in; a student types nothing
+    expect((await mama.put(`/api/students/${mark.id}/final-marks`).send({ startYear: 2024, marks: [] })).status).toBe(
+      400,
+    );
+    const student = await signIn(DEMO_LOGINS.student);
+    expect((await student.put(url).send({ startYear: 2024, marks: [] })).status).toBe(403);
+    // a year the diary sends stays the diary's
+    await db.insert(schoolYears).values({
+      studentId: milena.id,
+      providerId: 'demo-full',
+      externalId: '2025-2026',
+      label: '2025-2026',
+      startDate: '2025-09-01',
+      endDate: '2026-05-31',
+      source: 'api',
+    });
+    expect(await refused({ startYear: 2025, marks: [{ subjectName: 'Алгебра', raw: '7' }] })).toBe('year_from_diary');
+  });
 });
