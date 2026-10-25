@@ -573,6 +573,11 @@
   "home.showAll": "Показать все · {{count}}",
   "home.stats": "Статистика",
 
+  "home.nearGoal.title": "Близко к итогу {{target}}",
+  "home.nearGoal.mixed": "Близко к цели",
+  "home.nearGoal.row": "{{average}} → {{need}}: ещё {{plan}}",
+  "home.nearGoal.target": "цель {{target}}",
+
   "now.before": "первый урок в {{at}}",
   "now.lesson": "{{slot}}-й урок, до {{until}}",
   "now.lessonNoSlot": "урок, до {{until}}",

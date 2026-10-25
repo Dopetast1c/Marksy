@@ -1,6 +1,6 @@
 import { shortDate } from '@marksy/core';
 import { useNavigate, useParams } from 'react-router';
-import { usePeriods, useOverview, useTrend } from '../../api/queries';
+import { useMe, usePeriods, useOverview, useTrend } from '../../api/queries';
 import { Body, Frame } from '../../app/Frame';
 import { DistCard } from '../../components/DistCard';
 import { EmptyState } from '../../components/EmptyState';
@@ -18,13 +18,14 @@ import { dateStyle, useT } from '../../i18n';
 import { subjectStyle } from '../../lib/subject-color';
 import { todayIn } from '../../lib/time';
 import { usePeriod } from '../../state/store';
+import { NearGoals } from './NearGoals';
 import { NextDay } from './NextDay';
 
 // Главная (docs/design.md 5.2, ux-principles D30, D31, D52): «Сейчас» above the navigator during the school day; the
 // brief row (average and count, or lessons and homework in a class without marks, D49); the last school day's marks
 // (five, then «Все оценки»); Внимание (five, then «Показать все»); the next school day in brief; Статистика (bands,
-// Распределение, Динамика) at the bottom; the sync line. «Занятия сегодня» comes with M7, the student's goal card with
-// the subject goals (M5b).
+// Распределение, Динамика) at the bottom; the sync line. A student gets «Близко к цели» after Внимание (5.7). «Занятия
+// сегодня» comes with M7.
 
 const FIVE = 5;
 
@@ -44,6 +45,7 @@ export function HomeScreen() {
   const termWord = t(`term.${termKind}`);
   const o = overview.data;
   const ds = dateStyle();
+  const student = useMe().data?.family?.role === 'student';
 
   let body: React.ReactNode;
   if (!o) body = <EmptyState title={overview.isError ? t('app.error') : t('app.loading')} />;
@@ -114,6 +116,8 @@ export function HomeScreen() {
             {t('home.showAll', { count: o.attentionTotal })}
           </MoreButton>
         )}
+
+        {student && scale && o.nearGoals && <NearGoals studentId={studentId} rows={o.nearGoals} scale={scale} />}
 
         {o.nextDay && caps?.lessons && caps.futureTimetable && (
           <NextDay studentId={studentId} day={o.nextDay} tz={tz} />

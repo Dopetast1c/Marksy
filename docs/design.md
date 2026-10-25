@@ -329,7 +329,7 @@ The selected child's school, for reference: a student screen with back, title "�
 
 ### 5.7 Student mode
 
-Same screens, with: no student switcher, no sync controls, no family settings, notification rules limited to own marks and homework digest, the target calculator pinned on the overview.
+Same screens, with: no student switcher, no sync controls, no family settings, notification rules limited to own marks and homework digest, the target calculator pinned on the overview. That calculator is **«Близко к цели»**, after Внимание on Главная: the running term's subjects whose goal (the family's per subject, 5.4, or the scale's default) is not reached yet and at most one step of the scale away, with at least three marks and no final posted, nearest first, two at most: «Алгебра 7,3 → 7,5: ещё 1 × 9» (the quickest plan, 6.2); a tap opens the subject. The title names the goal when the subjects share it («Близко к итогу 8»), otherwise «Близко к цели» with the goal on each row. It is advice: `overview.nearGoals` is null with guidance off, and only a student sees the card (a parent has the goal rows on the subject screens).
 
 **Simple mode** (`users.ui_mode = 'simple'`, for the youngest, set by a parent or the student): Overview shrinks to three blocks built from the same components: today's marks as large chips, "Не забыть" (tag hits for the next 7 days), and the next school day's lessons with homework as checkboxes. No statistics, no trends, no hints. The other tabs stay but open in their plainest form (feed without filters, subjects as a list).
 

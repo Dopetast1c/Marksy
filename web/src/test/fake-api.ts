@@ -30,6 +30,10 @@ export interface FakeState {
   guidance?: boolean;
   /** Оформление: what PATCH /api/me/settings and the wallpaper routes have made of it */
   appearance?: Record<string, unknown>;
+  /** who is signed in: the admin by default; a student sees only their own card */
+  role?: 'admin' | 'parent' | 'student';
+  /** fields laid over every child's /overview answer */
+  overview?: Record<string, unknown>;
   /** the school's today for Расписание's days (a weekend, to see where День opens) */
   scheduleToday?: string;
 }
@@ -802,9 +806,9 @@ export function fakeApi(start: Partial<FakeState> = {}) {
             ...state.appearance,
           },
         },
-        memberships: [{ familyId: 'f1', familyName: 'Семья', role: 'admin' }],
-        family: { id: 'f1', name: 'Семья', role: 'admin' },
-        students: KIDS,
+        memberships: [{ familyId: 'f1', familyName: 'Семья', role: state.role ?? 'admin' }],
+        family: { id: 'f1', name: 'Семья', role: state.role ?? 'admin' },
+        students: state.role === 'student' ? KIDS.slice(0, 1) : KIDS,
       });
     if (route === 'POST /api/auth/logout') {
       state.signedIn = false;
@@ -943,7 +947,7 @@ export function fakeApi(start: Partial<FakeState> = {}) {
     const kid = route.match(/^GET \/api\/students\/([^/]+)\/(overview|trend|events|school)$/);
     if (kid) {
       const [, id, what] = kid;
-      if (what === 'overview') return json(OVERVIEW[id!]);
+      if (what === 'overview') return json({ nearGoals: null, ...(OVERVIEW[id!] as object), ...state.overview });
       if (what === 'trend') return json(id === 'kid-milena' ? TREND : { period: PERIOD, buckets: [] });
       if (what === 'events')
         return json(

@@ -33,6 +33,7 @@ import {
 } from '../students/data';
 import { childEvents } from '../students/events';
 import { finalsOf, finalsState } from '../students/finals';
+import { nearGoalOut, nearGoals } from '../students/goals';
 import { feedItem, feedItems, lastSeen } from '../students/feed';
 import { nowLine } from '../students/now';
 import { trendOf, trendResponse } from '../students/trend';
@@ -283,6 +284,8 @@ export function studentRoutes(deps: AppDeps): Router {
         /** The next school day after today with its lessons as Расписание has them (the compact LessonRow) */
         nextDay: z.object({ date: z.string(), lessons: z.array(lessonOut) }).nullable(),
         now: nowLineSchema.nullable(),
+        /** «Близко к цели» (5.7): subjects one step from their goal, for a student's Главная; null with guidance off */
+        nearGoals: z.array(nearGoalOut).nullable(),
       }),
       errors: { 404: 'No such child or period' },
     },
@@ -367,6 +370,7 @@ export function studentRoutes(deps: AppDeps): Router {
           localTime(ctx.now, ctx.timezone).minutes,
           nextDate ? { date: nextDate, lessons: nextLessons } : null,
         ),
+        nearGoals: await nearGoals(deps, ctx),
       };
     },
   );

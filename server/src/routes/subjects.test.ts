@@ -102,6 +102,44 @@ describe('Предметы and Предмет', () => {
     expect(noGoal.status).toBe(400);
   });
 
+  it('«Близко к цели» on Главная: subjects one step from their goal with the quickest plan; gone with guidance off', async () => {
+    const { milena, mark, signIn } = await setUp(IN_TERM);
+    const mama = await signIn(DEMO_LOGINS.parent);
+    const rows = (await mama.get(`/api/students/${milena.id}/subjects?period=month`)).body.subjects as Row[];
+    // every subject «Без цели» but one, whose goal is set one mark above where its term average stands
+    let near: { id: string; target: number; average: number } | null = null;
+    for (const r of rows) {
+      const url = `/api/students/${milena.id}/subjects/${r.subject.id}`;
+      const goal = (await mama.get(url)).body.attention.goal as { average: number | null } | null;
+      const a = goal?.average;
+      const terms = (await mama.get(`${url}?period=quarter`)).body.count as number;
+      if (!near && a != null && a < 9 && terms >= 3) {
+        near = { id: r.subject.id, target: Math.round(a) + 1, average: a };
+        await mama.put(`${url}/goal`).send({ termGoal: near.target });
+      } else await mama.put(`${url}/goal`).send({ termGoal: null });
+    }
+    expect(near).not.toBeNull();
+    const home = (await mama.get(`/api/students/${milena.id}/overview?period=week`)).body;
+    expect(home.nearGoals).toEqual([
+      {
+        subject: expect.objectContaining({ id: near!.id }),
+        target: near!.target,
+        average: near!.average,
+        need: near!.target - 0.5,
+        plan: { value: expect.any(Number), count: expect.any(Number) },
+      },
+    ]);
+    expect(home.nearGoals[0].plan.value).toBeGreaterThan(near!.target - 0.5);
+    // a year without marks has no goals
+    expect((await mama.get(`/api/students/${mark.id}/overview?period=week`)).body.nearGoals).toBeNull();
+    const [link] = await db.select().from(familyStudents).where(eq(familyStudents.studentId, milena.id));
+    await db
+      .update(families)
+      .set({ settings: { guidance: false } })
+      .where(eq(families.id, link!.familyId));
+    expect((await mama.get(`/api/students/${milena.id}/overview?period=week`)).body.nearGoals).toBeNull();
+  });
+
   it('guidance off hides the goal row and the hints; the goal stays saved and shown in the settings', async () => {
     const { milena, signIn } = await setUp(IN_TERM);
     const mama = await signIn(DEMO_LOGINS.parent);

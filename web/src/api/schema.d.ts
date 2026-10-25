@@ -1751,6 +1751,20 @@ export interface paths {
                                 lessons: components["schemas"]["Lesson"][];
                             } | null;
                             now: components["schemas"]["NowLine"];
+                            nearGoals: {
+                                subject: {
+                                    id: string;
+                                    name: string;
+                                    color: string | null;
+                                };
+                                target: number;
+                                average: number;
+                                need: number;
+                                plan: {
+                                    value: number;
+                                    count: number;
+                                };
+                            }[] | null;
                         };
                     };
                 };

@@ -531,6 +531,11 @@
   "home.showAll": "Show all · {{count}}",
   "home.stats": "Statistics",
 
+  "home.nearGoal.title": "Close to a final of {{target}}",
+  "home.nearGoal.mixed": "Close to the goal",
+  "home.nearGoal.row": "{{average}} → {{need}}: {{plan}} more",
+  "home.nearGoal.target": "goal {{target}}",
+
   "now.before": "first lesson at {{at}}",
   "now.lesson": "lesson {{slot}}, until {{until}}",
   "now.lessonNoSlot": "in a lesson until {{until}}",

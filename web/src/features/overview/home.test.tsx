@@ -80,4 +80,39 @@ describe('Главная', () => {
     expect(within(sheet).getByText('12 оценок')).toBeTruthy();
     expect(within(sheet).getByText('9 оценок')).toBeTruthy();
   });
+
+  const NEAR = [
+    {
+      subject: { id: 'sub-al', name: 'Алгебра', color: 'blue' },
+      target: 8,
+      average: 7.3,
+      need: 7.5,
+      plan: { value: 9, count: 1 },
+    },
+    {
+      subject: { id: 'sub-ph', name: 'Физика', color: null },
+      target: 8,
+      average: 7.1,
+      need: 7.5,
+      plan: { value: 10, count: 2 },
+    },
+  ];
+
+  it('a student gets «Близко к цели» after Внимание; a tap opens the subject', async () => {
+    useDevice.setState({ pick: { id: milena.id, lastActive: Date.now() }, alwaysLast: false });
+    fakeApi({ signedIn: true, role: 'student', overview: { nearGoals: NEAR } });
+    render(<App at={`/s/${milena.id}`} />);
+    const card = (await screen.findByRole('heading', { name: 'Близко к итогу 8' })).closest('section')!;
+    expect(card.textContent).toContain('Алгебра 7,3 → 7,5: ещё 1 × 9');
+    expect(card.textContent).toContain('Физика 7,1 → 7,5: ещё 2 × 10');
+    await userEvent.setup().click(within(card).getByText('Алгебра'));
+    expect(await screen.findByRole('heading', { name: 'Алгебра' })).toBeTruthy();
+  });
+
+  it('a parent never sees it, the same answer notwithstanding', async () => {
+    fakeApi({ signedIn: true, overview: { nearGoals: NEAR } });
+    render(<App at={`/s/${milena.id}`} />);
+    expect(await screen.findByText('Сейчас · 3-й урок')).toBeTruthy();
+    expect(screen.queryByText('Близко к итогу 8')).toBeNull();
+  });
 });
