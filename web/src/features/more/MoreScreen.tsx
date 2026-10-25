@@ -77,7 +77,7 @@ export function MoreScreen() {
         {user && (
           <div className="flex items-center gap-3 rounded-lg bg-surface px-3.5 py-3 shadow-card">
             <Avatar
-              traits={{ ...defaultTraits(null), age: parent ? 'adult' : 'preteen' }}
+              traits={{ ...defaultTraits(), age: parent ? 'adult' : 'preteen' }}
               index={parent ? kids.length : kids.findIndex((k) => k.id === child?.id)}
               size={44}
             />
@@ -93,16 +93,24 @@ export function MoreScreen() {
             </span>
           </div>
         )}
-        {school && (
-          <MenuCard>
+        <MenuCard>
+          {parent && (
+            <MenuRow
+              icon={<UsersIcon />}
+              title={t('family.title')}
+              sub={t('more.family.sub', { count: kids.length })}
+              onClick={() => navigate('/more/family')}
+            />
+          )}
+          {school && (
             <MenuRow
               icon={<SchoolIcon />}
               title={t('more.school')}
               sub={child ? t('more.school.subFor', { name: child.name }) : t('more.school.sub')}
               onClick={() => navigate(child ? `/s/${child.id}/school` : '/pick')}
             />
-          </MenuCard>
-        )}
+          )}
+        </MenuCard>
         <MenuCard>
           <MenuRow
             icon={<BulbIcon />}

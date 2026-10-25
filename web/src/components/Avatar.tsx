@@ -1,27 +1,17 @@
 import { useId } from 'react';
+import type { Schemas } from '../api/client';
 import tokens from '../../../docs/tokens.json';
 
-// A child's avatar (ux-principles D9): an SVG drawn from a few traits, the generator of docs/mockups.html. Until the
-// avatar editor (M5d) stores a child's own traits, every child gets the neutral look; what tells two children apart is
-// the background, a hue of the subject palette picked by the child's place in the family order, never anything
-// guessed from the child's id or name.
+// A child's avatar (ux-principles D9): an SVG drawn from a few traits, the generator of docs/mockups.html. The family
+// sets the traits in Семья (or uploads a photo, ChildAvatar); until then every child has the neutral look. The
+// background, a hue of the subject palette by the child's place in the family order, tells children apart, never
+// anything guessed from the child's id or name.
 
-export interface AvatarTraits {
-  age: 'kid' | 'preteen' | 'teen' | 'adult';
-  look: 'boy' | 'girl' | 'neutral';
-  skin: string;
-  hair: string;
-  style: 'buzz' | 'short' | 'medium' | 'long' | 'ponytail' | 'bob' | 'curly' | 'braids';
-  eyes: string;
-  glasses: boolean;
-}
+/** The traits the server keeps (its AvatarTraits schema, the keys of docs/tokens.json → avatar) */
+export type AvatarTraits = Schemas['AvatarTraits'];
 
-/**
- * The neutral look before the editor exists (owner, M5a): one age for every child, nothing read from the grade or
- * guessed from the name; children are told apart by the background (avatarHue). The grade stays in the signature for
- * the call sites the editor (M5d) replaces.
- */
-export function defaultTraits(_grade: number | null): AvatarTraits {
+/** The neutral look of a child whose family has set no avatar yet (one age for every child, nothing guessed) */
+export function defaultTraits(): AvatarTraits {
   return {
     age: 'preteen',
     look: 'neutral',

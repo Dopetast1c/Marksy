@@ -41,6 +41,8 @@ export const PROTOTYPE_STATES = [
   ['schedule-week', 'lessons', 'k', { lkind: 'week' }],
   ['schedule-2', 'lessons', 'm', { lkind: 'day' }],
   ['more', 'more', 'k'],
+  ['family', 'family', 'k'],
+  ['avatar', 'avatarEdit', 'k', { avatarFor: 'm' }],
   ['school-bells', 'school', 'k', { schoolTab: 'bells' }],
   ['school-year', 'school', 'k', { schoolTab: 'year' }],
 ];
@@ -109,6 +111,17 @@ async function shootApp(browser, base, family, device, dir, log) {
     if (page.url().endsWith('/pick')) await shot('pick');
     await page.goto(`${base}/more`);
     await shot('more');
+    // Семья for the admin and parents, and the first child's avatar screen
+    const view = await page.request.get(`${base}/api/family`);
+    if (view.ok()) {
+      await page.goto(`${base}/more/family`);
+      await shot('family');
+      const first = (await view.json()).children?.[0]?.studentId;
+      if (first) {
+        await page.goto(`${base}/more/family/child/${first}`);
+        await shot('avatar');
+      }
+    }
     for (const [i, kid] of kids.entries()) {
       await page.goto(`${base}/s/${kid.id}`);
       await shot(`home-${i + 1}`);

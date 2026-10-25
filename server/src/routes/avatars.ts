@@ -39,7 +39,7 @@ export function avatarRoutes(deps: AppDeps): Router {
       tags: ['students'],
       access: 'member',
       params: z.object({ id }),
-      body: z.object({ avatar: avatarTraits.nullable() }),
+      body: z.object({ avatar: z.union([avatarTraits, z.null()]) }),
       response: z.object({ avatar: avatarOut }),
       errors: { 403: 'A student does not set avatars', 404: 'No such child' },
     },

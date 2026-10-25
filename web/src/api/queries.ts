@@ -309,3 +309,9 @@ export function useLessonActions(id: string) {
   });
   return { prep, cancel, homework };
 }
+
+export type FamilyView = Schemas['Family'];
+
+/** Семья (design.md 5.6): members, diaries, children, join requests; admin and parents */
+export const useFamily = () =>
+  useQuery({ queryKey: ['family'], queryFn: () => data(api.GET('/api/family')), staleTime: 30_000 });

@@ -8669,15 +8669,12 @@
                 "type": "object",
                 "properties": {
                   "avatar": {
-                    "allOf": [
+                    "anyOf": [
                       {
                         "$ref": "#/components/schemas/AvatarTraits"
                       },
                       {
-                        "type": [
-                          "object",
-                          "null"
-                        ]
+                        "type": "null"
                       }
                     ]
                   }

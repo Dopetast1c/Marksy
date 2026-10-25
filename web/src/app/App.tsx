@@ -7,6 +7,8 @@ import { SubjectScreen } from '../features/subjects/SubjectScreen';
 import { SubjectsScreen } from '../features/subjects/SubjectsScreen';
 import { ConnectMatchScreen } from '../features/auth/ConnectMatchScreen';
 import { LoginScreen } from '../features/auth/LoginScreen';
+import { ChildScreen } from '../features/family/ChildScreen';
+import { FamilyScreen } from '../features/family/FamilyScreen';
 import { MoreScreen } from '../features/more/MoreScreen';
 import { EventsScreen } from '../features/overview/EventsScreen';
 import { HomeScreen } from '../features/overview/HomeScreen';
@@ -29,6 +31,8 @@ export const routes: RouteObject[] = [
       { path: '/connect/matches', element: <ConnectMatchScreen /> },
       { path: '/pick', element: <PickScreen /> },
       { path: '/more', element: <MoreScreen /> },
+      { path: '/more/family', element: <FamilyScreen /> },
+      { path: '/more/family/child/:studentId', element: <ChildScreen /> },
       {
         path: '/s/:studentId',
         element: <RequireChild />,

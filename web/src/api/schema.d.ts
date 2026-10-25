@@ -3274,7 +3274,7 @@ export interface paths {
             requestBody?: {
                 content: {
                     "application/json": {
-                        avatar: components["schemas"]["AvatarTraits"] & (Record<string, never> | null);
+                        avatar: components["schemas"]["AvatarTraits"] | null;
                     };
                 };
             };

@@ -676,6 +676,55 @@ const SCHEDULE_ATTENTION = [
   },
 ];
 
+/** Семья of the demo: a request to join, two members, two children, one diary */
+const FAMILY = {
+  family: { id: 'f1', name: 'Семья', parentsCanInvite: true, guidance: true },
+  role: 'admin',
+  members: [
+    { userId: 'u1', displayName: 'Родитель', role: 'admin', studentIds: [] },
+    { userId: 'u2', displayName: 'Бабушка', role: 'parent', studentIds: ['kid-mark'] },
+  ],
+  accounts: [
+    {
+      id: 'acc-1',
+      providerId: 'demo-full',
+      providerName: 'Школьный портал (демо)',
+      label: 'demo-login',
+      status: 'ok',
+      requiresAction: null,
+      studentIds: ['kid-milena', 'kid-mark'],
+    },
+  ],
+  children: [
+    {
+      studentId: 'kid-milena',
+      name: 'Милена',
+      classLabel: '7 «Г»',
+      schoolLabel: null,
+      status: 'active',
+      sharedWithOtherFamily: false,
+      settings: { lowMark: null, dropStep: null, callAfter: null },
+    },
+    {
+      studentId: 'kid-mark',
+      name: 'Марк',
+      classLabel: '1 «Д»',
+      schoolLabel: null,
+      status: 'active',
+      sharedWithOtherFamily: true,
+      settings: { lowMark: null, dropStep: null, callAfter: null },
+    },
+  ],
+  joinRequests: [
+    {
+      id: 'jr-1',
+      displayName: 'Папа',
+      createdAt: '2026-10-20T10:00:00Z',
+      diary: { providerName: 'Школьный портал (демо)', label: 'papa-login' },
+    },
+  ],
+};
+
 const TYPE_KEYS = new Set(['workType', 'workTypeRaw', 'lessonType']);
 const untyped = (key: string, value: unknown) => (TYPE_KEYS.has(key) ? null : value);
 
@@ -683,6 +732,8 @@ export function fakeApi(start: Partial<FakeState> = {}) {
   const state: FakeState = { signedIn: false, calls: [], urls: [], bodies: {}, ...start };
   const error = (status: number, code: string) => json({ error: { code, message: code } }, status);
   let matchesPending = false;
+  let familyGuidance = true;
+  const avatars: Record<string, unknown> = {};
   const lessonState = { ready: new Set<string>(), cancelled: new Set<string>(), homework: new Map<string, string>() };
   const json = (body: unknown, status = 200) =>
     new Response(status === 204 ? null : JSON.stringify(body, state.noTypes ? untyped : undefined), {
@@ -751,8 +802,24 @@ export function fakeApi(start: Partial<FakeState> = {}) {
     }
     if (route === 'GET /api/family')
       return json({
+        ...FAMILY,
+        family: { ...FAMILY.family, guidance: familyGuidance },
+        children: FAMILY.children.map((c) => ({ ...c, avatar: avatars[c.studentId] ?? null })),
         matches: matchesPending ? [{ accountId: 'acc-1', studentId: 'kid-shared', name: 'Марк' }] : [],
       });
+    if (route === 'PATCH /api/family') {
+      familyGuidance = (state.bodies[route] as { guidance?: boolean }).guidance ?? familyGuidance;
+      return json({});
+    }
+    if (/^PATCH \/api\/family\/join-requests\//.test(route)) return json(null, 204);
+    if (route === 'POST /api/family/invites')
+      return json({ code: 'K7M2Q9', url: '/join/K7M2Q9', expiresAt: '2026-10-23T16:12:00Z' }, 201);
+    const kidPatch = route.match(/^PATCH \/api\/students\/([^/]+)$/);
+    if (kidPatch) {
+      const traits = (state.bodies[route] as { avatar: unknown }).avatar;
+      avatars[kidPatch[1]!] = traits ? { kind: 'traits', traits } : null;
+      return json({ avatar: avatars[kidPatch[1]!] });
+    }
     if (route === 'POST /api/family/accounts/acc-1/matches/kid-shared') {
       matchesPending = false;
       return json({ outcome: 'followed' });
