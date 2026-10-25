@@ -43,6 +43,77 @@
           "error"
         ]
       },
+      "Appearance": {
+        "type": "object",
+        "properties": {
+          "theme": {
+            "type": "string",
+            "enum": [
+              "light",
+              "dark",
+              "system"
+            ]
+          },
+          "background": {
+            "type": "string",
+            "enum": [
+              "color",
+              "wallpaper"
+            ]
+          },
+          "palette": {
+            "type": "string",
+            "enum": [
+              "sea",
+              "forest",
+              "sky",
+              "plum",
+              "berry",
+              "amber",
+              "mint",
+              "graphite"
+            ]
+          },
+          "wallpaper": {
+            "type": "string",
+            "enum": [
+              "cell",
+              "line",
+              "dots",
+              "doodle",
+              "waves",
+              "own"
+            ]
+          },
+          "opacity": {
+            "type": "integer",
+            "minimum": 10,
+            "maximum": 100
+          },
+          "font": {
+            "type": "string",
+            "enum": [
+              "manrope",
+              "nunito",
+              "ptsans",
+              "inter",
+              "rubik"
+            ]
+          },
+          "hasOwnWallpaper": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "theme",
+          "background",
+          "palette",
+          "wallpaper",
+          "opacity",
+          "font",
+          "hasOwnWallpaper"
+        ]
+      },
       "AvatarTraits": {
         "type": "object",
         "properties": {
@@ -668,6 +739,9 @@
               },
               "guidance": {
                 "type": "boolean"
+              },
+              "appearance": {
+                "$ref": "#/components/schemas/Appearance"
               }
             },
             "required": [
@@ -677,7 +751,8 @@
               "locale",
               "timezone",
               "uiMode",
-              "guidance"
+              "guidance",
+              "appearance"
             ]
           },
           "memberships": {
@@ -3588,7 +3663,7 @@
     },
     "/api/me/settings": {
       "patch": {
-        "summary": "Your own settings: «Подсказки» (design.md 5.6); appearance comes with Оформление (5.6a)",
+        "summary": "Your own settings: «Подсказки» (design.md 5.6) and Оформление (5.6a), any part of it",
         "tags": [
           "auth"
         ],
@@ -3605,6 +3680,65 @@
                 "properties": {
                   "guidance": {
                     "type": "boolean"
+                  },
+                  "appearance": {
+                    "type": "object",
+                    "properties": {
+                      "theme": {
+                        "type": "string",
+                        "enum": [
+                          "light",
+                          "dark",
+                          "system"
+                        ]
+                      },
+                      "background": {
+                        "type": "string",
+                        "enum": [
+                          "color",
+                          "wallpaper"
+                        ]
+                      },
+                      "palette": {
+                        "type": "string",
+                        "enum": [
+                          "sea",
+                          "forest",
+                          "sky",
+                          "plum",
+                          "berry",
+                          "amber",
+                          "mint",
+                          "graphite"
+                        ]
+                      },
+                      "wallpaper": {
+                        "type": "string",
+                        "enum": [
+                          "cell",
+                          "line",
+                          "dots",
+                          "doodle",
+                          "waves",
+                          "own"
+                        ]
+                      },
+                      "opacity": {
+                        "type": "integer",
+                        "minimum": 10,
+                        "maximum": 100
+                      },
+                      "font": {
+                        "type": "string",
+                        "enum": [
+                          "manrope",
+                          "nunito",
+                          "ptsans",
+                          "inter",
+                          "rubik"
+                        ]
+                      }
+                    }
                   }
                 }
               }
@@ -9016,6 +9150,131 @@
           },
           "404": {
             "description": "No such child or no photo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/me/wallpaper": {
+      "put": {
+        "summary": "Your own wallpaper: JPEG, PNG or WebP up to 1600 px and 5 MB, metadata removed (14.1); only you see it",
+        "tags": [
+          "auth"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "hasOwnWallpaper": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "hasOwnWallpaper"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Not a JPEG, PNG or WebP, or larger than 1600 px",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Your own wallpaper, to you only",
+        "tags": [
+          "auth"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Done"
+          },
+          "401": {
+            "description": "No session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No wallpaper of your own",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Remove your own wallpaper (the picture is deleted)",
+        "tags": [
+          "auth"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Done"
+          },
+          "401": {
+            "description": "No session",
             "content": {
               "application/json": {
                 "schema": {

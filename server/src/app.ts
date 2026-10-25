@@ -10,6 +10,7 @@ import { authRoutes } from './routes/auth';
 import { familyRoutes } from './routes/family';
 import { inviteRoutes } from './routes/invites';
 import { avatarRoutes } from './routes/avatars';
+import { wallpaperRoutes } from './routes/wallpaper';
 import { lessonRoutes } from './routes/lessons';
 import { scheduleRoutes } from './routes/schedule';
 import { studentRoutes } from './routes/students';
@@ -48,6 +49,7 @@ export function createApp(deps: AppDeps) {
   app.use(scheduleRoutes(deps));
   app.use(lessonRoutes(deps));
   app.use(avatarRoutes(deps));
+  app.use(wallpaperRoutes(deps));
   app.use(syncRoutes(deps));
 
   // the document is built once, after every route registered itself; Swagger UI's assets are served from this

@@ -9,6 +9,7 @@ import { ConnectMatchScreen } from '../features/auth/ConnectMatchScreen';
 import { LoginScreen } from '../features/auth/LoginScreen';
 import { ChildScreen } from '../features/family/ChildScreen';
 import { FamilyScreen } from '../features/family/FamilyScreen';
+import { LookScreen } from '../features/look/LookScreen';
 import { MoreScreen } from '../features/more/MoreScreen';
 import { SyncScreen } from '../features/sync/SyncScreen';
 import { EventsScreen } from '../features/overview/EventsScreen';
@@ -16,6 +17,7 @@ import { HomeScreen } from '../features/overview/HomeScreen';
 import { PickScreen } from '../features/pick/PickScreen';
 import { ScheduleScreen } from '../features/schedule/ScheduleScreen';
 import { SchoolScreen } from '../features/school/SchoolScreen';
+import { Appearance } from './Appearance';
 import { RequireAuth, RequireChild, Start } from './guards';
 
 // Routes (docs/design.md 4). Everything but the login needs a session; every /s/:studentId screen needs a child this
@@ -34,6 +36,7 @@ export const routes: RouteObject[] = [
       { path: '/more', element: <MoreScreen /> },
       { path: '/more/family', element: <FamilyScreen /> },
       { path: '/more/sync', element: <SyncScreen /> },
+      { path: '/more/look', element: <LookScreen /> },
       { path: '/more/family/child/:studentId', element: <ChildScreen /> },
       {
         path: '/s/:studentId',
@@ -62,6 +65,7 @@ export function App({ client = newQueryClient(), at }: { client?: QueryClient; a
   const router = at ? createMemoryRouter(routes, { initialEntries: [at] }) : createBrowserRouter(routes);
   return (
     <QueryClientProvider client={client}>
+      <Appearance />
       <RouterProvider router={router} />
     </QueryClientProvider>
   );

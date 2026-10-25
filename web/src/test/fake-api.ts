@@ -28,6 +28,8 @@ export interface FakeState {
   syncRuns?: unknown;
   /** the person's own «Подсказки» switch */
   guidance?: boolean;
+  /** Оформление: what PATCH /api/me/settings and the wallpaper routes have made of it */
+  appearance?: Record<string, unknown>;
   /** the school's today for Расписание's days (a weekend, to see where День opens) */
   scheduleToday?: string;
 }
@@ -743,7 +745,9 @@ export function fakeApi(start: Partial<FakeState> = {}) {
       status,
       headers: { 'content-type': 'application/json' },
     });
-  vi.stubGlobal('fetch', async (input: Request) => {
+  vi.stubGlobal('fetch', async (target: Request | string, init?: RequestInit) => {
+    // the API client sends a Request; an upload calls fetch(url, init) with its bytes
+    const input = typeof target === 'string' ? new Request(new URL(target, 'http://localhost'), init) : target;
     const url = new URL(input.url);
     const route = `${input.method} ${url.pathname}`;
     state.calls.push(route);
@@ -787,6 +791,16 @@ export function fakeApi(start: Partial<FakeState> = {}) {
           timezone: null,
           uiMode: 'full',
           guidance: state.guidance ?? true,
+          appearance: {
+            theme: 'light',
+            background: 'color',
+            palette: 'sea',
+            wallpaper: 'cell',
+            opacity: 35,
+            font: 'manrope',
+            hasOwnWallpaper: false,
+            ...state.appearance,
+          },
         },
         memberships: [{ familyId: 'f1', familyName: 'Семья', role: 'admin' }],
         family: { id: 'f1', name: 'Семья', role: 'admin' },
@@ -805,8 +819,18 @@ export function fakeApi(start: Partial<FakeState> = {}) {
     if (route === 'GET /api/students') return json(CARDS);
     if (route === 'PATCH /api/me') return json({});
     if (route === 'PATCH /api/me/settings') {
-      state.guidance = (state.bodies[route] as { guidance?: boolean }).guidance ?? state.guidance;
+      const body = state.bodies[route] as { guidance?: boolean; appearance?: Record<string, unknown> };
+      state.guidance = body.guidance ?? state.guidance;
+      if (body.appearance) state.appearance = { ...state.appearance, ...body.appearance };
       return json({});
+    }
+    if (route === 'PUT /api/me/wallpaper') {
+      state.appearance = { ...state.appearance, hasOwnWallpaper: true };
+      return json({ hasOwnWallpaper: true });
+    }
+    if (route === 'DELETE /api/me/wallpaper') {
+      state.appearance = { ...state.appearance, hasOwnWallpaper: false, wallpaper: 'cell' };
+      return json({}, 204);
     }
     if (route === 'GET /api/family')
       return json({

@@ -304,9 +304,9 @@ Personal settings: stored per user (`users.settings.appearance`) and applied on 
 - **Тема**: Светлая (default for a new user and on the login screen) / Тёмная / Как в системе.
 - **Фон**: Цвет / Обои.
   - **Цвет → Палитра**: eight palettes (`tokens.json → palette`): Морская (default), Лесная, Небесная, Сливовая, Ягодная, Янтарная, Мятная, Графит. A palette sets the page background and the app accent (buttons, selected controls, links) in both themes. It never changes mark bands, severity or arrows, and on the subject screen the subject colour still overrides the accent (D45).
-  - **Обои**: five built-in tiled patterns (Клетка, Линейка, Точки, Каракули, Волны: school-notebook motifs in one mid-tone, `web/public/wallpapers`) and **"Загрузить"** for an own picture (JPEG/PNG/WebP up to 5 MB, scaled down to 1600 px on the server, stored per user in `user_files`, visible only to that user). **"Насколько видны обои"**: a slider 10 to 100 %, default 35 %. Cards stay solid; the wallpaper shows between them and behind headers; the sticky navigator gets a translucent blurred background so it stays readable.
+  - **Обои**: five built-in tiled patterns (Клетка, Линейка, Точки, Каракули, Волны: school-notebook motifs in one mid-tone, `web/public/wallpapers`) and **"Загрузить"** for an own picture (scaled down to 1600 px in the browser and sent as a JPEG; the server accepts JPEG/PNG/WebP up to 5 MB and 1600 px and strips the metadata, 14.1; stored per user in `user_files`, visible only to that user). Once there is one, the tile is **"Своё"** and two buttons under the slider replace it (**"Другое фото"**) or delete the file (**"Удалить фото"**, the background falls back to Клетка). **"Насколько видны обои"**: a slider 10 to 100 %, default 35 %. Cards stay solid; the wallpaper shows between them and behind headers; the sticky navigator gets a translucent blurred background so it stays readable.
 - **Шрифт**: five body fonts with full Cyrillic, each shown with a sample "Аа" in itself: **Manrope** (default, even and compact), **Nunito** (soft and round, liked by children), **PT Sans** (classic, made for Cyrillic), **Inter** (neutral, like system apps), **Rubik** (slightly rounded, large and friendly). Numbers in statistics keep the display font.
-- **Цвета предметов**: the student's subjects, each with its colour stripe and the colour's name ("авто", "синий"); a tap opens the same colour sheet as on the subject screen (6.6). The header says these colours are seen by the whole family.
+- **Цвета предметов**: the student's subjects, each with its colour stripe and the colour's name ("авто", "синий"); a tap opens the same colour sheet as on the subject screen (6.6). The header names the child and says these colours are seen by the whole family. The child is the one this device continues with (the 12-hour rule, D7); with none, the list is not shown. Every change on the screen applies at once and is saved to the person; a quiet note at the bottom says theme, background and font are personal and subject colours are the family's.
 
 ### 5.8 Занятия (`#study`)
 
@@ -577,8 +577,8 @@ families            id, name, created_at, settings (jsonb: parents_can_invite, g
                     consent_version, consent_at, consent_by
 users               id, login (unique), display_name, timezone (IANA, for notification times),
                     locale (ru|be|uk|kk|en|pl|de|es|pt|fr|nl|ro), ui_mode (full|simple),
-                    settings (jsonb: guidance, appearance {theme light|dark|system, bg color|wallpaper, palette,
-                    wallpaper (built-in id | user_file id), wallpaperOpacity 0.1..1, font manrope|nunito|ptsans|inter|rubik}),
+                    settings (jsonb: guidance, appearance {theme light|dark|system, background color|wallpaper, palette,
+                    wallpaper (built-in id | own), opacity 10..100, font manrope|nunito|ptsans|inter|rubik}),
                     password_hash, created_at, last_login_at
 user_files          id, user_id, kind (wallpaper), mime, bytes, width, height, storage_key, created_at   (5.6a; one
                     wallpaper per user, replaced on upload; served only to its owner)
@@ -864,8 +864,9 @@ PUT  /api/students/:id/lessons/:lessonId/cancel  DELETE …/cancel -> {cancelled
                                                                    409 diary_has_lesson when the diary has a mark or an
                                                                    attendance record for it
 PATCH /api/students/:id/homework/:itemId {text}   DELETE /api/students/:id/homework/:itemId   -> edit or remove a manual item (source: manual only)
-PATCH /api/me/settings {appearance: {...}}                      -> personal appearance (5.6a)
-POST /api/me/wallpaper (multipart, image ≤ 5 MB)   DELETE /api/me/wallpaper   GET /api/me/wallpaper -> own picture only
+PATCH /api/me/settings {guidance?, appearance?: {...any part}}   -> personal switches and appearance (5.6a); GET /api/auth/me
+                                                                   returns user.appearance with hasOwnWallpaper
+PUT /api/me/wallpaper (raw image body, ≤ 5 MB, ≤ 1600 px, 14.1)   DELETE /api/me/wallpaper   GET /api/me/wallpaper -> own picture only
 PUT  /api/students/:id/subjects/:subjectId/goal {termGoal}     -> the subject's goal, shown as a row in "Обратить внимание" (5.4); student (own), parent, admin
 PUT  /api/students/:id/subjects/:subjectId/color {color|null}  -> subject colour for the family (6.6); student (own), parent, admin
 GET  /api/tags                        POST /api/tags    PUT /api/tags/:id    DELETE /api/tags/:id   (family's tags; student may create own)

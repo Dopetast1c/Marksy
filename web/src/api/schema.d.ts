@@ -251,7 +251,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** Your own settings: «Подсказки» (design.md 5.6); appearance comes with Оформление (5.6a) */
+        /** Your own settings: «Подсказки» (design.md 5.6) and Оформление (5.6a), any part of it */
         patch: {
             parameters: {
                 query?: never;
@@ -263,6 +263,19 @@ export interface paths {
                 content: {
                     "application/json": {
                         guidance?: boolean;
+                        appearance?: {
+                            /** @enum {string} */
+                            theme?: "light" | "dark" | "system";
+                            /** @enum {string} */
+                            background?: "color" | "wallpaper";
+                            /** @enum {string} */
+                            palette?: "sea" | "forest" | "sky" | "plum" | "berry" | "amber" | "mint" | "graphite";
+                            /** @enum {string} */
+                            wallpaper?: "cell" | "line" | "dots" | "doodle" | "waves" | "own";
+                            opacity?: number;
+                            /** @enum {string} */
+                            font?: "manrope" | "nunito" | "ptsans" | "inter" | "rubik";
+                        };
                     };
                 };
             };
@@ -3439,6 +3452,129 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/me/wallpaper": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Your own wallpaper, to you only */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Done */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description No session */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No wallpaper of your own */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        /** Your own wallpaper: JPEG, PNG or WebP up to 1600 px and 5 MB, metadata removed (14.1); only you see it */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/octet-stream": string;
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            hasOwnWallpaper: boolean;
+                        };
+                    };
+                };
+                /** @description Not a JPEG, PNG or WebP, or larger than 1600 px */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No session */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        /** Remove your own wallpaper (the picture is deleted) */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Done */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description No session */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/sync/status": {
         parameters: {
             query?: never;
@@ -3749,6 +3885,20 @@ export interface components {
                 details?: unknown;
             };
         };
+        Appearance: {
+            /** @enum {string} */
+            theme: "light" | "dark" | "system";
+            /** @enum {string} */
+            background: "color" | "wallpaper";
+            /** @enum {string} */
+            palette: "sea" | "forest" | "sky" | "plum" | "berry" | "amber" | "mint" | "graphite";
+            /** @enum {string} */
+            wallpaper: "cell" | "line" | "dots" | "doodle" | "waves" | "own";
+            opacity: number;
+            /** @enum {string} */
+            font: "manrope" | "nunito" | "ptsans" | "inter" | "rubik";
+            hasOwnWallpaper: boolean;
+        };
         AvatarTraits: {
             /** @enum {string} */
             age: "kid" | "preteen" | "teen" | "adult";
@@ -3885,6 +4035,7 @@ export interface components {
                 /** @enum {string} */
                 uiMode: "full" | "simple";
                 guidance: boolean;
+                appearance: components["schemas"]["Appearance"];
             };
             memberships: {
                 familyId: string;

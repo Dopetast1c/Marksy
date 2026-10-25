@@ -7,6 +7,7 @@ import { diaryAccounts, families, sessions, syncRuns } from '../db/schema';
 import type { TransportRequest } from '@marksy/core';
 import { demoFullTransport } from '@marksy/registry';
 import { SESSION_COOKIE } from '../http/session';
+import { jpegWithGps } from '../../test/images';
 
 const db = testDb();
 const cookieOf = (res: request.Response) =>
@@ -227,5 +228,64 @@ describe('auth: connect, login, logout, me', () => {
     expect(res.status).toBe(200);
     expect(res.body.every((p: { status: string }) => ['stable', 'beta'].includes(p.status))).toBe(true);
     for (const p of res.body) expect(p.auth.fields.length).toBeGreaterThan(0);
+  });
+});
+
+describe('Оформление', () => {
+  beforeEach(() => resetDb(db));
+  afterEach(settle);
+
+  it('personal, any part at a time; a wallpaper of one’s own is seen by its owner only', async () => {
+    const mama = agentWith();
+    await connectFamily(mama);
+    expect((await mama.get('/api/auth/me')).body.user.appearance).toMatchObject({
+      theme: 'light',
+      palette: 'sea',
+      background: 'color',
+      font: 'manrope',
+      opacity: 35,
+      hasOwnWallpaper: false,
+    });
+    const set = await mama.patch('/api/me/settings').send({ appearance: { palette: 'forest', font: 'nunito' } });
+    expect(set.body.user.appearance).toMatchObject({ palette: 'forest', font: 'nunito', theme: 'light' });
+    expect(
+      (await mama.patch('/api/me/settings').send({ appearance: { theme: 'dark' } })).body.user.appearance,
+    ).toMatchObject({
+      palette: 'forest',
+      theme: 'dark',
+    });
+    expect((await mama.patch('/api/me/settings').send({ appearance: { palette: 'neon' } })).status).toBe(400);
+    expect((await mama.patch('/api/me/settings').send({ appearance: { opacity: 5 } })).status).toBe(400);
+
+    const put = await mama.put('/api/me/wallpaper').set('Content-Type', 'image/jpeg').send(jpegWithGps(1200, 900));
+    expect(put.body).toEqual({ hasOwnWallpaper: true });
+    const got = await mama
+      .get('/api/me/wallpaper')
+      .buffer(true)
+      .parse((res, done) => {
+        const parts: Buffer[] = [];
+        res.on('data', (c: Buffer) => parts.push(c));
+        res.on('end', () => done(null, Buffer.concat(parts)));
+      });
+    expect(got.status).toBe(200);
+    expect((got.body as Buffer).toString('latin1')).not.toContain('GPS');
+    await mama.patch('/api/me/settings').send({ appearance: { background: 'wallpaper', wallpaper: 'own' } });
+    expect((await mama.get('/api/auth/me')).body.user.appearance).toMatchObject({
+      wallpaper: 'own',
+      hasOwnWallpaper: true,
+    });
+    // another person has no wallpaper of their own, and sees nobody else's
+    const other = agentWith();
+    await connectFamily(other, 'other@example.com', 'demo-minimal');
+    expect((await other.get('/api/me/wallpaper')).status).toBe(404);
+    expect(
+      (await mama.put('/api/me/wallpaper').set('Content-Type', 'image/jpeg').send(jpegWithGps(2000, 900))).status,
+    ).toBe(400);
+    expect((await mama.delete('/api/me/wallpaper')).status).toBe(204);
+    expect((await mama.get('/api/me/wallpaper')).status).toBe(404);
+    expect((await mama.get('/api/auth/me')).body.user.appearance).toMatchObject({
+      wallpaper: 'cell',
+      hasOwnWallpaper: false,
+    });
   });
 });

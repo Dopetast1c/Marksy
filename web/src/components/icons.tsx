@@ -39,6 +39,7 @@ export const BackIcon = line(<path d="M15 5l-7 7 7 7" />, { width: 2.2 });
 export const ChevIcon = line(<path d="M9 5l7 7-7 7" />, { width: 2.2 });
 export const DownIcon = line(<path d="M6 9l6 6 6-6" />, { width: 2.4 });
 export const CheckIcon = line(<path d="M5 12l5 5L20 7" />, { width: 2.4 });
+export const PlusIcon = line(<path d="M12 5v14M5 12h14" />, { width: 2.2 });
 export const ClockIcon = line(
   <>
     <circle cx="12" cy="12" r="9" />

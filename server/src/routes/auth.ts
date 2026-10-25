@@ -13,6 +13,7 @@ import { underLimit } from '../http/rate-limit';
 import type { Limiters } from '../http/rate-limit';
 import { route } from '../http/route';
 import { endSession, startSession } from '../http/session';
+import { appearanceIn } from '../family/appearance';
 import { buildMe, meResponse } from './me';
 
 // Signing in and out, connecting the first diary, switching the current family (docs/design.md 7.2, 7.4, 9). The
@@ -135,19 +136,24 @@ export function authRoutes(deps: AppDeps, limiters: Limiters): Router {
     {
       method: 'patch',
       path: '/api/me/settings',
-      summary: 'Your own settings: «Подсказки» (design.md 5.6); appearance comes with Оформление (5.6a)',
+      summary: 'Your own settings: «Подсказки» (design.md 5.6) and Оформление (5.6a), any part of it',
       tags: ['auth'],
       access: 'session',
-      body: z.object({ guidance: z.boolean().optional() }),
+      body: z.object({ guidance: z.boolean().optional(), appearance: appearanceIn.optional() }),
       response: meResponse,
     },
     async (req, { body }) => {
       const auth = authOf(req);
       const [u] = await deps.db.select({ settings: users.settings }).from(users).where(eq(users.id, auth.userId));
-      await deps.db
-        .update(users)
-        .set({ settings: { ...(u?.settings ?? {}), ...body } })
-        .where(eq(users.id, auth.userId));
+      const before = u?.settings ?? {};
+      const settings = {
+        ...before,
+        ...(body.guidance !== undefined && { guidance: body.guidance }),
+        ...(body.appearance && {
+          appearance: { ...((before.appearance as object | undefined) ?? {}), ...body.appearance },
+        }),
+      };
+      await deps.db.update(users).set({ settings }).where(eq(users.id, auth.userId));
       return buildMe(deps.db, auth);
     },
   );

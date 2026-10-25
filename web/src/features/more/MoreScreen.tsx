@@ -8,10 +8,11 @@ import { Frame } from '../../app/Frame';
 import { useContinueChild } from '../../app/guards';
 import { Avatar, defaultTraits } from '../../components/Avatar';
 import { BottomSheet, SheetOption } from '../../components/BottomSheet';
-import { BulbIcon, OutIcon, SchoolIcon, SyncIcon, UsersIcon } from '../../components/icons';
+import { BulbIcon, OutIcon, PaletteIcon, SchoolIcon, SyncIcon, UsersIcon } from '../../components/icons';
 import { LanguagePicker } from '../../components/LanguagePicker';
 import { MenuCard, MenuRow } from '../../components/MenuRow';
 import { Switch } from '../../components/Switch';
+import { lookSummary } from '../look/LookScreen';
 import { setLanguage, useT } from '../../i18n';
 import { useDevice } from '../../state/store';
 
@@ -120,6 +121,14 @@ export function MoreScreen() {
           )}
         </MenuCard>
         <MenuCard>
+          {user && (
+            <MenuRow
+              icon={<PaletteIcon />}
+              title={t('look.title')}
+              sub={lookSummary(t, user.appearance)}
+              onClick={() => navigate('/more/look')}
+            />
+          )}
           <MenuRow
             icon={<BulbIcon />}
             title={t('more.guidance')}

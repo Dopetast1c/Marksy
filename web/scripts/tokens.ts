@@ -7,7 +7,8 @@
 type Leaf = string | number | null;
 interface Tokens {
   color: { light: ColorSet; dark: ColorSet; subject: Record<string, unknown> };
-  font: { display: string; body: string };
+  font: { display: string; body: string; bodyOptions: Record<string, string> };
+  palette: Record<string, unknown>;
   typeScale: Record<string, Record<string, Leaf>>;
   radius: Record<string, string>;
   space: Record<string, string>;
@@ -51,6 +52,10 @@ export function tokensToCss(t: Tokens): string {
   const common = [
     `--font-display: ${t.font.display};`,
     `--font-body: ${t.font.body};`,
+    // every body font by itself, for the samples of Оформление
+    ...Object.entries(t.font.bodyOptions)
+      .filter(([k]) => !k.startsWith('$'))
+      .map(([k, v]) => `--font-option-${k}: ${v};`),
     ...Object.entries(t.radius).map(([k, v]) => `--r-${k}: ${v};`),
     `--tap-min: ${t.tap.min};`,
     `--slide-distance: ${t.motion.periodSlide.distance};`,
@@ -133,10 +138,67 @@ export function tokensToCss(t: Tokens): string {
       '}',
     ].join('\n'),
     block(':root[data-theme="dark"]', darkLines),
+    ...paletteBlocks(t),
+    ...Object.entries(t.font.bodyOptions as Record<string, string>)
+      .filter(([k]) => !k.startsWith('$'))
+      .map(([k, v]) => block(`:root[data-font="${k}"]`, [`--font-body: ${v};`])),
     block('@theme inline', theme),
     subjectUtility,
     '',
   ].join('\n\n');
+}
+
+/**
+ * The appearance palettes (design.md 5.6a): each changes only bg, accent, accent-soft and accent-ink, in both themes;
+ * the dark blocks are more specific than the light one, so a palette follows the theme the way the base colours do.
+ * Band, severity and subject colours never change with it.
+ */
+function paletteBlocks(t: Tokens): string[] {
+  type Swatch = Record<'bg' | 'accent' | 'accent-soft' | 'accent-ink', string>;
+  const vars = (s: Swatch) => Object.entries(s).map(([k, v]) => `--${k}: ${v};`);
+  const palettes = Object.entries(t.palette as Record<string, { light: Swatch | null; dark: Swatch | null }>).filter(
+    ([k]) => !k.startsWith('$'),
+  );
+  // the swatches of Оформление show every palette at once, so each also has its colours under [data-swatch]; the
+  // default palette is the theme's own colours
+  const base = (c: ColorSet): Swatch => ({
+    bg: c.bg as string,
+    accent: c.accent as string,
+    'accent-soft': c.accentSoft as string,
+    'accent-ink': c.accentInk as string,
+  });
+  const sw = (s: Swatch) => [`--sw-bg: ${s.bg};`, `--sw-accent: ${s.accent};`];
+  const swatches = palettes.flatMap(([k, p]) => {
+    const light = p.light ?? base(t.color.light);
+    const dark = p.dark ?? base(t.color.dark);
+    return [
+      block(`[data-swatch="${k}"]`, sw(light)),
+      [
+        '@media (prefers-color-scheme: dark) {',
+        `  :root:not([data-theme="light"]) [data-swatch="${k}"] {`,
+        ...sw(dark).map((l) => `    ${l}`),
+        '  }',
+        '}',
+      ].join('\n'),
+      block(`:root[data-theme="dark"] [data-swatch="${k}"]`, sw(dark)),
+    ];
+  });
+  return [
+    ...swatches,
+    ...palettes
+      .filter(([, p]) => p.light && p.dark)
+      .flatMap(([k, p]) => [
+        block(`:root[data-palette="${k}"]`, vars(p.light!)),
+        [
+          '@media (prefers-color-scheme: dark) {',
+          `  :root[data-palette="${k}"]:not([data-theme="light"]) {`,
+          ...vars(p.dark!).map((l) => `    ${l}`),
+          '  }',
+          '}',
+        ].join('\n'),
+        block(`:root[data-palette="${k}"][data-theme="dark"]`, vars(p.dark!)),
+      ]),
+  ];
 }
 
 /** Hues of the subject palette (6.6); null is grey */

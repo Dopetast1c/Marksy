@@ -103,41 +103,59 @@ export function SubjectSettings({
               </span>
             </>
           )}
-          <span className="mt-2 text-label text-ink3 uppercase">{t('subject.color.label')}</span>
-          <div className="grid grid-cols-6 gap-2.5 py-1.5">
-            {SUBJECT_COLORS.map((c) => {
-              const on = subject.color === c;
-              return (
-                <button
-                  key={c}
-                  type="button"
-                  aria-label={colorName(t, c)}
-                  aria-pressed={on}
-                  onClick={() => save.color.mutate(c as SubjectColor)}
-                  style={subjectStyle(subject.name, c)}
-                  className={`bg-subject grid aspect-square place-items-center rounded-pill text-[var(--subj-on)] ${on ? 'ring-[3px] ring-ink/70 ring-offset-2 ring-offset-surface' : ''}`}
-                >
-                  {on && <CheckIcon size={18} />}
-                </button>
-              );
-            })}
-          </div>
-          <button
-            type="button"
-            aria-pressed={subject.color == null}
-            onClick={() => save.color.mutate(null)}
-            className="flex w-full items-center gap-3 py-2 text-left"
-          >
-            <span className="flex flex-1 flex-col">
-              <b>{t('color.auto.title')}</b>
-              <span className="text-small text-ink3">{t('color.auto.sub')}</span>
-            </span>
-            {subject.color == null && <CheckIcon size={22} className="text-accent" />}
-          </button>
-          <span className="text-small text-ink3">{t('subject.color.note')}</span>
+          <SubjectColorGrid studentId={studentId} subject={subject} />
           <Button onClick={() => setOpen(false)}>{t('subject.settings.done')}</Button>
         </div>
       </BottomSheet>
+    </>
+  );
+}
+
+/** The colour of a subject (6.6): the twelve swatches and «Авто», saved at once; the subject screen's settings sheet and
+ * Оформление → Цвета предметов both show it */
+export function SubjectColorGrid({
+  studentId,
+  subject,
+}: {
+  studentId: string;
+  subject: { id: string; name: string; color: string | null };
+}) {
+  const t = useT();
+  const save = useSubjectSettings(studentId, subject.id);
+  return (
+    <>
+      <span className="mt-2 text-label text-ink3 uppercase">{t('subject.color.label')}</span>
+      <div className="grid grid-cols-6 gap-2.5 py-1.5">
+        {SUBJECT_COLORS.map((c) => {
+          const on = subject.color === c;
+          return (
+            <button
+              key={c}
+              type="button"
+              aria-label={colorName(t, c)}
+              aria-pressed={on}
+              onClick={() => save.color.mutate(c as SubjectColor)}
+              style={subjectStyle(subject.name, c)}
+              className={`bg-subject grid aspect-square place-items-center rounded-pill text-[var(--subj-on)] ${on ? 'ring-[3px] ring-ink/70 ring-offset-2 ring-offset-surface' : ''}`}
+            >
+              {on && <CheckIcon size={18} />}
+            </button>
+          );
+        })}
+      </div>
+      <button
+        type="button"
+        aria-pressed={subject.color == null}
+        onClick={() => save.color.mutate(null)}
+        className="flex w-full items-center gap-3 py-2 text-left"
+      >
+        <span className="flex flex-1 flex-col">
+          <b>{t('color.auto.title')}</b>
+          <span className="text-small text-ink3">{t('color.auto.sub')}</span>
+        </span>
+        {subject.color == null && <CheckIcon size={22} className="text-accent" />}
+      </button>
+      <span className="text-small text-ink3">{t('subject.color.note')}</span>
     </>
   );
 }
