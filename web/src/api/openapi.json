@@ -3325,11 +3325,22 @@
                             "null"
                           ],
                           "format": "date-time"
+                        },
+                        "date": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "afterHolidays": {
+                          "type": "boolean"
                         }
                       },
                       "required": [
                         "kind",
-                        "at"
+                        "at",
+                        "date",
+                        "afterHolidays"
                       ]
                     },
                     "sets": {
@@ -9780,6 +9791,7 @@
                       "enum": [
                         "interval",
                         "action",
+                        "demo",
                         null
                       ]
                     },
@@ -9886,6 +9898,7 @@
                       "enum": [
                         "interval",
                         "action",
+                        "demo",
                         null
                       ]
                     },

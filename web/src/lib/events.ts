@@ -1,3 +1,4 @@
+import { inSentence } from '@marksy/i18n';
 import { daysBetween, shortDate } from '@marksy/core';
 import type { GradingScale, ShortDateStyle } from '@marksy/core';
 import type { TFunction } from 'i18next';
@@ -21,7 +22,7 @@ export function eventText(
   const subject = e.subject?.name ?? '';
   const day = shortDate(e.date, ctx.ds, { weekday: true });
   const avg = (v: unknown) => (ctx.scale && typeof v === 'number' ? numbers(ctx.scale).average(v) : '—');
-  const forPeriod = t(`period.for.${ctx.kind}`, { name: ctx.termWord.toLocaleLowerCase(ctx.ds.locale) });
+  const forPeriod = t(`period.for.${ctx.kind}`, { name: inSentence(ctx.termWord, ctx.ds.locale) });
   switch (e.kind) {
     case 'low_mark': {
       const work = typeof f.workType === 'string' ? t(`workType.${f.workType}`) : null;

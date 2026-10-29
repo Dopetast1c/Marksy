@@ -1,4 +1,4 @@
-import { CONSENT_VERSION } from '@marksy/i18n';
+import { CATALOGS, CONSENT_VERSION } from '@marksy/i18n';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -46,6 +46,35 @@ describe('the login screen', () => {
       expect(api.bodies['POST /api/family/accounts/acc-1/matches/kid-shared']).toEqual({ action: 'follow' }),
     );
     expect(await screen.findByRole('heading', { name: 'С кого начнём?' })).toBeTruthy();
+  });
+
+  it('in a machine translation: the consent opens the English text that counts, the sheet offers the translation form', async () => {
+    const de = CATALOGS.de!;
+    const en = CATALOGS.en!;
+    await i18n.changeLanguage('de');
+    fakeApi();
+    const user = userEvent.setup();
+    render(<App at="/login" />);
+    await user.click(await screen.findByRole('button', { name: de['login.mode.connect']! }));
+    expect(await screen.findByText(de['connect.consent']!)).toBeTruthy();
+    expect(screen.queryByText(en['connect.consent']!)).toBeNull();
+    await user.click(screen.getByRole('button', { name: de['connect.consent.english']! }));
+    expect(screen.getByText(en['connect.consent']!).getAttribute('lang')).toBe('en');
+
+    await user.click(screen.getByRole('button', { name: de['lang.choose']! }));
+    const form = await screen.findByRole('link', { name: new RegExp(de['lang.help']!) });
+    expect(form.getAttribute('href')).toMatch(/\/issues\/new\?template=translation\.yml&language=de$/);
+  });
+
+  it('in a reviewed language: no line under the consent, no translation form', async () => {
+    fakeApi();
+    const user = userEvent.setup();
+    render(<App at="/login" />);
+    await user.click(await screen.findByRole('button', { name: 'Подключить дневник' }));
+    expect(await screen.findByText(CATALOGS.ru!['connect.consent']!)).toBeTruthy();
+    expect(screen.queryByText(CATALOGS.ru!['connect.consent.machine']!)).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Язык интерфейса' }));
+    expect(screen.queryByRole('link', { name: /Помочь с переводом/ })).toBeNull();
   });
 
   it('a diary that refuses the login is said about the diary', async () => {

@@ -260,7 +260,9 @@ describe('read API', () => {
     });
     const mama = await signIn(DEMO_LOGINS.parent);
     const status = (await mama.get('/api/sync/status')).body;
-    expect(status.accounts).toEqual([expect.objectContaining({ id: account!.id, status: 'loading' })]);
+    // the seed's demo diaries next to it keep their own state
+    expect(status.accounts).toContainEqual(expect.objectContaining({ id: account!.id, status: 'loading' }));
+    expect(status.accounts.filter((a: { status: string }) => a.status === 'loading')).toHaveLength(1);
     const runs = (await mama.get('/api/sync/runs')).body;
     expect(runs[0]).toMatchObject({ kind: 'connect', trigger: 'user' });
   });

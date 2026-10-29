@@ -4,15 +4,15 @@
 |---|---|---|---|
 | en | English | source | |
 | ru | Русский | reviewed | the owner |
-| be | Беларуская | todo (M5e) | |
-| uk | Українська | todo (M5e) | |
-| kk | Қазақша | todo (M5e) | |
-| pl | Polski | todo (M5e) | |
-| de | Deutsch | todo (M5e) | |
-| es | Español | todo (M5e) | |
-| pt | Português | todo (M5e) | |
-| fr | Français | todo (M5e) | |
-| nl | Nederlands | todo (M5e) | |
-| ro | Română | todo (M5e) | |
+| be | Беларуская | machine | |
+| uk | Українська | machine | |
+| kk | Қазақша | machine | |
+| pl | Polski | machine | |
+| de | Deutsch | machine | |
+| es | Español | machine | |
+| pt | Português | machine | |
+| fr | Français | machine | |
+| nl | Nederlands | machine | |
+| ro | Română | machine | |
 
-Statuses: `source`, `reviewed` (checked by a native speaker), `machine` (machine translation, the app shows "help improve this translation"), `todo` (no file yet: every string falls back to English).
+Statuses: `source`, `reviewed` (checked by a native speaker), `machine` (machine translation: the language sheet offers «Помочь с переводом», the consent shows the English text on a tap), `todo` (no file yet: every string falls back to English). The ten machine translations were made in M5e (2026-10-29) with a shared glossary (GLOSSARY.md); a native speaker who checks one moves it to `reviewed` with their handle.

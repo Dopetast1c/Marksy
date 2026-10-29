@@ -1,3 +1,4 @@
+import { inSentence } from '@marksy/i18n';
 import { clockMinutes, daysBetween, schoolClock, shortRange } from '@marksy/core';
 import { useState } from 'react';
 import type { CSSProperties } from 'react';
@@ -163,7 +164,7 @@ function Year({ school }: { school: School }) {
   }
   // a month on its own («май», not the «мая» of a date), the language's own short form where it has one
   const monthName = (m: string) => monthAlone(Number(m.slice(5, 7)));
-  const termWord = t(`term.${terms[0]?.kind ?? 'other'}.plural`).toLocaleLowerCase(ds.locale);
+  const termWord = inSentence(t(`term.${terms[0]?.kind ?? 'other'}.plural`), ds.locale);
   const left = current ? daysBetween(today, current.to) + 1 : 0;
   return (
     <>

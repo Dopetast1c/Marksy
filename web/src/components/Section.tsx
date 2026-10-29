@@ -47,6 +47,7 @@ export function Row({
   trail,
   onClick,
   wrap = false,
+  subIsData = false,
   quiet = false,
 }: {
   stripe: ReactNode;
@@ -59,6 +60,11 @@ export function Row({
   onClick?: () => void;
   /** the second line is the fact itself (a teacher's comment, D56): wrap it, never cut it */
   wrap?: boolean;
+  /**
+   * the second line carries the diary's text (a topic, a comment): one line, cut at the end (data-content). Otherwise
+   * it may take two lines, so the app's own words fit in every language without an ellipsis (docs/i18n.md 4)
+   */
+  subIsData?: boolean;
   /** a row that is context, not news (an absence in Оценки): muted title */
   quiet?: boolean;
 }) {
@@ -71,8 +77,16 @@ export function Row({
       {stripe}
       {lead}
       <span className="flex min-w-0 flex-1 flex-col gap-[3px]">
-        <span className={`truncate ${quiet ? 'font-semibold text-ink2' : 'font-bold'}`}>{title}</span>
-        {sub && <span className={`text-small ${wrap ? 'text-ink2' : 'truncate text-ink3'}`}>{sub}</span>}
+        {/* two lines at most: an event's title is the app's sentence, which runs longer in some languages */}
+        <span className={`line-clamp-2 ${quiet ? 'font-semibold text-ink2' : 'font-bold'}`}>{title}</span>
+        {sub && (
+          <span
+            {...(subIsData && !wrap && { 'data-content': '' })}
+            className={`text-small ${wrap ? 'text-ink2' : subIsData ? 'truncate text-ink3' : 'line-clamp-2 text-ink3'}`}
+          >
+            {sub}
+          </span>
+        )}
         {extra}
       </span>
       {trail ?? <ChevIcon className="flex-none text-ink3" />}

@@ -87,6 +87,7 @@ function HomeFull({ studentId }: { studentId: string }) {
                   lead={<MarkChip mark={m.mark} />}
                   title={m.subject.name}
                   sub={[m.workType ? t(`workType.${m.workType}`) : null, m.comment].filter(Boolean).join(' · ') || null}
+                  subIsData
                   onClick={() => navigate(`/s/${studentId}/subjects/${m.subject.id}`)}
                 />
               ))}

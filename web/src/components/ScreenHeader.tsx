@@ -17,6 +17,7 @@ export function ScreenHeader({
   studentId,
   back = false,
   accent,
+  titleIsData = false,
   children,
 }: {
   title: string;
@@ -24,6 +25,8 @@ export function ScreenHeader({
   back?: boolean;
   /** the subject screen (D45): the header on a tint of the subject colour, the title in its shade, the controls in it */
   accent?: CSSProperties;
+  /** the title comes from the diary (a subject's name): it may be cut to one line (data-content, docs/i18n.md 5) */
+  titleIsData?: boolean;
   children?: ReactNode;
 }) {
   const t = useT();
@@ -51,7 +54,12 @@ export function ScreenHeader({
           </button>
         )}
         <div data-header-title className="flex min-w-[140px] flex-1 flex-col gap-px">
-          <h1 className={`truncate text-h1 tracking-[-0.01em] ${accent ? 'text-subject-title' : ''}`}>{title}</h1>
+          <h1
+            {...(titleIsData && { 'data-content': '' })}
+            className={`truncate text-h1 tracking-[-0.01em] ${accent ? 'text-subject-title' : ''}`}
+          >
+            {title}
+          </h1>
           {parent && student && (
             <span className="truncate text-[12px] font-semibold text-ink3">
               {student.classLabel ? `${student.name} · ${student.classLabel}` : student.name}

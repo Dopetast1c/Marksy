@@ -1,3 +1,4 @@
+import { inSentence } from '@marksy/i18n';
 import { addDays, daysBetween, lessonPassed, shortDate, shortRange, weekdayOf, weekStartOf } from '@marksy/core';
 import { useEffect, useMemo } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
@@ -98,9 +99,9 @@ function Attention({ studentId, items, today }: { studentId: string; items: Sche
         const n = daysBetween(today, a.date);
         const day =
           n === 0
-            ? t('day.today').toLocaleLowerCase(ds.locale)
+            ? inSentence(t('day.today'), ds.locale)
             : n === 1
-              ? t('home.tomorrow').toLocaleLowerCase(ds.locale)
+              ? inSentence(t('home.tomorrow'), ds.locale)
               : shortDate(a.date, ds, { weekday: true });
         const when = [
           a.slot != null ? t('schedule.attentionWhen', { day, slot: a.slot }) : day,

@@ -1,0 +1,37 @@
+name: Translation
+description: A string of the interface reads wrong in your language
+title: 'Translation: '
+labels: [translation]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **No real names, marks or comments, in screenshots or in text.** Write only the text of the string, as it is and as it should be, with any name, mark, subject, comment or date replaced by a placeholder such as {name}.
+  - type: input
+    id: language
+    attributes:
+      label: Language
+      description: The interface language, for example de, fr or pl.
+    validations:
+      required: true
+  - type: input
+    id: screen
+    attributes:
+      label: Where on the screen
+      description: The screen and the place, for example "Marks, the filter chips" or "More, Language".
+    validations:
+      required: true
+  - type: textarea
+    id: current
+    attributes:
+      label: How it reads now
+      description: The text as the app shows it, with any name, mark, subject, comment or date replaced by a placeholder such as {name}.
+    validations:
+      required: true
+  - type: textarea
+    id: correct
+    attributes:
+      label: How it should read
+      description: Your wording. If a word is too long for its place, a shorter one helps.
+    validations:
+      required: true

@@ -1,3 +1,4 @@
+import { inSentence } from '@marksy/i18n';
 import { bandOf, lessonNow, lessonPassed, shortDate, weekdayOf } from '@marksy/core';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
@@ -256,7 +257,7 @@ export function LessonRow({
       notes.push(
         <LessonNote key={`s-${h.tag.id}`} tone="info" icon={<TagNoteIcon name={h.tag.icon} />}>
           {t('lesson.taggedHomework', {
-            tag: h.tag.name.toLocaleLowerCase(locale),
+            tag: inSentence(h.tag.name, locale),
             date: shortDate(h.dueDate, ds, { weekday: true }),
           })}
         </LessonNote>,

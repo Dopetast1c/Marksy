@@ -1,4 +1,4 @@
-import { CONSENT_VERSION } from '@marksy/i18n';
+import { CATALOGS, CONSENT_VERSION, languageOf, SOURCE_LANGUAGE } from '@marksy/i18n';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
@@ -10,6 +10,7 @@ import { Button, Field } from '../../components/Field';
 import { DownIcon } from '../../components/icons';
 import { SegmentedControl } from '../../components/SegmentedControl';
 import { i18n, intlLocale, rememberForUser, useT } from '../../i18n';
+import { PROVIDERS_DOC } from '../../lib/links';
 import { errorText } from './errors';
 
 // «Подключить дневник» (docs/design.md 5.1, 7.2): the diary system, the fields its manifest asks for, the role when
@@ -18,8 +19,35 @@ import { errorText } from './errors';
 
 type Provider = Schemas['Provider'];
 
-/** Where a stranger reads how to add their own diary system */
-const PROVIDERS_DOC = 'https://github.com/Dopetast1c/Marksy/blob/main/docs/providers.md';
+/**
+ * The consent (design.md 14.1). In a machine translation, a line under it says so and opens the English text, which is
+ * the one that counts; the same consent version is accepted in every language (packages/i18n/src/consent.ts).
+ */
+function Consent() {
+  const t = useT();
+  const [english, setEnglish] = useState(false);
+  const machine = languageOf(i18n.language)?.status === 'machine';
+  return (
+    <div className="flex flex-col gap-1.5 text-small text-ink3">
+      <p className="m-0">{t('connect.consent')}</p>
+      {machine && (
+        <p className="m-0">
+          {t('connect.consent.machine')}{' '}
+          {!english && (
+            <button type="button" className="font-bold text-accent" onClick={() => setEnglish(true)}>
+              {t('connect.consent.english')}
+            </button>
+          )}
+        </p>
+      )}
+      {machine && english && (
+        <p className="m-0" lang={SOURCE_LANGUAGE}>
+          {CATALOGS[SOURCE_LANGUAGE]!['connect.consent']}
+        </p>
+      )}
+    </div>
+  );
+}
 
 export function providerLabel(p: Provider, locale: string): string {
   if (!p.country) return p.name;
@@ -93,7 +121,8 @@ export function ConnectForm({ intoFamily }: { intoFamily?: { onDone: () => void 
           aria-haspopup="dialog"
           className="flex min-h-12 items-center gap-2 rounded-md border-[1.5px] border-line bg-surface px-3.5 text-left"
         >
-          <span className="min-w-0 flex-1 truncate font-bold">
+          {/* the system's own name may be cut to one line (docs/i18n.md 5) */}
+          <span data-content className="min-w-0 flex-1 truncate font-bold">
             {provider ? providerLabel(provider, locale) : t('app.loading')}
           </span>
           <DownIcon size={16} className="flex-none text-ink3" />
@@ -160,7 +189,7 @@ export function ConnectForm({ intoFamily }: { intoFamily?: { onDone: () => void 
       <Button type="submit" disabled={busy || !provider}>
         {busy ? t('connect.checking') : intoFamily ? t('family.addDiary') : t('connect.submit')}
       </Button>
-      <p className="text-small text-ink3">{intoFamily ? t('family.addDiary.note') : t('connect.consent')}</p>
+      {intoFamily ? <p className="text-small text-ink3">{t('family.addDiary.note')}</p> : <Consent />}
       <BottomSheet open={sheet} onClose={() => setSheet(false)} label={t('connect.provider')}>
         <span className="text-label text-ink3 uppercase">{t('connect.provider')}</span>
         {list.map((p) => (

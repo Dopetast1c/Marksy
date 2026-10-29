@@ -4,6 +4,7 @@
   "private": true,
   "description": "Family PWA for school marks from the e-diary",
   "license": "PolyForm-Noncommercial-1.0.0",
+  "repository": "https://github.com/Dopetast1c/Marksy",
   "type": "module",
   "packageManager": "pnpm@10.28.0",
   "engines": {
@@ -34,6 +35,7 @@
     "db:restore": "node scripts/db-restore.mjs",
     "db:read": "node scripts/db-read.mjs",
     "i18n:check": "pnpm --filter @marksy/i18n i18n:check",
+    "i18n:stamp": "pnpm --filter @marksy/i18n i18n:stamp",
     "test:provider": "node scripts/test-provider.mjs",
     "probe": "node scripts/probe.mjs",
     "sync:once": "pnpm --filter @marksy/server sync:once",

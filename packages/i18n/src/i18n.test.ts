@@ -6,12 +6,21 @@ import {
   checkCatalogs,
   createT,
   formatList,
+  inSentence,
   isReviewed,
   LANGUAGES,
   pickerOrder,
+  pseudoCatalog,
+  pseudoString,
   resolveLanguage,
+  sourceStamps,
   translator,
 } from './index';
+import type { SourceStamps } from './index';
+
+const stamps = JSON.parse(
+  readFileSync(fileURLToPath(new URL('./locales/_source.json', import.meta.url)), 'utf8'),
+) as SourceStamps;
 
 describe('translation status', () => {
   it('every language has the status locales/STATUS.md gives it; only a language with a file can be checked', () => {
@@ -26,8 +35,9 @@ describe('translation status', () => {
 });
 
 describe('catalogs', () => {
-  it('en and ru have every key, plural form and placeholder', () => {
-    expect(checkCatalogs(CATALOGS)).toEqual({ errors: [], warnings: [] });
+  it('no errors: en and ru have every key, plural form and placeholder, ru follows the English of today', () => {
+    // the machine translations may lag inside a milestone (warnings); pnpm i18n:check --strict before the merge
+    expect(checkCatalogs(CATALOGS, stamps).errors).toEqual([]);
   });
 
   it('the check catches what it should', () => {
@@ -47,6 +57,44 @@ describe('catalogs', () => {
       warnings: ['pl: missing n'],
     });
   });
+
+  it('a translation made from another English text is stale: an error in ru, a warning in a machine language', () => {
+    const en = { a: 'A', n_one: '{{count}} n', n_other: '{{count}} n' };
+    const made = sourceStamps(en);
+    const later = { ...en, n_other: '{{count}} ns' };
+    const ru = { a: 'А', n_one: '{{count}}', n_few: '{{count}}', n_many: '{{count}}', n_other: '{{count}}' };
+    const pl = { ...ru };
+    expect(checkCatalogs({ en: later, ru, pl }, { ru: made, pl: made })).toEqual({
+      errors: ['ru: n is stale, en changed since it was translated'],
+      warnings: ['pl: n is stale, en changed since it was translated'],
+    });
+    // a key never stamped is stale too; one stamped from today's text is not
+    expect(checkCatalogs({ en, ru }, { ru: { n: made.n! } }).errors).toEqual([
+      'ru: a is stale, en changed since it was translated',
+    ]);
+  });
+
+  it('a key with a length limit is checked in every language', () => {
+    const en = { tab: 'Home', tab_comment: 'a bottom tab: max 6 chars' };
+    expect(checkCatalogs({ en, ru: { tab: 'Главная' } }).errors).toEqual(['ru: tab has 7 characters, at most 6']);
+    expect(checkCatalogs({ en, ru: { tab: 'Дом' } }).errors).toEqual([]);
+  });
+});
+
+describe('pseudo-locale', () => {
+  it('accents and lengthens every string, keeps placeholders and plural keys, drops comments', () => {
+    expect(pseudoString('Below {{value}}')).toBe('[Ɓéĺóŵ {{value}}~~]');
+    // long padding comes in words, so a paragraph still wraps
+    expect(pseudoString('a'.repeat(40))).toBe(`[${'á'.repeat(40)} ~~~~~ ~~~~~ ~~]`);
+    // a key with a limit is filled to exactly its limit
+    expect(pseudoString('Home', 11)).toBe('[Ĥóɱéeeeee]');
+    expect(pseudoString('Aa', 2)).toBe('Áá');
+    const qps = pseudoCatalog(CATALOGS.en!);
+    expect([...qps['tabs.schedule']!]).toHaveLength(11);
+    expect(qps['marks.count_one']).toContain('{{count}}');
+    expect(Object.keys(qps).some((k) => k.endsWith('_comment'))).toBe(false);
+    expect(Object.keys(qps)).toHaveLength(Object.keys(CATALOGS.en!).filter((k) => !k.endsWith('_comment')).length);
+  });
 });
 
 describe('t()', () => {
@@ -64,10 +112,17 @@ describe('t()', () => {
   });
 
   it('falls back to English, then to the key', () => {
-    expect(translator('pl')('period.week')).toBe('Week');
-    expect(translator('pl')('marks.count', { count: 3 })).toBe('3 marks');
+    const catalogs = { en: { week: 'Week', n_one: '{{count}} mark', n_other: '{{count}} marks' }, pl: {} };
+    expect(createT('pl', catalogs)('week')).toBe('Week');
+    expect(createT('pl', catalogs)('n', { count: 3 })).toBe('3 marks');
     expect(createT('ru', { en: { a: 'A' }, ru: {} })('a')).toBe('A');
     expect(translator('en')('no.such.key')).toBe('no.such.key');
+  });
+
+  it('picks the plural forms of every shipped language', () => {
+    expect(translator('pl')('marks.count', { count: 5 })).toMatch(/^5 /);
+    expect(translator('pl')('marks.count', { count: 5 })).not.toBe(translator('pl')('marks.count', { count: 2 }));
+    expect(translator('de')('marks.count', { count: 1 })).not.toBe(translator('de')('marks.count', { count: 2 }));
   });
 
   it('lists in the interface language', () => {
@@ -82,6 +137,13 @@ describe('languages', () => {
     const order = pickerOrder(['ru', 'be']).map((l) => l.code);
     expect(order.slice(0, 3)).toEqual(['ru', 'be', 'uk']);
     expect(order).toHaveLength(12);
+  });
+
+  it('a label inside a sentence: lower case, except where nouns keep their capital', () => {
+    expect(inSentence('Четверть', 'ru')).toBe('четверть');
+    expect(inSentence('Quarter', 'en-GB')).toBe('quarter');
+    expect(inSentence('Quartal', 'de')).toBe('Quartal');
+    expect(inSentence('Klassenarbeit', 'de-DE')).toBe('Klassenarbeit');
   });
 
   it('resolves: saved, provider default, browser, English', () => {

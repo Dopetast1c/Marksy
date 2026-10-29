@@ -1,4 +1,5 @@
 import { shortDate, shortRange } from '@marksy/core';
+import { LANGUAGES } from '@marksy/i18n';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { dateStyle, i18n, initI18n } from '../i18n';
 import { formatTime, minutesIn, todayIn } from './time';
@@ -41,9 +42,13 @@ describe('short dates in the interface language', () => {
     expect(shortRange('2026-10-12', '2026-10-18', dateStyle())).toBe('12–18 Oct');
   });
 
-  it('a language without its own month names uses Intl, never English months', async () => {
-    await i18n.changeLanguage('pl');
-    expect(dateStyle().months).toBeNull();
-    expect(shortDate('2026-10-15', dateStyle())).not.toContain('Oct');
+  it('every language writes its own month names, never English ones, and never with a dot', async () => {
+    for (const l of LANGUAGES.filter((x) => x.code !== 'en')) {
+      await i18n.changeLanguage(l.code);
+      expect(dateStyle().months, l.code).toHaveLength(12);
+      const date = shortDate('2026-10-15', dateStyle());
+      expect(date, l.code).not.toContain('Oct');
+      expect(date, l.code).not.toContain('.');
+    }
   });
 });

@@ -5,7 +5,7 @@ import type { Locale } from '../api/client';
 import { useMe } from '../api/queries';
 import { useQueryClient } from '@tanstack/react-query';
 import { EmptyState } from '../components/EmptyState';
-import { i18n, setLanguage, takePendingLanguage, useT } from '../i18n';
+import { i18n, languageOverride, setLanguage, takePendingLanguage, useT } from '../i18n';
 import { restoredChild } from '../lib/pick';
 import { useDevice } from '../state/store';
 
@@ -27,7 +27,8 @@ export function RequireAuth() {
   const userId = me.data?.user.id;
   const saved = me.data?.user.locale;
   useEffect(() => {
-    if (!userId || !saved) return;
+    // a development override (smoke:ui --lang, the pseudo-locale) leaves the user's language alone
+    if (!userId || !saved || languageOverride()) return;
     const pending = takePendingLanguage();
     if (pending && pending !== saved) void api.PATCH('/api/me', { body: { locale: pending as Locale } });
     else if (!pending && saved !== i18n.language) void setLanguage(saved);

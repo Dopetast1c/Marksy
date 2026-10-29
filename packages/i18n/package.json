@@ -11,7 +11,8 @@
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
-    "i18n:check": "tsx scripts/check.ts"
+    "i18n:check": "tsx scripts/check.ts",
+    "i18n:stamp": "tsx scripts/stamp.ts"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",

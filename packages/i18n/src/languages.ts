@@ -15,21 +15,31 @@ export interface Language {
    * first two (design.md 5.6).
    */
   status: 'source' | 'reviewed' | 'machine' | 'todo';
+  /** Nouns keep their capital inside a sentence (German): a term word or a tag name is not lower-cased there */
+  capitalNouns?: true;
 }
 
 export const LANGUAGES: readonly Language[] = [
   { code: 'ru', name: 'Russian', nativeName: 'Русский', dir: 'ltr', intl: 'ru-RU', status: 'reviewed' },
-  { code: 'be', name: 'Belarusian', nativeName: 'Беларуская', dir: 'ltr', intl: 'be-BY', status: 'todo' },
-  { code: 'uk', name: 'Ukrainian', nativeName: 'Українська', dir: 'ltr', intl: 'uk-UA', status: 'todo' },
-  { code: 'kk', name: 'Kazakh', nativeName: 'Қазақша', dir: 'ltr', intl: 'kk-KZ', status: 'todo' },
+  { code: 'be', name: 'Belarusian', nativeName: 'Беларуская', dir: 'ltr', intl: 'be-BY', status: 'machine' },
+  { code: 'uk', name: 'Ukrainian', nativeName: 'Українська', dir: 'ltr', intl: 'uk-UA', status: 'machine' },
+  { code: 'kk', name: 'Kazakh', nativeName: 'Қазақша', dir: 'ltr', intl: 'kk-KZ', status: 'machine' },
   { code: 'en', name: 'English', nativeName: 'English', dir: 'ltr', intl: 'en-GB', status: 'source' },
-  { code: 'pl', name: 'Polish', nativeName: 'Polski', dir: 'ltr', intl: 'pl-PL', status: 'todo' },
-  { code: 'de', name: 'German', nativeName: 'Deutsch', dir: 'ltr', intl: 'de-DE', status: 'todo' },
-  { code: 'es', name: 'Spanish', nativeName: 'Español', dir: 'ltr', intl: 'es-ES', status: 'todo' },
-  { code: 'pt', name: 'Portuguese', nativeName: 'Português', dir: 'ltr', intl: 'pt-PT', status: 'todo' },
-  { code: 'fr', name: 'French', nativeName: 'Français', dir: 'ltr', intl: 'fr-FR', status: 'todo' },
-  { code: 'nl', name: 'Dutch', nativeName: 'Nederlands', dir: 'ltr', intl: 'nl-NL', status: 'todo' },
-  { code: 'ro', name: 'Romanian', nativeName: 'Română', dir: 'ltr', intl: 'ro-RO', status: 'todo' },
+  { code: 'pl', name: 'Polish', nativeName: 'Polski', dir: 'ltr', intl: 'pl-PL', status: 'machine' },
+  {
+    code: 'de',
+    name: 'German',
+    nativeName: 'Deutsch',
+    dir: 'ltr',
+    intl: 'de-DE',
+    status: 'machine',
+    capitalNouns: true,
+  },
+  { code: 'es', name: 'Spanish', nativeName: 'Español', dir: 'ltr', intl: 'es-ES', status: 'machine' },
+  { code: 'pt', name: 'Portuguese', nativeName: 'Português', dir: 'ltr', intl: 'pt-PT', status: 'machine' },
+  { code: 'fr', name: 'French', nativeName: 'Français', dir: 'ltr', intl: 'fr-FR', status: 'machine' },
+  { code: 'nl', name: 'Dutch', nativeName: 'Nederlands', dir: 'ltr', intl: 'nl-NL', status: 'machine' },
+  { code: 'ro', name: 'Romanian', nativeName: 'Română', dir: 'ltr', intl: 'ro-RO', status: 'machine' },
 ];
 
 export const SOURCE_LANGUAGE = 'en';
@@ -39,6 +49,15 @@ export const isReviewed = (l: Language) => l.status === 'source' || l.status ===
 
 export function languageOf(code: string): Language | undefined {
   return LANGUAGES.find((l) => l.code === code);
+}
+
+/**
+ * A word that stands alone as a label («Четверть», «Сегодня», a tag's name) written inside a sentence: lower case,
+ * except in a language whose nouns keep their capital. Takes a language code or an Intl tag.
+ */
+export function inSentence(word: string, locale: string): string {
+  const lg = languageOf(locale.split('-')[0]!.toLowerCase());
+  return lg?.capitalNouns ? word : word.toLocaleLowerCase(lg?.intl ?? locale);
 }
 
 /**

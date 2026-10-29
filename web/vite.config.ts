@@ -11,14 +11,16 @@ import { defineConfig } from 'vite';
 // one, so each device has its own login limit and no client can claim another address.
 const api = { target: 'http://127.0.0.1:3000', xfwd: true };
 
-// the app's version, as Ещё shows it («Marksy 0.1.0 · …»): the root package.json's, one place for the whole workspace
-const { version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as {
+// the app's version, as Ещё shows it («Marksy 0.1.0 · …»), and the project's page, where the app links to its docs and
+// to the translation form: the root package.json's, one place for the whole workspace
+const { version, repository } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as {
   version: string;
+  repository: string;
 };
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  define: { __MARKSY_VERSION__: JSON.stringify(version) },
+  define: { __MARKSY_VERSION__: JSON.stringify(version), __MARKSY_REPO__: JSON.stringify(repository) },
   server: {
     port: 5173,
     strictPort: true,

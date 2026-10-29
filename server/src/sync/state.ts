@@ -1,5 +1,5 @@
 import type { Calendar, ISODate, ProviderManifest } from '@marksy/core';
-import { weekStartOf, weekdayOf } from '@marksy/core';
+import { addDays, weekStartOf, weekdayOf } from '@marksy/core';
 import { and, desc, eq, isNull, lte, ne } from 'drizzle-orm';
 import type { Db } from '../db/client';
 import {
@@ -172,6 +172,48 @@ export async function lastAheadOf(db: Db, accountId: string): Promise<Date | nul
  * The planner's view of an account before any login (docs/design.md 10.2, 10.4): today's window of each child it reads,
  * their union, and what is waiting. Shared by run.ts and pnpm sync:plan.
  */
+export interface NextSchoolDay {
+  date: ISODate;
+  /** When that day's window opens, minutes of the school's day; null when the day's times are not known */
+  from: number | null;
+  /** Holidays lie between today and that day: «следующая после каникул» */
+  afterHolidays: boolean;
+}
+
+/** How far ahead the next school day is looked for: the summer is not a stretch to plan across */
+const NEXT_DAY_HORIZON = 60;
+
+/**
+ * The account's next school day after today (Синхронизация, design.md 5.6): the earliest of its children's, with that
+ * day's window as the planner will compute it (the child's lessons and bells, or the manifest's window when the day's
+ * times are unknown). Null when no child has one within the horizon or in the stored school year.
+ */
+export async function nextSchoolDayOf(
+  db: Db,
+  studentIds: readonly string[],
+  ctx: WeekContext,
+  limits: Pick<EffectiveLimits, 'envWindow' | 'standIn'>,
+): Promise<NextSchoolDay | null> {
+  let best: NextSchoolDay | null = null;
+  for (const studentId of studentIds) {
+    const cal = await storedPlanCalendar(db, studentId, ctx.today);
+    if (!cal) continue;
+    for (let i = 1; i <= NEXT_DAY_HORIZON; i++) {
+      const date = addDays(ctx.today, i);
+      if (best && date > best.date) break;
+      if (!isSchoolDay(date, cal, ctx)) continue;
+      const window = childWindow(await childDayOf(db, studentId, date, cal, ctx), limits.standIn).window;
+      const from = window ? (boundWindows([window], limits.envWindow)[0]?.[0] ?? null) : null;
+      const afterHolidays = cal.holidays.some((h) => h.to >= ctx.today && h.from < date);
+      if (!best || date < best.date) best = { date, from, afterHolidays };
+      else if (from != null && (best.from == null || from < best.from))
+        best = { date: best.date, from, afterHolidays: best.afterHolidays };
+      break;
+    }
+  }
+  return best;
+}
+
 export async function accountToday(
   db: Db,
   studentIds: readonly string[],

@@ -1,3 +1,4 @@
+import { inSentence } from '@marksy/i18n';
 import { scaleValues } from '@marksy/core';
 import type { GradingScale } from '@marksy/core';
 import { useState } from 'react';
@@ -43,7 +44,7 @@ export function SubjectSettings({
         ? t('subject.settings.goal', { value: v(settings.goal) })
         : t('subject.settings.noGoal')
       : null,
-    t('subject.settings.color', { name: colorName(t, subject.color).toLocaleLowerCase(locale) }),
+    t('subject.settings.color', { name: inSentence(colorName(t, subject.color), locale) }),
   ]
     .filter(Boolean)
     .join(' · ');
