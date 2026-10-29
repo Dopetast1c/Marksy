@@ -19,7 +19,10 @@
     "sync:plan": "tsx --env-file-if-exists=../.env scripts/sync-plan.ts",
     "openapi": "tsx scripts/openapi.ts",
     "login:claim": "tsx --env-file-if-exists=../.env scripts/login-claim.ts",
-    "dev:connect": "tsx --env-file-if-exists=../.env scripts/dev-connect.ts"
+    "dev:connect": "tsx --env-file-if-exists=../.env scripts/dev-connect.ts",
+    "db:export": "tsx --env-file-if-exists=../.env scripts/db-export.ts",
+    "env:prod": "tsx scripts/env-prod.ts",
+    "marksy": "tsx --env-file-if-exists=../.env src/cli/entry.ts"
   },
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "^9.1.0",

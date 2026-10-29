@@ -106,7 +106,7 @@ async function demoFamilyId(db: Db): Promise<string | null> {
  * Removes the demo families with their logins; the children only they follow go with them (design.md 7.1: a child goes
  * with the last link, a trigger of migration 0004).
  */
-async function removeDemoFamilies(tx: Tx): Promise<void> {
+export async function removeDemoFamilies(tx: Tx): Promise<void> {
   const demo = await tx
     .select({ familyId: memberships.familyId })
     .from(memberships)

@@ -14,7 +14,9 @@ export const DEFAULT_DATABASE_URL = 'postgres://marksy:marksy@localhost:5432/mar
 export const MIGRATIONS_DIR = fileURLToPath(new URL('../../drizzle', import.meta.url));
 
 export function createDb(url = process.env.DATABASE_URL ?? DEFAULT_DATABASE_URL): Db {
-  const pool = new pg.Pool({ connectionString: url, max: 10 });
+  // DB_POOL_MAX (env.example): fewer connections on a small host
+  const max = Math.max(2, Number(process.env.DB_POOL_MAX?.trim() || 10) || 10);
+  const pool = new pg.Pool({ connectionString: url, max });
   return drizzle(pool, { schema });
 }
 

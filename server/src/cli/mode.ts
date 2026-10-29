@@ -10,6 +10,10 @@ import type { LoginPolicy } from './login-guard';
 // (NODE_ENV=production, whatever MARKSY_ENV says). It keeps the manifest's interval, and for Claude Code at most three
 // runs a day between 07:00 and 20:00 school time. SYNC_MIN_LOGIN_INTERVAL tightens both. The scheduler's own runs keep
 // the product's rules in either mode (each child's school day, D55); the mode never touches them.
+//
+// PRODUCTION_ACTIVE=true in a development .env (pnpm env:dev --production-active) says that a production instance
+// reads the same diary accounts. The two databases do not share last_login_at, so a development run cannot see the
+// production logins: while it is set, development runs keep the production limits too (docs/running.md).
 
 export type RunMode = 'development' | 'production';
 
@@ -20,6 +24,7 @@ type Env = Record<string, string | undefined>;
 
 export function runMode(env: Env = process.env): RunMode {
   if (env.NODE_ENV?.trim().toLowerCase() === 'production') return 'production';
+  if (env.PRODUCTION_ACTIVE?.trim().toLowerCase() === 'true') return 'production';
   return env.MARKSY_ENV?.trim().toLowerCase() === 'development' ? 'development' : 'production';
 }
 

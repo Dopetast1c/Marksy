@@ -40,6 +40,8 @@
     "db:backup": "node scripts/db-backup.mjs",
     "db:restore": "node scripts/db-restore.mjs",
     "db:read": "node scripts/db-read.mjs",
+    "db:export": "pnpm --filter @marksy/server db:export",
+    "env:prod": "pnpm --filter @marksy/server env:prod",
     "i18n:check": "pnpm --filter @marksy/i18n i18n:check",
     "i18n:stamp": "pnpm --filter @marksy/i18n i18n:stamp",
     "test:provider": "node scripts/test-provider.mjs",

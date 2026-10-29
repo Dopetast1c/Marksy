@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEV_KEYS, ensureKeys } from './env-dev.mjs';
+import { DEV_KEYS, ensureKeys, setKey } from './env-dev.mjs';
 
 describe('env:dev', () => {
   it('appends missing keys, keeps the rest of the file and its line endings', () => {
@@ -25,5 +25,16 @@ describe('env:dev', () => {
     const twice = ensureKeys(once.text, DEV_KEYS);
     expect(twice.text).toBe(once.text);
     expect(Object.values(twice.results)).toEqual(['already set', 'already set']);
+  });
+
+  it('--production-active sets PRODUCTION_ACTIVE=true, also over false, and leaves the rest alone', () => {
+    expect(setKey('PORT=3000\n', 'PRODUCTION_ACTIVE', 'true')).toEqual({
+      text: 'PORT=3000\nPRODUCTION_ACTIVE=true\n',
+      result: 'set',
+    });
+    expect(setKey('PRODUCTION_ACTIVE=false\r\nPORT=3000\r\n', 'PRODUCTION_ACTIVE', 'true').text).toBe(
+      'PRODUCTION_ACTIVE=true\r\nPORT=3000\r\n',
+    );
+    expect(setKey('PRODUCTION_ACTIVE=true\n', 'PRODUCTION_ACTIVE', 'true').result).toBe('already set');
   });
 });

@@ -20,6 +20,14 @@ describe('the mode of manual real runs', () => {
     expect(manualLoginPolicy(manifest, env)).toEqual(production);
   });
 
+  it('PRODUCTION_ACTIVE: a production instance reads the same diary, so development runs keep its limits', () => {
+    const env = { MARKSY_ENV: 'development', PRODUCTION_ACTIVE: 'true', DEV_MIN_LOGIN_INTERVAL_MINUTES: '10' };
+    expect(runMode(env)).toBe('production');
+    expect(manualLoginPolicy(manifest, env)).toEqual(production);
+    expect(runMode({ MARKSY_ENV: 'development', PRODUCTION_ACTIVE: 'false' })).toBe('development');
+    expect(runMode({ MARKSY_ENV: 'development', PRODUCTION_ACTIVE: '' })).toBe('development');
+  });
+
   it('development: DEV_MIN_LOGIN_INTERVAL_MINUTES, never below 10; no cap, any hour', () => {
     const dev = { MARKSY_ENV: 'development' };
     expect(manualLoginPolicy(manifest, dev)).toEqual({
