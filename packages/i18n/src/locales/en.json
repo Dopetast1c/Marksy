@@ -211,6 +211,8 @@
   "connect.checking": "Checking the diary…",
   "connect.submit": "Connect and create the family",
   "connect.consent": "The diary login and password are checked once, stored encrypted and used only to read the diary a few times a day on school days. Marksy never changes anything in the diary. It copies the children's names and classes, the timetable, marks, absences, homework and teachers' comments from the diary. All of it is kept only on the server this app runs on, with whoever set it up, and is deleted with the family.",
+  "connect.consent.machine": "Machine translation. The main text is in English.",
+  "connect.consent.english": "Show the English text",
   "connect.otherCountry": "Another country or school",
   "connect.otherCountry.sub": "how to add your own diary",
 
@@ -587,6 +589,8 @@
   "more.sync.problem.paused": "the diary does not answer",
   "more.sync.problem.stale": "the data is out of date",
   "lang.unreviewed": "{{language}} · translation not checked",
+  "lang.help": "Help improve this translation",
+  "lang.help.sub": "A form on the project’s page. Text only: no screenshots with real data",
   "look.summary.wallpaperOwn": "own wallpaper",
   "more.guidance": "Tips",
   "more.guidance.sub": "Advice in “Worth a look” and under lessons; without it only the facts remain",

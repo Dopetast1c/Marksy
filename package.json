@@ -4,6 +4,7 @@
   "private": true,
   "description": "Family PWA for school marks from the e-diary",
   "license": "PolyForm-Noncommercial-1.0.0",
+  "repository": "https://github.com/Dopetast1c/Marksy",
   "type": "module",
   "packageManager": "pnpm@10.28.0",
   "engines": {
