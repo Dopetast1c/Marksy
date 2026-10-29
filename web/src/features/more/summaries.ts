@@ -1,3 +1,4 @@
+import { inSentence } from '@marksy/i18n';
 import { shortDate } from '@marksy/core';
 import type { TFunction } from 'i18next';
 import type { FamilyView, SyncStatus } from '../../api/queries';
@@ -24,7 +25,7 @@ export function familyLine(t: TFunction, view: FamilyView): string {
 /** «Милена: звонки, четверти и каникулы»: the periods' word from Term.kind, never typed; without terms, only bells */
 export function schoolLine(t: TFunction, terms: TermKind, name: string | null): string {
   if (terms === 'none') return name ? t('more.school.subForPlain', { name }) : t('more.school.subPlain');
-  const words = t(`term.${terms}.plural`).toLocaleLowerCase(intlLocale());
+  const words = inSentence(t(`term.${terms}.plural`), intlLocale());
   return name ? t('more.school.subFor', { name, terms: words }) : t('more.school.sub', { terms: words });
 }
 

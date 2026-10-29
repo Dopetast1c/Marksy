@@ -1,3 +1,4 @@
+import { inSentence } from '@marksy/i18n';
 import { addDays, bandOf, shortDate } from '@marksy/core';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
@@ -114,9 +115,9 @@ export function SubjectsScreen() {
     const next = l?.next;
     const day = next
       ? next.date === today
-        ? t('day.today').toLocaleLowerCase(locale)
+        ? inSentence(t('day.today'), locale)
         : next.date === addDays(today, 1)
-          ? t('home.tomorrow').toLocaleLowerCase(locale)
+          ? inSentence(t('home.tomorrow'), locale)
           : shortDate(next.date, ds, { weekday: true })
       : null;
     return (

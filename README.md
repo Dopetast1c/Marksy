@@ -65,7 +65,7 @@ The family connects the diary once. Each member gets their own Marksy login thro
 
 ### Your look, your language
 
-Light and dark themes, colour palettes, wallpapers, five body fonts, a colour for every subject. Twelve interface languages: Russian, Belarusian, Ukrainian, Kazakh, English, Polish, German, Spanish, Portuguese, French, Dutch and Romanian, chosen per person. Adding a language is one JSON file ([`docs/i18n.md`](docs/i18n.md)).
+Light and dark themes, colour palettes, wallpapers, five body fonts, a colour for every subject. Twelve interface languages: Russian, Belarusian, Ukrainian, Kazakh, English, Polish, German, Spanish, Portuguese, French, Dutch and Romanian, chosen per person. English and Russian are checked by people; the other ten are machine translations, marked as such in the app, which links to a short form for corrections. Adding a language is one JSON file ([`docs/i18n.md`](docs/i18n.md)).
 
 ## See it now
 
@@ -185,7 +185,7 @@ All configuration is in `.env` (created by `pnpm setup:env` from `env.example`).
 ```
 packages/core/          common types, provider interface, grading scales, marks math,
                         guidance rules, throttled HTTP client, provider conformance suite
-packages/i18n/          interface languages: en.json as the source of truth, ru complete, ten more planned
+packages/i18n/          interface languages: en.json as the source of truth, ru reviewed, ten machine translations
 packages/registry/      the list of providers the app offers
 providers/_template/    starting point for a new provider
 providers/demo-minimal/ a fictional diary with the fewest features, served from fixtures

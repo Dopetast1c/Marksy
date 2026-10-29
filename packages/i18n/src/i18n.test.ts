@@ -6,6 +6,7 @@ import {
   checkCatalogs,
   createT,
   formatList,
+  inSentence,
   isReviewed,
   LANGUAGES,
   pickerOrder,
@@ -111,10 +112,17 @@ describe('t()', () => {
   });
 
   it('falls back to English, then to the key', () => {
-    expect(translator('pl')('period.week')).toBe('Week');
-    expect(translator('pl')('marks.count', { count: 3 })).toBe('3 marks');
+    const catalogs = { en: { week: 'Week', n_one: '{{count}} mark', n_other: '{{count}} marks' }, pl: {} };
+    expect(createT('pl', catalogs)('week')).toBe('Week');
+    expect(createT('pl', catalogs)('n', { count: 3 })).toBe('3 marks');
     expect(createT('ru', { en: { a: 'A' }, ru: {} })('a')).toBe('A');
     expect(translator('en')('no.such.key')).toBe('no.such.key');
+  });
+
+  it('picks the plural forms of every shipped language', () => {
+    expect(translator('pl')('marks.count', { count: 5 })).toMatch(/^5 /);
+    expect(translator('pl')('marks.count', { count: 5 })).not.toBe(translator('pl')('marks.count', { count: 2 }));
+    expect(translator('de')('marks.count', { count: 1 })).not.toBe(translator('de')('marks.count', { count: 2 }));
   });
 
   it('lists in the interface language', () => {
@@ -129,6 +137,13 @@ describe('languages', () => {
     const order = pickerOrder(['ru', 'be']).map((l) => l.code);
     expect(order.slice(0, 3)).toEqual(['ru', 'be', 'uk']);
     expect(order).toHaveLength(12);
+  });
+
+  it('a label inside a sentence: lower case, except where nouns keep their capital', () => {
+    expect(inSentence('Четверть', 'ru')).toBe('четверть');
+    expect(inSentence('Quarter', 'en-GB')).toBe('quarter');
+    expect(inSentence('Quartal', 'de')).toBe('Quartal');
+    expect(inSentence('Klassenarbeit', 'de-DE')).toBe('Klassenarbeit');
   });
 
   it('resolves: saved, provider default, browser, English', () => {

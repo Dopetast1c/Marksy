@@ -1,3 +1,4 @@
+import { inSentence } from '@marksy/i18n';
 import { addDays, shortDate } from '@marksy/core';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
@@ -74,9 +75,9 @@ export function LessonMenu({
   const today = todayIn(tz);
   const day =
     lesson.date === today
-      ? t('day.today').toLocaleLowerCase(locale)
+      ? inSentence(t('day.today'), locale)
       : lesson.date === addDays(today, 1)
-        ? t('home.tomorrow').toLocaleLowerCase(locale)
+        ? inSentence(t('home.tomorrow'), locale)
         : shortDate(lesson.date, ds, { weekday: true });
   const when = [day, lesson.start].filter(Boolean).join(' ');
   const title =

@@ -1,3 +1,4 @@
+import { inSentence } from '@marksy/i18n';
 import { shortRange } from '@marksy/core';
 import type { ShortDateStyle } from '@marksy/core';
 import type { TFunction } from 'i18next';
@@ -96,5 +97,5 @@ export function roman(n: number): string {
 
 /** «за неделю», «за четверть»: the period's span in a phrase («нет оценок за неделю») */
 export function forPeriod(t: TFunction, kind: Kind, termKind: Instance['termKind'], locale: string): string {
-  return t(`period.for.${kind}`, { name: t(`term.${termKind ?? 'other'}`).toLocaleLowerCase(locale) });
+  return t(`period.for.${kind}`, { name: inSentence(t(`term.${termKind ?? 'other'}`), locale) });
 }
