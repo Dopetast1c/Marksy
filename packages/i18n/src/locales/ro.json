@@ -238,7 +238,7 @@
 
   "pick.title": "Cu cine începem?",
   "pick.new": "Noutăți",
-  "pick.week": "Săptămână",
+  "pick.week": "Săpt.",
   "pick.absences": "Absențe",
   "pick.lessonsTomorrow": "Lecții mâine",
   "pick.lessonsOn": "Lecții, {{day}}",
@@ -631,7 +631,7 @@
   "look.palette.sky": "Cer",
   "look.palette.plum": "Prună",
   "look.palette.berry": "Mură",
-  "look.palette.amber": "Chihlimbar",
+  "look.palette.amber": "Ambră",
   "look.palette.mint": "Mentă",
   "look.palette.graphite": "Grafit",
   "look.wallpaper": "Tapet",

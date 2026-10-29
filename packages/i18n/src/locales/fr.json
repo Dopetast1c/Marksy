@@ -163,7 +163,7 @@
   "header.moreStudents_other": "{{count}} autres élèves",
 
   "screen.home": "Accueil",
-  "screen.events": "Points d’attention",
+  "screen.events": "Attention",
   "screen.marks": "Notes",
   "screen.subjects": "Matières",
   "screen.schedule": "Emploi du temps",
@@ -807,7 +807,7 @@
   "finals.manual.failed": "Enregistrement impossible. Vérifiez la connexion et réessayez.",
   "finals.manual.legend": "Le symbole du stylo indique les notes finales saisies à la main.",
   "finals.manual.cell": "saisie à la main",
-  "finals.year": "Année",
+  "finals.year": "An",
   "finals.all": "Toutes les notes finales",
   "finals.scope.quarter": "par période et par année",
   "finals.scope.trimester": "par trimestre et par année",

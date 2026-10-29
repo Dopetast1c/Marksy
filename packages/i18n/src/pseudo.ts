@@ -21,7 +21,7 @@ const MAX_CHARS = /max (\d+) chars/;
 /**
  * One string: placeholders kept as they are, letters accented, 30 percent longer, in brackets. The padding comes in
  * words of five, so a long text still wraps. A string with a length limit (docs/i18n.md 4) is filled to exactly its
- * limit instead: the layout promises room for that many characters, not more.
+ * limit instead, with a letter of average width: the layout promises room for that many characters, not more.
  */
 export function pseudoString(s: string, max?: number): string {
   const parts = s.split(PLACEHOLDER);
@@ -29,8 +29,8 @@ export function pseudoString(s: string, max?: number): string {
   if (max !== undefined) {
     const length = [...text].length;
     return length + 2 <= max
-      ? `[${text}${'~'.repeat(max - length - 2)}]`
-      : text + '~'.repeat(Math.max(0, max - length));
+      ? `[${text}${'e'.repeat(max - length - 2)}]`
+      : text + 'e'.repeat(Math.max(0, max - length));
   }
   const n = Math.ceil(parts.filter((_, i) => i % 2 === 0).join('').length * 0.3);
   const words = Array.from({ length: Math.ceil(n / 5) }, (_, i) => '~'.repeat(Math.min(5, n - i * 5)));

@@ -807,7 +807,7 @@
   "finals.manual.failed": "No se pudo guardar. Revisa la conexión y vuelve a intentarlo.",
   "finals.manual.legend": "El lápiz señala las notas finales introducidas a mano.",
   "finals.manual.cell": "introducida a mano",
-  "finals.year": "Curso",
+  "finals.year": "Año",
   "finals.all": "Todas las notas finales",
   "finals.scope.quarter": "por bimestre y curso",
   "finals.scope.trimester": "por trimestre y curso",

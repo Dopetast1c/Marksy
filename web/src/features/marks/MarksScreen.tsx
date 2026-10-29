@@ -69,6 +69,7 @@ export function MarksScreen() {
             lead={<MarkChip mark={i.mark} />}
             title={i.subject.name}
             sub={sub || null}
+            subIsData
             trail={
               i.comment ? (
                 <span className="flex-none text-ink3" title={i.comment}>

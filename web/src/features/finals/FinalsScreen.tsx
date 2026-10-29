@@ -82,7 +82,7 @@ function TermsView({ studentId, termKind }: { studentId: string; termKind: strin
             <span className="flex min-w-0 flex-col gap-px">
               <b className="hyphens-auto break-words">{r.subject.name}</b>
               {lastYear && (
-                <span className="truncate text-small text-ink3">
+                <span className="text-small text-ink3">
                   {r.lastYear
                     ? t('finals.lastYear', { year: schoolYearLabel(lastYear.label), mark: r.lastYear.raw })
                     : t('finals.newSubject')}
@@ -139,9 +139,9 @@ function YearsView({ studentId, termKind }: { studentId: string; termKind: strin
               <span className="flex min-w-0 flex-col gap-px">
                 <b className="hyphens-auto break-words">{r.subjectName}</b>
                 {!r.subjectId ? (
-                  <span className="truncate text-small text-ink3">{t('finals.notThisYear')}</span>
+                  <span className="text-small text-ink3">{t('finals.notThisYear')}</span>
                 ) : r.isNew ? (
-                  <span className="truncate text-small text-ink3">{t('finals.newSubject')}</span>
+                  <span className="text-small text-ink3">{t('finals.newSubject')}</span>
                 ) : null}
               </span>
               {r.cells.map((c) => (

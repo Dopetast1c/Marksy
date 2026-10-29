@@ -87,7 +87,7 @@ describe('pseudo-locale', () => {
     // long padding comes in words, so a paragraph still wraps
     expect(pseudoString('a'.repeat(40))).toBe(`[${'á'.repeat(40)} ~~~~~ ~~~~~ ~~]`);
     // a key with a limit is filled to exactly its limit
-    expect(pseudoString('Home', 11)).toBe('[Ĥóɱé~~~~~]');
+    expect(pseudoString('Home', 11)).toBe('[Ĥóɱéeeeee]');
     expect(pseudoString('Aa', 2)).toBe('Áá');
     const qps = pseudoCatalog(CATALOGS.en!);
     expect([...qps['tabs.schedule']!]).toHaveLength(11);

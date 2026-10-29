@@ -280,7 +280,7 @@ export function SubjectScreen() {
 
   return (
     <Frame studentId={studentId}>
-      <ScreenHeader title={d?.subject.name ?? ''} studentId={studentId} back accent={accent}>
+      <ScreenHeader title={d?.subject.name ?? ''} titleIsData studentId={studentId} back accent={accent}>
         <PeriodBar studentId={studentId} />
         {scale && <MarkFilter studentId={studentId} />}
       </ScreenHeader>

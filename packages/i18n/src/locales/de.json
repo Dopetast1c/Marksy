@@ -237,7 +237,7 @@
   "pick.title": "Mit wem starten?",
   "pick.new": "Neu",
   "pick.week": "Woche",
-  "pick.absences": "Fehlstunden",
+  "pick.absences": "Gefehlt",
   "pick.lessonsTomorrow": "Stunden morgen",
   "pick.lessonsOn": "Stunden, {{day}}",
   "pick.homework": "HA",

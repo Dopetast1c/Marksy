@@ -105,8 +105,10 @@ export function say(page, key) {
 }
 
 /**
- * What does not fit on the screen just shot (docs/i18n.md 4: no ellipsis in any of the twelve languages): texts cut
- * by an ellipsis or spilling out of their box, outside horizontal scrollers, and a page wider than the screen.
+ * What does not fit on the screen just shot (docs/i18n.md 4: no ellipsis in any of the twelve languages): an
+ * element's own text that runs past its box (cut by an ellipsis or spilling out), outside horizontal scrollers, and a
+ * page wider than the screen. The text itself is measured, so a wider hit area around a button is no overflow. Text
+ * from the diary or the family (a subject's name, a teacher's comment, a topic) sits in `data-content` and may be cut.
  */
 export async function overflowReport(page) {
   return page.evaluate(() => {
@@ -118,24 +120,34 @@ export async function overflowReport(page) {
       }
       return false;
     };
-    const ownText = (el) =>
-      [...el.childNodes]
-        .filter((n) => n.nodeType === Node.TEXT_NODE)
-        .map((n) => n.textContent)
-        .join('')
-        .trim();
+    const range = document.createRange();
     const cut = [];
     for (const el of document.body.querySelectorAll('*')) {
-      const text = ownText(el);
-      if (!text || el.clientWidth === 0 || el.scrollWidth <= el.clientWidth + 1 || scrolls(el)) continue;
+      const nodes = [...el.childNodes].filter((n) => n.nodeType === Node.TEXT_NODE && n.textContent.trim());
+      if (!nodes.length || el.closest('[data-content]') || scrolls(el)) continue;
       const box = el.getBoundingClientRect();
       // text for screen readers only is hidden on purpose
       if (box.bottom < 0 || box.width <= 1 || box.height <= 1) continue;
-      cut.push(text.slice(0, 40));
+      range.setStartBefore(nodes[0]);
+      range.setEndAfter(nodes.at(-1));
+      const text = range.getBoundingClientRect();
+      if (text.right <= box.right + 1 && text.left >= box.left - 1) continue;
+      cut.push(
+        nodes
+          .map((n) => n.textContent)
+          .join('')
+          .trim()
+          .slice(0, 40),
+      );
     }
     return { cut, wide: document.documentElement.scrollWidth > window.innerWidth + 1 };
   });
 }
+
+const firstLine = (err) =>
+  String(err.message ?? '')
+    .split('\n')[0]
+    .slice(0, 160);
 
 function prune() {
   if (!existsSync(OUT)) return;
@@ -186,7 +198,8 @@ async function shootApp(browser, base, family, device, dir, log, lang) {
     await shot('login');
     await page.getByLabel(await say(page, 'login.marksyLogin')).fill(family.login);
     await page.getByLabel(await say(page, 'login.password'), { exact: true }).fill(family.password);
-    await page.getByRole('button', { name: await say(page, 'login.submit') }).click();
+    // the form's own button: in some languages the mode switch above it has the same word
+    await page.locator('form button[type=submit]').click();
     await page.waitForURL(/\/(pick|s\/[^/]+)$/, { timeout: 15_000 });
     const me = await (await page.request.get(`${base}/api/auth/me`)).json();
     const kids = me.students ?? [];
@@ -269,7 +282,8 @@ async function shootApp(browser, base, family, device, dir, log, lang) {
       }
     }
   } catch (err) {
-    log.push(`BAD ${family.key}/${device}: ${err.name}`);
+    // the fictional family's error may be quoted; the own family's may carry names from its data
+    log.push(`BAD ${family.key}/${device}: ${err.name}${family.key === 'seed' ? ` ${firstLine(err)}` : ''}`);
   } finally {
     await context.close();
   }
@@ -289,7 +303,8 @@ async function shootStudent(browser, base, device, dir, log, lang) {
     await page.goto(`${base}/login`);
     await page.getByLabel(await say(page, 'login.marksyLogin')).fill(SEED_STUDENT.login);
     await page.getByLabel(await say(page, 'login.password'), { exact: true }).fill(SEED_STUDENT.password);
-    await page.getByRole('button', { name: await say(page, 'login.submit') }).click();
+    // the form's own button: in some languages the mode switch above it has the same word
+    await page.locator('form button[type=submit]').click();
     await page.waitForURL(/\/s\/[^/]+$/, { timeout: 15_000 });
     const kid = new URL(page.url()).pathname.split('/')[2];
     await shot('student-home');
@@ -299,7 +314,7 @@ async function shootStudent(browser, base, device, dir, log, lang) {
     await page.goto(`${base}/s/${kid}/schedule`);
     await shot('student-simple-schedule');
   } catch (err) {
-    log.push(`BAD seed/${device}/student: ${err.name}`);
+    log.push(`BAD seed/${device}/student: ${err.name} ${firstLine(err)}`);
   } finally {
     if (simple) await page.request.patch(`${base}/api/me`, { data: { uiMode: 'full' } });
     await context.close();

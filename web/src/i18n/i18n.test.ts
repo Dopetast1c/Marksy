@@ -15,7 +15,7 @@ describe('language override in development', () => {
     await setLanguageOverride('qps');
     expect(languageOverride()).toBe('qps');
     expect(initialLanguage()).toBe('qps');
-    expect(i18n.t('tabs.home')).toBe('[Ĥóɱé~~~~~]');
+    expect(i18n.t('tabs.home')).toBe('[Ĥóɱéeeeee]');
   });
 
   it('ignores an unknown code, and picking a language clears it', async () => {

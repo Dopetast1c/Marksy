@@ -121,7 +121,8 @@ export function ConnectForm({ intoFamily }: { intoFamily?: { onDone: () => void 
           aria-haspopup="dialog"
           className="flex min-h-12 items-center gap-2 rounded-md border-[1.5px] border-line bg-surface px-3.5 text-left"
         >
-          <span className="min-w-0 flex-1 truncate font-bold">
+          {/* the system's own name may be cut to one line (docs/i18n.md 5) */}
+          <span data-content className="min-w-0 flex-1 truncate font-bold">
             {provider ? providerLabel(provider, locale) : t('app.loading')}
           </span>
           <DownIcon size={16} className="flex-none text-ink3" />
