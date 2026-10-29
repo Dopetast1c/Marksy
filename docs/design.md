@@ -892,9 +892,10 @@ GET  /api/sync/status                                          -> per diary acco
                                                                    own data. /api/me carries the same
                                                                    `status` + lastSuccessAt per student so
                                                                    the FreshnessBanner needs no extra call
-POST /api/sync/run {accountId}                                 -> «Обновить сейчас» (admin, parent): {started, reason: interval|action|null,
+POST /api/sync/run {accountId}                                 -> «Обновить сейчас» (admin, parent): {started, reason: interval|action|demo|null,
                                                                    retryAt}; the run goes on after the answer and records its
-                                                                   own decision (a skipped row for a try inside the interval)
+                                                                   own decision (a skipped row for a try inside the interval);
+                                                                   demo: a login without credentials (the seed's), never read
 POST /api/sync/rescan {accountId, studentIds?, period: term|year} -> the period's weeks lose their check, so the planner reads them
                                                                    again as unverified weeks (freshest first, a catch-up allowed),
                                                                    then the same as /run; {weeks} says how many

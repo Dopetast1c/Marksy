@@ -12,9 +12,11 @@ const IN_TERM = new Date('2026-10-15T16:12:00Z');
 // Wednesday 4 November 2026, the autumn holidays: the first term is over and its finals are in
 const HOLIDAYS = new Date('2026-11-04T09:00:00Z');
 
-async function setUp(now: Date) {
+/** The seed at a moment; pastYear: false drops the year the seed types in from a report card, for a child without one */
+async function setUp(now: Date, { pastYear = true } = {}) {
   await resetDb(db);
   await seedDemo(db, { now });
+  if (!pastYear) await db.delete(schoolYears).where(eq(schoolYears.source, 'manual'));
   const kids = await demoStudents(db);
   const app = testApp({ now: () => now });
   const signIn = async (login: string) => {
@@ -219,7 +221,7 @@ describe('Итоги', () => {
   afterEach(settle);
 
   it('while the term runs: «идёт», the running average in italics, no year value without a term final', async () => {
-    const { milena, signIn } = await setUp(IN_TERM);
+    const { milena, signIn } = await setUp(IN_TERM, { pastYear: false });
     const mama = await signIn(DEMO_LOGINS.parent);
     const periods = (await mama.get(`/api/students/${milena.id}/periods`)).body;
     expect(periods.finals).toMatchObject({ state: 'running', term: { index: 1, kind: 'quarter', to: '2026-10-31' } });
@@ -297,7 +299,7 @@ describe('Итоги', () => {
   });
 
   it('Годы: last year’s finals by subject name, «новый предмет», the arrow against last year', async () => {
-    const { milena, signIn } = await setUp(HOLIDAYS);
+    const { milena, signIn } = await setUp(HOLIDAYS, { pastYear: false });
     const mama = await signIn(DEMO_LOGINS.parent);
     const algebra = await subjectNamed(milena.id, 'Алгебра');
     const [last] = await db
@@ -354,7 +356,7 @@ describe('Итоги', () => {
   });
 
   it('a past year typed in: on the scale, «введено вручную», replaced as a whole, never over the diary’s years', async () => {
-    const { milena, mark, signIn } = await setUp(IN_TERM);
+    const { milena, mark, signIn } = await setUp(IN_TERM, { pastYear: false });
     const mama = await signIn(DEMO_LOGINS.parent);
     const url = `/api/students/${milena.id}/final-marks`;
     const put = await mama.put(url).send({

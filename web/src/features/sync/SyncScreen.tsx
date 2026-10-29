@@ -88,7 +88,9 @@ export function SyncScreen() {
         ? t('sync.refresh.started')
         : res.reason === 'interval' && res.retryAt
           ? t('sync.refresh.later', { at: formatTime(res.retryAt, tzOf(a), locale) })
-          : t('sync.refresh.action'),
+          : res.reason === 'demo'
+            ? t('sync.refresh.demo')
+            : t('sync.refresh.action'),
     );
     await reload();
   };
@@ -325,7 +327,7 @@ function RescanSheet({
           body: { accountId: account.id, period, ...(who ? { studentIds: [who] } : {}) },
         }),
       );
-      onDone(t('sync.rescan.queued', { count: res.weeks }));
+      onDone(res.reason === 'demo' ? t('sync.refresh.demo') : t('sync.rescan.queued', { count: res.weeks }));
     } catch {
       onDone(t('sync.failed'));
     }

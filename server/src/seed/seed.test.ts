@@ -1,19 +1,28 @@
 import { and, eq } from 'drizzle-orm';
-import { beforeEach, describe, expect, it } from 'vitest';
+import request from 'supertest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { settle, testApp } from '../../test/app';
 import { resetDb, testDb } from '../../test/db';
 import { verifyPassword } from '../auth/password';
 import {
+  apiDriftEvents,
   attendance,
   bellSchedules,
+  diaryAccounts,
   families,
   familyStudents,
+  finalMarks,
   lessons,
   lessonTags,
   marks,
   memberships,
   notifications,
+  schoolYears,
   students,
+  studentSources,
   studySessions,
+  syncCoverage,
+  syncRuns,
   users,
 } from '../db/schema';
 import { generateGrade7, seedCalendar } from '@marksy/demo-diary';
@@ -47,6 +56,7 @@ describe('seed generator', () => {
 
 describe('pnpm db:seed', () => {
   beforeEach(() => resetDb(db));
+  afterEach(settle);
 
   it('runs only where nobody outside the home can sign in with the demo password', () => {
     for (const ok of [
@@ -114,6 +124,55 @@ describe('pnpm db:seed', () => {
     expect(r.familyId).toBeDefined();
   });
 
+  it('the demo diaries: a run log, verified weeks and a drift notice, no credentials, never read', async () => {
+    await seedDemo(db, { now: NOW });
+    const accounts = await db.select().from(diaryAccounts);
+    expect(accounts.map((a) => [a.providerId, a.label, a.credentialsEnc]).sort()).toEqual([
+      ['demo-full', 'a.petrov', null],
+      ['demo-lite', 'andrey.p', null],
+    ]);
+    // each child is read through the own family's login
+    const sources = await db.select().from(studentSources).where(eq(studentSources.active, true));
+    expect(sources).toHaveLength(2);
+    const runs = await db.select().from(syncRuns);
+    expect(runs.every((r) => r.startedAt <= NOW)).toBe(true);
+    expect(runs.map((r) => r.status)).toEqual(expect.arrayContaining(['success', 'failed', 'skipped_interval']));
+    expect(runs.find((r) => r.status === 'failed')).toMatchObject({ errorClass: 'provider_unavailable' });
+    const full = accounts.find((a) => a.providerId === 'demo-full')!;
+    expect(full.lastSuccessAt!.getTime()).toBeLessThanOrEqual(NOW.getTime());
+    // the plan has stale weeks to take: some of the term's weeks were verified more than six days ago
+    const weeks = await db.select().from(syncCoverage);
+    expect(weeks.some((w) => NOW.getTime() - w.verifiedAt.getTime() > 6 * 86_400_000)).toBe(true);
+    expect(await db.select().from(apiDriftEvents)).toHaveLength(1);
+
+    // the scheduler takes only accounts with credentials; «Обновить сейчас» and the re-scan say it is a demo
+    const mama = request.agent(testApp({ now: () => NOW }));
+    await mama.post('/api/auth/login').send({ login: DEMO_LOGINS.parent, password: DEMO_PASSWORD });
+    expect((await mama.post('/api/sync/run').send({ accountId: full.id })).body).toEqual({
+      started: false,
+      reason: 'demo',
+      retryAt: null,
+    });
+    const rescan = await mama.post('/api/sync/rescan').send({ accountId: full.id, period: 'term' });
+    expect(rescan.body).toMatchObject({ started: false, reason: 'demo', weeks: 0 });
+    expect(await db.select().from(syncRuns)).toHaveLength(runs.length);
+    expect(await db.select().from(syncCoverage)).toHaveLength(weeks.length);
+    const status = (await mama.get('/api/sync/status')).body;
+    expect(status.accounts.map((a: { status: string }) => a.status)).toEqual(['ok', 'ok']);
+    expect(status.accounts.find((a: { id: string }) => a.id === full.id).plan.drift).toHaveLength(1);
+  });
+
+  it('a past year typed in from the report card, and a student with a wallpaper', async () => {
+    await seedDemo(db, { now: NOW });
+    const [typed] = await db.select().from(schoolYears).where(eq(schoolYears.source, 'manual'));
+    expect(typed).toMatchObject({ label: '2025-2026', startDate: '2025-09-01' });
+    const finals = await db.select().from(finalMarks).where(eq(finalMarks.schoolYearId, typed!.id));
+    expect(finals.length).toBeGreaterThan(5);
+    expect(finals.every((f) => f.source === 'manual' && f.enteredBy && f.periodId === null)).toBe(true);
+    const [student] = await db.select().from(users).where(eq(users.login, DEMO_LOGINS.student));
+    expect(student!.settings).toMatchObject({ appearance: { background: 'wallpaper' } });
+  });
+
   it('is safe to re-run, and --reset replaces only the demo family', async () => {
     const [other] = await db.insert(families).values({ name: 'Another family' }).returning();
     const first = await seedDemo(db, { now: NOW });
@@ -129,5 +188,8 @@ describe('pnpm db:seed', () => {
     expect(left).toContain(again.familyId);
     expect(left).toHaveLength(3);
     expect(await db.select().from(students)).toHaveLength(2);
+    // the demo diaries were replaced with their families, the drift notice is still one
+    expect(await db.select().from(diaryAccounts)).toHaveLength(2);
+    expect(await db.select().from(apiDriftEvents)).toHaveLength(1);
   });
 });

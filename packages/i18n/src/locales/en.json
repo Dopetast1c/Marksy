@@ -313,6 +313,7 @@
   "sync.refresh.started": "The run has started; the data shows in a couple of minutes",
   "sync.refresh.later": "the next diary login is possible at {{at}}",
   "sync.refresh.action": "a new diary password is needed first",
+  "sync.refresh.demo": "This is a demo diary: nothing reads it",
   "sync.newPassword": "Update the diary password",
   "sync.state": "State",
   "sync.status.ok": "all fresh",

@@ -42,13 +42,17 @@ import {
 } from '@marksy/demo-diary';
 import type { ProviderManifest } from '@marksy/core';
 import { notifyAdmins } from '../notify/admin';
+import { insertDemoDiaries } from './demo-sync';
+import type { DemoDiaryChild } from './demo-sync';
 import type { SeedCalendar, SeedStudent } from '@marksy/demo-diary';
 
 // `pnpm db:seed [--reset]`: the fictional demo family (docs/build-plan.md M3, M3a, "Data for testing"), matching the
 // prototype: Милена in grade 7 on the fictional demo-full diary with her bells, subgroups, teachers and rooms; Марк in
 // grade 1, a class without marks, at another school on the thinner demo-lite diary; and a second fictional family that
-// also follows Марк (parents who live apart, ux-principles D54). No diary account is attached, so the planner never
-// touches them. Re-running is safe: the demo families are left alone unless --reset replaces them.
+// also follows Марк (parents who live apart, ux-principles D54). Each child's diary has a fictional login with a run
+// history, verified weeks and a drift notice (demo-sync.ts), but no credentials, so the planner never reads it. A past
+// year typed in from a report card and a student with a wallpaper complete the states of the prototype. Re-running is
+// safe: the demo families are left alone unless --reset replaces them.
 
 /** Each demo child's fictional diary (the prototype's «Марк в другой школе, другой дневник») */
 export const DEMO_PROVIDERS = { k: 'demo-full', m: 'demo-lite' } as const;
@@ -142,7 +146,13 @@ export async function seedDemo(db: Db, opts: { reset?: boolean; now?: Date } = {
       .insert(users)
       .values([
         { login: DEMO_LOGINS.parent, displayName: 'Мама', passwordHash },
-        { login: DEMO_LOGINS.student, displayName: 'Милена', passwordHash },
+        // the student has picked a wallpaper (Оформление, design.md 5.6a): the parent keeps the plain background
+        {
+          login: DEMO_LOGINS.student,
+          displayName: 'Милена',
+          passwordHash,
+          settings: { appearance: { background: 'wallpaper', wallpaper: 'doodle' } },
+        },
       ])
       .returning();
     await tx.insert(memberships).values([
@@ -151,9 +161,12 @@ export async function seedDemo(db: Db, opts: { reset?: boolean; now?: Date } = {
     ]);
 
     const studentIds: Record<string, string> = {};
+    const diaries: DemoDiaryChild[] = [];
     for (const kid of kids) {
       const id = await insertStudent(tx, kid, calendars[kid.key], manifests[kid.key], count);
       studentIds[kid.key] = id.studentId;
+      diaries.push({ kid, cal: calendars[kid.key], manifest: manifests[kid.key], ...id });
+      if (kid.scale) await insertTypedYear(tx, id, kid, calendars[kid.key], parent!.id, count);
       await tx
         .insert(familyStudents)
         .values({ familyId: fid, studentId: id.studentId, linkedBy: parent!.id, linkedAt: now });
@@ -161,6 +174,7 @@ export async function seedDemo(db: Db, opts: { reset?: boolean; now?: Date } = {
       const actor = kid.key === 'k' ? child!.id : parent!.id;
       await insertDiary(tx, id, kid, calendars[kid.key], manifests[kid.key], now, tz, count, actor);
     }
+    await insertDemoDiaries(tx, { familyId: fid, parentId: parent!.id, children: diaries, now }, count);
     await tx.insert(userStudentAccess).values([
       { userId: parent!.id, familyId: fid, studentId: studentIds.k! },
       { userId: parent!.id, familyId: fid, studentId: studentIds.m! },
@@ -509,6 +523,53 @@ async function insertDiary(
     count('study_sessions', sessions.length);
     count('lesson_prep', prep.length);
   }
+}
+
+/**
+ * The school year before the diary's, typed in from the paper report card (Итоги → Годы, design.md 5.3b): stored as
+ * PUT /api/students/:id/final-marks stores it (students/manual-finals.ts), with «введено вручную».
+ */
+async function insertTypedYear(
+  db: Tx,
+  ids: StudentIds,
+  kid: SeedStudent,
+  cal: SeedCalendar,
+  enteredBy: string,
+  count: (k: string, n: number) => void,
+) {
+  const back = (d: string) => `${Number(d.slice(0, 4)) - 1}${d.slice(4)}`;
+  const startYear = Number(cal.year.start.slice(0, 4)) - 1;
+  const [year] = await db
+    .insert(schoolYears)
+    .values({
+      studentId: ids.studentId,
+      providerId: 'manual',
+      externalId: `manual:${startYear}`,
+      label: cal.year.label.replace(/\d{4}/g, (y) => String(Number(y) - 1)),
+      startDate: back(cal.year.start),
+      endDate: back(cal.year.end),
+      source: 'manual',
+    })
+    .returning();
+  const typed = kid.subjects.map((sub) => sub.name);
+  await db.insert(finalMarks).values(
+    typed.map((subjectName, i) => {
+      const mark = [8, 7, 9, 6, 8, 7, 10, 7][i % 8]!;
+      return {
+        studentId: ids.studentId,
+        schoolYearId: year!.id,
+        subjectName,
+        periodId: null,
+        role: 'final',
+        raw: String(mark),
+        mark,
+        kind: 'numeric',
+        source: 'manual' as const,
+        enteredBy,
+      };
+    }),
+  );
+  count('final_marks', typed.length);
 }
 
 /** For tests: the children the demo family follows */

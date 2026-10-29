@@ -298,6 +298,8 @@ export function syncRoutes(deps: AppDeps): Router {
    * The run goes on after the answer; the answer says whether it starts, and when the next login is allowed if not.
    */
   const refresh = async (userId: string, a: typeof diaryAccounts.$inferSelect) => {
+    // a login without credentials is the demo family's (seed/demo-sync.ts): there is nothing to read it with
+    if (!a.credentialsEnc) return { started: false, reason: 'demo' as const, retryAt: null };
     const now = deps.now?.() ?? new Date();
     const interval = (getProvider(a.providerId)?.manifest.limits.minLoginIntervalMinutes ?? 60) * 60_000;
     const last = [a.lastAttemptAt, a.lastLoginAt].filter((d): d is Date => !!d).sort((x, y) => +y - +x)[0];
@@ -323,8 +325,8 @@ export function syncRoutes(deps: AppDeps): Router {
   };
   const refreshOut = z.object({
     started: z.boolean(),
-    /** interval: the login budget; action: the diary refused the login, a new password first */
-    reason: z.enum(['interval', 'action']).nullable(),
+    /** interval: the login budget; action: the diary refused the login, a new password first; demo: never read */
+    reason: z.enum(['interval', 'action', 'demo']).nullable(),
     retryAt: z.date().nullable(),
   });
 
@@ -367,6 +369,8 @@ export function syncRoutes(deps: AppDeps): Router {
     async (req, { body }) => {
       const m = memberOf(req);
       const a = await accountOf(m.familyId, body.accountId);
+      // the demo's weeks stay checked: nothing would ever read them again
+      if (!a.credentialsEnc) return { ...(await refresh(m.userId, a)), weeks: 0 };
       const read = await deps.db
         .select({ studentId: studentSources.studentId })
         .from(studentSources)

@@ -3891,7 +3891,7 @@ export interface paths {
                         "application/json": {
                             started: boolean;
                             /** @enum {string|null} */
-                            reason: "interval" | "action" | null;
+                            reason: "interval" | "action" | "demo" | null;
                             /** Format: date-time */
                             retryAt: string | null;
                         };
@@ -3961,7 +3961,7 @@ export interface paths {
                         "application/json": {
                             started: boolean;
                             /** @enum {string|null} */
-                            reason: "interval" | "action" | null;
+                            reason: "interval" | "action" | "demo" | null;
                             /** Format: date-time */
                             retryAt: string | null;
                             weeks: number;

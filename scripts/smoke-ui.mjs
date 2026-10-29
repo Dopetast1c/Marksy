@@ -23,6 +23,17 @@ export const DEVICES = {
   tablet: { viewport: { width: 820, height: 1180 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true },
 };
 
+/** The demo student's Оформление (server/src/seed/seed.ts), as the prototype's state.look */
+const STUDENT_LOOK = {
+  theme: 'light',
+  bg: 'wallpaper',
+  palette: 'sea',
+  wall: 'doodle',
+  wallUrl: null,
+  wallOp: 35,
+  font: 'manrope',
+};
+
 /** The prototype's states that match the app's screens: screen id and the demo child */
 export const PROTOTYPE_STATES = [
   ['login', 'login', null],
@@ -44,15 +55,17 @@ export const PROTOTYPE_STATES = [
   ['schedule-week', 'lessons', 'k', { lkind: 'week' }],
   ['schedule-2', 'lessons', 'm', { lkind: 'day' }],
   ['more', 'more', 'k'],
-  ['family', 'family', 'k'],
-  ['sync', 'sync', 'k'],
+  // the seed's two children are on two diaries, one login each (server/src/seed/demo-sync.ts)
+  ['family', 'family', 'k', { demoSchools: 'diff' }],
+  ['sync', 'sync', 'k', { demoSchools: 'diff' }],
   ['look', 'look', 'k'],
   ['avatar', 'avatarEdit', 'k', { avatarFor: 'm' }],
   ['school-bells', 'school', 'k', { schoolTab: 'bells' }],
   ['school-year', 'school', 'k', { schoolTab: 'year' }],
   // last: they leave the prototype in student mode
-  ['student-home', 'home', 'k', { role: 'student', uiMode: 'full' }],
-  ['student-simple-home', 'home', 'k', { role: 'student', uiMode: 'simple' }],
+  // the seed's student has picked a wallpaper
+  ['student-home', 'home', 'k', { role: 'student', uiMode: 'full', look: STUDENT_LOOK }],
+  ['student-simple-home', 'home', 'k', { role: 'student', uiMode: 'simple', look: STUDENT_LOOK }],
 ];
 
 /** The demo's student login (server/src/seed/seed.ts), for student mode and simple mode */
@@ -116,7 +129,8 @@ export async function overflowReport(page) {
       const text = ownText(el);
       if (!text || el.clientWidth === 0 || el.scrollWidth <= el.clientWidth + 1 || scrolls(el)) continue;
       const box = el.getBoundingClientRect();
-      if (box.bottom < 0 || box.width === 0) continue;
+      // text for screen readers only is hidden on purpose
+      if (box.bottom < 0 || box.width <= 1 || box.height <= 1) continue;
       cut.push(text.slice(0, 40));
     }
     return { cut, wide: document.documentElement.scrollWidth > window.innerWidth + 1 };
@@ -305,6 +319,7 @@ async function shootPrototype(browser, device, dir, log) {
           state.stack = [];
           state.unpicked = false;
           state.loginMode = 'login';
+          state.demoSchools = 'same';
           if (k) state.student = k;
           Object.assign(state, more ?? {});
           go(s, false);
