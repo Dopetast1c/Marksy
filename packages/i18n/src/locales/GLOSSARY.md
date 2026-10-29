@@ -33,7 +33,10 @@ one changes it everywhere in the file and here. The ten machine translations (M5
   holidays), Romanian «Modul», because the word for a third of the year is taken by the trimester kind. «Période»
   is also French for the generic period, and «Período» Portuguese for the other term kind.
 - **Gender.** Where a language has no neutral singular for a role, the translation uses a plural or a pair: Belarusian
-  «бацькі», Ukrainian «батьки», Spanish «madre o padre». Verbs about teachers and children are passive or impersonal
+  «бацькі», Ukrainian «батьки», Spanish «madre o padre».
+- **Open for a native speaker (be):** the role «родитель» is «бацькі», a plural, which reads oddly next to one
+  person's name («Мама (бацькі)»). Would the pair «бацька або маці», like the Spanish «madre o padre», read better
+  for the role label and «у ролі …»? Verbs about teachers and children are passive or impersonal
   («оцінку змінено», «zmieniona przez nauczyciela»), labels are nouns («fait», «feito», «listo» as a state).
 - **German nouns keep their capital** inside a sentence (`capitalNouns` in `languages.ts`, `inSentence()`): a term
   word or a tag name is not lower-cased there. German calls tags «Label», because «Tag» means day.

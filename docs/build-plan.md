@@ -16,7 +16,7 @@ The order in which Marksy is built with Claude Code, what each milestone must de
 | M5b | Web: Оценки, Итоги, Предметы, Предмет | `m5b-marks` | done |
 | M5c | Web: Расписание, lesson menu, ready ticks, own homework | `m5c-schedule` | done |
 | M5d | Web: Ещё, Семья, Синхронизация, Оформление | `m5d-more` | done |
-| M5e | Translations: the ten other interface languages | `m5e-i18n` | in progress |
+| M5e | Translations: the ten other interface languages | `m5e-i18n` | done |
 | M6 | Tags | `m6-tags` | todo |
 | M7 | Study time | `m7-study` | todo |
 | M8 | PWA: install, offline, service worker | `m8-pwa` | todo |
@@ -177,7 +177,10 @@ Local check: `pnpm install`, `pnpm db:up`, `pnpm check`, `pnpm dev`, then open h
 
 **Read:** `docs/design.md` 6.3; prototype screens Теги, Тег, Расписание, Главная.
 
-**First (owner, 2026-10-29):** `pnpm dev` and `pnpm dev:lan` check ports 5173 and 3000 before starting. When our own app already answers there (the PWA, and `/api/health` through it), they print «dev:lan уже запущен: http://<ip>:5173» (the address `smoke:lan` uses) and exit with 0 instead of a stack trace; when another program holds a port, they say which port and the process id that holds it, and exit non-zero. Tested without starting a server (the check as a pure function over what the ports answer).
+**First (owner, 2026-10-29):**
+1. The flaky `web/src/features/subjects/subjects.test.tsx` («switching the child opens their subject of the same name»: the tab «Милена» was not found once in a full run, most likely looked for before the screen rendered after loading): find the cause, fix it (wait for the element, never a longer timeout or a retry), then run the full `pnpm check` five times in a row, all green.
+2. `pnpm dev:connect` and `pnpm sync:once` refuse a demo provider («это демо-дневник»), so a seed login can never be taken over or given credentials from the command line (privacy review of M5e).
+3. `pnpm dev` and `pnpm dev:lan` check ports 5173 and 3000 before starting. When our own app already answers there (the PWA, and `/api/health` through it), they print «dev:lan уже запущен: http://<ip>:5173» (the address `smoke:lan` uses) and exit with 0 instead of a stack trace; when another program holds a port, they say which port and the process id that holds it, and exit non-zero. Tested without starting a server (the check as a pure function over what the ports answer).
 
 **Deliver:** presets, matching at sync into `lesson_tag_hits`, recompute on tag change, the Теги screen and editor with the live check (its entry «Уведомления по тегам» comes with M9), the тег пометка in the schedule, tags on marks for the filter, tag hits in «Обратить внимание» and «С кого начнём?».
 
