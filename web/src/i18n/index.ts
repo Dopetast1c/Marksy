@@ -44,6 +44,7 @@ export function languageOverride(): string | null {
 
 /** Development only: shows this device in a language (or the pseudo-locale) without saving it for the user */
 export async function setLanguageOverride(lng: string) {
+  if (!import.meta.env.DEV) return;
   try {
     localStorage.setItem(OVERRIDE_KEY, lng);
   } catch {

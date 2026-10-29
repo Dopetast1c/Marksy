@@ -605,7 +605,7 @@
   "more.sync.problem.stale": "los datos no están al día",
   "lang.unreviewed": "{{language}} · traducción sin revisar",
   "lang.help": "Ayuda a mejorar esta traducción",
-  "lang.help.sub": "Un formulario en la página del proyecto. Solo texto: sin capturas con datos reales",
+  "lang.help.sub": "Un formulario en la página del proyecto. Sin nombres, notas ni comentarios reales, ni en el texto ni en capturas",
   "look.summary.wallpaperOwn": "imagen de fondo propia",
   "more.guidance": "Consejos",
   "more.guidance.sub": "Consejos en «A tener en cuenta» y bajo las clases; sin ellos quedan solo los hechos",

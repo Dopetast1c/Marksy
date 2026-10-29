@@ -605,7 +605,7 @@
   "more.sync.problem.stale": "datele sunt vechi",
   "lang.unreviewed": "{{language}} · traducere neverificată",
   "lang.help": "Ajută la îmbunătățirea traducerii",
-  "lang.help.sub": "Un formular pe pagina proiectului. Doar text: fără capturi de ecran cu date reale",
+  "lang.help.sub": "Un formular pe pagina proiectului. Fără nume, note sau comentarii reale, nici în text, nici în capturi de ecran",
   "look.summary.wallpaperOwn": "tapet propriu",
   "more.guidance": "Sfaturi",
   "more.guidance.sub": "Sfaturi în „Merită atenție” și sub lecții; fără ele rămân doar faptele",

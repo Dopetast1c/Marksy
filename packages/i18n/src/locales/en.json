@@ -593,7 +593,7 @@
   "more.sync.problem.stale": "the data is out of date",
   "lang.unreviewed": "{{language}} · translation not checked",
   "lang.help": "Help improve this translation",
-  "lang.help.sub": "A form on the project’s page. Text only: no screenshots with real data",
+  "lang.help.sub": "A form on the project’s page. No real names, marks or comments, in text or in screenshots",
   "look.summary.wallpaperOwn": "own wallpaper",
   "more.guidance": "Tips",
   "more.guidance.sub": "Advice in “Worth a look” and under lessons; without it only the facts remain",

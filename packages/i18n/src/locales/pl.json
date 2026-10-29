@@ -628,7 +628,7 @@
   "more.sync.problem.stale": "dane są nieaktualne",
   "lang.unreviewed": "{{language}} · tłumaczenie niesprawdzone",
   "lang.help": "Pomóż ulepszyć to tłumaczenie",
-  "lang.help.sub": "Formularz na stronie projektu. Tylko tekst: bez zrzutów ekranu z prawdziwymi danymi",
+  "lang.help.sub": "Formularz na stronie projektu. Bez prawdziwych imion, ocen i komentarzy: ani w tekście, ani na zrzutach ekranu",
   "look.summary.wallpaperOwn": "własna tapeta",
   "more.guidance": "Podpowiedzi",
   "more.guidance.sub": "Porady w „Warto zerknąć” i pod lekcjami; bez nich zostają tylko fakty",

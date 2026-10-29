@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        **Do not attach screenshots with real data: children's names, marks, comments.** Write only the text of the string, as it is and as it should be.
+        **No real names, marks or comments, in screenshots or in text.** Write only the text of the string, as it is and as it should be, with any name, mark, subject, comment or date replaced by a placeholder such as {name}.
   - type: input
     id: language
     attributes:
@@ -25,7 +25,7 @@ body:
     id: current
     attributes:
       label: How it reads now
-      description: Copy the text exactly as the app shows it.
+      description: The text as the app shows it, with any name, mark, subject, comment or date replaced by a placeholder such as {name}.
     validations:
       required: true
   - type: textarea

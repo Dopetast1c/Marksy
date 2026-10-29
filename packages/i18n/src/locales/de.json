@@ -582,7 +582,7 @@
   "more.sync.problem.stale": "die Daten sind veraltet",
   "lang.unreviewed": "{{language}} · Übersetzung nicht geprüft",
   "lang.help": "Bei der Übersetzung helfen",
-  "lang.help.sub": "Ein Formular auf der Projektseite. Nur Text: keine Screenshots mit echten Daten",
+  "lang.help.sub": "Ein Formular auf der Projektseite. Keine echten Namen, Noten oder Kommentare, weder im Text noch auf Screenshots",
   "look.summary.wallpaperOwn": "eigenes Hintergrundbild",
   "more.guidance": "Tipps",
   "more.guidance.sub": "Ratschläge unter „Einen Blick wert“ und unter den Stunden; ohne sie bleiben nur die Fakten",

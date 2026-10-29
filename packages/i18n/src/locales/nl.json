@@ -582,7 +582,7 @@
   "more.sync.problem.stale": "de gegevens zijn verouderd",
   "lang.unreviewed": "{{language}} · vertaling niet gecontroleerd",
   "lang.help": "Help deze vertaling te verbeteren",
-  "lang.help.sub": "Een formulier op de pagina van het project. Alleen tekst: geen schermafbeeldingen met echte gegevens",
+  "lang.help.sub": "Een formulier op de pagina van het project. Geen echte namen, cijfers of opmerkingen, niet in tekst en niet op schermafbeeldingen",
   "look.summary.wallpaperOwn": "eigen behang",
   "more.guidance": "Tips",
   "more.guidance.sub": "Adviezen in “Let op” en onder lessen; zonder tips blijven alleen de feiten over",

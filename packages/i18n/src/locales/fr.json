@@ -605,7 +605,7 @@
   "more.sync.problem.stale": "les données ne sont plus à jour",
   "lang.unreviewed": "{{language}} · traduction non vérifiée",
   "lang.help": "Aider à améliorer cette traduction",
-  "lang.help.sub": "Un formulaire sur la page du projet. Du texte uniquement : pas de captures d’écran avec de vraies données",
+  "lang.help.sub": "Un formulaire sur la page du projet. Aucun vrai nom, aucune note ni aucun commentaire, ni dans le texte ni sur une capture d’écran",
   "look.summary.wallpaperOwn": "fond d’écran personnel",
   "more.guidance": "Conseils",
   "more.guidance.sub": "Conseils dans « À regarder » et sous les cours ; sans eux, il ne reste que les faits",
