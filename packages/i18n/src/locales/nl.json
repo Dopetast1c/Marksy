@@ -47,6 +47,8 @@
   "app.title": "Marksy",
   "app.loading": "Laden",
   "app.error": "Er ging iets mis. Probeer het over een minuut opnieuw.",
+  "app.update.available": "Marksy {{version}} is beschikbaar",
+  "app.update.reload": "Bijwerken",
 
   "app.back": "Terug",
   "family.title": "Gezin",
@@ -186,6 +188,7 @@
   "auth.error.diary_unavailable": "Het schoolportaal reageert nu niet. Probeer het later opnieuw.",
   "auth.error.student_login_not_supported": "De login van een leerling wordt nog niet ondersteund: koppel het schoolportaal van een ouder.",
   "auth.error.invite_gone": "Deze uitnodigingscode werkt niet: hij is onjuist, al gebruikt of verlopen.",
+  "auth.error.signup_closed": "Deze Marksy is al ingericht. Vraag iemand uit het gezin om een uitnodiging.",
 
   "connect.provider": "Land en schoolportaal",
   "connect.beta": "Dit schoolportaal wordt ondersteund in een testversie: misschien werkt nog niet alles.",
@@ -308,6 +311,7 @@
   "sync.refresh.later": "de volgende keer inloggen op het schoolportaal kan om {{at}}",
   "sync.refresh.action": "eerst is een nieuw wachtwoord voor het schoolportaal nodig",
   "sync.refresh.demo": "Dit is een demo-schoolportaal: niets leest het",
+  "sync.refresh.off": "Synchronisatie staat op deze server nu uit",
   "sync.newPassword": "Wachtwoord schoolportaal bijwerken",
   "sync.state": "Status",
   "sync.status.ok": "alles actueel",
@@ -705,6 +709,8 @@
   "fresh.paused.never": "Het schoolportaal reageerde een paar keer niet; de volgende pogingen zijn uitgesteld.",
   "fresh.refused": "Gegevens van {{when}}. Het schoolportaal accepteerde de login niet; de synchronisatie is gestopt.",
   "fresh.refused.never": "Het schoolportaal accepteerde de login niet; de synchronisatie is gestopt.",
+  "fresh.unreachable": "Geen verbinding met de server. Gegevens van {{when}}.",
+  "fresh.unreachable.never": "Geen verbinding met de server.",
 
   "term.quarter": "Kwartaal",
   "term.trimester": "Trimester",

@@ -5,7 +5,8 @@ import type { Schemas } from '../api/client';
 // The account is the one that reads the child now (sync status lists only those children under it).
 
 export type SyncStatus = Schemas['SyncStatus'];
-export type Freshness = { kind: 'loading' | 'stale' | 'paused' | 'refused'; since: string | null };
+/** unreachable: the server does not answer (restarting for an update, or the host is off); the data on screen stays */
+export type Freshness = { kind: 'loading' | 'stale' | 'paused' | 'refused' | 'unreachable'; since: string | null };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 

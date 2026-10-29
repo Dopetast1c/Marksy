@@ -1,13 +1,16 @@
 import createClient from 'openapi-fetch';
+import { BASE } from '../lib/base';
 import type { components, paths } from './schema';
 
 // The typed client (docs/design.md 13) over the types generated from the server's OpenAPI document. The browser only
-// ever talks to its own origin: every path is a relative /api one, so the app works on localhost, over the home
-// network through the dev server's proxy and behind a reverse proxy alike (CLAUDE.md "Local and phone testing").
+// ever talks to its own origin: every path is a /api one under the app's base path, so the app works on localhost,
+// over the home network through the dev server's proxy and behind a reverse proxy at any path alike (CLAUDE.md "Local
+// and phone testing", docs/running.md).
 
 export const api = createClient<paths>({
-  // the page's own origin, whatever it is (localhost, the computer's address on the home network, a public host)
-  baseUrl: typeof location === 'undefined' ? '' : location.origin,
+  // the page's own origin, whatever it is (localhost, the computer's address on the home network, a public host),
+  // and the path the app is served under
+  baseUrl: typeof location === 'undefined' ? BASE : `${location.origin}${BASE}`,
   credentials: 'same-origin',
   // looked up on every call, so tests can replace it
   fetch: (request) => globalThis.fetch(request),

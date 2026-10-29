@@ -14,6 +14,7 @@ import { MenuCard, MenuRow } from '../../components/MenuRow';
 import { SegmentedControl } from '../../components/SegmentedControl';
 import { Switch } from '../../components/Switch';
 import { intlLocale, useT } from '../../i18n';
+import { appPath } from '../../lib/base';
 import { ConnectForm } from '../auth/ConnectForm';
 
 // Семья (docs/design.md 5.6, 7.1–7.3, ux-principles D54), for the admin and parents: the requests to join (admin),
@@ -374,7 +375,12 @@ function InviteSheet({ view, open, onClose }: { view: FamilyView; open: boolean;
     setFailed(false);
     try {
       const res = await data(api.POST('/api/family/invites', { body: { role, studentIds: kids } }));
-      setMade({ code: res.code, url: new URL(res.url, window.location.origin).href, expiresAt: String(res.expiresAt) });
+      // the invite's path is the app's own (/join/<code>): the link carries the base path the app is served under
+      setMade({
+        code: res.code,
+        url: new URL(appPath(res.url), window.location.origin).href,
+        expiresAt: String(res.expiresAt),
+      });
     } catch {
       setFailed(true);
     }

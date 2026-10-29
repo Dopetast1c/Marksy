@@ -47,6 +47,8 @@
   "app.title": "Marksy",
   "app.loading": "Ładowanie",
   "app.error": "Coś poszło nie tak. Spróbuj ponownie za minutę.",
+  "app.update.available": "Dostępna jest Marksy {{version}}",
+  "app.update.reload": "Aktualizuj",
 
   "app.back": "Wstecz",
   "family.title": "Rodzina",
@@ -190,6 +192,7 @@
   "auth.error.diary_unavailable": "Dziennik teraz nie odpowiada. Spróbuj później.",
   "auth.error.student_login_not_supported": "Login ucznia do dziennika nie jest jeszcze obsługiwany: podłącz dziennik rodzica.",
   "auth.error.invite_gone": "Ten kod zaproszenia nie działa: jest błędny, użyty lub wygasł.",
+  "auth.error.signup_closed": "Ten Marksy jest już skonfigurowany. Poproś kogoś z rodziny o zaproszenie.",
 
   "connect.provider": "Kraj i dziennik",
   "connect.beta": "Ten dziennik jest obsługiwany w wersji testowej: coś może jeszcze nie działać.",
@@ -312,6 +315,7 @@
   "sync.refresh.later": "następne logowanie do dziennika możliwe o {{at}}",
   "sync.refresh.action": "najpierw potrzebne jest nowe hasło do dziennika",
   "sync.refresh.demo": "To dziennik demonstracyjny: nic go nie odczytuje",
+  "sync.refresh.off": "Synchronizacja na tym serwerze jest teraz wyłączona",
   "sync.newPassword": "Zaktualizuj hasło do dziennika",
   "sync.state": "Stan",
   "sync.status.ok": "wszystko aktualne",
@@ -757,6 +761,8 @@
   "fresh.paused.never": "Dziennik kilka razy nie odpowiedział; kolejne próby są odłożone.",
   "fresh.refused": "Stan danych: {{when}}. Dziennik nie przyjął loginu; synchronizacja jest zatrzymana.",
   "fresh.refused.never": "Dziennik nie przyjął loginu; synchronizacja jest zatrzymana.",
+  "fresh.unreachable": "Brak połączenia z serwerem. Stan danych: {{when}}.",
+  "fresh.unreachable.never": "Brak połączenia z serwerem.",
 
   "term.quarter": "Kwartał",
   "term.trimester": "Trymestr",

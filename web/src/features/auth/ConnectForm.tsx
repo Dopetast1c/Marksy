@@ -111,6 +111,14 @@ export function ConnectForm({ intoFamily }: { intoFamily?: { onDone: () => void 
     }
   };
 
+  // signing up is closed on this instance (SIGNUP): nothing to fill in, an invite is the way in
+  if (providers.isError)
+    return (
+      <p role="alert" className="text-small text-ink2">
+        {errorText(t, providers.error)}
+      </p>
+    );
+
   return (
     <form onSubmit={submit} className="flex flex-col gap-3.5">
       <div className="flex flex-col gap-1.5">

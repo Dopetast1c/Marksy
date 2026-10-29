@@ -50,6 +50,8 @@
   "app.title": "Marksy",
   "app.loading": "Loading",
   "app.error": "Something went wrong. Try again in a minute.",
+  "app.update.available": "Marksy {{version}} is available",
+  "app.update.reload": "Update",
 
   "app.back": "Back",
   "family.title": "Family",
@@ -194,6 +196,7 @@
   "auth.error.diary_unavailable": "The diary does not answer right now. Try again later.",
   "auth.error.student_login_not_supported": "A student's diary login is not supported yet: connect a parent's diary.",
   "auth.error.invite_gone": "This invite code does not work: it is wrong, used or expired.",
+  "auth.error.signup_closed": "This Marksy is set up already. Ask someone in the family for an invite.",
 
   "connect.provider": "Country and diary",
   "connect.beta": "This diary is supported in a test version: something may not work yet.",
@@ -319,6 +322,7 @@
   "sync.refresh.later": "the next diary login is possible at {{at}}",
   "sync.refresh.action": "a new diary password is needed first",
   "sync.refresh.demo": "This is a demo diary: nothing reads it",
+  "sync.refresh.off": "Syncing is switched off on this server for now",
   "sync.newPassword": "Update the diary password",
   "sync.state": "State",
   "sync.status.ok": "all fresh",
@@ -725,6 +729,8 @@
   "fresh.paused.never": "The diary did not answer several times; the next tries are postponed.",
   "fresh.refused": "Data as of {{when}}. The diary did not accept the login; syncing has stopped.",
   "fresh.refused.never": "The diary did not accept the login; syncing has stopped.",
+  "fresh.unreachable": "No connection to the server. Data as of {{when}}.",
+  "fresh.unreachable.never": "No connection to the server.",
 
   "term.quarter": "Quarter",
   "term.quarter_comment": "a period segment, four share 360 px: max 10 chars",

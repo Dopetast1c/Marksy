@@ -47,6 +47,8 @@
   "app.title": "Marksy",
   "app.loading": "A carregar",
   "app.error": "Algo correu mal. Tente de novo daqui a um minuto.",
+  "app.update.available": "O Marksy {{version}} está disponível",
+  "app.update.reload": "Atualizar",
 
   "app.back": "Voltar",
   "family.title": "Família",
@@ -188,6 +190,7 @@
   "auth.error.diary_unavailable": "A caderneta não responde neste momento. Tente mais tarde.",
   "auth.error.student_login_not_supported": "A conta de estudante na caderneta ainda não é suportada: ligue a caderneta de um responsável.",
   "auth.error.invite_gone": "Este código de convite não funciona: está errado, já foi usado ou expirou.",
+  "auth.error.signup_closed": "Este Marksy já está configurado. Peça um convite a alguém da família.",
 
   "connect.provider": "País e caderneta",
   "connect.beta": "Esta caderneta é suportada numa versão de teste: algo pode ainda não funcionar.",
@@ -310,6 +313,7 @@
   "sync.refresh.later": "a próxima entrada na caderneta é possível a partir de {{at}}",
   "sync.refresh.action": "primeiro é precisa uma nova palavra-passe da caderneta",
   "sync.refresh.demo": "Esta é uma caderneta de demonstração: nada a lê",
+  "sync.refresh.off": "A sincronização está desligada neste servidor por agora",
   "sync.newPassword": "Atualizar a palavra-passe da caderneta",
   "sync.state": "Estado",
   "sync.status.ok": "tudo atualizado",
@@ -731,6 +735,8 @@
   "fresh.paused.never": "A caderneta não respondeu várias vezes; as próximas tentativas foram adiadas.",
   "fresh.refused": "Dados de {{when}}. A caderneta não aceitou a conta; a sincronização parou.",
   "fresh.refused.never": "A caderneta não aceitou a conta; a sincronização parou.",
+  "fresh.unreachable": "Sem ligação ao servidor. Dados de {{when}}.",
+  "fresh.unreachable.never": "Sem ligação ao servidor.",
 
   "term.quarter": "Bimestre",
   "term.trimester": "Trimestre",

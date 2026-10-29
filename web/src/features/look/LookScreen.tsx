@@ -15,6 +15,7 @@ import { BackIcon, CheckIcon, PlusIcon } from '../../components/icons';
 import { ListCard, Note, Row, SectionHeader, Stripe } from '../../components/Section';
 import { SegmentedControl } from '../../components/SegmentedControl';
 import { useT } from '../../i18n';
+import { appPath } from '../../lib/base';
 import { fontFamily, loadFont } from '../../lib/fonts';
 import { subjectStyle } from '../../lib/subject-color';
 import { SubjectColorGrid } from '../subjects/SubjectSettings';
@@ -130,7 +131,7 @@ export function LookScreen() {
     void (async () => {
       setError(null);
       try {
-        const res = await fetch('/api/me/wallpaper', {
+        const res = await fetch(appPath('/api/me/wallpaper'), {
           method: 'PUT',
           headers: { 'Content-Type': 'image/jpeg' },
           body: await scaledJpeg(file),
@@ -236,7 +237,7 @@ export function LookScreen() {
                         pressed={a.wallpaper === w}
                         onClick={() => void save({ wallpaper: w })}
                         label={t(`look.wallpaper.${w}`)}
-                        sample={{ style: { backgroundImage: `url("/wallpapers/${w}.svg")` } }}
+                        sample={{ style: { backgroundImage: `url("${appPath(`/wallpapers/${w}.svg`)}")` } }}
                       />
                     ))}
                     {a.hasOwnWallpaper ? (

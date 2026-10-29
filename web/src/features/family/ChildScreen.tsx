@@ -13,6 +13,7 @@ import { Button, Field } from '../../components/Field';
 import { BackIcon } from '../../components/icons';
 import { Switch } from '../../components/Switch';
 import { useT } from '../../i18n';
+import { appPath } from '../../lib/base';
 
 // A child in Семья (docs/design.md 5.6, D9, D54): the avatar, drawn from traits (every option shown already applied to
 // the child's current look) or a photo; for the admin, «Перестать следить», «Следить снова» and «Удалить данные» (7.1).
@@ -79,7 +80,7 @@ export function ChildScreen() {
     if (!file) return;
     void done(async () => {
       const blob = await squareJpeg(file);
-      const res = await fetch(`/api/students/${studentId}/photo`, {
+      const res = await fetch(appPath(`/api/students/${studentId}/photo`), {
         method: 'PUT',
         headers: { 'Content-Type': 'image/jpeg' },
         body: blob,

@@ -47,6 +47,8 @@
   "app.title": "Marksy",
   "app.loading": "Se încarcă",
   "app.error": "Ceva n-a mers. Încearcă din nou peste un minut.",
+  "app.update.available": "Marksy {{version}} este disponibil",
+  "app.update.reload": "Actualizează",
 
   "app.back": "Înapoi",
   "family.title": "Familie",
@@ -188,6 +190,7 @@
   "auth.error.diary_unavailable": "Catalogul nu răspunde acum. Încearcă mai târziu.",
   "auth.error.student_login_not_supported": "Contul de elev din catalog nu e încă suportat: conectează catalogul unui părinte.",
   "auth.error.invite_gone": "Acest cod de invitație nu funcționează: e greșit, folosit sau expirat.",
+  "auth.error.signup_closed": "Acest Marksy e deja configurat. Cere o invitație cuiva din familie.",
 
   "connect.provider": "Țara și catalogul",
   "connect.beta": "Acest catalog e suportat într-o versiune de test: s-ar putea ca unele lucruri să nu funcționeze încă.",
@@ -310,6 +313,7 @@
   "sync.refresh.later": "următoarea autentificare în catalog e posibilă la {{at}}",
   "sync.refresh.action": "mai întâi e nevoie de o parolă nouă pentru catalog",
   "sync.refresh.demo": "Acesta e un catalog demo: nimeni nu îl citește",
+  "sync.refresh.off": "Sincronizarea e oprită deocamdată pe acest server",
   "sync.newPassword": "Actualizează parola catalogului",
   "sync.state": "Stare",
   "sync.status.ok": "totul la zi",
@@ -731,6 +735,8 @@
   "fresh.paused.never": "Catalogul nu a răspuns de mai multe ori; următoarele încercări sunt amânate.",
   "fresh.refused": "Date: {{when}}. Catalogul nu a acceptat datele de autentificare; sincronizarea s-a oprit.",
   "fresh.refused.never": "Catalogul nu a acceptat datele de autentificare; sincronizarea s-a oprit.",
+  "fresh.unreachable": "Nu există conexiune cu serverul. Date: {{when}}.",
+  "fresh.unreachable.never": "Nu există conexiune cu serverul.",
 
   "term.quarter": "Modul",
   "term.trimester": "Trimestru",

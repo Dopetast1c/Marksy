@@ -47,6 +47,8 @@
   "app.title": "Marksy",
   "app.loading": "Cargando",
   "app.error": "Algo ha fallado. Vuelve a intentarlo dentro de un minuto.",
+  "app.update.available": "Marksy {{version}} está disponible",
+  "app.update.reload": "Actualizar",
 
   "app.back": "Atrás",
   "family.title": "Familia",
@@ -188,6 +190,7 @@
   "auth.error.diary_unavailable": "La agenda no responde ahora mismo. Inténtalo más tarde.",
   "auth.error.student_login_not_supported": "Aún no se admite el usuario de estudiante de la agenda: conecta la agenda de una madre o un padre.",
   "auth.error.invite_gone": "Este código de invitación no funciona: es incorrecto, ya se usó o ha caducado.",
+  "auth.error.signup_closed": "Este Marksy ya está configurado. Pide una invitación a alguien de la familia.",
 
   "connect.provider": "País y agenda",
   "connect.beta": "Esta agenda funciona en versión de prueba: puede que algo aún no funcione.",
@@ -310,6 +313,7 @@
   "sync.refresh.later": "el próximo acceso a la agenda será posible a las {{at}}",
   "sync.refresh.action": "antes hace falta una contraseña nueva de la agenda",
   "sync.refresh.demo": "Es una agenda de demostración: nadie la lee",
+  "sync.refresh.off": "La sincronización está desactivada en este servidor por ahora",
   "sync.newPassword": "Actualizar la contraseña de la agenda",
   "sync.state": "Estado",
   "sync.status.ok": "todo al día",
@@ -731,6 +735,8 @@
   "fresh.paused.never": "La agenda no respondió varias veces; los próximos intentos se aplazan.",
   "fresh.refused": "Datos de {{when}}. La agenda no aceptó el acceso; la sincronización se ha detenido.",
   "fresh.refused.never": "La agenda no aceptó el acceso; la sincronización se ha detenido.",
+  "fresh.unreachable": "Sin conexión con el servidor. Datos de {{when}}.",
+  "fresh.unreachable.never": "Sin conexión con el servidor.",
 
   "term.quarter": "Bimestre",
   "term.trimester": "Trimestre",

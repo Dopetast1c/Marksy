@@ -90,7 +90,9 @@ export function SyncScreen() {
           ? t('sync.refresh.later', { at: formatTime(res.retryAt, tzOf(a), locale) })
           : res.reason === 'demo'
             ? t('sync.refresh.demo')
-            : t('sync.refresh.action'),
+            : res.reason === 'off'
+              ? t('sync.refresh.off')
+              : t('sync.refresh.action'),
     );
     await reload();
   };

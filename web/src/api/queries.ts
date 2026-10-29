@@ -97,6 +97,21 @@ export const useSyncStatus = () =>
     refetchInterval: 5 * 60_000,
   });
 
+/**
+ * Whether the server answers, and which version it runs: the update prompt names a newer one, and a failed check shows
+ * the banner «no connection» over the data already on screen instead of an error (docs/running.md, updates)
+ */
+export const useServerHealth = () =>
+  useQuery({
+    queryKey: ['health'],
+    queryFn: () => data(api.GET('/api/health')),
+    staleTime: 60_000,
+    refetchInterval: 5 * 60_000,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    retry: false,
+  });
+
 export type FeedItem = Schemas['FeedItem'];
 export type FinalCell = Schemas['FinalCell'];
 export type FinalsState = Schemas['FinalsState'];

@@ -17,6 +17,7 @@ import { HomeScreen } from '../features/overview/HomeScreen';
 import { PickScreen } from '../features/pick/PickScreen';
 import { ScheduleScreen } from '../features/schedule/ScheduleScreen';
 import { SchoolScreen } from '../features/school/SchoolScreen';
+import { BASE } from '../lib/base';
 import { Appearance } from './Appearance';
 import { RequireAuth, RequireChild, Start } from './guards';
 
@@ -62,7 +63,10 @@ export function newQueryClient() {
 }
 
 export function App({ client = newQueryClient(), at }: { client?: QueryClient; at?: string }) {
-  const router = at ? createMemoryRouter(routes, { initialEntries: [at] }) : createBrowserRouter(routes);
+  // under BASE_PATH the router's paths stay the app's own ("/more"), the address bar shows "/marksy/more"
+  const router = at
+    ? createMemoryRouter(routes, { initialEntries: [at] })
+    : createBrowserRouter(routes, { basename: BASE || '/' });
   return (
     <QueryClientProvider client={client}>
       <Appearance />

@@ -47,6 +47,8 @@
   "app.title": "Marksy",
   "app.loading": "Wird geladen",
   "app.error": "Etwas ist schiefgelaufen. Versuchen Sie es in einer Minute noch einmal.",
+  "app.update.available": "Marksy {{version}} ist verfügbar",
+  "app.update.reload": "Aktualisieren",
 
   "app.back": "Zurück",
   "family.title": "Familie",
@@ -186,6 +188,7 @@
   "auth.error.diary_unavailable": "Das Klassenbuch antwortet gerade nicht. Versuchen Sie es später noch einmal.",
   "auth.error.student_login_not_supported": "Ein Schülerzugang zum Klassenbuch wird noch nicht unterstützt: Verbinden Sie den Zugang eines Elternteils.",
   "auth.error.invite_gone": "Dieser Einladungscode funktioniert nicht: Er ist falsch, schon benutzt oder abgelaufen.",
+  "auth.error.signup_closed": "Dieses Marksy ist schon eingerichtet. Bitten Sie jemanden aus der Familie um eine Einladung.",
 
   "connect.provider": "Land und Klassenbuch",
   "connect.beta": "Dieses Klassenbuch wird in einer Testversion unterstützt: Manches funktioniert vielleicht noch nicht.",
@@ -308,6 +311,7 @@
   "sync.refresh.later": "die nächste Anmeldung im Klassenbuch ist um {{at}} möglich",
   "sync.refresh.action": "zuerst ist ein neues Passwort fürs Klassenbuch nötig",
   "sync.refresh.demo": "Das ist ein Demo-Klassenbuch: Es wird nicht abgerufen",
+  "sync.refresh.off": "Der Abgleich ist auf diesem Server gerade ausgeschaltet",
   "sync.newPassword": "Passwort des Klassenbuchs ändern",
   "sync.state": "Status",
   "sync.status.ok": "alles aktuell",
@@ -705,6 +709,8 @@
   "fresh.paused.never": "Das Klassenbuch hat mehrmals nicht geantwortet; die nächsten Versuche sind verschoben.",
   "fresh.refused": "Stand: {{when}}. Das Klassenbuch hat die Anmeldung abgelehnt; der Abgleich ist gestoppt.",
   "fresh.refused.never": "Das Klassenbuch hat die Anmeldung abgelehnt; der Abgleich ist gestoppt.",
+  "fresh.unreachable": "Keine Verbindung zum Server. Stand: {{when}}.",
+  "fresh.unreachable.never": "Keine Verbindung zum Server.",
 
   "term.quarter": "Quartal",
   "term.trimester": "Trimester",

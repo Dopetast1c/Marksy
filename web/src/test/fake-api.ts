@@ -13,6 +13,10 @@ export interface FakeState {
   bodies: Record<string, unknown>;
   /** the connected diary refuses the login */
   diaryRefuses?: boolean;
+  /** the version /api/health reports; this build's own by default */
+  serverVersion?: string;
+  /** the server does not answer (restarting for an update): /api/health fails, everything else is untouched */
+  serverDown?: boolean;
   /** a diary without work and lesson types (the usual real case, api-spec 7.3): every type is null */
   noTypes?: boolean;
   /** Оценки answers in two pages */
@@ -769,6 +773,10 @@ export function fakeApi(start: Partial<FakeState> = {}) {
       state.signedIn = true;
       return json({ ok: true });
     }
+    if (route === 'GET /api/health')
+      return state.serverDown
+        ? new Response('Bad Gateway', { status: 502 })
+        : json({ status: 'ok', version: state.serverVersion ?? __MARKSY_VERSION__, commit: 'test' });
     if (route === 'GET /api/providers') return json(PROVIDERS);
     if (route === 'POST /api/auth/connect') {
       if (state.diaryRefuses) return error(401, 'diary_auth_failed');

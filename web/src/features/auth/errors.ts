@@ -14,6 +14,7 @@ const KNOWN = new Set([
   'diary_unavailable',
   'student_login_not_supported',
   'invite_gone',
+  'signup_closed',
 ]);
 
 export function errorText(t: TFunction, err: unknown): string {

@@ -1,5 +1,6 @@
 import type { Schemas } from '../api/client';
 import { useStudent } from '../hooks/useStudent';
+import { appPath } from '../lib/base';
 import { Avatar, defaultTraits } from './Avatar';
 
 // A child's avatar as the family set it (docs/design.md 5.6, D9): the traits drawn by Avatar, or the photo the family
@@ -12,7 +13,7 @@ export function ChildAvatar({ avatar, index, size = 34 }: { avatar: AvatarData; 
   if (avatar?.kind === 'photo')
     return (
       <img
-        src={avatar.url}
+        src={appPath(avatar.url)}
         alt=""
         width={size}
         height={size}

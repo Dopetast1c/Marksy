@@ -34,7 +34,8 @@ export function RequireAuth() {
     else if (!pending && saved !== i18n.language) void setLanguage(saved);
   }, [userId, saved]);
   if (me.isPending) return <EmptyState title={t('app.loading')} />;
-  if (me.isError) return <EmptyState title={t('app.error')} />;
+  // a failed check while the person is known (the server restarts for an update) keeps the app on screen
+  if (me.isError && !me.data) return <EmptyState title={t('app.error')} />;
   if (!me.data) return <Navigate to="/login" replace />;
   return <Outlet />;
 }

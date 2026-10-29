@@ -47,6 +47,8 @@
   "app.title": "Marksy",
   "app.loading": "Chargement",
   "app.error": "Un problème est survenu. Réessayez dans une minute.",
+  "app.update.available": "Marksy {{version}} est disponible",
+  "app.update.reload": "Mettre à jour",
 
   "app.back": "Retour",
   "family.title": "Famille",
@@ -187,6 +189,7 @@
   "auth.error.login_taken": "Cet identifiant Marksy est déjà pris. Choisissez-en un autre.",
   "auth.error.diary_unavailable": "Le carnet numérique ne répond pas pour le moment. Réessayez plus tard.",
   "auth.error.student_login_not_supported": "L’identifiant élève du carnet n’est pas encore pris en charge : connectez le carnet d’un parent.",
+  "auth.error.signup_closed": "Ce Marksy est déjà configuré. Demandez une invitation à un membre de la famille.",
   "auth.error.invite_gone": "Ce code d’invitation ne fonctionne pas : il est erroné, déjà utilisé ou expiré.",
 
   "connect.provider": "Pays et carnet",
@@ -309,6 +312,7 @@
   "sync.refresh.started": "La lecture a commencé ; les données arrivent d’ici quelques minutes",
   "sync.refresh.later": "la prochaine connexion au carnet est possible à {{at}}",
   "sync.refresh.action": "il faut d’abord un nouveau mot de passe du carnet",
+  "sync.refresh.off": "La synchronisation est désactivée sur ce serveur pour le moment",
   "sync.refresh.demo": "C’est un carnet de démonstration : rien ne le lit",
   "sync.newPassword": "Mettre à jour le mot de passe du carnet",
   "sync.state": "État",
@@ -730,6 +734,8 @@
   "fresh.paused": "Dernières données : {{when}}. Le carnet n’a pas répondu plusieurs fois ; les prochaines tentatives sont reportées.",
   "fresh.paused.never": "Le carnet n’a pas répondu plusieurs fois ; les prochaines tentatives sont reportées.",
   "fresh.refused": "Dernières données : {{when}}. Le carnet n’a pas accepté l’identifiant ; la synchronisation est arrêtée.",
+  "fresh.unreachable": "Pas de connexion au serveur. Données à jour au {{when}}.",
+  "fresh.unreachable.never": "Pas de connexion au serveur.",
   "fresh.refused.never": "Le carnet n’a pas accepté l’identifiant ; la synchronisation est arrêtée.",
 
   "term.quarter": "Période",
