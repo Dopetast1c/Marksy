@@ -144,8 +144,10 @@ The owner tests every screen in a desktop browser and on a phone over the home n
 
 The owner's machine is Windows; the shell is Git Bash.
 
-- Never call `python` or `python3`: on Windows it is usually the Microsoft Store stub, which hangs waiting for input. Helper scripts are Node only (`node -e`, `node scripts/*.mjs`).
-- Write and change files with the editing tools (Write, Edit), not with `printf`, `echo` or heredocs in the shell: Git Bash eats backslashes in them (`\\w` in a JSON regex arrives as `\w`).
+- Never call `python` or `python3`: on Windows it is usually the Microsoft Store stub, which hangs waiting for input. Helper scripts are Node only, as files (`node scripts/*.mjs`) behind a pnpm script.
+- Write and change files only with the editing tools (Write, Edit), even for many similar edits (several Edit calls): never with `node -e`, `sed`, `printf`, `echo` or heredocs in the shell. Git Bash eats backslashes in them (`\\w` in a JSON regex arrives as `\w`), and every shell edit asks the owner for permission while the editing tools do not.
+- Read and search only with Read, Grep and Glob, never with `grep`, `rg`, `find`, `cat`, `head`, `tail` or `ls` in the shell. Do not prefix commands with `cd`: use absolute paths or the tool's path parameter. The shell is for what the tools cannot do (`pnpm`, `git`, `docker`); anything run repeatedly becomes a pnpm script (`Bash(pnpm *)` is allowed) instead of an inline `node -e`.
+- One command per shell call, as is: no pipes or redirects (`| tail`, `| grep`, `2>&1 | …`) and no chaining with `&&` or `;`. Long output is fine. A plain command matches the allow rules in `.claude/settings.json`; a compound one asks the owner every time.
 - Never run, import or `tsx --eval` a probe script (`providers/*/scripts/probe.ts`): importing it starts a real login. Test the launcher only with `MARKSY_PROBE_DRY_RUN=1 node scripts/probe.mjs …`; test probe logic through `src/probe.ts`.
 - One `git push` at a time: before a new push, make sure the previous one has finished. `.claude/settings.json` sets `GCM_INTERACTIVE=never`, so a push without stored credentials fails with an error instead of waiting for the Git Credential Manager account window; when that happens, tell the owner to sign in once (`git push` in their own terminal) instead of retrying.
 

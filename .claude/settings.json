@@ -8,6 +8,9 @@
     "defaultMode": "acceptEdits",
     "allow": [
       "Bash(pnpm *)",
+      "Bash(pnpm --filter *)",
+      "Bash(pnpm -F *)",
+      "Bash(pnpm run *)",
       "Bash(npm install -g pnpm*)",
       "Bash(node *)",
       "Bash(docker version*)",
