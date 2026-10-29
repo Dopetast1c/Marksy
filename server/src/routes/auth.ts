@@ -13,6 +13,7 @@ import { underLimit } from '../http/rate-limit';
 import type { Limiters } from '../http/rate-limit';
 import { route } from '../http/route';
 import { endSession, startSession } from '../http/session';
+import { assertSignupOpen } from '../http/signup';
 import { appearanceIn } from '../family/appearance';
 import { buildMe, meResponse } from './me';
 
@@ -215,11 +216,13 @@ export function authRoutes(deps: AppDeps, limiters: Limiters): Router {
       errors: {
         400: 'Unknown diary system, missing field, or a student diary login (not supported yet)',
         401: 'The diary refused the login',
+        403: 'Signing up is closed on this instance (SIGNUP): join by invite',
         409: 'The Marksy login is taken, the diary is connected already, or the diary asks for a code (needs_2fa)',
         503: 'The diary does not answer',
       },
     },
     async (req, { body }, res) => {
+      await assertSignupOpen(deps, req);
       // every connect is a login to the diary: limited per address and per diary login
       const result = await underLimit(limiters.connect, req.ip ?? 'unknown', diaryKey(body), () =>
         connectDiary(connectDepsOf(deps, body.providerId), {

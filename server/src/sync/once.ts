@@ -115,6 +115,7 @@ export function exitCodeOf(r: SyncOnceReport): 0 | 1 {
       return res.decision.reason === 'requires_action' ? 1 : 0;
     case 'offline':
     case 'locked':
+    case 'held':
       return 0;
     case 'unknown_account':
       return 1;
@@ -149,6 +150,9 @@ export function formatReport(r: SyncOnceReport): string[] {
       break;
     case 'locked':
       lines.push('not run: another sync of this account is running (is pnpm dev running?)');
+      break;
+    case 'held':
+      lines.push('not run: the collector is switched off on this instance (after a restore: marksy sync enable)');
       break;
     case 'unknown_account':
       lines.push('not run: unknown provider');

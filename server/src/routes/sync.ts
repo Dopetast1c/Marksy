@@ -24,6 +24,7 @@ import { registry } from '../openapi';
 import { readSyncConfig } from '../sync/config';
 import { syncPlanOf, syncPlanOut } from '../sync/status';
 import { visibleStudents } from './me';
+import { mayStartRun } from '../runtime/instance';
 
 // Синхронизация (docs/design.md 9, 10.4): how fresh each diary account of the family is, «загружаем» while a run (the
 // first sync after connecting) is under way, when the next login is allowed; and per child whether it is read through
@@ -301,6 +302,8 @@ export function syncRoutes(deps: AppDeps): Router {
     // a login without credentials is the demo family's (seed/demo-sync.ts): there is nothing to read it with
     if (!a.credentialsEnc) return { started: false, reason: 'demo' as const, retryAt: null };
     const now = deps.now?.() ?? new Date();
+    // switched off on this instance (after a restore, until `marksy sync enable`) or held for an update
+    if (!(await mayStartRun(deps.db, now))) return { started: false, reason: 'off' as const, retryAt: null };
     const interval = (getProvider(a.providerId)?.manifest.limits.minLoginIntervalMinutes ?? 60) * 60_000;
     const last = [a.lastAttemptAt, a.lastLoginAt].filter((d): d is Date => !!d).sort((x, y) => +y - +x)[0];
     const retryAt = last && last.getTime() + interval > now.getTime() ? new Date(last.getTime() + interval) : null;
@@ -325,8 +328,11 @@ export function syncRoutes(deps: AppDeps): Router {
   };
   const refreshOut = z.object({
     started: z.boolean(),
-    /** interval: the login budget; action: the diary refused the login, a new password first; demo: never read */
-    reason: z.enum(['interval', 'action', 'demo']).nullable(),
+    /**
+     * interval: the login budget; action: the diary refused the login, a new password first; demo: never read; off: the
+     * collector is switched off on this instance (after a restore) or held for an update
+     */
+    reason: z.enum(['interval', 'action', 'demo', 'off']).nullable(),
     retryAt: z.date().nullable(),
   });
 

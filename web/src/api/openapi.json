@@ -3,7 +3,7 @@
   "info": {
     "title": "Marksy API",
     "version": "0.0.0",
-    "description": "The API of the Marksy PWA. JSON, camelCase, dates as ISO strings. Every route except login, health and docs needs a session (from M4)."
+    "description": "The API of the Marksy PWA. JSON, camelCase, dates as ISO strings. Every route except login, invites, health and docs needs a session; connecting a diary signed out only where signing up is open."
   },
   "servers": [
     {
@@ -2808,12 +2808,21 @@
           "status": {
             "type": "string",
             "enum": [
-              "ok"
+              "ok",
+              "unavailable"
             ]
+          },
+          "version": {
+            "type": "string"
+          },
+          "commit": {
+            "type": "string"
           }
         },
         "required": [
-          "status"
+          "status",
+          "version",
+          "commit"
         ]
       },
       "Schedule": {
@@ -3491,13 +3500,23 @@
   "paths": {
     "/api/health": {
       "get": {
-        "summary": "Is the API up",
+        "summary": "Is the API up, with its database, and which version runs (nothing else: it answers signed out)",
         "tags": [
           "system"
         ],
         "responses": {
           "200": {
-            "description": "The API answers",
+            "description": "The API and its database answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The database does not answer",
             "content": {
               "application/json": {
                 "schema": {
@@ -4000,6 +4019,16 @@
           },
           "400": {
             "description": "Unknown diary system, missing field, or a student diary login (not supported yet)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Signing up is closed on this instance (SIGNUP): join by invite",
             "content": {
               "application/json": {
                 "schema": {
@@ -5176,6 +5205,16 @@
                   "items": {
                     "$ref": "#/components/schemas/Provider"
                   }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Signed out where signing up is closed (SIGNUP)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
                 }
               }
             }
@@ -9792,6 +9831,7 @@
                         "interval",
                         "action",
                         "demo",
+                        "off",
                         null
                       ]
                     },
@@ -9899,6 +9939,7 @@
                         "interval",
                         "action",
                         "demo",
+                        "off",
                         null
                       ]
                     },

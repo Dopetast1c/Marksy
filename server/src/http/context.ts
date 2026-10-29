@@ -1,6 +1,7 @@
 import type { Logger, Transport } from '@marksy/core';
 import type { Request } from 'express';
 import type { Db } from '../db/client';
+import type { AppVersion } from '../runtime/version';
 import type { ConnectDeps } from '../family/connect';
 import type { MemberRole } from '../family/rules';
 import { readSyncConfig } from '../sync/config';
@@ -16,8 +17,22 @@ export interface AppDeps {
   credentialsKey: Buffer;
   /** SESSION_SECRET: the key invite codes are stored under (HMAC) */
   secret: string;
-  /** Session cookies are Secure only when PUBLIC_URL is https (CLAUDE.md, local and phone testing) */
-  secureCookies: boolean;
+  /** BASE_PATH, normalised ("" for the root, runtime/network.ts): the Path of the session cookie */
+  basePath?: string;
+  /**
+   * TRUST_PROXY (Express syntax): the proxies whose X-Forwarded-* headers are believed, loopback by default. A session
+   * cookie is Secure when the request came over https, as the trusted proxy says.
+   */
+  trustProxy?: string;
+  /**
+   * SIGNUP: who may connect a diary without a session. open: anyone (development); first: only while the instance has
+   * no family yet (production); closed: nobody
+   */
+  signup?: 'open' | 'first' | 'closed';
+  /** API_DOCS: Swagger and the OpenAPI document open to anyone, behind a session (production), or off */
+  apiDocs?: 'open' | 'session' | 'off';
+  /** The running version, for /api/health */
+  version?: AppVersion;
   now?: () => Date;
   /** Tests and the demo: a provider's transport instead of the network */
   transportFor?: (providerId: string) => Transport | undefined;

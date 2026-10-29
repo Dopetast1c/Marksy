@@ -53,9 +53,10 @@ describe('auth: connect, login, logout, me', () => {
     expect((await agent.get('/api/auth/me')).body.user.login).toBe('parent@example.com');
   });
 
-  it('Secure cookies behind https', async () => {
-    const res = await request(testApp({ secureCookies: true }))
+  it('Secure cookies behind https, as the trusted proxy says', async () => {
+    const res = await request(testApp())
       .post('/api/auth/connect')
+      .set('X-Forwarded-Proto', 'https')
       .send({
         providerId: 'demo-full',
         credentials: { login: 'diary-user', password: 'x' },

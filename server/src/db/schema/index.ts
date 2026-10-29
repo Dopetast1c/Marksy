@@ -6,3 +6,4 @@ export * from './prep';
 export * from './sync';
 export * from './notify';
 export * from './tags';
+export * from './ops';

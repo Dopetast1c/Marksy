@@ -8,7 +8,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Is the API up */
+        /** Is the API up, with its database, and which version runs (nothing else: it answers signed out) */
         get: {
             parameters: {
                 query?: never;
@@ -18,8 +18,17 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description The API answers */
+                /** @description The API and its database answer */
                 200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Health"];
+                    };
+                };
+                /** @description The database does not answer */
+                503: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -413,6 +422,15 @@ export interface paths {
                 };
                 /** @description Unknown diary system, missing field, or a student diary login (not supported yet) */
                 400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Signing up is closed on this instance (SIGNUP): join by invite */
+                403: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -1423,6 +1441,15 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["Provider"][];
+                    };
+                };
+                /** @description Signed out where signing up is closed (SIGNUP) */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
                     };
                 };
             };
@@ -3891,7 +3918,7 @@ export interface paths {
                         "application/json": {
                             started: boolean;
                             /** @enum {string|null} */
-                            reason: "interval" | "action" | "demo" | null;
+                            reason: "interval" | "action" | "demo" | "off" | null;
                             /** Format: date-time */
                             retryAt: string | null;
                         };
@@ -3961,7 +3988,7 @@ export interface paths {
                         "application/json": {
                             started: boolean;
                             /** @enum {string|null} */
-                            reason: "interval" | "action" | "demo" | null;
+                            reason: "interval" | "action" | "demo" | "off" | null;
                             /** Format: date-time */
                             retryAt: string | null;
                             weeks: number;
@@ -4629,7 +4656,9 @@ export interface components {
         };
         Health: {
             /** @enum {string} */
-            status: "ok";
+            status: "ok" | "unavailable";
+            version: string;
+            commit: string;
         };
         Schedule: {
             from: string;

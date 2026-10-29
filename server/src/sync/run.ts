@@ -22,6 +22,7 @@ import { readableStudents, sourcedStudents } from './readers';
 import { rebalanceAccount } from './sources';
 import type { OpenedLogin } from './opened';
 import { localTime } from './time';
+import { mayStartRun } from '../runtime/instance';
 
 // One attempt to sync one diary account (docs/design.md 10.4), whatever triggered it: the scheduler's tick, the
 // start-up tick, `pnpm sync:once` or (M5d) the refresh button. It takes the account's advisory lock, asks the planner
@@ -56,6 +57,8 @@ export interface RunSyncOptions {
 
 export type RunSyncResult =
   | { outcome: 'locked' }
+  /** the collector is switched off on this instance (after a restore) or held for an update (runtime/instance.ts) */
+  | { outcome: 'held' }
   | { outcome: 'unknown_account' }
   | { outcome: 'skipped'; decision: Extract<GateDecision, { start: false }>; runId?: string }
   | { outcome: 'offline'; runId: string }
@@ -102,6 +105,8 @@ async function withAccountLock<T>(db: Db, accountId: string, fn: () => Promise<T
 }
 
 export async function runSync(opts: RunSyncOptions): Promise<RunSyncResult> {
+  // a login opened by connecting a diary goes on in it; every other run waits while the instance holds the collector
+  if (!opts.opened && !(await mayStartRun(opts.db, (opts.now ?? (() => new Date()))()))) return { outcome: 'held' };
   const result = await withAccountLock(opts.db, opts.accountId, () => runLocked(opts));
   return result ?? { outcome: 'locked' };
 }

@@ -3,10 +3,10 @@ import { describe, expect, it } from 'vitest';
 import { testApp } from '../test/app';
 
 describe('GET /api/health', () => {
-  it('answers ok', async () => {
+  it('answers ok with the running version', async () => {
     const res = await request(testApp()).get('/api/health');
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({ status: 'ok' });
+    expect(res.body).toEqual({ status: 'ok', version: expect.stringMatching(/^\d+\.\d+\.\d+/), commit: 'dev' });
   });
 });
 

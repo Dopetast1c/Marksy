@@ -118,6 +118,8 @@ export async function applyRetention(
   await run('sessions', sql`delete from sessions where expires_at < ${now}`);
   // the login guard looks back a day at most; kept as long as the sync runs for diagnosis
   await run('cli_logins', sql`delete from cli_logins where at < ${days(limits.syncRunsDays)}`);
+  // the record of backups, not the files: the backup service rotates those itself (docs/running.md, backups)
+  await run('backup_runs', sql`delete from backup_runs where started_at < ${events}`);
   // single-use secrets: an expired code is useless and should not linger
   await run('invites', sql`delete from invites where expires_at < ${now}`);
   await run('telegram_link_codes', sql`delete from telegram_link_codes where expires_at < ${now}`);
