@@ -16,7 +16,7 @@ The order in which Marksy is built with Claude Code, what each milestone must de
 | M5b | Web: Оценки, Итоги, Предметы, Предмет | `m5b-marks` | done |
 | M5c | Web: Расписание, lesson menu, ready ticks, own homework | `m5c-schedule` | done |
 | M5d | Web: Ещё, Семья, Синхронизация, Оформление | `m5d-more` | done |
-| M5e | Translations: the ten other interface languages | `m5e-i18n` | todo |
+| M5e | Translations: the ten other interface languages | `m5e-i18n` | in progress |
 | M6 | Tags | `m6-tags` | todo |
 | M7 | Study time | `m7-study` | todo |
 | M8 | PWA: install, offline, service worker | `m8-pwa` | todo |
@@ -50,7 +50,7 @@ Claude Code builds and tests with the fictional data. It may read the real famil
 - `pnpm check` is green: formatting, typecheck, lint, tests, privacy check.
 - New code has tests: units for logic, Supertest for every route, the conformance suite for providers.
 - No real data anywhere: fixtures are sanitised and fictional, examples use example.com, nothing personal in logs.
-- Every user-facing string is an i18n key with `en` and `ru` values (from M1 on).
+- Every user-facing string is an i18n key with `en` and `ru` values (from M1 on); from M5e on, the new and changed keys are translated into all twelve languages and stamped, and `pnpm i18n:check --strict` is green (no missing or stale translation, `docs/i18n.md` 5).
 - `env.example` lists every variable the code reads.
 - The docs listed for the milestone still describe what the code does.
 - From M5a on: the app starts with `pnpm dev:lan` and the milestone's screens work on a phone over the home network, on the owner's family and on the seed.

@@ -1,6 +1,6 @@
-import { isReviewed, LANGUAGES } from '@marksy/i18n';
+import { isReviewed, LANGUAGES, PSEUDO_LOCALE, pseudoString } from '@marksy/i18n';
 import { useState } from 'react';
-import { i18n, useT } from '../i18n';
+import { i18n, setLanguageOverride, useT } from '../i18n';
 import { MenuRow } from './MenuRow';
 import { BottomSheet, SheetOption } from './BottomSheet';
 import { DownIcon, GlobeIcon } from './icons';
@@ -46,13 +46,24 @@ export function LanguagePicker({
           <SheetOption
             key={l.code}
             title={l.nativeName}
-            selected={l.code === current.code}
+            selected={l.code === i18n.language}
             onSelect={() => {
               setOpen(false);
               onPick(l.code);
             }}
           />
         ))}
+        {import.meta.env.DEV && (
+          // development only: the pseudo-locale for this device, never saved for the user (docs/i18n.md 5)
+          <SheetOption
+            title={pseudoString(PSEUDO_LOCALE)}
+            selected={i18n.language === PSEUDO_LOCALE}
+            onSelect={() => {
+              setOpen(false);
+              void setLanguageOverride(PSEUDO_LOCALE);
+            }}
+          />
+        )}
       </BottomSheet>
     </>
   );

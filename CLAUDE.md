@@ -26,6 +26,7 @@ Read these before any work, in this order:
 - Frontend: React 19 + Vite PWA, React Router, TanStack Query, Tailwind. Tailwind theme is generated from `docs/tokens.json`; no hex colours in components.
 - Tests: Vitest for units (parsers, mark math, token pipeline), Supertest for the API against a test database. Parser tests run on `fixtures/`.
 - Interface languages: twelve at launch (ru, be, uk, kk, en, pl, de, es, pt, fr, nl, ro) in `packages/i18n`, `en.json` is the source of truth, `ru.json` the second complete file. No literal user-facing strings in components or notification code; dates and numbers through `Intl`. Rules and the how-to-add-a-language guide: `docs/i18n.md`. Documentation and code in English.
+- Translations follow the English text (`docs/i18n.md` 5). `locales/_source.json` stamps each translation with a hash of the English it was made from; when an English text changes, its translations are stale. Change `ru` with `en` in the same commit and stamp it (`pnpm i18n:stamp ru <key...>`), or `pnpm check` fails. The machine languages may lag inside a milestone, but before the merge the new and changed keys (only those, never whole files) are translated into every language and stamped, and `pnpm i18n:check --strict` is green. Labels with a fixed room carry a `"<key>_comment": "max N chars"` limit; `pnpm smoke:ui --only seed --lang <code>` (and `qps`, the pseudo-locale) shows what does not fit.
 - Spelling in Russian copy: the Belarusian language and adjective are «беларуский» / «Беларуская», not «белорусский». Diary content (subject names) is shown as the diary sends it.
 
 ## Repo layout (pnpm workspaces)
@@ -102,7 +103,8 @@ pnpm check              formatting, typecheck, lint, tests (packages and scripts
 pnpm format             Prettier over the workspace
 pnpm --filter @marksy/server test    one package
 pnpm test:provider <id> the shared conformance suite for one provider (demo-minimal, demo-full, demo-lite, by-eschools)
-pnpm i18n:check         every key, plural form and placeholder in every language file
+pnpm i18n:check [--strict]  every key, plural form, placeholder, length limit and stale translation in every language file; --strict before every merge
+pnpm i18n:stamp <lang|all> <key...>|--every-key  records that these translations follow today's English text
 pnpm privacy            scripts/privacy-check.mjs: secrets, forbidden files, personal data, provider names outside the provider
 pnpm db:migrate         applies server/drizzle to DATABASE_URL (pnpm --filter @marksy/server db:generate writes a new migration)
 pnpm db:seed [--reset]  the fictional demo family on demo-full, with demo logins; --reset replaces only that family
@@ -117,7 +119,7 @@ pnpm sync:once          one real collector run of the account in .env (login gua
 pnpm dev:connect        the owner's family from .env through the connect service (a real diary run when the diary is not connected yet)
 pnpm env:dev            adds MARKSY_ENV=development and DEV_MIN_LOGIN_INTERVAL_MINUTES=10 to .env when missing; never changes a set value, prints keys only
 pnpm smoke:lan          with pnpm dev:lan running: signs in over the LAN address with MARKSY_DEV_* and walks the read API (statuses, counts, shapes only)
-pnpm smoke:ui           with pnpm dev:lan running: Playwright on a phone (360 px) and a tablet over the LAN address, seed and owner's family, plus the same states of docs/mockups.html; screenshots to data/ui/ (run it on every UI iteration and compare the pairs)
+pnpm smoke:ui           with pnpm dev:lan running: Playwright on a phone (360 px) and a tablet over the LAN address, seed and owner's family, plus the same states of docs/mockups.html; screenshots to data/ui/ (run it on every UI iteration and compare the pairs); WARN lines name text that does not fit; --lang <code>|qps shows another language without changing a user
 pnpm --filter @marksy/web tokens     docs/tokens.json to web/src/styles/tokens.css (a test fails when it is stale)
 pnpm --filter @marksy/web api:types  the server's OpenAPI document to web/src/api/schema.d.ts (a test fails when it is stale)
 ```
