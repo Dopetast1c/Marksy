@@ -17,13 +17,23 @@ The order in which Marksy is built with Claude Code, what each milestone must de
 | M5c | Web: Расписание, lesson menu, ready ticks, own homework | `m5c-schedule` | done |
 | M5d | Web: Ещё, Семья, Синхронизация, Оформление | `m5d-more` | done |
 | M5e | Translations: the ten other interface languages | `m5e-i18n` | done |
+| R1 | First release: production runtime, portable data and automatic updates (1.0.0) | `r1-release` | in progress |
 | M6 | Tags | `m6-tags` | todo |
 | M7 | Study time | `m7-study` | todo |
 | M8 | PWA: install, offline, service worker | `m8-pwa` | todo |
 | M9 | Notifications: inbox, rules, Web Push, Telegram | `m9-notify` | todo |
-| M10 | Running at home: production build, backups, remote access | `m10-run` | todo |
 
-M9 and M10 come last on purpose: the app is complete and usable without them (Внимание on Главная already shows what matters), so they can wait until everything else works.
+R1 comes right after M5 because the app is already useful to the owner's family: from R1 on it runs at home every day and updates itself within minutes of each release, and every later milestone ships through that production setup without changing it. M9 comes last on purpose: the app is complete and usable without it (Внимание on Главная already shows what matters).
+
+### Versions
+
+Releases are numbered MAJOR.MINOR.PATCH and tagged `vX.Y.Z`; R1 is 1.0.0.
+
+- **MAJOR**: a global rework of the app. Rare or never, and never raised automatically: only when the owner says so.
+- **MINOR**: new features. Every milestone that adds something a user can see or use (M6 tags, M7 study time, and so on) raises MINOR and resets PATCH: 1.0.0, 1.1.0, 1.2.0.
+- **PATCH**: small corrections and bug fixes with no new feature: 1.1.0, 1.1.1, 1.1.2. Fixes between milestones are released as PATCH as soon as the owner approves them, without waiting for the next milestone.
+
+Commits follow Conventional Commits in English (`feat`, `fix`, `perf`, `refactor`, `docs`, `test`, `chore`, `ci`, `build`). The next version is computed from the commits since the last release tag: any `feat` raises MINOR; otherwise `fix` or `perf` raises PATCH; only `docs`, `test`, `chore`, `ci`, `build` or `refactor` means there is nothing to release. A breaking commit (`feat!`, `BREAKING CHANGE`) does not raise MAJOR: it stops the release and Claude Code asks the owner how to number it. The computed number is only a proposal: before every release Claude Code writes the proposed version and the reason in one or two lines in the chat ("1.2.0: tags were added") and creates the release only after the owner confirms it or gives another number. Migrations follow the rules of CLAUDE.md in every release, PATCH included.
 
 ## How to work with Claude Code
 
@@ -54,6 +64,7 @@ Claude Code builds and tests with the fictional data. It may read the real famil
 - `env.example` lists every variable the code reads.
 - The docs listed for the milestone still describe what the code does.
 - From M5a on: the app starts with `pnpm dev:lan` and the milestone's screens work on a phone over the home network, on the owner's family and on the seed.
+- From R1 on: every milestone ends with a GitHub Release, and production picks it up automatically. Claude Code creates the release only after the owner has checked the screens, has confirmed the version number ("Versions" above), and the translated public documentation is up to date (`docs/i18n.md`).
 
 ## M0. Workspace scaffold (done)
 
@@ -173,6 +184,25 @@ Local check: `pnpm install`, `pnpm db:up`, `pnpm check`, `pnpm dev`, then open h
 
 **Done when:** `pnpm i18n:check` reports no errors and no warnings for all twelve files, and the pseudo-locale and the longest languages (de, fr) fit every screen without ellipsis. `pnpm smoke:ui` has app and prototype pairs of Синхронизация and Семья with the demo diary.
 
+## R1. First release: production runtime, portable data and automatic updates
+
+**Read:** `docs/design.md` 10.1, 10.4, 14, 17; `docs/i18n.md`; `CLAUDE.md` "Hard rules", "Versions and releases", "Migrations"; `docs/running.md`.
+
+**Why here (owner, 2026-10-29):** the family already uses the app; from R1 on it runs at home every day, updates itself within minutes of each release, and M6 and later ship through this production setup without changes to it. Everything the former M10 held (production build, backups, remote access) is part of R1. R1 ships as 1.0.0.
+
+**Hosts.** One of the owner's Windows laptop (Docker Desktop, WSL2), a Raspberry Pi 3B (1 GB, ARM64, Raspberry Pi OS Lite 64-bit, USB SSD) or a Synology NAS (DS225+, x86_64, DSM 7.2 Container Manager); production starts on a Windows laptop. Moving between any two is a routine restore from backup with no data loss. The host sits behind the home router with no inbound access except the Cloudflare Tunnel; it pulls updates itself, and GitHub can only nudge it through the tunnel.
+
+**Two ways in, one app at one path:** the home network (`http://<host LAN IP>/marksy` by default, through a reverse proxy on the host that will later serve other home services on other paths) and outside (`https://<subdomain>/marksy` through Cloudflare Tunnel, behind Cloudflare Access). The API stays inside the compose network behind the same-origin `/api` proxy, as in dev.
+
+**Sessions** (one milestone, one branch; production works at the end of A, and 1.0.0 is released only after D):
+
+- **A. Production runtime.** Multi-stage, non-root, multi-arch images for the server (API, planner, collector, backup, commands) and the web app (the built PWA and the reverse proxy), built only in GitHub Actions and audited before they are pushed; the version and commit as labels and at runtime. `docker-compose.prod.yml` (postgres:16 with its own volume, server, web, proxy, backup, updater with its socket proxy from C, cloudflared under the profile `tunnel`) and `docker-compose.macvlan.yml`; only the proxy publishes a port; `TZ` from env (UTC by default). A runtime `BASE_PATH` (one image for any path: routing, assets, API calls, cookie path, invite links, Swagger), the access options A to E of `docs/running.md`, generated from env. Per-request `Secure` cookies from `X-Forwarded-Proto` trusted only from the local proxy, plain http only from private addresses, security headers and a CSP with no third-party sources, Swagger behind a session in production, sign-up without a session only on an empty instance (`SIGNUP=first`). Migrations on start under an advisory lock in one transaction. `/api/health` with the version; an internal status for the commands and the updater. Secrets created by a command in the server image (`init-env`). Backups in a container (daily, 7/4/6 rotation, on demand, pre-update), restore into an empty database with migrations, a row count check and the collector left off. Small-host budget (Postgres profiles, heap limits, memory limits, argon2id within OWASP minimums). The update prompt with the new version and cached data while the server restarts. The owner's family moves from the dev database to production through export and restore, without the demo family; `PRODUCTION_ACTIVE` in the dev `.env` puts real-diary runs from dev under production limits.
+- **B. CI and releases.** `pnpm check` with PostgreSQL as a service container, the privacy and language checks and the Conventional Commits check on every push and pull request; the version proposal and release notes from the commits (tests: feat, fix, only chore, breaking); a GitHub Release tags the images of its commit as X.Y.Z, X.Y, X and `stable` without rebuilding, signs them with cosign (keyless, GitHub OIDC), attaches the deploy bundle and nudges production. No self-hosted runners. The code, comments and tests become English only (the language rule of CLAUDE.md).
+- **C. Automatic updates.** The updater with channels (`UPDATE_CHANNEL`: `1`, `1.4`, `1.4.2`, `stable`, `edge`), a signed hook through the tunnel and polling of GHCR every 5 minutes, cosign verification of the release workflow's signature, a backup before every update, pull before stop, health and version check, rollback to the recorded digests, history, pause, quiet hours, a manual update; a socket proxy limited to the Marksy services. Migration rules (expand and contract) with a lint and a CI check that starts the previous release against the new schema; long data changes as resumable background jobs. Downtime and memory measured and written into the runbook.
+- **D. Public documentation in all twelve languages.** README, `docs/running.md` and `docs/adding-a-diary.md` in every interface language with a language bar, a source stamp and a CI check; the documentation bundle attached to every release; then the merge and 1.0.0.
+
+**Done when:** `pnpm check` and `/privacy-check` are green locally and in CI, with the commit message, migration compatibility and documentation checks; the restore, base path, version calculation, channel, migration, updater, hook and security tests pass; both image architectures build in CI and land in GHCR, signed, and a test release produces X.Y.Z, X.Y, X and `stable` and attaches the documentation bundle; `docker compose -f docker-compose.prod.yml up -d` starts healthy on a machine with only Docker (no Node or pnpm), with memory limits that fit a 1 GB Pi; the seeded demo family can log in at `http://localhost/marksy`, from a phone on the LAN at `http://<host IP>/marksy`, and with options C and D instead of A, and sees the version in Ещё; in a test setup a signed nudge brings a new release into production within about 2 minutes (also one with a migration), polling does it within 5 minutes, a broken release and one with a failing migration are rolled back with nothing lost, and an unsigned image is refused; every public page exists in all twelve languages with a working language bar, English is what GitHub shows by default, and nothing committed is in Russian beyond the exceptions of CLAUDE.md; a fresh clone plus `docs/running.md`, in any of the twelve languages, is enough for an outsider to run it with the seed at the root path. Then merge into `main`, propose 1.0.0 in the chat, release after the owner confirms, and list the steps that need the owner's accounts or hardware.
+
 ## M6. Tags
 
 **Read:** `docs/design.md` 6.3; prototype screens Теги, Тег, Расписание, Главная.
@@ -198,21 +228,15 @@ Local check: `pnpm install`, `pnpm db:up`, `pnpm check`, `pnpm dev`, then open h
 
 **Deliver:** manifest and icons, service worker with an offline shell and cached last data, install prompt, update flow. Push handling is added with M9.
 
-**HTTPS on the phone.** Browsers allow a service worker, installation and push only on https (or localhost), so plain `http://<ip>:5173` is not enough here. Add `pnpm dev:lan:https` with a locally trusted certificate (mkcert: its root installed on the phone once) and document it in README; or use the remote-access route chosen for M10 if it is ready. **Done when:** the PWA installs on the phone from the home network and opens offline with the last data.
+**HTTPS on the phone.** Browsers allow a service worker, installation and push only on https (or localhost), so plain `http://<ip>:5173` is not enough here. The https route for installing the PWA on a phone is the Cloudflare address of production (R1, `docs/running.md`); for development, `pnpm dev:lan:https` with a locally trusted certificate (mkcert: its root installed on the phone once), documented in README. The service worker plugs into the update prompt of R1 (it names the new version) instead of adding a second one. **Done when:** the PWA installs on the phone from the Cloudflare address and opens offline with the last data.
 
 ## M9. Notifications
 
 **Read:** `docs/design.md` 5.2b, 11, 6.4; prototype screens Уведомления, Настройки уведомлений, Правило уведомления, Внимание (the «пришло …» line).
 
-**Deliver:** the bell in every header (and on «С кого начнём?»), the `notifications` inbox with unread count and deep links, «пришло …» on Внимание rows, alert rules and the rule editor with the live check, quiet hours and grouping, Web Push (VAPID), Telegram (link code, webhook), digests, tag reminders at their moments, drift and auth alerts for the admin, push handling in the service worker (deep links on tap).
+**Deliver:** the bell in every header (and on «С кого начнём?»), the `notifications` inbox with unread count and deep links, «пришло …» on Внимание rows, alert rules and the rule editor with the live check, quiet hours and grouping, Web Push (VAPID), Telegram (link code, webhook), digests, tag reminders at their moments, drift and auth alerts for the admin, push handling in the service worker (deep links on tap), admin alerts for a failed automatic update and a failed backup (R1 leaves the hooks: the updater's `onUpdateFailed` and the backup service's failure record).
 
 **Done when:** rules, quiet hours, grouping and every channel have tests; Supertest tests show that a child shared by two families never shows the other family's rules or inbox notifications (not in the inbox, the unread count, «пришло …» or a push or Telegram message), and that an event about the shared child notifies each family by its own rules only.
-
-## M10. Running at home
-
-**Read:** `docs/design.md` 10.1, 14, 17 (hosting question).
-
-**Decide first:** how the app is reached from outside the home network (Cloudflare Tunnel or Tailscale, design 17). **Deliver:** production Docker Compose for API, web and database, daily `pg_dump` to a local folder outside the repo with rotation, restore instructions in README, health monitoring of the collector.
 
 ## Notes
 
