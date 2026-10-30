@@ -138,7 +138,8 @@ jobs:
           docker buildx imagetools inspect "${IMAGE}:sha-${GITHUB_SHA}"
 
       # the version the updater image verifies with (updater/Dockerfile)
-      - uses: sigstore/cosign-installer@v3
+      # v4 of the installer is the one that installs cosign 3
+      - uses: sigstore/cosign-installer@v4.1.2
         with:
           cosign-release: v3.1.3
 
