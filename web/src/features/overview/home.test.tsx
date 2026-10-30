@@ -7,7 +7,7 @@ import { useDevice, usePeriod } from '../../state/store';
 import { fakeApi, KIDS } from '../../test/fake-api';
 
 beforeAll(() => {
-  initI18n('ru');
+  initI18n('en');
 });
 beforeEach(() => {
   useDevice.setState({ pick: null, alwaysLast: false });
@@ -16,69 +16,69 @@ beforeEach(() => {
 
 const [milena, mark] = KIDS as [(typeof KIDS)[number], (typeof KIDS)[number]];
 
-describe('Главная', () => {
-  it('a child with marks: «Сейчас», the tiles with "было", the last day, Внимание, the next day, Статистика', async () => {
+describe('Home', () => {
+  it('a child with marks: "Now", the tiles with "was", the last day, Attention, the next day, Statistics', async () => {
     fakeApi({ signedIn: true });
     render(<App at={`/s/${milena.id}`} />);
-    // «Сейчас» above the navigator
-    expect(await screen.findByText('Сейчас · 3-й урок')).toBeTruthy();
-    expect(screen.getByText('каб. 206 · до 10:40')).toBeTruthy();
+    // "Now" (nowCard.lesson) above the navigator
+    expect(await screen.findByText('Now · lesson 3')).toBeTruthy();
+    expect(screen.getByText('room 206 · until 10:40')).toBeTruthy();
     // the brief row
-    // the average in its tile (and once more over the last point of Динамика)
-    expect((await screen.findAllByText('7,4')).length).toBeGreaterThan(0);
-    expect(screen.getByText('Средний балл')).toBeTruthy();
-    expect(screen.getByText('было 8,2')).toBeTruthy();
-    expect(screen.getByText('было 15')).toBeTruthy();
+    // the average in its tile (and once more over the last point of Trend)
+    expect((await screen.findAllByText('7.4')).length).toBeGreaterThan(0);
+    expect(screen.getByText('Average')).toBeTruthy();
+    expect(screen.getByText('was 8.2')).toBeTruthy();
+    expect(screen.getByText('was 15')).toBeTruthy();
     // the last day: newest first, the work type only when the diary set one
-    expect(screen.getByText('Самостоятельная работа · Пересдача во вторник')).toBeTruthy();
-    // Внимание: five rows, then «Показать все»
-    expect(screen.getByText('5 из 7')).toBeTruthy();
-    expect(screen.getByText('Физика: средний падает')).toBeTruthy();
-    expect(screen.getByText('было 6,0, стало 4,0 за неделю · 2 оценки')).toBeTruthy();
-    expect(screen.getByText('«Нет домашнего задания»')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Показать все · 7' })).toBeTruthy();
+    expect(screen.getByText('Quiz · Пересдача во вторник')).toBeTruthy();
+    // Attention: five rows, then "Show all" (home.showAll)
+    expect(screen.getByText('5 of 7')).toBeTruthy();
+    expect(screen.getByText('Физика: the average is falling')).toBeTruthy();
+    expect(screen.getByText('was 6.0, now 4.0 over the week · 2 marks')).toBeTruthy();
+    expect(screen.getByText('“Нет домашнего задания”')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Show all · 7' })).toBeTruthy();
     // the next day: an empty first slot, the second lesson's form, the lab note
-    expect(screen.getByText('урока нет')).toBeTruthy();
-    expect(screen.getByText('окно')).toBeTruthy();
-    expect(screen.getByText('ко 2-му, к 09:25', { exact: false })).toBeTruthy();
-    expect(screen.getByText('Лабораторная работа')).toBeTruthy();
-    // Статистика
-    expect(screen.getByRole('heading', { name: 'По градациям' })).toBeTruthy();
-    expect(screen.getByRole('heading', { name: 'Распределение' })).toBeTruthy();
-    expect(await screen.findByRole('heading', { name: 'Динамика' })).toBeTruthy();
+    expect(screen.getByText('no lesson')).toBeTruthy();
+    expect(screen.getByText('free period')).toBeTruthy();
+    expect(screen.getByText('from lesson 2, at 09:25', { exact: false })).toBeTruthy();
+    expect(screen.getByText('Lab work')).toBeTruthy();
+    // Statistics
+    expect(screen.getByRole('heading', { name: 'By band' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Distribution' })).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Trend' })).toBeTruthy();
   });
 
-  it('a class without marks: lessons and homework instead, no marks blocks, «Уроки закончились · завтра»', async () => {
+  it('a class without marks: lessons and homework instead, no marks blocks, "Lessons are over · tomorrow"', async () => {
     fakeApi({ signedIn: true });
     render(<App at={`/s/${mark.id}`} />);
-    expect(await screen.findByText('Уроков')).toBeTruthy();
-    expect(screen.getByText('Заданий')).toBeTruthy();
-    expect(screen.getByText('было 16')).toBeTruthy();
-    expect(screen.getByText('Уроки закончились')).toBeTruthy();
-    expect(screen.getByText('Всё спокойно')).toBeTruthy();
-    expect(screen.queryByText('Средний балл')).toBeNull();
-    expect(screen.queryByRole('heading', { name: 'Статистика' })).toBeNull();
+    expect(await screen.findByText('Lessons')).toBeTruthy();
+    expect(screen.getByText('Homework')).toBeTruthy();
+    expect(screen.getByText('was 16')).toBeTruthy();
+    expect(screen.getByText('Lessons are over')).toBeTruthy();
+    expect(screen.getByText('All calm')).toBeTruthy();
+    expect(screen.queryByText('Average')).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Statistics' })).toBeNull();
   });
 
-  it('«Показать все» opens Внимание with every row and the note', async () => {
+  it('"Show all" opens Attention with every row and the note', async () => {
     fakeApi({ signedIn: true });
     const user = userEvent.setup();
     render(<App at={`/s/${milena.id}`} />);
-    await user.click(await screen.findByRole('button', { name: 'Показать все · 7' }));
-    expect(await screen.findByRole('heading', { name: 'Внимание' })).toBeTruthy();
-    const list = (await screen.findAllByText('Пропуск: Беларуская мова')).length;
+    await user.click(await screen.findByRole('button', { name: 'Show all · 7' }));
+    expect(await screen.findByRole('heading', { name: 'Attention' })).toBeTruthy();
+    const list = (await screen.findAllByText('Absent: Беларуская мова')).length;
     expect(list).toBe(4);
-    expect(screen.getByText(/только для текущего периода/)).toBeTruthy();
+    expect(screen.getByText(/only in the current one/)).toBeTruthy();
   });
 
   it('the period picker shows each instance with its marks', async () => {
     fakeApi({ signedIn: true });
     const user = userEvent.setup();
     render(<App at={`/s/${milena.id}`} />);
-    await user.click(await screen.findByRole('button', { name: /Эта неделя/ }));
+    await user.click(await screen.findByRole('button', { name: /This week/ }));
     const sheet = await screen.findByRole('dialog');
-    expect(within(sheet).getByText('12 оценок')).toBeTruthy();
-    expect(within(sheet).getByText('9 оценок')).toBeTruthy();
+    expect(within(sheet).getByText('12 marks')).toBeTruthy();
+    expect(within(sheet).getByText('9 marks')).toBeTruthy();
   });
 
   const NEAR = [
@@ -98,13 +98,13 @@ describe('Главная', () => {
     },
   ];
 
-  it('a student gets «Близко к цели» after Внимание; a tap opens the subject', async () => {
+  it('a student gets "Close to the goal" after Attention; a tap opens the subject', async () => {
     useDevice.setState({ pick: { id: milena.id, lastActive: Date.now() }, alwaysLast: false });
     fakeApi({ signedIn: true, role: 'student', overview: { nearGoals: NEAR } });
     render(<App at={`/s/${milena.id}`} />);
-    const card = (await screen.findByRole('heading', { name: 'Близко к итогу 8' })).closest('section')!;
-    expect(card.textContent).toContain('Алгебра 7,3 → 7,5: ещё 1 × 9');
-    expect(card.textContent).toContain('Физика 7,1 → 7,5: ещё 2 × 10');
+    const card = (await screen.findByRole('heading', { name: 'Close to a final of 8' })).closest('section')!;
+    expect(card.textContent).toContain('Алгебра 7.3 → 7.5: 1 × 9 more');
+    expect(card.textContent).toContain('Физика 7.1 → 7.5: 2 × 10 more');
     await userEvent.setup().click(within(card).getByText('Алгебра'));
     expect(await screen.findByRole('heading', { name: 'Алгебра' })).toBeTruthy();
   });
@@ -112,7 +112,7 @@ describe('Главная', () => {
   it('a parent never sees it, the same answer notwithstanding', async () => {
     fakeApi({ signedIn: true, overview: { nearGoals: NEAR } });
     render(<App at={`/s/${milena.id}`} />);
-    expect(await screen.findByText('Сейчас · 3-й урок')).toBeTruthy();
-    expect(screen.queryByText('Близко к итогу 8')).toBeNull();
+    expect(await screen.findByText('Now · lesson 3')).toBeTruthy();
+    expect(screen.queryByText('Close to a final of 8')).toBeNull();
   });
 });

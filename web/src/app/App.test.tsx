@@ -8,7 +8,7 @@ import { fakeApi, KIDS } from '../test/fake-api';
 import { App } from './App';
 
 beforeAll(() => {
-  initI18n('ru');
+  initI18n('en');
 });
 beforeEach(() => {
   useDevice.setState({ pick: null, alwaysLast: false });
@@ -18,21 +18,21 @@ beforeEach(() => {
 const [milena, mark] = KIDS as [(typeof KIDS)[number], (typeof KIDS)[number]];
 
 describe('the shell', () => {
-  it('no session: the login; signing in leads to «С кого начнём?», then Главная of the picked child', async () => {
+  it('no session: the login; signing in leads to "Who first?" (pick.title), then Home of the picked child', async () => {
     fakeApi();
     const user = userEvent.setup();
     render(<App at="/" />);
-    await user.type(await screen.findByLabelText('Логин Marksy'), 'parent@example.com');
-    await user.type(screen.getByLabelText('Пароль'), 'nope');
-    await user.click(screen.getByRole('button', { name: 'Войти' }));
-    expect(await screen.findByRole('alert')).toHaveProperty('textContent', 'Неверный логин или пароль.');
-    await user.clear(screen.getByLabelText('Пароль'));
-    await user.type(screen.getByLabelText('Пароль'), 'correct horse battery');
-    await user.click(screen.getByRole('button', { name: 'Войти' }));
+    await user.type(await screen.findByLabelText('Marksy login'), 'parent@example.com');
+    await user.type(screen.getByLabelText('Password'), 'nope');
+    await user.click(screen.getByRole('button', { name: 'Sign in' }));
+    expect(await screen.findByRole('alert')).toHaveProperty('textContent', 'Wrong login or password.');
+    await user.clear(screen.getByLabelText('Password'));
+    await user.type(screen.getByLabelText('Password'), 'correct horse battery');
+    await user.click(screen.getByRole('button', { name: 'Sign in' }));
     await user.click(await screen.findByRole('button', { name: /Марк/ }));
-    expect(await screen.findByRole('heading', { name: 'Главная' })).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Home' })).toBeTruthy();
     expect(screen.getByText('Марк · 1 «Д»')).toBeTruthy();
-    expect(await screen.findByText('Эта неделя')).toBeTruthy();
+    expect(await screen.findByText('This week')).toBeTruthy();
   });
 
   it('the child chosen within 12 hours is kept; after 12 hours the picker comes back', async () => {
@@ -43,7 +43,7 @@ describe('the shell', () => {
     first.unmount();
     useDevice.setState({ pick: { id: milena.id, lastActive: Date.now() - PICK_AFTER_MS - 60_000 } });
     render(<App at="/" />);
-    expect(await screen.findByRole('heading', { name: 'С кого начнём?' })).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Who first?' })).toBeTruthy();
   });
 
   it('switching the child keeps the screen and the period', async () => {
@@ -51,18 +51,18 @@ describe('the shell', () => {
     usePeriod.setState({ kind: 'week', offset: 0 });
     const user = userEvent.setup();
     render(<App at={`/s/${milena.id}/events`} />);
-    expect(await screen.findByRole('heading', { name: 'Внимание' })).toBeTruthy();
-    await user.click(await screen.findByRole('button', { name: 'Предыдущий период' }));
-    expect(await screen.findByText('Прошлая неделя')).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Attention' })).toBeTruthy();
+    await user.click(await screen.findByRole('button', { name: 'Previous period' }));
+    expect(await screen.findByText('Last week')).toBeTruthy();
     await user.click(screen.getByRole('tab', { name: mark.name }));
     await waitFor(() => expect(screen.getByText('Марк · 1 «Д»')).toBeTruthy());
-    expect(screen.getByRole('heading', { name: 'Внимание' })).toBeTruthy();
-    expect(screen.getByText('Прошлая неделя')).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Attention' })).toBeTruthy();
+    expect(screen.getByText('Last week')).toBeTruthy();
   });
 
   it('a child this person does not see is never opened', async () => {
     fakeApi({ signedIn: true });
     render(<App at="/s/someone-else" />);
-    expect(await screen.findByRole('heading', { name: 'С кого начнём?' })).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Who first?' })).toBeTruthy();
   });
 });

@@ -6,11 +6,11 @@ import { formatTime, minutesIn, todayIn } from './time';
 
 const deviceTz = process.env.TZ;
 beforeAll(() => {
-  initI18n('ru');
+  initI18n('en');
 });
 afterEach(async () => {
   process.env.TZ = deviceTz;
-  await i18n.changeLanguage('ru');
+  await i18n.changeLanguage('en');
 });
 
 describe('school time, not the device', () => {
@@ -22,20 +22,22 @@ describe('school time, not the device', () => {
       process.env.TZ = tz;
       expect(todayIn('Europe/Minsk', at)).toBe('2026-10-19');
       expect(minutesIn('Europe/Minsk', at)).toBe(23 * 60 + 30);
-      expect(formatTime(at, 'Europe/Minsk', 'ru-RU')).toBe('23:30');
+      expect(formatTime(at, 'Europe/Minsk', 'en-GB')).toBe('23:30');
     }
   });
 
   it('a calendar day keeps its date in every device timezone', () => {
     for (const tz of ['Pacific/Kiritimati', 'Pacific/Pago_Pago']) {
       process.env.TZ = tz;
-      expect(shortDate('2026-10-19', dateStyle(), { weekday: true })).toBe('пн, 19 окт');
+      expect(shortDate('2026-10-19', dateStyle(), { weekday: true })).toBe('Mon, 19 Oct');
     }
   });
 });
 
 describe('short dates in the interface language', () => {
+  // about Russian on purpose: the ru catalog's own month names, against English
   it('Russian and English from their catalogs, without a dot', async () => {
+    await i18n.changeLanguage('ru');
     expect(shortRange('2026-10-12', '2026-10-18', dateStyle())).toBe('12–18 окт');
     expect(shortRange('2026-11-01', '2026-11-08', dateStyle())).toBe('1–8 ноя');
     await i18n.changeLanguage('en');

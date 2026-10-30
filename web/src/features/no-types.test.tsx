@@ -9,7 +9,7 @@ import { fakeApi, KIDS } from '../test/fake-api';
 // screen may show an empty slot, a placeholder for a missing type or a dangling separator.
 
 beforeAll(() => {
-  initI18n('ru');
+  initI18n('en');
 });
 beforeEach(() => {
   usePeriod.setState({ kind: 'week', offset: 0 });
@@ -18,32 +18,34 @@ beforeEach(() => {
 
 const [milena] = KIDS as [(typeof KIDS)[number]];
 
-/** Every leaf text of the page: none starts or ends with «·», none has two in a row, none is a type placeholder */
+/** Every leaf text of the page: none starts or ends with "·", none has two in a row, none is a type placeholder */
 function expectNoDangling(root: HTMLElement) {
   const leaves = [...root.querySelectorAll('span, b, p, div')].filter((el) => el.children.length === 0);
   for (const el of leaves) {
     const text = el.textContent ?? '';
-    // a part that joins the text before or after it («3 урока» + « · ко 2-му») needs that neighbour
+    // a part that joins the text before or after it ("3 lessons" + " · from lesson 2") needs that neighbour
     if (/^\s*·/.test(text)) expect(el.previousSibling?.textContent?.trim(), text).toBeTruthy();
     if (/·\s*$/.test(text)) expect(el.nextSibling?.textContent?.trim(), text).toBeTruthy();
     expect(text, text).not.toMatch(/·\s*·/);
-    expect(text, text).not.toMatch(/Работа на уроке|undefined|null/);
+    // "Work in class" (workType.none) and "Classwork" (workType.classwork): placeholders for a missing type
+    expect(text, text).not.toMatch(/Work in class|Classwork|undefined|null/);
   }
 }
 
 describe('a diary without types', () => {
   it.each([
-    ['Главная', ''],
-    ['Оценки', '/marks'],
-    ['Предметы', '/subjects'],
-    ['Предмет', '/subjects/sub-al'],
-    ['Расписание', '/schedule?day=2026-10-22'],
+    ['Home', ''],
+    ['Marks', '/marks'],
+    ['Subjects', '/subjects'],
+    ['Subject', '/subjects/sub-al'],
+    ['Timetable', '/schedule?day=2026-10-22'],
   ])('%s has no empty slot or dangling separator', async (_name, path) => {
     fakeApi({ signedIn: true, noTypes: true });
     const { container } = render(<App at={`/s/${milena.id}${path}`} />);
     await screen.findAllByText('Алгебра', { exact: false });
     expectNoDangling(container);
-    // no work type label anywhere
-    expect(screen.queryByText(/Контрольная работа|Самостоятельная работа|Лабораторная работа/)).toBeNull();
+    // no work type label anywhere: "Test", "Quiz", "Lab work" (workType.*); the tip "Test. Subject average …"
+    // (guidance.lessonTest.fact) comes from the lesson's tag, not from a type
+    expect(screen.queryByText(/\bTest\b(?!\.)|Quiz|Lab work/)).toBeNull();
   });
 });

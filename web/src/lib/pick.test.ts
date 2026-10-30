@@ -11,7 +11,7 @@ describe('the picker rule', () => {
     expect(restoredChild(null, base)).toBeNull();
   });
 
-  it('«Всегда начинать с последнего» keeps the child however long ago', () => {
+  it('"Always start with the last one" (pick.alwaysLast) keeps the child however long ago', () => {
     expect(restoredChild({ id: 'a', lastActive: now - 30 * PICK_AFTER_MS }, { ...base, alwaysLast: true })).toBe('a');
   });
 

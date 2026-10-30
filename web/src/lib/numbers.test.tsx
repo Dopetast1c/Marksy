@@ -6,7 +6,8 @@ import { useMarkFilter, usePeriod } from '../state/store';
 import { fakeApi, KIDS } from '../test/fake-api';
 
 // One formatter for every number of the scale (lib/numbers.ts): the same average is written the same way on every
-// screen, with the interface language's separator (ru «7,5», en «7.5») and the scale's decimals.
+// screen, with the interface language's separator (ru "7,5", en "7.5") and the scale's decimals. The Russian case
+// stays on purpose: the decimal comma is what it tests.
 
 const [milena] = KIDS as [(typeof KIDS)[number]];
 
@@ -15,7 +16,7 @@ beforeEach(() => {
   useMarkFilter.setState({ comments: false, tags: [], tagMode: 'any' });
 });
 afterAll(() => {
-  void setLanguage('ru');
+  void setLanguage('en');
 });
 
 const CASES = [
@@ -42,7 +43,7 @@ const CASES = [
 ] as const;
 
 describe.each(CASES)('numbers in $lang', (c) => {
-  it('Главная, Внимание, Предметы, Предмет and Итоги write the same numbers the same way', async () => {
+  it('Home, Attention, Subjects, Subject and Finals write the same numbers the same way', async () => {
     initI18n(c.lang);
     fakeApi({ signedIn: true, locale: c.lang });
     const home = render(<App at={`/s/${milena.id}`} />);

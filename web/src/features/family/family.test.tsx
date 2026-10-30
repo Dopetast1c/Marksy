@@ -7,26 +7,26 @@ import { useDevice } from '../../state/store';
 import { fakeApi } from '../../test/fake-api';
 
 beforeAll(() => {
-  initI18n('ru');
+  initI18n('en');
 });
 beforeEach(() => {
   useDevice.setState({ pick: null, alwaysLast: false });
 });
 
-describe('Семья', () => {
+describe('Family', () => {
   it('the admin sees the request to join with its diary, the members, the children, the diaries, the family’s switches', async () => {
     const api = fakeApi({ signedIn: true });
     const user = userEvent.setup();
     render(<App at="/more/family" />);
-    expect(await screen.findByText('Заявки на вступление')).toBeTruthy();
-    expect(screen.getByText('Школьный портал (демо) · логин papa-login')).toBeTruthy();
-    expect(screen.getByText('администратор · все дети')).toBeTruthy();
-    expect(screen.getByText('родитель · Марк')).toBeTruthy();
-    expect(screen.getByText('Также следит другая семья')).toBeTruthy();
+    expect(await screen.findByText('Requests to join')).toBeTruthy();
+    expect(screen.getByText('Школьный портал (демо) · login papa-login')).toBeTruthy();
+    expect(screen.getByText('admin · all children')).toBeTruthy();
+    expect(screen.getByText('parent · Марк')).toBeTruthy();
+    expect(screen.getByText('Another family follows too')).toBeTruthy();
     expect(screen.getByText('demo-login')).toBeTruthy();
-    await user.click(screen.getByRole('button', { name: 'Принять' }));
+    await user.click(screen.getByRole('button', { name: 'Accept' }));
     expect(api.bodies['PATCH /api/family/join-requests/jr-1']).toEqual({ approve: true });
-    const guidance = screen.getByRole('switch', { name: 'Подсказки для всей семьи' });
+    const guidance = screen.getByRole('switch', { name: 'Tips for the whole family' });
     await user.click(guidance);
     expect(api.bodies['PATCH /api/family']).toEqual({ guidance: false });
   });
@@ -35,9 +35,9 @@ describe('Семья', () => {
     const api = fakeApi({ signedIn: true });
     const user = userEvent.setup();
     render(<App at="/more/family" />);
-    await user.click(await screen.findByRole('button', { name: 'Пригласить · код действует 48 часов' }));
+    await user.click(await screen.findByRole('button', { name: 'Invite · the code works for 48 hours' }));
     const sheet = screen.getByRole('dialog');
-    const create = within(sheet).getByRole('button', { name: 'Создать код' });
+    const create = within(sheet).getByRole('button', { name: 'Create the code' });
     expect(create.hasAttribute('disabled')).toBe(true);
     await user.click(within(sheet).getByText('Марк'));
     await user.click(create);
@@ -50,7 +50,7 @@ describe('Семья', () => {
     const user = userEvent.setup();
     render(<App at="/more/family/child/kid-mark" />);
     expect(await screen.findByRole('heading', { name: 'Марк' })).toBeTruthy();
-    await user.click(screen.getByRole('button', { name: 'косы' }));
+    await user.click(screen.getByRole('button', { name: 'braids' }));
     expect(api.bodies['PATCH /api/students/kid-mark']).toEqual({
       avatar: {
         age: 'preteen',
@@ -62,8 +62,8 @@ describe('Семья', () => {
         glasses: false,
       },
     });
-    expect(await screen.findByRole('button', { name: 'Без аватара' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'No avatar' })).toBeTruthy();
     // the admin may stop following; the child stays in the history
-    expect(screen.getByRole('button', { name: 'Перестать следить' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Stop following' })).toBeTruthy();
   });
 });

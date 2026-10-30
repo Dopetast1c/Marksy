@@ -19,9 +19,9 @@ export interface FakeState {
   serverDown?: boolean;
   /** a diary without work and lesson types (the usual real case, api-spec 7.3): every type is null */
   noTypes?: boolean;
-  /** Оценки answers in two pages */
+  /** Marks answers in two pages */
   feedPages?: boolean;
-  /** the signed-in person's interface language */
+  /** the signed-in person's interface language; English by default */
   locale?: string;
   /** the subject screen's answer, when a test needs another one */
   subject?: unknown;
@@ -30,17 +30,17 @@ export interface FakeState {
   /** /api/sync/status and /api/sync/runs, when a test needs them */
   syncStatus?: unknown;
   syncRuns?: unknown;
-  /** the person's own «Подсказки» switch */
+  /** the person's own "Tips" switch (more.guidance) */
   guidance?: boolean;
-  /** Оформление: what PATCH /api/me/settings and the wallpaper routes have made of it */
+  /** Appearance: what PATCH /api/me/settings and the wallpaper routes have made of it */
   appearance?: Record<string, unknown>;
   /** who is signed in: the admin by default; a student sees only their own card */
   role?: 'admin' | 'parent' | 'student';
   /** fields laid over every child's /overview answer */
   overview?: Record<string, unknown>;
-  /** the signed-in person's simple mode (5.7); the student member's in Семья follows PUT …/ui-mode */
+  /** the signed-in person's simple mode (5.7); the student member's in Family follows PUT …/ui-mode */
   uiMode?: 'full' | 'simple';
-  /** the school's today for Расписание's days (a weekend, to see where День opens) */
+  /** the school's today for Timetable's days (a weekend, to see where Day opens) */
   scheduleToday?: string;
 }
 
@@ -371,7 +371,7 @@ const periods = {
   finals: { state: 'running', term: Q1 },
 };
 
-// Оценки: two days; marks with and without a work type and a topic, an absence, a teacher's comment, a corrected mark,
+// Marks: two days; marks with and without a work type and a topic, an absence, a teacher's comment, a corrected mark,
 // the first term's finals card
 const subj = (id: string, name: string) => ({ id, name, color: null });
 export const FEED = [
@@ -526,7 +526,7 @@ export const YEAR_FINALS = {
   ],
 };
 
-// Предметы and Предмет
+// Subjects and Subject
 const info = (id: string, name: string, extra: object = {}) => ({
   id,
   name,
@@ -624,7 +624,7 @@ export const SUBJECT = {
   week: [{ weekday: 1, slot: 2, start: '08:55', end: '09:40', room: '305', groupLabel: null }],
 };
 
-/** Расписание: today (Wed 21 Oct) is over at 19:12; tomorrow starts with the second lesson and has a window */
+/** Timetable: today (Wed 21 Oct) is over at 19:12; tomorrow starts with the second lesson and has a window */
 const facts = (since: number) => ({
   average: 7.6,
   last: [chip('h1', '8', 'good'), chip('h2', '6', 'low'), chip('h3', '9', 'top')],
@@ -691,7 +691,7 @@ const SCHEDULE_ATTENTION = [
   },
 ];
 
-/** Семья of the demo: a request to join, three members (Милена has her own login), two children, one diary */
+/** Family of the demo: a request to join, three members (the older child has her own login), two children, one diary */
 const FAMILY = {
   family: { id: 'f1', name: 'Семья', parentsCanInvite: true, guidance: true },
   role: 'admin',
@@ -803,7 +803,7 @@ export function fakeApi(start: Partial<FakeState> = {}) {
           id: 'u1',
           login: 'parent@example.com',
           displayName: 'Родитель',
-          locale: state.locale ?? 'ru',
+          locale: state.locale ?? 'en',
           timezone: null,
           uiMode: state.uiMode ?? 'full',
           guidance: state.guidance ?? true,
@@ -905,7 +905,7 @@ export function fakeApi(start: Partial<FakeState> = {}) {
       }
       return json(what === 'finals/quarters' ? TERM_FINALS : YEAR_FINALS);
     }
-    // Расписание and the lesson menu: ticks, cancellations and own homework are kept for the next read
+    // Timetable and the lesson menu: ticks, cancellations and own homework are kept for the next read
     if (/^GET \/api\/students\/[^/]+\/schedule\/days$/.test(route))
       return json({
         today: state.scheduleToday ?? '2026-10-21',
