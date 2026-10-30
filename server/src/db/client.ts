@@ -11,7 +11,9 @@ import * as schema from './schema';
 export type Db = NodePgDatabase<typeof schema> & { $client: pg.Pool };
 
 export const DEFAULT_DATABASE_URL = 'postgres://marksy:marksy@localhost:5432/marksy';
-export const MIGRATIONS_DIR = fileURLToPath(new URL('../../drizzle', import.meta.url));
+/** server/drizzle; the image keeps them at MARKSY_MIGRATIONS_DIR, next to its bundle */
+export const MIGRATIONS_DIR =
+  process.env.MARKSY_MIGRATIONS_DIR?.trim() || fileURLToPath(new URL('../../drizzle', import.meta.url));
 
 export function createDb(url = process.env.DATABASE_URL ?? DEFAULT_DATABASE_URL): Db {
   // DB_POOL_MAX (env.example): fewer connections on a small host

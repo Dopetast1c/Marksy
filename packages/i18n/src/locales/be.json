@@ -49,6 +49,7 @@
   "app.error": "Нешта пайшло не так. Паспрабуйце праз хвіліну.",
   "app.update.available": "Даступная Marksy {{version}}",
   "app.update.reload": "Абнавіць",
+  "app.updating": "Marksy абнаўляецца. Старонка адкрыецца сама праз хвіліну.",
 
   "app.back": "Назад",
   "family.title": "Сям’я",

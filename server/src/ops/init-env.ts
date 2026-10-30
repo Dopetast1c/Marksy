@@ -36,12 +36,19 @@ const PRODUCTION: Record<string, string> = {
   MARKSY_DEV_PASSWORD: '',
   MARKSY_RUNNER: '',
   PRODUCTION_ACTIVE: '',
-  TEST_DATABASE_URL: '',
-  MARKSY_UPDATE_EXPECTED: '',
-  MARKSY_PROBE_DRY_RUN: '',
-  MARKSY_VERSION: '',
-  MARKSY_COMMIT: '',
 };
+
+/**
+ * Keys a production file never has: the image sets its version and commit (an empty line here would hide them), and
+ * the test switches mean nothing there
+ */
+const LEFT_OUT = new Set([
+  'MARKSY_VERSION',
+  'MARKSY_COMMIT',
+  'TEST_DATABASE_URL',
+  'MARKSY_UPDATE_EXPECTED',
+  'MARKSY_PROBE_DRY_RUN',
+]);
 
 function vapidKeys() {
   const ecdh = createECDH('prime256v1');
@@ -119,6 +126,7 @@ export function initEnv(opts: InitEnvOptions): InitEnvResult {
       const m = line.match(LINE);
       if (!m) return line;
       const key = m[1]!;
+      if (LEFT_OUT.has(key)) return `# ${key}: not in a production file`;
       result.added.push(key);
       if (key === 'DATABASE_URL') return `DATABASE_URL=postgres://marksy:${password}@postgres:5432/marksy`;
       return `${key}=${valueFor(key, m[2]!.trim())}`;
@@ -146,7 +154,7 @@ export function initEnv(opts: InitEnvOptions): InitEnvResult {
   const missing: string[] = [];
   for (const line of opts.template.split(/\r?\n/)) {
     const m = line.match(LINE);
-    if (m && !existing.has(m[1]!)) {
+    if (m && !existing.has(m[1]!) && !LEFT_OUT.has(m[1]!)) {
       const key = m[1]!;
       result.added.push(key);
       missing.push(key === 'DATABASE_URL' ? 'DATABASE_URL=' : `${key}=${valueFor(key, m[2]!.trim())}`);

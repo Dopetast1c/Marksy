@@ -29,6 +29,7 @@
     "tokens": "pnpm --filter @marksy/web tokens",
     "prepare": "node scripts/install-hooks.mjs",
     "privacy": "node scripts/privacy-check.mjs",
+    "image:audit": "node scripts/image-audit.mjs",
     "setup:env": "node scripts/init-env.mjs",
     "env:dev": "node scripts/env-dev.mjs",
     "db:up": "docker compose up -d --wait",

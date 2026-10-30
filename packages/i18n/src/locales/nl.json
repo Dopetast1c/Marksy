@@ -49,6 +49,7 @@
   "app.error": "Er ging iets mis. Probeer het over een minuut opnieuw.",
   "app.update.available": "Marksy {{version}} is beschikbaar",
   "app.update.reload": "Bijwerken",
+  "app.updating": "Marksy wordt bijgewerkt. De pagina opent zo vanzelf.",
 
   "app.back": "Terug",
   "family.title": "Gezin",

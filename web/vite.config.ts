@@ -28,6 +28,9 @@ export const BASE_PLACEHOLDER = '/__MARKSY_BASE__/';
 
 export default defineConfig(({ command }) => ({
   base: command === 'build' ? BASE_PLACEHOLDER : '/',
+  // every asset a file of its own: the production policy allows fonts and pictures from this origin only, never as
+  // inlined data (docker/web/web.Caddyfile)
+  build: { assetsInlineLimit: 0 },
   plugins: [react(), tailwindcss()],
   define: { __MARKSY_VERSION__: JSON.stringify(version), __MARKSY_REPO__: JSON.stringify(pkg.repository) },
   server: {

@@ -49,6 +49,7 @@
   "app.error": "Coś poszło nie tak. Spróbuj ponownie za minutę.",
   "app.update.available": "Dostępna jest Marksy {{version}}",
   "app.update.reload": "Aktualizuj",
+  "app.updating": "Marksy się aktualizuje. Strona otworzy się sama za chwilę.",
 
   "app.back": "Wstecz",
   "family.title": "Rodzina",

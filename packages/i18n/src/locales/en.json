@@ -52,6 +52,7 @@
   "app.error": "Something went wrong. Try again in a minute.",
   "app.update.available": "Marksy {{version}} is available",
   "app.update.reload": "Update",
+  "app.updating": "Marksy is updating. The page will open by itself in a moment.",
 
   "app.back": "Back",
   "family.title": "Family",

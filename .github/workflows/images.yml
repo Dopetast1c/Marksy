@@ -1,0 +1,131 @@
+name: Images
+
+# The production images (docs/running.md): built here and nowhere else, on native amd64 and arm64 runners, audited
+# before they are pushed (the images are public), pushed by digest and joined into one multi-arch tag per commit:
+# sha-<commit> always, edge from main, preview from the release branch. A release only tags these images
+# (release.yml); it never builds again.
+
+on:
+  push:
+    branches: [main, r1-release]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: images-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  OWNER: dopetast1c
+
+jobs:
+  build:
+    name: ${{ matrix.image }} (${{ matrix.arch }})
+    strategy:
+      fail-fast: true
+      matrix:
+        image: [server, web]
+        arch: [amd64, arm64]
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Version
+        id: version
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build for the audit
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.image }}/Dockerfile
+          platforms: linux/${{ matrix.arch }}
+          load: true
+          tags: marksy-${{ matrix.image }}:audit
+          build-args: |
+            MARKSY_VERSION=${{ steps.version.outputs.version }}
+            MARKSY_COMMIT=${{ github.sha }}
+          cache-from: type=gha,scope=${{ matrix.image }}-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}-${{ matrix.arch }}
+
+      - name: Audit the image
+        run: node scripts/image-audit.mjs marksy-${{ matrix.image }}:audit
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push by digest
+        id: push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.image }}/Dockerfile
+          platforms: linux/${{ matrix.arch }}
+          build-args: |
+            MARKSY_VERSION=${{ steps.version.outputs.version }}
+            MARKSY_COMMIT=${{ github.sha }}
+          labels: |
+            org.opencontainers.image.version=${{ steps.version.outputs.version }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          outputs: type=image,name=${{ env.REGISTRY }}/${{ env.OWNER }}/marksy-${{ matrix.image }},push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=${{ matrix.image }}-${{ matrix.arch }}
+
+      - name: Keep the digest
+        run: |
+          mkdir -p digests
+          echo "${{ steps.push.outputs.digest }}" > "digests/${{ matrix.image }}-${{ matrix.arch }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: digest-${{ matrix.image }}-${{ matrix.arch }}
+          path: digests/*
+          retention-days: 1
+
+  tag:
+    name: Tag ${{ matrix.image }}
+    needs: build
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        image: [server, web]
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: digest-${{ matrix.image }}-*
+          merge-multiple: true
+          path: digests
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: One tag for both architectures
+        env:
+          IMAGE: ${{ env.REGISTRY }}/${{ env.OWNER }}/marksy-${{ matrix.image }}
+        run: |
+          channel=preview
+          if [ "${GITHUB_REF}" = "refs/heads/main" ]; then channel=edge; fi
+          docker buildx imagetools create \
+            -t "${IMAGE}:sha-${GITHUB_SHA}" \
+            -t "${IMAGE}:${channel}" \
+            "${IMAGE}@$(cat digests/${{ matrix.image }}-amd64)" \
+            "${IMAGE}@$(cat digests/${{ matrix.image }}-arm64)"
+          docker buildx imagetools inspect "${IMAGE}:sha-${GITHUB_SHA}"

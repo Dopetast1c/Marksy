@@ -49,6 +49,7 @@
   "app.error": "Algo correu mal. Tente de novo daqui a um minuto.",
   "app.update.available": "O Marksy {{version}} está disponível",
   "app.update.reload": "Atualizar",
+  "app.updating": "O Marksy está a ser atualizado. A página abre sozinha daqui a pouco.",
 
   "app.back": "Voltar",
   "family.title": "Família",

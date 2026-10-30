@@ -49,6 +49,7 @@
   "app.error": "Что-то пошло не так. Попробуйте через минуту.",
   "app.update.available": "Доступна Marksy {{version}}",
   "app.update.reload": "Обновить",
+  "app.updating": "Marksy обновляется. Страница откроется сама через минуту.",
 
   "app.back": "Назад",
   "family.title": "Семья",

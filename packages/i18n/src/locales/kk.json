@@ -49,6 +49,7 @@
   "app.error": "Бірдеңе дұрыс болмады. Бір минуттан кейін қайталап көріңіз.",
   "app.update.available": "Marksy {{version}} нұсқасы қолжетімді",
   "app.update.reload": "Жаңарту",
+  "app.updating": "Marksy жаңартылып жатыр. Бет бір минуттан кейін өзі ашылады.",
 
   "app.back": "Артқа",
   "family.title": "Отбасы",

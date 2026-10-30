@@ -49,6 +49,7 @@
   "app.error": "Etwas ist schiefgelaufen. Versuchen Sie es in einer Minute noch einmal.",
   "app.update.available": "Marksy {{version}} ist verfügbar",
   "app.update.reload": "Aktualisieren",
+  "app.updating": "Marksy wird aktualisiert. Die Seite öffnet sich gleich von selbst.",
 
   "app.back": "Zurück",
   "family.title": "Familie",

@@ -1,0 +1,8 @@
+# Room for other home services on other paths of the same proxy (docs/running.md, "Other services"). Mount a folder of
+# your own *.caddy files at /etc/marksy/extra in docker-compose.prod.yml, each with a handle block, for example:
+#
+#   handle /photos/* {
+#     reverse_proxy photos:2342
+#   }
+#
+# They apply only when BASE_PATH is a path; at the root, Marksy answers every path.

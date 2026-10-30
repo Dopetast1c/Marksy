@@ -34,7 +34,7 @@ export async function serve(): Promise<void> {
     log.info('migrations', { count: applied });
   } catch (err) {
     // the message names the failing statement's error, never a value from the data
-    log.error('migrations failed: the schema is unchanged, the server stops', { reason: errorSummary(err) });
+    log.error('migrations failed: the schema is unchanged, the server stops', { error: errorSummary(err) });
     await db.$client.end().catch(() => undefined);
     process.exit(1);
   }

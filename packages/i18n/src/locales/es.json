@@ -49,6 +49,7 @@
   "app.error": "Algo ha fallado. Vuelve a intentarlo dentro de un minuto.",
   "app.update.available": "Marksy {{version}} está disponible",
   "app.update.reload": "Actualizar",
+  "app.updating": "Marksy se está actualizando. La página se abrirá sola en un momento.",
 
   "app.back": "Atrás",
   "family.title": "Familia",

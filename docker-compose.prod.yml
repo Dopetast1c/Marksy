@@ -1,0 +1,200 @@
+# Marksy in production (docs/running.md). A host with only Docker runs the whole stack from this file and
+# .env.production (marksy init-env creates it). Use the wrappers next to it, which pass both files:
+#   ./marksy.sh up          (Linux, a Raspberry Pi, a Synology NAS over SSH)
+#   .\marksy.ps1 up         (Windows)
+# or: docker compose --env-file .env.production -f docker-compose.prod.yml up -d
+# Option B of the ways in (an own address on the home network) adds docker-compose.macvlan.yml.
+# The images come from GitHub Container Registry; the tag is the update channel (UPDATE_CHANNEL, "1" by default).
+# Memory limits fit a Raspberry Pi 3B with 1 GB; measured numbers are in docs/running.md.
+
+# Its own project name and volume names: a computer that also has the development checkout (whose compose project is
+# "marksy") never mixes the two databases.
+name: marksy-prod
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: '10m'
+    max-file: '3'
+
+services:
+  postgres:
+    image: postgres:16.10-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: marksy
+      POSTGRES_DB: marksy
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is missing in .env.production (marksy init-env)}
+      TZ: ${TZ:-UTC}
+    # the small profile fits 1 GB; docs/running.md has the large one for a laptop or a NAS
+    command:
+      - postgres
+      - -c
+      - shared_buffers=${PG_SHARED_BUFFERS:-64MB}
+      - -c
+      - effective_cache_size=${PG_EFFECTIVE_CACHE_SIZE:-256MB}
+      - -c
+      - work_mem=${PG_WORK_MEM:-2MB}
+      - -c
+      - maintenance_work_mem=${PG_MAINTENANCE_WORK_MEM:-32MB}
+      - -c
+      - max_connections=${PG_MAX_CONNECTIONS:-30}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks: [backend]
+    healthcheck:
+      test: ['CMD', 'pg_isready', '-U', 'marksy', '-d', 'marksy']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    mem_limit: 256m
+    logging: *logging
+
+  server:
+    image: ghcr.io/dopetast1c/marksy-server:${UPDATE_CHANNEL:-1}
+    pull_policy: missing
+    restart: unless-stopped
+    env_file: .env.production
+    environment:
+      TZ: ${TZ:-UTC}
+      # one BASE_PATH for the server (the cookie's Path), the web app and the proxy
+      BASE_PATH: ${BASE_PATH:-/}
+      # the proxy and cloudflared on the compose network are the only proxies whose headers are believed
+      TRUST_PROXY: loopback, ${MARKSY_EDGE_SUBNET:-172.30.57.0/24}
+      SERVER_INTERNAL_URL: http://server:3001
+      BACKUP_INTERNAL_URL: http://backup:3002
+      NODE_OPTIONS: --max-old-space-size=192
+    volumes:
+      - uploads:/data/uploads
+      # read only: the status command counts the backups, a restore reads one
+      - ${BACKUP_DIR:-./backups}:/backups:ro
+    networks: [edge, backend]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/api/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      # migrations run before the server answers; a start on the Pi with a migration is measured in docs/running.md
+      start_period: 90s
+    labels:
+      marksy.updatable: 'true'
+    mem_limit: 320m
+    logging: *logging
+
+  web:
+    image: ghcr.io/dopetast1c/marksy-web:${UPDATE_CHANNEL:-1}
+    pull_policy: missing
+    restart: unless-stopped
+    command: ['web']
+    environment:
+      BASE_PATH: ${BASE_PATH:-/}
+    read_only: true
+    tmpfs:
+      - /tmp
+    networks: [edge]
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://127.0.0.1:8080/']
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    labels:
+      marksy.updatable: 'true'
+    mem_limit: 48m
+    logging: *logging
+
+  proxy:
+    image: ghcr.io/dopetast1c/marksy-web:${UPDATE_CHANNEL:-1}
+    pull_policy: missing
+    restart: unless-stopped
+    command: ['proxy']
+    environment:
+      BASE_PATH: ${BASE_PATH:-/}
+      PROXY_HOST: ${PROXY_HOST:-}
+      PROXY_TRUSTED_EXTRA: ${PROXY_TRUSTED_EXTRA:-}
+      MARKSY_EDGE_SUBNET: ${MARKSY_EDGE_SUBNET:-172.30.57.0/24}
+    # the only published port of the stack (options A, C and D); cloudflared reaches the proxy inside the network
+    ports:
+      - '${PROXY_PORT:-80}:8080'
+    read_only: true
+    tmpfs:
+      - /tmp
+    networks: [edge]
+    depends_on:
+      - web
+      - server
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://127.0.0.1:8080/_marksy/proxy-health']
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    labels:
+      marksy.updatable: 'true'
+    mem_limit: 48m
+    logging: *logging
+
+  backup:
+    image: ghcr.io/dopetast1c/marksy-server:${UPDATE_CHANNEL:-1}
+    pull_policy: missing
+    restart: unless-stopped
+    command: ['backup-daemon']
+    env_file: .env.production
+    environment:
+      TZ: ${TZ:-UTC}
+      NODE_OPTIONS: --max-old-space-size=96
+    volumes:
+      - uploads:/data/uploads:ro
+      - ${BACKUP_DIR:-./backups}:/backups
+    networks: [backend]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3002/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    labels:
+      marksy.updatable: 'true'
+    mem_limit: 128m
+    logging: *logging
+
+  cloudflared:
+    image: cloudflare/cloudflared:2025.10.0
+    profiles: [tunnel]
+    restart: unless-stopped
+    command: ['tunnel', '--no-autoupdate', 'run']
+    environment:
+      # from the Cloudflare dashboard (docs/running.md, Cloudflare Tunnel); without it the tunnel does not start
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
+    networks: [edge]
+    depends_on:
+      - proxy
+    mem_limit: 96m
+    logging: *logging
+
+volumes:
+  pgdata:
+    name: marksy-prod-pgdata
+  uploads:
+    name: marksy-prod-uploads
+
+networks:
+  # the proxy, the web app, the server and cloudflared; its subnet is what TRUST_PROXY and the proxy trust
+  edge:
+    ipam:
+      config:
+        - subnet: ${MARKSY_EDGE_SUBNET:-172.30.57.0/24}
+  # the database and the backup service: no way out to the internet
+  backend:
+    internal: true

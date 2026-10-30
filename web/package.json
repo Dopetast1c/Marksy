@@ -13,6 +13,7 @@
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
     "tokens": "node --import tsx scripts/tokens-to-css.ts",
+    "updating-page": "node --import tsx scripts/updating-page.ts",
     "api:types": "pnpm --filter @marksy/server openapi && node --import tsx scripts/api-types.ts"
   },
   "dependencies": {
@@ -31,6 +32,7 @@
     "react-dom": "^19.3.1",
     "react-i18next": "^17.1.8",
     "react-router": "^8.5.0",
+    "zod": "^4.6.7",
     "zustand": "^5.0.16"
   },
   "devDependencies": {

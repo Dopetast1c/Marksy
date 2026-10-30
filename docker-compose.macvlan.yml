@@ -1,0 +1,22 @@
+# Option B of the ways in (docs/running.md): the reverse proxy gets its own address on the home network, for a host
+# whose port 80 is taken (a Synology NAS: DSM's own web server holds 80 and 443). Open http://<MACVLAN_ADDRESS>/marksy.
+#   ./marksy.sh picks this file up by itself when MACVLAN_ADDRESS is set in .env.production
+# Pick an address outside the router's DHCP range and reserve it there. The host itself cannot reach this address
+# without a shim interface (docs/running.md, "Option B").
+
+services:
+  proxy:
+    networks:
+      edge: {}
+      lan:
+        ipv4_address: ${MACVLAN_ADDRESS:?MACVLAN_ADDRESS is missing in .env.production}
+
+networks:
+  lan:
+    driver: macvlan
+    driver_opts:
+      parent: ${MACVLAN_PARENT:?MACVLAN_PARENT (the host's network card, e.g. eth0 or ovs_eth0) is missing}
+    ipam:
+      config:
+        - subnet: ${MACVLAN_SUBNET:?MACVLAN_SUBNET (e.g. 192.168.1.0/24) is missing}
+          gateway: ${MACVLAN_GATEWAY:?MACVLAN_GATEWAY (the router, e.g. 192.168.1.1) is missing}

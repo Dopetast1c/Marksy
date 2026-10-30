@@ -49,6 +49,7 @@
   "app.error": "Un problème est survenu. Réessayez dans une minute.",
   "app.update.available": "Marksy {{version}} est disponible",
   "app.update.reload": "Mettre à jour",
+  "app.updating": "Marksy se met à jour. La page s’ouvrira d’elle-même dans un instant.",
 
   "app.back": "Retour",
   "family.title": "Famille",

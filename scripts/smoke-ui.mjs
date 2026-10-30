@@ -1,9 +1,11 @@
-import { existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { lanAddress, ownAddresses } from './smoke-lan.mjs';
 
-// `pnpm smoke:ui [--host <ip>] [--only seed|own] [--lang <code>|qps]`: with `pnpm dev:lan` running, opens the app the way a phone does,
+// `pnpm smoke:ui [--host <ip>] [--url <production address>] [--only seed|own] [--lang <code>|qps]`: with `pnpm dev:lan`
+// running (or, with --url, the production stack at its base path, under its real security policy: any CSP violation
+// fails the run), opens the app the way a phone does,
 // through http://<computer-ip>:5173, in a phone (360 px, touch) and a tablet (820 px), and walks login, «С кого
 // начнём?», Главная and Внимание for the fictional demo family (pnpm db:seed) and for the owner's family
 // (MARKSY_DEV_EMAIL, MARKSY_DEV_PASSWORD from .env), then every child's Оценки, Предметы, Предмет, Итоги and Расписание. The same states of docs/mockups.html are shot at the same sizes,
@@ -98,10 +100,26 @@ function trackRequests(page) {
   };
 }
 
-/** The text of an i18n key in the language on screen: buttons and fields are found by key in every language */
-export function say(page, key) {
+const catalogs = new Map();
+/** A language's catalog from packages/i18n, for a production build, which has no development hook */
+function catalog(lang) {
+  if (!catalogs.has(lang)) {
+    const file = new URL(`../packages/i18n/src/locales/${lang}.json`, import.meta.url);
+    catalogs.set(lang, existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : {});
+  }
+  return catalogs.get(lang);
+}
+
+/**
+ * The text of an i18n key in the language on screen: buttons and fields are found by key in every language. A
+ * development build answers through its hook; a production build is read in the page's language from the catalogs.
+ */
+export async function say(page, key) {
   /* global window */
-  return page.evaluate((k) => window.__marksyT(k), key);
+  const fromPage = await page.evaluate((k) => (window.__marksyT ? window.__marksyT(k) : null), key);
+  if (fromPage !== null) return fromPage;
+  const lang = (await page.evaluate(() => document.documentElement.lang)) || 'en';
+  return catalog(lang)[key] ?? catalog('en')[key] ?? key;
 }
 
 /**
@@ -162,7 +180,29 @@ function prune() {
 async function appContext(browser, device, lang) {
   const context = await browser.newContext({ ...DEVICES[device], locale: 'ru-RU' });
   if (lang) await context.addInitScript((lng) => localStorage.setItem('marksy.lang.override', lng), lang);
+  // every blocked script, style, picture or font the page meets (the production CSP, docker/web/web.Caddyfile)
+  /* global location */
+  await context.addInitScript(() =>
+    document.addEventListener('securitypolicyviolation', (e) =>
+      console.error(
+        `[csp] ${e.effectiveDirective} ${e.blockedURI ? new URL(e.blockedURI, location.href).pathname : 'inline'}`,
+      ),
+    ),
+  );
   return context;
+}
+
+/**
+ * Fails the run on any CSP violation: the event above, or the browser's own console error about the policy. The line
+ * names the directive and the path only (no data from the page).
+ */
+export function watchCsp(page, label, log) {
+  page.on('console', (msg) => {
+    if (msg.type() !== 'error') return;
+    const text = msg.text();
+    if (text.startsWith('[csp] ')) log.push(`BAD csp ${label}: ${text.slice(6)}`);
+    else if (/Content Security Policy/i.test(text)) log.push(`BAD csp ${label}: ${text.split(/[.:]/)[0]}`);
+  });
 }
 
 /** Shoots the screen and notes what does not fit; texts are printed for the fictional family only */
@@ -183,6 +223,7 @@ function shooter(page, settle, { dir, family, device, lang, log }) {
 async function shootApp(browser, base, family, device, dir, log, lang) {
   const context = await appContext(browser, device, lang);
   const page = await context.newPage();
+  watchCsp(page, `${family.key}/${device}`, log);
   const settle = trackRequests(page);
   const shot = shooter(page, settle, { dir, family: family.key, device, lang, log });
   try {
@@ -296,6 +337,7 @@ async function shootApp(browser, base, family, device, dir, log, lang) {
 async function shootStudent(browser, base, device, dir, log, lang) {
   const context = await appContext(browser, device, lang);
   const page = await context.newPage();
+  watchCsp(page, `seed/${device}/student`, log);
   const settle = trackRequests(page);
   const shot = shooter(page, settle, { dir, family: 'seed', device, lang, log });
   let simple = false;
@@ -358,20 +400,22 @@ async function main() {
   const host = at >= 0 ? args[at + 1] : lanAddress();
   const only = args.includes('--only') ? args[args.indexOf('--only') + 1] : null;
   const lang = args.includes('--lang') ? args[args.indexOf('--lang') + 1] : null;
+  // --url: the production stack instead of the dev server, at its base path (http://localhost/marksy)
+  const url = args.includes('--url') ? args[args.indexOf('--url') + 1]?.replace(/\/+$/, '') : null;
   if (lang !== null && !/^[a-z]{2,3}$/.test(lang ?? '')) {
     console.error('--lang takes a language code: one of the twelve, or qps for the pseudo-locale');
     return 2;
   }
-  if (!host || !ownAddresses().includes(host)) {
+  if (!url && (!host || !ownAddresses().includes(host))) {
     console.error('no address of this computer on the home network; pass one with --host <ip>');
     return 2;
   }
-  const base = `http://${host}:${PORT}`;
+  const base = url ?? `http://${host}:${PORT}`;
   try {
     const health = await fetch(`${base}/api/health`);
     if (!health.ok) throw new Error(String(health.status));
   } catch {
-    console.error(`nothing answers at ${base}: start pnpm dev:lan first`);
+    console.error(`nothing answers at ${base}: start pnpm dev:lan (or the production stack for --url) first`);
     return 1;
   }
   const families = [SEED];

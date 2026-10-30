@@ -1,5 +1,6 @@
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { statfs } from 'node:fs/promises';
+import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { listProviders } from '@marksy/registry';
 import { runnerOf } from './login-guard';
@@ -14,6 +15,7 @@ import { restoreBackup } from '../ops/restore';
 import { setSyncEnabled } from '../runtime/instance';
 import { instanceStatus } from '../runtime/status';
 import { serve } from '../serve';
+import { DEMO_LOGINS, DEMO_PASSWORD, seedAllowed, seedDemo } from '../seed/seed';
 import { checkOnline } from '../sync/connectivity';
 import { readSyncConfig } from '../sync/config';
 
@@ -38,6 +40,7 @@ const USAGE = `marksy <command>
   init-env <file> [--credentials-key-from <file>] [--tz <zone>] [--show-hook-secret]
                                 create or complete the production settings file
   connect [--provider <id>]     connect the diary from DIARY_LOGIN, DIARY_PASSWORD, MARKSY_DEV_EMAIL, MARKSY_DEV_PASSWORD
+  seed [--reset]                the fictional demo family, to try Marksy without a diary account
   check-network                 can this container reach each diary's host (DNS and TCP, no login)
   healthcheck                   exit 0 when the API answers`;
 
@@ -176,6 +179,7 @@ function cmdInitEnv(args: string[]): number {
     credentialsFrom: from ? readFileSync(from, 'utf8') : null,
     ...(option(args, '--tz') && { tz: option(args, '--tz')! }),
   });
+  mkdirSync(dirname(target), { recursive: true });
   writeFileSync(target, result.text, { mode: 0o600 });
   console.log(`${target}: ${result.added.length} keys added, ${result.kept.length} secrets kept as they were`);
   if (result.generated.length) console.log(`generated: ${result.generated.join(', ')}`);
@@ -216,6 +220,32 @@ async function cmdConnect(args: string[]): Promise<number> {
       return 3;
     }
     console.log(`connect: ${result.outcome}, ${result.children} children followed`);
+    return 0;
+  } finally {
+    await db.$client.end();
+  }
+}
+
+/**
+ * The fictional demo family (pnpm db:seed), for trying Marksy without a diary account. Its logins have a published
+ * password: never on an instance that strangers can reach, and never next to a real family (docs/running.md).
+ */
+async function cmdSeed(args: string[]): Promise<number> {
+  if (!seedAllowed(env('PUBLIC_URL')) && !flag(args, '--allow-public')) {
+    console.error(
+      'PUBLIC_URL is a public address: the demo logins have a published password (--allow-public to seed anyway)',
+    );
+    return 2;
+  }
+  const db = createDb(databaseUrl());
+  try {
+    await migrateDb(db);
+    const r = await seedDemo(db, { reset: flag(args, '--reset') });
+    console.log(r.created ? 'demo family created' : 'demo family already exists (seed --reset replaces it)');
+    console.log(
+      `logins: ${DEMO_LOGINS.parent} (parent, admin), ${DEMO_LOGINS.student} (student), ${DEMO_LOGINS.otherParent}`,
+    );
+    console.log(`password for all three: ${DEMO_PASSWORD}`); // privacy-ok: the published password of the fictional demo family
     return 0;
   } finally {
     await db.$client.end();
@@ -285,6 +315,8 @@ export async function main(argv: string[]): Promise<number> {
       return cmdInitEnv(args);
     case 'connect':
       return cmdConnect(args);
+    case 'seed':
+      return cmdSeed(args);
     case 'check-network':
       return cmdCheckNetwork();
     case 'healthcheck':

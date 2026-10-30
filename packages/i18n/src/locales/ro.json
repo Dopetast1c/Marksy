@@ -49,6 +49,7 @@
   "app.error": "Ceva n-a mers. Încearcă din nou peste un minut.",
   "app.update.available": "Marksy {{version}} este disponibil",
   "app.update.reload": "Actualizează",
+  "app.updating": "Marksy se actualizează. Pagina se deschide singură într-o clipă.",
 
   "app.back": "Înapoi",
   "family.title": "Familie",
