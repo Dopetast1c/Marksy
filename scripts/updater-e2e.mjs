@@ -63,7 +63,8 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /** The version the running server reports */
 async function serverVersion() {
-  const r = await fetch(`http://localhost:${PORT}/api/health`).catch(() => null);
+  // init-env's BASE_PATH; the hook stays at the root
+  const r = await fetch(`http://localhost:${PORT}/marksy/api/health`).catch(() => null);
   return r?.ok ? (await r.json()).version : null;
 }
 
