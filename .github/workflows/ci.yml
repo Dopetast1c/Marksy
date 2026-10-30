@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-24.04
     services:
       # the test database the server tests expect (docker-compose.yml: marksy-postgres-test on 5434)
-      postgres-test:
+      postgres:
         image: postgres:16.10-bookworm
         env:
           POSTGRES_USER: marksy
@@ -35,8 +35,6 @@ jobs:
           --health-retries 20
     env:
       TEST_DATABASE_URL: postgres://marksy:marksy@localhost:5434/marksy_test
-      # the restore tests run pg_dump and pg_restore inside this container
-      MARKSY_PG_TOOLS_CONTAINER: ${{ job.services.postgres-test.id }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -63,6 +61,10 @@ jobs:
           pnpm commit:lint --range "$range"
 
       - name: Check
+        env:
+          # the restore tests run pg_dump and pg_restore inside the service container (the job context exists in
+          # steps only)
+          MARKSY_PG_TOOLS_CONTAINER: ${{ job.services.postgres.id }}
         run: pnpm check
 
       - name: Every interface language, strictly
