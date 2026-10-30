@@ -22,11 +22,19 @@ describe('init-env', () => {
     expect(env.get('DATABASE_URL')).toBe(`postgres://marksy:${env.get('POSTGRES_PASSWORD')}@postgres:5432/marksy`);
     for (const key of ['DIARY_LOGIN', 'DIARY_PASSWORD', 'MARKSY_DEV_EMAIL', 'MARKSY_DEV_PASSWORD', 'PRODUCTION_ACTIVE'])
       expect(env.get(key), key).toBe('');
-    // every key of the template is in the file, but the image's version (an empty line would hide it) and the tests'
+    // every key of the template is in the file, but the image's version (an empty line would hide it), what the compose
+    // file sets for the updater, and the tests'
     expect([...parseEnv(template).keys()].filter((k) => !env.has(k))).toEqual([
       'TEST_DATABASE_URL',
       'MARKSY_VERSION',
       'MARKSY_COMMIT',
+      'UPDATE_STATE_DIR',
+      'UPDATE_HOOK_PORT',
+      'DOCKER_GUARD_URL',
+      'SERVER_URL',
+      'GUARD_PORT',
+      'UPDATE_IMAGE_PREFIX',
+      'UPDATE_TEST_COSIGN_KEY',
       'MARKSY_UPDATE_EXPECTED',
       'MARKSY_PROBE_DRY_RUN',
     ]);

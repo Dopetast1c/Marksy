@@ -48,6 +48,14 @@ const LEFT_OUT = new Set([
   'TEST_DATABASE_URL',
   'MARKSY_UPDATE_EXPECTED',
   'MARKSY_PROBE_DRY_RUN',
+  // set by docker-compose.prod.yml, or only for the updater's end-to-end test
+  'UPDATE_STATE_DIR',
+  'UPDATE_HOOK_PORT',
+  'DOCKER_GUARD_URL',
+  'SERVER_URL',
+  'GUARD_PORT',
+  'UPDATE_IMAGE_PREFIX',
+  'UPDATE_TEST_COSIGN_KEY',
 ]);
 
 function vapidKeys() {

@@ -19,6 +19,8 @@ RUN MARKSY_VERSION=${MARKSY_VERSION} pnpm --filter @marksy/web build
 FROM ${CADDY_IMAGE}
 ARG MARKSY_VERSION=0.0.0
 ARG MARKSY_COMMIT=dev
+# a hash of what the proxy runs (images.yml): the updater replaces the proxy only when it changes
+ARG MARKSY_PROXY_CONFIG=dev
 RUN addgroup -S -g 1000 marksy && adduser -S -u 1000 -G marksy marksy
 COPY --from=build /src/web/dist /srv/app
 COPY docker/web/web.Caddyfile /etc/marksy/web.Caddyfile
@@ -34,7 +36,8 @@ LABEL org.opencontainers.image.title="marksy-web" \
   org.opencontainers.image.source="https://github.com/Dopetast1c/Marksy" \
   org.opencontainers.image.licenses="PolyForm-Noncommercial-1.0.0" \
   org.opencontainers.image.version="${MARKSY_VERSION}" \
-  org.opencontainers.image.revision="${MARKSY_COMMIT}"
+  org.opencontainers.image.revision="${MARKSY_COMMIT}" \
+  marksy.proxy-config="${MARKSY_PROXY_CONFIG}"
 USER marksy
 EXPOSE 8080
 ENTRYPOINT ["/usr/local/bin/marksy-web"]

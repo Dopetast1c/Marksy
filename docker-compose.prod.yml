@@ -119,6 +119,8 @@ services:
       PROXY_HOST: ${PROXY_HOST:-}
       PROXY_TRUSTED_EXTRA: ${PROXY_TRUSTED_EXTRA:-}
       MARKSY_EDGE_SUBNET: ${MARKSY_EDGE_SUBNET:-172.30.57.0/24}
+      # /_marksy/update-hook, outside BASE_PATH (and outside Cloudflare Access): the release workflow's signed nudge
+      UPDATE_HOOK_UPSTREAM: updater:8090
     # the only published port of the stack (options A, C and D); cloudflared reaches the proxy inside the network
     ports:
       - '${PROXY_PORT:-80}:8080'
@@ -169,6 +171,67 @@ services:
     mem_limit: 128m
     logging: *logging
 
+  # installs signed releases of the update channel (docs/running.md, updates); it never touches the socket itself
+  updater:
+    image: ghcr.io/dopetast1c/marksy-updater:${UPDATE_CHANNEL:-1}
+    pull_policy: missing
+    restart: unless-stopped
+    command: ['updater']
+    environment:
+      TZ: ${TZ:-UTC}
+      UPDATE_CHANNEL: ${UPDATE_CHANNEL:-1}
+      UPDATE_QUIET_HOURS: ${UPDATE_QUIET_HOURS:-}
+      UPDATE_PAUSED: ${UPDATE_PAUSED:-false}
+      UPDATE_POLL_MINUTES: ${UPDATE_POLL_MINUTES:-5}
+      UPDATE_HEALTH_TIMEOUT_SECONDS: ${UPDATE_HEALTH_TIMEOUT_SECONDS:-300}
+      UPDATE_COLLECTOR_WAIT_MINUTES: ${UPDATE_COLLECTOR_WAIT_MINUTES:-20}
+      UPDATE_MIN_FREE_MB: ${UPDATE_MIN_FREE_MB:-1024}
+      UPDATE_HOOK_SECRET: ${UPDATE_HOOK_SECRET:-}
+      MARKSY_INTERNAL_TOKEN: ${MARKSY_INTERNAL_TOKEN:?MARKSY_INTERNAL_TOKEN is missing in .env.production (marksy init-env)}
+      DOCKER_GUARD_URL: http://socket-guard:2375
+      NODE_OPTIONS: --max-old-space-size=64
+    volumes:
+      - updater-state:/state
+    networks: [edge, backend, docker]
+    depends_on:
+      - socket-guard
+    read_only: true
+    tmpfs:
+      - /tmp
+    healthcheck:
+      test: ['CMD', 'marksy-updater', 'healthcheck']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    labels:
+      marksy.updatable: 'true'
+    mem_limit: 128m
+    logging: *logging
+
+  # the only container with the Docker socket: it lets the updater act on Marksy's own containers and images, and
+  # nothing else (updater/src/guard-rules.ts); it has no way out of its network
+  socket-guard:
+    image: ghcr.io/dopetast1c/marksy-updater:${UPDATE_CHANNEL:-1}
+    pull_policy: missing
+    restart: unless-stopped
+    command: ['socket-guard']
+    user: root
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks: [docker]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ['no-new-privileges:true']
+    environment:
+      NODE_OPTIONS: --max-old-space-size=32
+    healthcheck:
+      test: ['CMD', 'marksy-updater', 'healthcheck', 'guard']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    mem_limit: 64m
+    logging: *logging
+
   cloudflared:
     image: cloudflare/cloudflared:2025.10.0
     profiles: [tunnel]
@@ -188,6 +251,8 @@ volumes:
     name: marksy-prod-pgdata
   uploads:
     name: marksy-prod-uploads
+  updater-state:
+    name: marksy-prod-updater-state
 
 networks:
   # the proxy, the web app, the server and cloudflared; its subnet is what TRUST_PROXY and the proxy trust
@@ -197,4 +262,7 @@ networks:
         - subnet: ${MARKSY_EDGE_SUBNET:-172.30.57.0/24}
   # the database and the backup service: no way out to the internet
   backend:
+    internal: true
+  # the updater and the socket guard only
+  docker:
     internal: true

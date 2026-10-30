@@ -1,0 +1,19 @@
+{
+  "name": "@marksy/updater",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Installs signed releases on a home host: channels, hook and polling, backup, rollback, a socket guard",
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "build": "node scripts/build.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "esbuild": "^0.27.0",
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.5"
+  }
+}

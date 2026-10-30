@@ -4,6 +4,7 @@
 #   ./marksy.sh up | stop | pull | ps | logs [service] | status
 #   ./marksy.sh backup | restore <file in BACKUP_DIR> [--without-demo] [--replace --yes]
 #   ./marksy.sh sync enable|disable | check-network | connect | tunnel on|off
+#   ./marksy.sh update status | history [n] | pause | resume | now [--to X.Y.Z]
 #   ./marksy.sh init-env [--credentials-key-from <file>] [--tz <zone>] [--show-hook-secret]
 set -eu
 cd "$(dirname "$0")"
@@ -42,6 +43,16 @@ case "$command" in
     need_env
     compose ps
     compose exec server node /app/dist/marksy.mjs status
+    compose exec updater marksy-updater status
+    ;;
+  update)
+    need_env
+    case "${1:-status}" in
+      status | history | pause | resume | now) ;;
+      *) echo "update status|history [n]|pause|resume|now [--to X.Y.Z]" >&2; exit 2 ;;
+    esac
+    [ $# -eq 0 ] && set -- status
+    compose exec updater marksy-updater "$@"
     ;;
   backup) need_env; compose exec server node /app/dist/marksy.mjs backup ;;
   restore)
@@ -52,7 +63,8 @@ case "$command" in
     fi
     file="$1"
     shift
-    compose stop server backup
+    # the updater too: no update may start while the database is replaced
+    compose stop updater server backup
     compose run --rm --no-deps server restore "/backups/$file" "$@"
     compose up -d
     ;;
@@ -72,6 +84,6 @@ case "$command" in
     esac
     ;;
   *)
-    sed -n '2,8p' "$0"
+    sed -n '2,9p' "$0"
     ;;
 esac

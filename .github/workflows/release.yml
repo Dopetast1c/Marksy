@@ -72,7 +72,7 @@ jobs:
         env:
           COMMIT: ${{ steps.what.outputs.commit }}
         run: |
-          for image in server web; do
+          for image in server web updater; do
             for i in $(seq 1 60); do
               if docker buildx imagetools inspect "$REGISTRY/marksy-$image:sha-$COMMIT" >/dev/null 2>&1; then break; fi
               if [ "$i" = 60 ]; then echo "::error::no image marksy-$image:sha-$COMMIT after 30 minutes"; exit 1; fi
@@ -86,7 +86,7 @@ jobs:
           COMMIT: ${{ steps.what.outputs.commit }}
           VERSION: ${{ steps.what.outputs.version }}
         run: |
-          for image in server web; do
+          for image in server web updater; do
             docker pull -q --platform linux/amd64 "$REGISTRY/marksy-$image:sha-$COMMIT" >/dev/null
             label="$(docker image inspect --format '{{ index .Config.Labels "org.opencontainers.image.version" }}' "$REGISTRY/marksy-$image:sha-$COMMIT")"
             if [ "$label" != "$VERSION" ]; then
@@ -95,7 +95,10 @@ jobs:
             fi
           done
 
+      # the version the updater image verifies with (updater/Dockerfile)
       - uses: sigstore/cosign-installer@v3
+        with:
+          cosign-release: v3.1.3
 
       - name: Tag and sign
         env:
@@ -104,7 +107,7 @@ jobs:
           TAGS: ${{ steps.what.outputs.tags }}
           VERSION: ${{ steps.what.outputs.version }}
         run: |
-          for image in server web; do
+          for image in server web updater; do
             args=""
             for tag in $TAGS; do args="$args -t $REGISTRY/$TARGET-$image:$tag"; done
             # shellcheck disable=SC2086

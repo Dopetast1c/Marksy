@@ -2,7 +2,8 @@ name: Images
 
 # The production images (docs/running.md): built here and nowhere else, on native amd64 and arm64 runners, audited
 # before they are pushed (the images are public), pushed by digest and joined into one multi-arch tag per commit:
-# sha-<commit> always, edge from main, preview from the release branch. A release only tags these images
+# sha-<commit> always, edge from main, preview from the release branch. Each is signed with cosign through GitHub's
+# OIDC, so that a host on the edge or preview channel checks its images too. A release only tags these images
 # (release.yml); it never builds again.
 
 on:
@@ -13,6 +14,7 @@ on:
 permissions:
   contents: read
   packages: write
+  id-token: write
 
 concurrency:
   group: images-${{ github.ref }}
@@ -28,7 +30,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        image: [server, web]
+        image: [server, web, updater]
         arch: [amd64, arm64]
         include:
           - arch: amd64
@@ -41,7 +43,10 @@ jobs:
 
       - name: Version
         id: version
-        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+          # what the proxy runs: the updater replaces the proxy only when this changes
+          echo "proxy=$(cat web/Dockerfile docker/web/entrypoint.sh docker/web/updating.html docker/web/extra.caddy | sha256sum | cut -c1-16)" >> "$GITHUB_OUTPUT"
 
       - uses: docker/setup-buildx-action@v3
 
@@ -56,6 +61,7 @@ jobs:
           build-args: |
             MARKSY_VERSION=${{ steps.version.outputs.version }}
             MARKSY_COMMIT=${{ github.sha }}
+            MARKSY_PROXY_CONFIG=${{ steps.version.outputs.proxy }}
           cache-from: type=gha,scope=${{ matrix.image }}-${{ matrix.arch }}
           cache-to: type=gha,mode=max,scope=${{ matrix.image }}-${{ matrix.arch }}
 
@@ -78,6 +84,7 @@ jobs:
           build-args: |
             MARKSY_VERSION=${{ steps.version.outputs.version }}
             MARKSY_COMMIT=${{ github.sha }}
+            MARKSY_PROXY_CONFIG=${{ steps.version.outputs.proxy }}
           labels: |
             org.opencontainers.image.version=${{ steps.version.outputs.version }}
             org.opencontainers.image.revision=${{ github.sha }}
@@ -101,7 +108,7 @@ jobs:
     runs-on: ubuntu-24.04
     strategy:
       matrix:
-        image: [server, web]
+        image: [server, web, updater]
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -129,3 +136,15 @@ jobs:
             "${IMAGE}@$(cat digests/${{ matrix.image }}-amd64)" \
             "${IMAGE}@$(cat digests/${{ matrix.image }}-arm64)"
           docker buildx imagetools inspect "${IMAGE}:sha-${GITHUB_SHA}"
+
+      # the version the updater image verifies with (updater/Dockerfile)
+      - uses: sigstore/cosign-installer@v3
+        with:
+          cosign-release: v3.1.3
+
+      - name: Sign
+        env:
+          IMAGE: ${{ env.REGISTRY }}/${{ env.OWNER }}/marksy-${{ matrix.image }}
+        run: |
+          digest="$(docker buildx imagetools inspect "${IMAGE}:sha-${GITHUB_SHA}" --format '{{ json .Manifest }}' | jq -r .digest)"
+          cosign sign --yes "${IMAGE}@${digest}"
