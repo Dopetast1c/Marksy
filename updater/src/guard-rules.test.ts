@@ -52,6 +52,10 @@ describe('the socket guard', () => {
     expect((await ask('POST', '/containers/server1/attach')).allow).toBe(false);
     expect((await ask('GET', '/containers/server1/archive')).allow).toBe(false);
     expect((await ask('GET', '/containers/server1/stats')).allow).toBe(false);
+    // whether a container exists: Docker answers 404; a foreign one stays hidden
+    expect((await ask('GET', '/containers/gone/json')).allow).toBe(true);
+    expect((await ask('GET', '/containers/postgres1/json')).allow).toBe(false);
+    expect((await ask('DELETE', '/containers/gone')).allow).toBe(false);
   });
 
   it('creates only a labelled container from a Marksy image with nothing that reaches the host', async () => {

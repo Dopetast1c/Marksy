@@ -393,6 +393,15 @@ describe('the update procedure', () => {
     expect(docker.serviceImageVersion('server')).toBe('1.1.0');
   });
 
+  it('a failed update waits an hour before it is tried again by itself', async () => {
+    const u = make({ minFreeMb: 999_999 });
+    expect(await u.check('poll')).toMatchObject({ outcome: 'failed' });
+    expect(await u.check('poll')).toMatchObject({ outcome: 'failed', reason: 'failed less than an hour ago' });
+    expect((await stateStore(dir).list()).filter((a) => a.outcome === 'failed')).toHaveLength(1);
+    clock += 61 * 60_000;
+    expect((await make().check('poll'))?.outcome).toBe('updated');
+  });
+
   it('a pinned channel never updates', async () => {
     expect((await make({ channel: '1.0.0' }).check('poll'))?.outcome).toBe('up_to_date');
   });

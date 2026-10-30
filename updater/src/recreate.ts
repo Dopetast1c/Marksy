@@ -28,8 +28,12 @@ export function containerSpec(old: ContainerInspect, oldImage: ImageInspect, ima
     Aliases: (e.Aliases ?? []).filter((a) => a !== shortId && a !== old.Id),
     ...(e.IPAMConfig && Object.keys(e.IPAMConfig).length > 0 && { IPAMConfig: e.IPAMConfig }),
   });
+  // the network of NetworkMode is the one the container is created on (older Docker APIs refuse any other); the rest
+  // are connected afterwards
   const networks = Object.entries(old.NetworkSettings.Networks ?? {});
-  const [first, ...rest] = networks;
+  const mode = old.HostConfig.NetworkMode;
+  const first = networks.find(([n]) => n === mode) ?? networks[0];
+  const rest = networks.filter((n) => n !== first);
   const body: Record<string, unknown> = {
     Image: image,
     Env: (c.Env ?? []).filter((e) => !imageEnv.has(e)),

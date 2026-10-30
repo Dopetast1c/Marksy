@@ -93,6 +93,8 @@ class Abort extends Error {
   }
 }
 
+export const RETRY_AFTER_FAILURE_MS = 60 * 60_000;
+
 const short = (digest: string) => digest.replace(/^sha256:/, '').slice(0, 12);
 
 export function createUpdater(cfg: UpdaterConfig, deps: Deps) {
@@ -230,12 +232,16 @@ export function createUpdater(cfg: UpdaterConfig, deps: Deps) {
 
     // a release that was rolled back here is not tried again on its own (a backup and a rollback every few minutes);
     // `marksy update now` still installs it, and a newer release is tried as usual
+    // and one that failed for another reason (a backup, the disk, Docker) waits an hour before it is tried again
     const shortKey = JSON.stringify(attempt('updated').digests);
-    if (
-      !manual &&
-      (await store.list(KEEP)).some((a) => a.outcome === 'rolled_back' && JSON.stringify(a.digests) === shortKey)
-    )
-      return result({ available: target.label, outcome: 'rolled_back', reason: 'rolled back before' });
+    if (!manual) {
+      const same = (await store.list(KEEP)).filter((a) => JSON.stringify(a.digests) === shortKey);
+      if (same.some((a) => a.outcome === 'rolled_back'))
+        return result({ available: target.label, outcome: 'rolled_back', reason: 'rolled back before' });
+      const failed = same.filter((a) => a.outcome === 'failed').at(-1);
+      if (failed && deps.now() - Date.parse(failed.at) < RETRY_AFTER_FAILURE_MS)
+        return result({ available: target.label, outcome: 'failed', reason: 'failed less than an hour ago' });
+    }
 
     // 1. signatures, before anything is pulled
     const key = Object.values(target.digests).join(',');

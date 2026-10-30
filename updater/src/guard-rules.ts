@@ -116,7 +116,11 @@ export async function decide(req: GuardRequest, lookup: GuardLookup, prefix: str
       (method === 'DELETE' && action === undefined);
     if (!allowed) return deny('container action');
     if (action === 'stats' && query.get('stream') !== 'false') return deny('stats stream');
-    return (await updatable(id, lookup)) ? ALLOW : deny('not a Marksy container');
+    if (await updatable(id, lookup)) return ALLOW;
+    // asking whether a container exists is fine: Docker answers 404 when it does not; it says nothing about others
+    if (method === 'GET' && action === 'json' && (await lookup.containerLabels(decodeURIComponent(id))) === null)
+      return ALLOW;
+    return deny('not a Marksy container');
   }
 
   if (parts[0] === 'images') {
