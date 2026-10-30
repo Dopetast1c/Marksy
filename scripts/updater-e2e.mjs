@@ -163,7 +163,18 @@ async function main() {
   // another key: an image it signs must be refused
   mkdirSync(join(work, 'other'));
   sh('cosign', ['generate-key-pair'], { cwd: join(work, 'other'), env: { ...process.env, COSIGN_PASSWORD: '' } });
-  sh('docker', ['run', '--rm', '-v', `${work}:/work`, 'marksy-server:e2e', 'init-env', '/work/.env.production']);
+  const user = `${process.getuid?.() ?? 1000}:${process.getgid?.() ?? 1000}`;
+  sh('docker', [
+    'run',
+    '--rm',
+    '--user',
+    user,
+    '-v',
+    `${work}:/work`,
+    'marksy-server:e2e',
+    'init-env',
+    '/work/.env.production',
+  ]);
   writeFileSync(join(work, '.env.production'), `\nBACKUP_DIR=./backups\n`, { flag: 'a' });
   const secret = env('UPDATE_HOOK_SECRET');
 
@@ -322,6 +333,12 @@ try {
   } catch {
     console.log('   (no history)');
   }
+  step('memory after the updates');
+  const ids = compose(['ps', '-q'], { ok: true }).split('\n').filter(Boolean);
+  if (ids.length)
+    console.log(
+      sh('docker', ['stats', '--no-stream', '--format', '   {{.Name}}: {{.MemUsage}}', ...ids], { ok: true }),
+    );
   if (failures) compose(['logs', '--tail', '80', 'updater', 'socket-guard', 'server'], { ok: true, stdio: 'inherit' });
   compose(['down', '-v', '--remove-orphans'], { ok: true });
 }

@@ -32,7 +32,9 @@ command="${1:-help}"
 case "$command" in
   init-env)
     channel="${UPDATE_CHANNEL:-$(setting UPDATE_CHANNEL)}"
-    docker run --rm -v "$PWD:/work" "ghcr.io/dopetast1c/marksy-server:${channel:-1}" init-env "/work/$ENV_FILE" "$@"
+    # as the user running this script, so that the file is theirs and the folder needs no other owner
+    docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/work" "ghcr.io/dopetast1c/marksy-server:${channel:-1}" \
+      init-env "/work/$ENV_FILE" "$@"
     ;;
   up) need_env; compose up -d "$@" ;;
   stop) need_env; compose stop "$@" ;;
