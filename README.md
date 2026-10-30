@@ -157,6 +157,12 @@ Vite prints a `Network:` address such as `http://192.168.1.20:5173`; open it on 
 
 `pnpm smoke:ui` does the same for the screens: with `pnpm dev:lan` running it opens the app over the home-network address in a headless browser at a phone size (360 px, touch) and a tablet size, signs in as the demo parent (and as you, when `MARKSY_DEV_EMAIL` is set), walks the login, the student pick, Главная and Внимание, and shoots the same states of the clickable prototype (`docs/mockups.html`) for comparison. The screenshots land in `data/ui/` (the last three runs), which is never committed. It needs Chromium for Playwright once: `pnpm exec playwright install chromium`.
 
+## Running in production
+
+To run Marksy for your family every day, on a laptop, a Raspberry Pi or a NAS, with only Docker on that computer: [docs/running.md](docs/running.md). It covers the install, the ways to reach the app at home and from outside (Cloudflare Tunnel), backups, restoring and moving to another computer, and updates.
+
+Releases are numbered MAJOR.MINOR.PATCH: MAJOR is a global rework of the app (rare), MINOR brings new features, PATCH brings corrections and fixes.
+
 ## Configuration
 
 All configuration is in `.env` (created by `pnpm setup:env` from `env.example`). Secrets never go into the repository.
