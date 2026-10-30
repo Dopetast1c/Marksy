@@ -23,6 +23,10 @@ class FakeDocker implements Docker {
   containers = new Map<string, ContainerInspect>();
   registryImages = new Map<string, ImageInspect & { behaviour: Behaviour }>();
   log: string[] = [];
+  /** every pull fails, as with the network down */
+  failPulls = false;
+  /** creating a container whose name holds this fails, as a Docker error in the middle of an install */
+  failCreate: string | null = null;
   private n = 0;
 
   addRegistryImage(img: string, version: string, opts: { behaviour?: Behaviour; proxy?: string } = {}) {
@@ -122,6 +126,7 @@ class FakeDocker implements Docker {
     return [...this.images.values()].map((i) => ({ Id: i.Id, RepoTags: i.RepoTags, RepoDigests: i.RepoDigests }));
   }
   async pull(ref: string) {
+    if (this.failPulls) throw new Error(`pull ${ref}: connection reset`);
     const img = this.registryImages.get(ref);
     if (!img) throw new Error(`pull ${ref}: not found`);
     if (!this.images.has(img.Id)) this.images.set(img.Id, structuredClone(img));
@@ -141,6 +146,7 @@ class FakeDocker implements Docker {
     this.log.push(`rmi ${img.Id}`);
   }
   async create(name: string, spec: Record<string, unknown>) {
+    if (this.failCreate && name.includes(this.failCreate)) throw new Error('create: no space left on device');
     if (this.byName(name)) throw new Error('name in use');
     const image = (await this.inspectImage(spec.Image as string))!;
     const id = `c-${name}-${++this.n}`;
@@ -218,6 +224,8 @@ let running: number;
 let migrations: number;
 let clock: number;
 let refusedDigests: Set<string>;
+/** every pre-update backup taken, as "from->to" */
+let backups: string[];
 
 function updater(
   over: Partial<UpdaterConfig> = {},
@@ -254,7 +262,10 @@ function updater(
         if (refusedDigests.has(ref.split('@')[1]!)) throw new Error('no matching signatures');
       },
       server,
-      backup: async (from, to) => `pre-update/marksy-${from}-to-${to}.dump`,
+      backup: async (from, to) => {
+        backups.push(`${from}->${to}`);
+        return `pre-update/marksy-${from}-to-${to}.dump`;
+      },
       store: stateStore(dir!),
       freeMb: async () => 10_000,
       onFailed: (a) => failures.push(a),
@@ -274,6 +285,7 @@ beforeEach(async () => {
   migrations = 13;
   clock = Date.UTC(2026, 9, 30, 12, 0);
   refusedDigests = new Set();
+  backups = [];
   dir = await mkdtemp(join(tmpdir(), 'marksy-updater-'));
   for (const v of ['1.0.0', '1.1.0', '1.1.1', '1.2.0', '2.0.0'])
     for (const img of ['server', 'web', 'updater'])
@@ -341,12 +353,6 @@ describe('the update procedure', () => {
     );
     expect(failures.map((f) => f.outcome)).toEqual(['rolled_back']);
     expect(docker.serviceImageVersion('web')).toBe('1.0.0');
-    // not tried again on its own: no second backup, no second rollback
-    const u = make({}, { server: tags, web: tags, updater: ['1.0.0'] });
-    const before = docker.log.length;
-    expect(await u.check('poll')).toMatchObject({ outcome: 'rolled_back', reason: 'rolled back before' });
-    expect(docker.log.length).toBe(before);
-    expect(failures).toHaveLength(1);
   });
 
   it('a failing migration (the server exits) is rolled back at once', async () => {
@@ -371,17 +377,17 @@ describe('the update procedure', () => {
     expect(docker.log.filter((l) => l.startsWith('pull 1.3.0') || l.includes('stop'))).toEqual([]);
     expect(failures).toHaveLength(1);
     expect(docker.serviceImageVersion('server')).toBe('1.0.0');
+    expect(backups).toEqual([]);
   });
 
-  it('nothing installs inside quiet hours or while the collector reads', async () => {
+  it('nothing installs inside quiet hours or while the collector reads, and no backup is taken', async () => {
     const quiet = parseQuietHours(`${String(new Date(clock).getHours()).padStart(2, '0')}:00-23:59`);
     expect((await make({ quiet }).check('poll'))?.outcome).toBe('waiting_quiet_hours');
     expect(docker.serviceImageVersion('server')).toBe('1.0.0');
     running = 1;
     expect((await make().check('hook'))?.outcome).toBe('waiting_collector');
     expect(docker.serviceImageVersion('server')).toBe('1.0.0');
-    running = 0;
-    expect((await make().check('hook'))?.outcome).toBe('updated');
+    expect(backups).toEqual([]);
   });
 
   it('a pause stops automatic updates, not a manual one; a manual update never goes down', async () => {
@@ -393,16 +399,72 @@ describe('the update procedure', () => {
     expect(docker.serviceImageVersion('server')).toBe('1.1.0');
   });
 
-  it('a failed update waits an hour before it is tried again by itself', async () => {
-    const u = make({ minFreeMb: 999_999 });
-    expect(await u.check('poll')).toMatchObject({ outcome: 'failed' });
-    expect(await u.check('poll')).toMatchObject({ outcome: 'failed', reason: 'failed less than an hour ago' });
-    expect((await stateStore(dir).list()).filter((a) => a.outcome === 'failed')).toHaveLength(1);
-    clock += 61 * 60_000;
+  it('a pinned channel never updates', async () => {
+    expect((await make({ channel: '1.0.0' }).check('poll'))?.outcome).toBe('up_to_date');
+  });
+});
+
+// The two rules for trying a release again by itself, and the backup only right before the install
+// (docs/running.md, "How an update happens"). A manual `update now` ignores both rules.
+describe('trying again', () => {
+  const hour = 61 * 60_000;
+  const skipped = (outcome: string) => ({ outcome, reason: 'tried less than an hour ago' });
+
+  it('rule 1: stopped before the install (the disk, a pull, a busy collector): no backup, tried again an hour later', async () => {
+    expect(await make({ minFreeMb: 999_999 }).check('poll')).toMatchObject({ outcome: 'failed' });
+    expect(await make().check('poll')).toMatchObject(skipped('failed'));
+    clock += hour;
+    docker.failPulls = true;
+    expect(await make().check('poll')).toMatchObject({ outcome: 'failed', reason: expect.stringContaining('pull') });
+    docker.failPulls = false;
+    expect(await make().check('poll')).toMatchObject(skipped('failed'));
+    clock += hour;
+    running = 1;
+    expect(await make().check('poll')).toMatchObject({ outcome: 'waiting_collector' });
+    running = 0;
+    expect(await make().check('poll')).toMatchObject(skipped('waiting_collector'));
+    // none of these got as far as the install: no backup
+    expect(backups).toEqual([]);
+    expect(docker.serviceImageVersion('server')).toBe('1.0.0');
+    clock += hour;
+    expect((await make().check('poll'))?.outcome).toBe('updated');
+    expect(backups).toEqual(['1.0.0->1.2.0']);
+  });
+
+  it('rule 1: a Docker error in the middle of the install puts everything back and is tried again an hour later', async () => {
+    docker.failCreate = '-web-';
+    const r = await make().check('poll');
+    expect(r).toMatchObject({ outcome: 'failed', reason: expect.stringContaining('put back after') });
+    expect(docker.serviceImageVersion('server')).toBe('1.0.0');
+    expect(docker.serviceImageVersion('web')).toBe('1.0.0');
+    // the install had begun: its backup was taken
+    expect(backups).toEqual(['1.0.0->1.2.0']);
+    docker.failCreate = null;
+    expect(await make().check('poll')).toMatchObject(skipped('failed'));
+    clock += hour;
     expect((await make().check('poll'))?.outcome).toBe('updated');
   });
 
-  it('a pinned channel never updates', async () => {
-    expect((await make({ channel: '1.0.0' }).check('poll'))?.outcome).toBe('up_to_date');
+  it('rule 2: installed and rolled back on health (a failing migration too) never installs again by itself', async () => {
+    docker.addRegistryImage('server', '1.3.0', { behaviour: 'crash' });
+    docker.addRegistryImage('web', '1.3.0', { proxy: 'p1' });
+    const tags = { server: ['1.0.0', '1.3.0'], web: ['1.0.0', '1.3.0'], updater: [] };
+    expect((await make({}, tags).check('poll'))?.outcome).toBe('rolled_back');
+    expect(backups).toHaveLength(1);
+    const logged = docker.log.length;
+    // not after an hour, not after a day
+    for (const later of [hour, 24 * hour]) {
+      clock += later;
+      expect(await make({}, tags).check('poll')).toMatchObject({
+        outcome: 'rolled_back',
+        reason: 'rolled back before',
+      });
+    }
+    expect(docker.log.length).toBe(logged);
+    expect(backups).toHaveLength(1);
+    expect(failures).toHaveLength(1);
+    // update now still tries it
+    expect((await make({}, tags).check('manual'))?.outcome).toBe('rolled_back');
+    expect(backups).toHaveLength(2);
   });
 });

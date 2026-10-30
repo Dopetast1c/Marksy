@@ -12,9 +12,10 @@ import type { Verifier } from './verify';
 
 // One update (docs/running.md, updates), in this order, and nothing is stopped before everything is ready:
 //   find the release the channel allows -> check every image's signature -> wait out quiet hours -> hold the
-//   collector and wait for a running read to end -> check the disk -> take a pre-update backup -> pull by digest ->
-//   move the channel's local tags -> replace server, backup, web (and the proxy when its configuration changed),
-//   each healthy before the next -> keep the old containers until all are healthy, or put them all back.
+//   collector and wait for a running read to end -> check the disk -> pull by digest and check the versions ->
+//   take the pre-update backup -> move the channel's local tags -> replace server, backup, web (and the proxy when
+//   its configuration changed), each healthy before the next -> keep the old containers until all are healthy, or
+//   put them all back. A backup is taken only by an attempt that gets as far as the install.
 // Then old images are pruned (the previous release stays for a rollback) and the updater replaces itself last,
 // through a one-off swap container.
 
@@ -94,6 +95,8 @@ class Abort extends Error {
 }
 
 export const RETRY_AFTER_FAILURE_MS = 60 * 60_000;
+/** Outcomes that stopped before the install or during it for a reason other than health: tried again after an hour */
+const RETRY_LATER: Attempt['outcome'][] = ['failed', 'waiting_collector'];
 
 const short = (digest: string) => digest.replace(/^sha256:/, '').slice(0, 12);
 
@@ -230,17 +233,19 @@ export function createUpdater(cfg: UpdaterConfig, deps: Deps) {
       await store.append(a);
     };
 
-    // a release that was rolled back here is not tried again on its own (a backup and a rollback every few minutes);
-    // `marksy update now` still installs it, and a newer release is tried as usual
-    // and one that failed for another reason (a backup, the disk, Docker) waits an hour before it is tried again
+    // Two rules decide whether this release is tried again by itself; `marksy update now` ignores both, and a newer
+    // release is always tried:
+    //   installed and rolled back because it did not become healthy (a failing migration included): never again;
+    //   stopped before or during the install for any other reason (the disk, a pull, the backup, a busy collector,
+    //   Docker): again an hour after the last try.
     const shortKey = JSON.stringify(attempt('updated').digests);
     if (!manual) {
       const same = (await store.list(KEEP)).filter((a) => JSON.stringify(a.digests) === shortKey);
       if (same.some((a) => a.outcome === 'rolled_back'))
         return result({ available: target.label, outcome: 'rolled_back', reason: 'rolled back before' });
-      const failed = same.filter((a) => a.outcome === 'failed').at(-1);
-      if (failed && deps.now() - Date.parse(failed.at) < RETRY_AFTER_FAILURE_MS)
-        return result({ available: target.label, outcome: 'failed', reason: 'failed less than an hour ago' });
+      const last = same.filter((a) => RETRY_LATER.includes(a.outcome)).at(-1);
+      if (last && deps.now() - Date.parse(last.at) < RETRY_AFTER_FAILURE_MS)
+        return result({ available: target.label, outcome: last.outcome, reason: 'tried less than an hour ago' });
     }
 
     // 1. signatures, before anything is pulled
@@ -270,7 +275,7 @@ export function createUpdater(cfg: UpdaterConfig, deps: Deps) {
     await deps.server.hold(30);
     if (!(await waitForCollector())) {
       await deps.server.hold(0);
-      await once(`collector:${key}`, attempt('waiting_collector'));
+      await store.append(attempt('waiting_collector'));
       return result({ available: target.label, outcome: 'waiting_collector' });
     }
 
@@ -281,16 +286,9 @@ export function createUpdater(cfg: UpdaterConfig, deps: Deps) {
     let before = 0;
     let downtimeMs: number | undefined;
     try {
+      // 4. the disk, then every image pulled and checked: nothing stops and no backup is taken before this succeeds
       const free = await deps.freeMb();
       if (free !== null && free < cfg.minFreeMb) throw new Abort('failed', `only ${free} MB free on the disk`);
-      before = (await deps.server.status()).migrations;
-      try {
-        backup = await deps.backup(current.version, target.label);
-      } catch (err) {
-        throw new Abort('failed', `backup: ${errorText(err)}`);
-      }
-
-      // 4. pull everything before anything stops
       for (const img of IMAGES) {
         const d = target.digests[img];
         if (!d) continue;
@@ -304,7 +302,15 @@ export function createUpdater(cfg: UpdaterConfig, deps: Deps) {
         ids[img] = { id: inspected.Id, labels };
       }
 
-      // 5. the channel's local tag follows the release, so that `docker compose up` keeps it
+      // 5. the backup, right before the install
+      before = (await deps.server.status()).migrations;
+      try {
+        backup = await deps.backup(current.version, target.label);
+      } catch (err) {
+        throw new Abort('failed', `backup: ${errorText(err)}`);
+      }
+
+      // 6. the channel's local tag follows the release, so that `docker compose up` keeps it
       for (const img of IMAGES) {
         const now = ids[img];
         if (!now) continue;
@@ -313,7 +319,7 @@ export function createUpdater(cfg: UpdaterConfig, deps: Deps) {
         if (before && before !== now.id) moved.push([img, before]);
       }
 
-      // 6. replace, server first
+      // 7. replace, server first
       const newRevision = ids.server!.labels[REVISION_LABEL];
       for (const [service, img] of SERVICES) {
         const c = byService.get(service);
@@ -338,7 +344,9 @@ export function createUpdater(cfg: UpdaterConfig, deps: Deps) {
         if (service === 'server') downtimeMs = deps.now() - t0;
       }
     } catch (err) {
-      const outcome = err instanceof Abort ? err.outcome : 'failed';
+      // only a container that did not become healthy makes a rollback for good; any other error (Docker, the network)
+      // puts back what was replaced too, and the release is tried again later
+      const outcome = err instanceof Abort && err.outcome === 'rolled_back' ? 'rolled_back' : 'failed';
       // put back what was replaced, newest first, and the tags
       for (const r of [...done].reverse()) {
         await restore(docker, r).catch((e: unknown) => log.error('restore failed', { reason: errorText(e) }));
@@ -349,8 +357,8 @@ export function createUpdater(cfg: UpdaterConfig, deps: Deps) {
           () => false,
         );
       await deps.server.hold(0).catch(() => undefined);
-      const a = attempt(done.length ? 'rolled_back' : outcome === 'rolled_back' ? 'failed' : outcome, {
-        reason: errorText(err),
+      const a = attempt(outcome, {
+        reason: done.length && outcome === 'failed' ? `put back after: ${errorText(err)}` : errorText(err),
         ...(backup && { backup }),
         durationMs: deps.now() - startedAt,
       });

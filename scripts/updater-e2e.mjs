@@ -4,14 +4,16 @@
 // with a test key, and every promise of docs/running.md, "Updates", checked against the real updater:
 //   a pinned channel stays; channel 1.1 takes 1.1.1 but not 1.2.0, within about two minutes of a signed nudge;
 //   unsigned, stale and replayed nudges are refused; channel 1 takes 1.2.0 by polling but never 2.0.0;
-//   nothing installs inside quiet hours or while a collector run is open;
-//   a release that never becomes healthy and one whose migration fails are rolled back, the schema unchanged;
+//   nothing installs inside quiet hours or while a collector run is open, and such an attempt takes no backup and
+//   is not tried again within the hour, while `update now` installs it with one backup;
+//   a release that never becomes healthy and one whose migration fails are rolled back, the schema unchanged, and
+//   a rolled-back release is not tried again by itself;
 //   an unsigned image and one signed by another key are refused; the updater replaces itself.
 // Expects the images marksy-server:e2e, marksy-web:e2e and marksy-updater:e2e (built by the workflow) and cosign on
 // PATH. Prints versions, outcomes and timings; the history of the updater is printed at the end.
 import { spawnSync } from 'node:child_process';
 import { createHmac } from 'node:crypto';
-import { chmodSync, copyFileSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { chmodSync, copyFileSync, mkdirSync, mkdtempSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -221,16 +223,35 @@ async function main() {
   const h1 = history().at(-1);
   console.log(`   downtime of the server: ${h1?.downtimeMs} ms, whole update ${h1?.durationMs} ms`);
 
-  step('quiet hours and an open collector run hold an update back');
+  step('channel 1 picks 1.2.0 up by polling, never 2.0.0');
   channel = '1';
   release('2.0.0');
+  compose(['up', '-d', '--no-deps', 'updater']);
+  const tPoll = await waitFor('1.2.0', async () => (await serverVersion()) === '1.2.0', 300_000);
+  check(tPoll !== null, `1.2.0 installed by polling (${tPoll && Math.round(tPoll / 1000)} s)`);
+  await sleep(70_000);
+  check((await serverVersion()) === '1.2.0', 'channel 1 did not take 2.0.0');
+
+  // pre-update backups in BACKUP_DIR: one only for an attempt that got as far as the install
+  const dumps = () => {
+    try {
+      return readdirSync(join(work, 'backups', 'pre-update')).filter((f) => f.endsWith('.dump')).length;
+    } catch {
+      return 0;
+    }
+  };
+  const dumpsBefore = dumps();
+
+  step('quiet hours and an open collector run hold 1.2.1 back');
+  // without the updater image: `update now` below answers before a self-update could stop it
+  release('1.2.1', { only: ['server', 'web'] });
   const hour = new Date().getHours();
   const quiet = `${String(hour).padStart(2, '0')}:00-${String((hour + 2) % 24).padStart(2, '0')}:00`;
   compose(['up', '-d', '--no-deps', 'updater'], { env: { UPDATE_QUIET_HOURS: quiet } });
   await sleep(80_000);
-  check((await serverVersion()) === '1.1.1', `nothing installed inside quiet hours ${quiet}`);
+  check((await serverVersion()) === '1.2.0', `nothing installed inside quiet hours ${quiet}`);
   check(
-    history().some((a) => a.outcome === 'waiting_quiet_hours'),
+    history().some((a) => a.to === '1.2.1' && a.outcome === 'waiting_quiet_hours'),
     'the history says it waits for quiet hours to end',
   );
   psql(`update sync_runs set status = 'running', started_at = now() where id = (select id from sync_runs limit 1)`);
@@ -238,23 +259,30 @@ async function main() {
     env: { UPDATE_QUIET_HOURS: '', UPDATE_COLLECTOR_WAIT_MINUTES: '1' },
   });
   await sleep(150_000);
-  check((await serverVersion()) === '1.1.1', 'nothing installed while a collector run is open');
+  check((await serverVersion()) === '1.2.0', 'nothing installed while a collector run is open');
   check(
-    history().some((a) => a.outcome === 'waiting_collector'),
+    history().some((a) => a.to === '1.2.1' && a.outcome === 'waiting_collector'),
     'the history says it waits for the collector',
   );
   psql(`update sync_runs set status = 'success' where status = 'running'`);
 
-  step('channel 1 picks 1.2.0 up by polling, never 2.0.0');
-  const tPoll = await waitFor('1.2.0', async () => (await serverVersion()) === '1.2.0', 300_000);
-  check(tPoll !== null, `1.2.0 installed by polling (${tPoll && Math.round(tPoll / 1000)} s)`);
-  await sleep(70_000);
-  check((await serverVersion()) === '1.2.0', 'channel 1 did not take 2.0.0');
+  step('rule 1: stopped before the install, tried again only after an hour; update now installs it');
+  await sleep(130_000);
+  check((await serverVersion()) === '1.2.0', 'two polls with the collector free: not tried again within the hour');
+  check(
+    history().filter((a) => a.to === '1.2.1' && a.outcome === 'waiting_collector').length === 1,
+    'one attempt in the history',
+  );
+  check(dumps() === dumpsBefore, 'no pre-update backup by the attempts that stopped before the install');
+  const manual = updaterCli(['now']);
+  check(manual?.outcome === 'updated', `update now: ${manual?.outcome}`);
+  check((await serverVersion()) === '1.2.1', 'the server runs 1.2.1');
+  check(dumps() === dumpsBefore + 1, 'one pre-update backup, taken right before the install');
 
   const migrations = () => psql('select count(*) from drizzle.__drizzle_migrations');
   const before = migrations();
 
-  step('a release that never becomes healthy is rolled back');
+  step('rule 2: a release that never becomes healthy is rolled back, and never tried again by itself');
   release('1.3.0', {
     only: ['server', 'web'],
     serverExtra: 'ENTRYPOINT ["node", "-e", "setInterval(() => {}, 1000)"]',
@@ -262,8 +290,12 @@ async function main() {
   await nudge(secret);
   await waitFor('the rollback of 1.3.0', async () => lastOutcome() === 'rolled_back', 300_000);
   check(lastOutcome() === 'rolled_back', 'the history says rolled back');
-  check((await serverVersion()) === '1.2.0', 'the server runs 1.2.0 again');
+  check((await serverVersion()) === '1.2.1', 'the server runs 1.2.1 again');
   check(migrations() === before, 'the schema is unchanged');
+  const dumpsAfterRollback = dumps();
+  await sleep(130_000);
+  check(history().filter((a) => a.to === '1.3.0').length === 1, 'two polls later: 1.3.0 not tried again');
+  check(dumps() === dumpsAfterRollback, 'and no new backup');
 
   step('a release whose migration fails is rolled back, the schema unchanged');
   const ctx = mkdtempSync(join(work, 'ctx-'));
@@ -287,7 +319,7 @@ async function main() {
   await nudge(secret);
   await waitFor('the rollback of 1.3.1', async () => history().at(-1)?.to === '1.3.1', 300_000);
   check(history().at(-1)?.outcome === 'rolled_back', 'the history says rolled back');
-  check((await serverVersion()) === '1.2.0', 'the server runs 1.2.0 again');
+  check((await serverVersion()) === '1.2.1', 'the server runs 1.2.1 again');
   check(migrations() === before, 'the migration count is unchanged');
   check(psql("select count(*) from information_schema.tables where table_name = 'e2e_half'") === '0', 'no half table');
 
@@ -300,7 +332,7 @@ async function main() {
   await nudge(secret);
   await waitFor('the refusal of 1.3.3', async () => history().at(-1)?.to === '1.3.3', 120_000);
   check(history().at(-1)?.outcome === 'refused_signature', '1.3.3 signed by another key refused');
-  check((await serverVersion()) === '1.2.0', 'the server still runs 1.2.0');
+  check((await serverVersion()) === '1.2.1', 'the server still runs 1.2.1');
 
   step('a good release, the updater included, and the updater replaces itself');
   release('1.4.0');
