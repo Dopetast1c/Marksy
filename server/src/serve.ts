@@ -2,6 +2,7 @@ import type { Server } from 'node:http';
 import { createApp } from './app';
 import { masterKey } from './crypto/credentials';
 import { createDb, migrateDb } from './db/client';
+import { JOBS, runJobs } from './jobs/runner';
 import { errorSummary, log } from './log';
 import { dailyJanitor, readRetention } from './retention';
 import { readRuntimeConfig } from './runtime/config';
@@ -91,9 +92,14 @@ export async function serve(): Promise<void> {
     timers.push(setTimeout(tidy, 60_000).unref(), setInterval(tidy, 3_600_000).unref());
   }
 
+  // long data changes of this release, after the server answers; a stop leaves them at their last step
+  let stopping = false;
+  void runJobs(jobs, JOBS, { log, stopped: () => stopping, pauseMs: 200 }).catch((err: unknown) =>
+    log.error('background jobs', { error: errorSummary(err) }),
+  );
+
   // docker stop sends SIGTERM: no new requests or ticks, the pools close, and the process ends within the 10 seconds
   // Docker waits before it kills
-  let stopping = false;
   const stop = (signal: string) => {
     if (stopping) return;
     stopping = true;

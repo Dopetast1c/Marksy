@@ -120,6 +120,8 @@ export async function applyRetention(
   await run('cli_logins', sql`delete from cli_logins where at < ${days(limits.syncRunsDays)}`);
   // the record of backups, not the files: the backup service rotates those itself (docs/running.md, backups)
   await run('backup_runs', sql`delete from backup_runs where started_at < ${events}`);
+  // a finished job is only a record; an unfinished one is the cursor it resumes from and stays
+  await run('background_jobs', sql`delete from background_jobs where status = 'done' and finished_at < ${events}`);
   // single-use secrets: an expired code is useless and should not linger
   await run('invites', sql`delete from invites where expires_at < ${now}`);
   await run('telegram_link_codes', sql`delete from telegram_link_codes where expires_at < ${now}`);

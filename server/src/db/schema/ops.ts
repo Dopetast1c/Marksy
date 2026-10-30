@@ -1,4 +1,4 @@
-import { bigint, check, index, pgTable, smallint, text, boolean } from 'drizzle-orm/pg-core';
+import { bigint, check, index, integer, jsonb, pgTable, smallint, text, boolean } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { createdAt, id, ts } from './columns';
 
@@ -43,3 +43,25 @@ export const backupRuns = pgTable(
   },
   (t) => [index('backup_runs_started_idx').on(t.startedAt)],
 );
+
+/**
+ * A long change to existing data that runs after the server answers instead of inside a migration (CLAUDE.md,
+ * "Migrations"; server/src/jobs/runner.ts): one row per job, named in code, with the cursor it resumes from after a
+ * restart and its progress for the status command. Finished jobs go after 180 days (retention.ts).
+ */
+export const backgroundJobs = pgTable('background_jobs', {
+  id: text('id').primaryKey(),
+  status: text('status', { enum: ['pending', 'running', 'done', 'failed'] })
+    .notNull()
+    .default('pending'),
+  /** where the next step starts; written in the same transaction as the step's changes */
+  cursor: jsonb('cursor'),
+  done: integer('done').notNull().default(0),
+  total: integer('total'),
+  attempts: integer('attempts').notNull().default(0),
+  /** A short English reason, never a value from the data */
+  error: text('error'),
+  startedAt: ts('started_at'),
+  updatedAt: ts('updated_at').notNull().defaultNow(),
+  finishedAt: ts('finished_at'),
+});

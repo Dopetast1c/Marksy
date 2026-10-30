@@ -1,6 +1,7 @@
 import { desc, eq, max } from 'drizzle-orm';
 import type { Db } from '../db/client';
 import { backupRuns, diaryAccounts } from '../db/schema';
+import { jobsStatus } from '../jobs/runner';
 import { runsInProgress, syncEnabledHere, syncHeldUntil } from './instance';
 import { appVersion } from './version';
 import type { AppVersion } from './version';
@@ -19,6 +20,8 @@ export interface InstanceStatus extends AppVersion {
     lastSuccessAt: string | null;
   };
   backup: { lastSuccessAt: string | null; lastFile: string | null; lastFailureAt: string | null };
+  /** background jobs that are not done, and the ones finished in the last day */
+  jobs: Awaited<ReturnType<typeof jobsStatus>>;
 }
 
 const iso = (d: Date | null | undefined) => (d ? d.toISOString() : null);
@@ -56,5 +59,6 @@ export async function instanceStatus(db: Db, opts: { syncEnv: boolean; now?: Dat
       lastFile: ok?.file ?? null,
       lastFailureAt: iso(failed && (!ok || failed.startedAt > ok.startedAt) ? failed.startedAt : null),
     },
+    jobs: await jobsStatus(db, now),
   };
 }

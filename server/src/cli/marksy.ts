@@ -146,6 +146,8 @@ async function cmdStatus(): Promise<number> {
       `last backup ${s.backup.lastSuccessAt ?? 'never'}${s.backup.lastFile ? ` (${s.backup.lastFile})` : ''}`,
     );
     if (s.backup.lastFailureAt) console.log(`backup failed at ${s.backup.lastFailureAt}`);
+    for (const j of s.jobs)
+      console.log(`job         ${j.id}: ${j.status}, ${j.done}${j.total !== null ? ` of ${j.total}` : ''} done`);
     const dir = backupDir();
     if (existsSync(dir)) {
       const counts = await Promise.all(

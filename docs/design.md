@@ -1012,6 +1012,7 @@ The schedule above describes the ideal day. Section 10.4 describes what happens 
 | `sync_daily` | while the diary account exists | one small line per account and day |
 | `backup_runs` | 180 days (`RETENTION_MARK_EVENTS_DAYS`) | the status command shows the last backup and the last failure; the dump files themselves are rotated by the backup service (7 daily, 4 weekly, 6 monthly, the last 10 before updates; `docs/running.md`) |
 | `instance_state` | one row | the collector's switch that travels with the data (a restore turns it off) |
+| `background_jobs` | unfinished: until done; done: 180 days after (`RETENTION_MARK_EVENTS_DAYS`) | the cursor a long data change resumes from after a restart, and its progress in the status command (CLAUDE.md, "Migrations") |
 | `invites`, `telegram_link_codes` | until they expire | single-use secrets |
 | `user_files` (wallpaper) | while the user exists; replaced on upload, deleted with the user | a personal picture, one per user |
 | picture files under `UPLOADS_DIR` (a child's photo, a wallpaper) | while a row points at them: a replaced picture is deleted at once, and the janitor removes every file no `students.avatar` or `user_files` row points at (older than an hour), whatever removed the row | a child's photo must go with the child's data, never linger on disk |
