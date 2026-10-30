@@ -10,8 +10,8 @@ import { loadChild } from '../students/context';
 import type { ChildContext } from '../students/context';
 import { actorsOf } from '../students/data';
 
-// What the family does with a lesson (docs/design.md 5.5, 6.5, the ⋯ menu of D41): «готово», «Урока не будет» and
-// homework the diary does not have. Marksy's own shared state, never written to the diary. Anyone who may see the
+// What the family does with a lesson (docs/design.md 5.5, 6.5, the ⋯ menu of D41): "Ready" (lesson.ready), "Lesson won't
+// take place" (lessonMenu.cancel) and homework the diary does not have. Marksy's own shared state, never written to the diary. Anyone who may see the
 // child may do it (the student for themselves, parents and the admin); a lesson that has passed takes no action
 // (core's lessonPassed, the same rule that hides the ⋯ menu in the app).
 
@@ -47,7 +47,7 @@ export function lessonRoutes(deps: AppDeps): Router {
       method: 'put',
       path: '/api/students/:id/lessons/:lessonId/prep',
       summary:
-        '«Готово» on a lesson that has not passed (6.5): who and when are kept, the history in lesson_prep_events',
+        '"Ready" (lesson.ready) on a lesson that has not passed (6.5): who and when are kept, the history in lesson_prep_events',
       tags: ['lessons'],
       access: 'member',
       params: lessonParams,
@@ -78,7 +78,7 @@ export function lessonRoutes(deps: AppDeps): Router {
     {
       method: 'delete',
       path: '/api/students/:id/lessons/:lessonId/prep',
-      summary: 'Take «готово» off a lesson that has not passed: the lesson goes back to open (6.5)',
+      summary: 'Take "Ready" (lesson.ready) off a lesson that has not passed: the lesson goes back to open (6.5)',
       tags: ['lessons'],
       access: 'member',
       params: lessonParams,
@@ -104,7 +104,8 @@ export function lessonRoutes(deps: AppDeps): Router {
     {
       method: 'put',
       path: '/api/students/:id/lessons/:lessonId/cancel',
-      summary: '«Урока не будет» (5.5): out of the counts and reminders; the diary wins once it records the lesson',
+      summary:
+        '"Lesson won\'t take place" (lessonMenu.cancel, 5.5): out of the counts and reminders; the diary wins once it records the lesson',
       tags: ['lessons'],
       access: 'member',
       params: lessonParams,
@@ -142,7 +143,7 @@ export function lessonRoutes(deps: AppDeps): Router {
     {
       method: 'delete',
       path: '/api/students/:id/lessons/:lessonId/cancel',
-      summary: '«Вернуть урок»: the lesson is back exactly as it was (5.5)',
+      summary: '"Bring the lesson back" (lessonMenu.restore): the lesson is back exactly as it was (5.5)',
       tags: ['lessons'],
       access: 'member',
       params: lessonParams,
@@ -164,7 +165,8 @@ export function lessonRoutes(deps: AppDeps): Router {
     {
       method: 'post',
       path: '/api/students/:id/lessons/:lessonId/homework',
-      summary: '«Добавить задание»: homework the diary does not have, shown like the diary’s (6.5); one per lesson',
+      summary:
+        '"Add homework" (lessonMenu.addHomework): homework the diary does not have, shown like the diary’s (6.5); one per lesson',
       tags: ['lessons'],
       access: 'member',
       params: lessonParams,
@@ -225,7 +227,7 @@ export function lessonRoutes(deps: AppDeps): Router {
     {
       method: 'patch',
       path: '/api/students/:id/homework/:itemId',
-      summary: '«Изменить задание»: the family’s own homework only (6.5)',
+      summary: '"Edit homework" (lessonMenu.editHomework): the family’s own homework only (6.5)',
       tags: ['lessons'],
       access: 'member',
       params: itemParams,
@@ -247,7 +249,7 @@ export function lessonRoutes(deps: AppDeps): Router {
     {
       method: 'delete',
       path: '/api/students/:id/homework/:itemId',
-      summary: '«Удалить задание»: the family’s own homework only (6.5)',
+      summary: '"Delete homework" (homeworkSheet.remove): the family’s own homework only (6.5)',
       tags: ['lessons'],
       access: 'member',
       params: itemParams,

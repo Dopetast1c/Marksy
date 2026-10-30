@@ -22,7 +22,7 @@ import { Appearance } from './Appearance';
 import { RequireAuth, RequireChild, Start } from './guards';
 
 // Routes (docs/design.md 4). Everything but the login needs a session; every /s/:studentId screen needs a child this
-// person sees. Ещё and the screens under it need no child.
+// person sees. More (tabs.more) and the screens under it need no child.
 
 export const routes: RouteObject[] = [
   { path: '/login', element: <LoginScreen /> },

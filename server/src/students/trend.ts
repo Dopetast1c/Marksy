@@ -7,8 +7,8 @@ import { resolvePeriod } from './context';
 import type { ChildContext, periodQuery } from './context';
 import { factOf, marksIn } from './data';
 
-// Динамика (docs/design.md 5.4, D26): one bucket per week, month or term back from the selected instance, each with its
-// average and the stacked bar of its marks by band. Over all marks on Главная, over one subject on the subject screen.
+// Trend (stat.trend; docs/design.md 5.4, D26): one bucket per week, month or term back from the selected instance, each with its
+// average and the stacked bar of its marks by band. Over all marks on Home (screen.home), over one subject on the subject screen.
 
 export const trendResponse = registry.register(
   'Trend',

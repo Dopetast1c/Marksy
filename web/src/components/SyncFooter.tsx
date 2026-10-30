@@ -8,9 +8,10 @@ import { freshnessOf } from '../lib/freshness';
 import { formatTime } from '../lib/time';
 import { whenText } from '../lib/when';
 
-// The footer of Главная (docs/design.md 5.2): one centred quiet line, when the child's data was last updated, and for
-// the admin and parents «Обновить»: one run of the diary that reads the child, within its one-login-per-interval
-// budget (it says «можно в 13:17» when the budget is used up). A stale or paused state is the banner's job (D22).
+// The footer of Home (tabs.home; docs/design.md 5.2): one centred quiet line, when the child's data was last updated,
+// and for the admin and parents "Refresh" (home.refresh): one run of the diary that reads the child, within its
+// one-login-per-interval budget (it says "Refresh possible at 13:17", sync.refresh.allowedAt, when the budget is used
+// up). A stale or paused state is the banner's job (D22).
 
 export function SyncFooter({ studentId }: { studentId: string }) {
   const t = useT();
@@ -22,7 +23,8 @@ export function SyncFooter({ studentId }: { studentId: string }) {
   const since = status.data?.students.find((s) => s.id === studentId)?.lastSuccessAt as unknown as string | null;
   if (!since) return null;
   const when = whenText(t, since, tz);
-  // «Обновлено …» while the data is fresh; «Данные от …» once the banner says they are not (the prototype's syncFoot)
+  // "Updated …" (home.updated) while the data is fresh; "Data as of …" (home.dataFrom) once the banner says they are
+  // not (the prototype's syncFoot)
   const fresh = !freshnessOf(status.data, studentId);
   const account = status.data?.accounts.find((a) => a.studentIds.includes(studentId));
   const parent = me.data?.family?.role !== 'student';

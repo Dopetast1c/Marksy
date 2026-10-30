@@ -103,7 +103,7 @@ describe('calendar', () => {
       ['q1', 1, '2026-09-01', '2026-10-31'],
       ['q2', 2, '2026-11-09', '2026-12-24'],
     ]);
-    // the kind from the title: the app names them («Осенние каникулы»), never by month
+    // the kind from the title: the app names them ("Autumn holidays", holiday.name.autumn), never by month
     expect(c.holidays).toEqual([{ from: '2026-11-01', to: '2026-11-08', kind: 'autumn' }]);
     expect(c.schoolYear).toEqual({ externalId: 'y', label: '2026/2027', start: '2026-09-01', end: '2027-05-31' });
     expect(c.gradingScaleId).toBeUndefined();

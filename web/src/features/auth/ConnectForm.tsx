@@ -13,9 +13,10 @@ import { i18n, intlLocale, rememberForUser, useT } from '../../i18n';
 import { PROVIDERS_DOC } from '../../lib/links';
 import { errorText } from './errors';
 
-// «Подключить дневник» (docs/design.md 5.1, 7.2): the diary system, the fields its manifest asks for, the role when
-// the system knows both, and the Marksy login the person wants. The system is named in one place only, the «Страна и
-// дневник» row; every other label says «дневник», so the screen works for any provider without new copy.
+// "Connect a diary" (login.mode.connect; docs/design.md 5.1, 7.2): the diary system, the fields its manifest asks for,
+// the role when the system knows both, and the Marksy login the person wants. The system is named in one place only,
+// the "Country and diary" row (connect.provider); every other label says "diary", so the screen works for any provider
+// without new copy.
 
 type Provider = Schemas['Provider'];
 
@@ -56,7 +57,7 @@ export function providerLabel(p: Provider, locale: string): string {
 }
 
 /**
- * intoFamily: Семья → «Добавить дневник» (7.2): the same fields of the diary, no Marksy login (the person is signed in),
+ * intoFamily: Family (family.title) → "Add a diary" (family.addDiary; 7.2): the same fields of the diary, no Marksy login (the person is signed in),
  * the account goes into the current family; onDone gets the family's new view
  */
 export function ConnectForm({ intoFamily }: { intoFamily?: { onDone: () => void } } = {}) {

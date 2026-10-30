@@ -11,7 +11,7 @@ export interface Language {
   intl: string;
   /**
    * How far the strings can be trusted (locales/STATUS.md, a test keeps the two in step): source (en), reviewed by a
-   * native speaker, machine translation, or todo (no file yet, English key by key). Ещё says so for anything but the
+   * native speaker, machine translation, or todo (no file yet, English key by key). More (tabs.more) says so for anything but the
    * first two (design.md 5.6).
    */
   status: 'source' | 'reviewed' | 'machine' | 'todo';
@@ -52,7 +52,7 @@ export function languageOf(code: string): Language | undefined {
 }
 
 /**
- * A word that stands alone as a label («Четверть», «Сегодня», a tag's name) written inside a sentence: lower case,
+ * A word that stands alone as a label ("Quarter" (term.quarter), "Today" (day.today), a tag's name) written inside a sentence: lower case,
  * except in a language whose nouns keep their capital. Takes a language code or an Intl tag.
  */
 export function inSentence(word: string, locale: string): string {

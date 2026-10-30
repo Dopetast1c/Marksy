@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { registry } from '../openapi';
 
-// Оформление (docs/design.md 5.6a, D46): personal, stored per user (users.settings.appearance) and applied on every
+// Appearance (look.title; docs/design.md 5.6a, D46): personal, stored per user (users.settings.appearance) and applied on every
 // device the person signs in on. A palette changes only the page background and the accent; band, severity and subject
 // colours never follow it. The ids are those of docs/tokens.json (palette, wallpaper.ids, font.bodyOptions); a test
 // keeps the two in step.

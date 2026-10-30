@@ -109,7 +109,7 @@ export async function exportFamily(db: Db, familyId: string) {
         ...g,
         setBy: author(g.setBy),
       })),
-      // «Урока не будет» is the child's own work too
+      // "Lesson won't take place" (lessonMenu.cancel) is the child's own work too
       lessonOverrides: (await db.select().from(lessonOverrides).where(eq(lessonOverrides.studentId, id))).map((o) => ({
         ...o,
         setBy: author(o.setBy),

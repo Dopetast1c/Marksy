@@ -4,6 +4,7 @@ import type { Transport } from '@marksy/core';
 import request from 'supertest';
 import { testApp } from './app';
 import type { AppDeps } from '../src/http/context';
+import { DEMO_PARENT_NAME } from '../src/seed/seed';
 
 export type TestAgent = ReturnType<typeof request.agent>;
 
@@ -29,7 +30,7 @@ export async function connectFamily(agent: TestAgent, login = 'parent@example.co
     providerId,
     credentials: { login: 'diary-user', password: 'diary-pw-123' },
     role: 'parent',
-    user: { login, password: 'correct horse battery', displayName: 'Мама' },
+    user: { login, password: 'correct horse battery', displayName: DEMO_PARENT_NAME },
     consentVersion: CONSENT,
   });
   if (res.status !== 201) throw new Error(`connect failed: ${res.status} ${JSON.stringify(res.body)}`);

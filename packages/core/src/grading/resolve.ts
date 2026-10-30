@@ -20,7 +20,7 @@ export function manifestScale(manifest: ProviderManifest): GradingScale {
 
 /**
  * The scale of one student in one school year (stored as student_years.grading_scale_id). null means the year has no
- * marks at all: the no-marks mode of Главная, Предметы and Предмет follows from this and from nothing else, never from
+ * marks at all: the no-marks mode of Home, Subjects and the subject screen follows from this and from nothing else, never from
  * a grade number, since the age at which marks start differs per country (docs/providers.md 5.3).
  */
 export function studentYearScale(

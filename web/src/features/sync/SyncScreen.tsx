@@ -15,11 +15,12 @@ import { dateStyle, intlLocale, useT } from '../../i18n';
 import { formatTime } from '../../lib/time';
 import { whenText } from '../../lib/when';
 
-// Синхронизация (docs/design.md 5.6, 10.4, D22, D55): one block per diary account of the family, each with its state
+// Sync (sync.title; docs/design.md 5.6, 10.4, D22, D55): one block per diary account of the family, each with its state
 // card (status, the last data, the last attempt and its outcome, failures in a row, the next run and why, today's
 // window and whose school day makes it, a plain note when something is wrong), what the next run will take, the term's
-// re-scan, changes in the diary's API, «Обновить сейчас» and «Перепроверить» (both within the one-login-per-interval
-// budget; after a refused password the main button leads to Семья), and the run log. Times are the school's.
+// re-scan, changes in the diary's API, "Refresh now" (sync.refresh) and "Check the history again"
+// (sync.rescan.button) (both within the one-login-per-interval budget; after a refused password the main button leads
+// to Family, family.title), and the run log. Times are the school's.
 
 type Account = SyncStatus['accounts'][number];
 
@@ -304,7 +305,7 @@ export function SyncScreen() {
   );
 }
 
-/** «Перепроверить историю»: whom and which period; the weeks are read again by the next runs (10.4) */
+/** "Check the history again" (sync.rescan.button): whom and which period; the weeks are read again by the next runs (10.4) */
 function RescanSheet({
   account,
   names,

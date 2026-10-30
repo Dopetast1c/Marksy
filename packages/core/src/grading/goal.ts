@@ -76,7 +76,7 @@ export interface PlanOption {
 }
 
 /**
- * The fewest marks of each value that lift the average to `need`, best values first: "ещё 2 × 9 или 1 × 10".
+ * The fewest marks of each value that lift the average to `need`, best values first: "2 × 9 or 1 × 10 more" (goal.short).
  * Options needing more than `maxCount` marks are dropped as unrealistic.
  */
 export function targetPlan(scale: GradingScale, sum: number, count: number, need: number, maxCount = 12): PlanOption[] {
@@ -91,7 +91,7 @@ export function targetPlan(scale: GradingScale, sum: number, count: number, need
   return out;
 }
 
-/** The worst next mark that keeps the average at `need`: "чтобы не потерять, следующая не ниже 7". */
+/** The worst next mark that keeps the average at `need`: "to keep it, the next mark no lower than 7" (goal.reachedSub, goal.keepHigher). */
 export function keepMark(scale: GradingScale, need: number, sum: number, count: number): number {
   const raw = clean((need * (count + 1) - sum) / scale.step);
   const v = (scale.higherIsBetter ? Math.ceil(raw) : Math.floor(raw)) * scale.step;

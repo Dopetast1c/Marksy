@@ -4,9 +4,9 @@ import { dateStyle, useT } from '../i18n';
 import { CommentChip } from './MarkChip';
 import { Row, Stripe } from './Section';
 
-// The teacher's comment without a mark (D56): one row for Оценки and for the subject's marks (design.md 5.3, 5.4).
-// The comment icon in place of a chip, the text in quotes and in full. In Оценки the title is the subject; on the
-// subject screen it is «Комментарий учителя» and the date leads the text. Never counted, never a band colour.
+// The teacher's comment without a mark (D56): one row for Marks (screen.marks) and for the subject's marks (design.md
+// 5.3, 5.4). The comment icon in place of a chip, the text in quotes and in full. In Marks the title is the subject; on
+// the subject screen it is "Teacher's comment" (marks.comment) and the date leads the text. Never counted, never a band colour.
 
 export function CommentRow({
   item,

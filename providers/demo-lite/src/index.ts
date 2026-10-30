@@ -12,9 +12,9 @@ import subjects1 from '../fixtures/subjects-1.json';
 import timetable1 from '../fixtures/timetable-1.json';
 import year1 from '../fixtures/year-1.json';
 
-// demo-lite: the fictional demo diary (packages/demo-diary) as a thinner system, the prototype's "другой дневник":
+// demo-lite: the fictional demo diary (packages/demo-diary) as a thinner system, the prototype's "other diary":
 // lessons, quarters, bells, the regular week and teachers, but no lesson or work types, no attendance, no rooms, no
-// subgroups and no finals. In the seeded demo family Марк goes to this school. Its fixtures are written from the
+// subgroups and no finals. In the seeded demo family the younger child (Mark) goes to this school. Its fixtures are written from the
 // shared fictional school (pnpm --filter @marksy/demo-diary fixtures) and imported here, so the server image carries
 // them inside its bundle and reads nothing from disk.
 

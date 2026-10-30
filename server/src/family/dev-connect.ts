@@ -12,7 +12,7 @@ import { connectDiary, connectableProvider } from './connect';
 import { rulesForMember, welcomeChild } from './rules';
 
 // `pnpm dev:connect` (docs/build-plan.md M4): the owner's own family on their own machine, from the logins in .env,
-// through the same service as «Подключить дневник». Idempotent: run again after a database reset or on top of what
+// through the same service as "Connect a diary" (login.mode.connect). Idempotent: run again after a database reset or on top of what
 // `pnpm sync:once` created, it adopts the diary account that is already there (no diary login at all), creates the
 // Marksy login if it is missing and makes it the family's admin. Only a diary not connected yet costs a real login,
 // through the login guard.

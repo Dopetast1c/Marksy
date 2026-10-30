@@ -47,22 +47,24 @@ import type { DemoDiaryChild } from './demo-sync';
 import type { SeedCalendar, SeedStudent } from '@marksy/demo-diary';
 
 // `pnpm db:seed [--reset]`: the fictional demo family (docs/build-plan.md M3, M3a, "Data for testing"), matching the
-// prototype: Милена in grade 7 on the fictional demo-full diary with her bells, subgroups, teachers and rooms; Марк in
+// prototype: Milena in grade 7 on the fictional demo-full diary with her bells, subgroups, teachers and rooms; Mark in
 // grade 1, a class without marks, at another school on the thinner demo-lite diary; and a second fictional family that
-// also follows Марк (parents who live apart, ux-principles D54). Each child's diary has a fictional login with a run
+// also follows Mark (parents who live apart, ux-principles D54). Each child's diary has a fictional login with a run
 // history, verified weeks and a drift notice (demo-sync.ts), but no credentials, so the planner never reads it. A past
 // year typed in from a report card and a student with a wallpaper complete the states of the prototype. Re-running is
 // safe: the demo families are left alone unless --reset replaces them.
 
-/** Each demo child's fictional diary (the prototype's «Марк в другой школе, другой дневник») */
+/** Each demo child's fictional diary (the prototype's "Mark at another school, another diary") */
 export const DEMO_PROVIDERS = { k: 'demo-full', m: 'demo-lite' } as const;
 export const DEMO_PASSWORD = 'marksy-demo';
 export const DEMO_LOGINS = {
   parent: 'parent@example.com',
   student: 'student@example.com',
-  /** the parent of the second family, who follows Марк too */
+  /** the parent of the second family, who follows Mark too */
   otherParent: 'parent2@example.com',
 } as const;
+/** The demo parent's display name, also the parent the API tests connect (test/connect.ts) */
+export const DEMO_PARENT_NAME = 'Мама';
 
 /**
  * The demo admin has a published password, so the seed only runs where nobody outside the home can sign in: PUBLIC_URL
@@ -145,8 +147,8 @@ export async function seedDemo(db: Db, opts: { reset?: boolean; now?: Date } = {
     const [parent, child] = await tx
       .insert(users)
       .values([
-        { login: DEMO_LOGINS.parent, displayName: 'Мама', passwordHash },
-        // the student has picked a wallpaper (Оформление, design.md 5.6a): the parent keeps the plain background
+        { login: DEMO_LOGINS.parent, displayName: DEMO_PARENT_NAME, passwordHash },
+        // the student has picked a wallpaper (Appearance, look.title, design.md 5.6a): the parent keeps the plain background
         {
           login: DEMO_LOGINS.student,
           displayName: 'Милена',
@@ -170,7 +172,7 @@ export async function seedDemo(db: Db, opts: { reset?: boolean; now?: Date } = {
       await tx
         .insert(familyStudents)
         .values({ familyId: fid, studentId: id.studentId, linkedBy: parent!.id, linkedAt: now });
-      // a child ticks and times only their own lessons (6.5): Милена has her own login, Марк's are Мама's
+      // a child ticks and times only their own lessons (6.5): Milena has her own login, Mark's are their mother's
       const actor = kid.key === 'k' ? child!.id : parent!.id;
       await insertDiary(tx, id, kid, calendars[kid.key], manifests[kid.key], now, tz, count, actor);
     }
@@ -192,7 +194,7 @@ export async function seedDemo(db: Db, opts: { reset?: boolean; now?: Date } = {
     );
     count('lesson_tags', SEED_TAGS.length);
 
-    // a second household that follows Марк too: its own parent and nothing else of the first family
+    // a second household that follows Mark too: its own parent and nothing else of the first family
     const [other] = await tx.insert(families).values({ name: 'Вторая демо-семья', settings: {} }).returning();
     const [otherParent] = await tx
       .insert(users)
@@ -487,7 +489,7 @@ async function insertDiary(
     count('final_marks', kid.finals.length);
   }
 
-  // study sessions, and the "готово" ticks they end with
+  // study sessions, and the "Ready" (lesson.ready) ticks they end with
   const sessions = generateSessions(kid, localTime(now, tz).date, cal);
   if (sessions.length) {
     await db.insert(studySessions).values(
@@ -526,8 +528,9 @@ async function insertDiary(
 }
 
 /**
- * The school year before the diary's, typed in from the paper report card (Итоги → Годы, design.md 5.3b): stored as
- * PUT /api/students/:id/final-marks stores it (students/manual-finals.ts), with «введено вручную».
+ * The school year before the diary's, typed in from the paper report card (Finals → Years, finals.screen and
+ * finals.years, design.md 5.3b): stored as PUT /api/students/:id/final-marks stores it (students/manual-finals.ts), with
+ * "entered by hand" (finals.manual.cell).
  */
 async function insertTypedYear(
   db: Tx,

@@ -29,7 +29,7 @@ export function minutesIn(tz: string, at = new Date()): number {
   return Number(p.hour) * 60 + Number(p.minute);
 }
 
-// Calendar days ("12–18 окт", "чт, 15 окт") are written by core's shortDate and shortRange with i18n's dateStyle().
+// Calendar days ("12–18 Oct", "Thu, 15 Oct") are written by core's shortDate and shortRange with i18n's dateStyle().
 
 /** An instant as school time: "12:17" */
 export function formatTime(at: string | Date, tz: string, locale: string): string {

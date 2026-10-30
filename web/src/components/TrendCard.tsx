@@ -6,10 +6,10 @@ import type { Kind } from '../lib/period';
 import { roman } from '../lib/period';
 import { numbers } from '../lib/numbers';
 
-// «Динамика» (ux-principles D26, docs/design.md 5.2, 5.4): one stacked bar per bucket of the selected kind (weeks,
+// "Trend" (stat.trend; ux-principles D26, docs/design.md 5.2, 5.4): one stacked bar per bucket of the selected kind (weeks,
 // months, terms, the months of a year), marks stacked by band, worst at the bottom, the average line with its value
-// over every point and the label under it; the selected instance is last and drawn solid. The same card on Главная
-// (all marks) and on the subject screen (one subject).
+// over every point and the label under it; the selected instance is last and drawn solid. The same card on Home
+// (tabs.home; all marks) and on the subject screen (one subject).
 
 type Bucket = Schemas['Trend']['buckets'][number];
 
@@ -49,7 +49,7 @@ export function TrendCard({
   scale: GradingScale;
   kind: Kind;
   buckets: readonly Bucket[];
-  /** what the child's terms are called, for «по четвертям» */
+  /** what the child's terms are called, for "by quarter" (stat.trend.sub.term.*) */
   termKind?: string | null;
 }) {
   const t = useT();
@@ -83,7 +83,7 @@ export function TrendCard({
       <div className="flex items-baseline justify-between gap-2">
         <h2 className="text-h2">{t('stat.trend')}</h2>
         <span className="text-small text-ink3">
-          {/* «по четвертям», «по триместрам»: the term word in its case comes with the kind */}
+          {/* "by quarter", "by trimester" (stat.trend.sub.term.*): the term word in its case comes with the kind */}
           {t(kind === 'term' ? `stat.trend.sub.term.${termKind ?? 'other'}` : `stat.trend.sub.${kind}`)}
         </span>
       </div>

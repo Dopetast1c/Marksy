@@ -6,9 +6,10 @@ import { lanAddress, ownAddresses } from './smoke-lan.mjs';
 // `pnpm smoke:ui [--host <ip>] [--url <production address>] [--only seed|own] [--lang <code>|qps]`: with `pnpm dev:lan`
 // running (or, with --url, the production stack at its base path, under its real security policy: any CSP violation
 // fails the run), opens the app the way a phone does,
-// through http://<computer-ip>:5173, in a phone (360 px, touch) and a tablet (820 px), and walks login, «С кого
-// начнём?», Главная and Внимание for the fictional demo family (pnpm db:seed) and for the owner's family
-// (MARKSY_DEV_EMAIL, MARKSY_DEV_PASSWORD from .env), then every child's Оценки, Предметы, Предмет, Итоги and Расписание. The same states of docs/mockups.html are shot at the same sizes,
+// through http://<computer-ip>:5173, in a phone (360 px, touch) and a tablet (820 px), and walks login, "Who first?"
+// (pick.title), Home (screen.home) and Attention (screen.events) for the fictional demo family (pnpm db:seed) and for
+// the owner's family (MARKSY_DEV_EMAIL, MARKSY_DEV_PASSWORD from .env), then every child's Marks (screen.marks),
+// Subjects (screen.subjects), the subject screen, Finals (finals.screen) and Timetable (screen.schedule). The same states of docs/mockups.html are shot at the same sizes,
 // so every screen has a pair to compare. Screenshots go to data/ui/<run>/ (last three runs kept, never committed);
 // the terminal shows file names, statuses and counts only, never a name from the data. Every shot is checked for text
 // that does not fit (an ellipsis, a spill, a page wider than the screen): a WARN line, quoting the text for the
@@ -25,7 +26,7 @@ export const DEVICES = {
   tablet: { viewport: { width: 820, height: 1180 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true },
 };
 
-/** The demo student's Оформление (server/src/seed/seed.ts), as the prototype's state.look */
+/** The demo student's Appearance (look.title) (server/src/seed/seed.ts), as the prototype's state.look */
 const STUDENT_LOOK = {
   theme: 'light',
   bg: 'wallpaper',
@@ -252,7 +253,7 @@ async function shootApp(browser, base, family, device, dir, log, lang) {
     await shot('sync');
     await page.goto(`${base}/more/look`);
     await shot('look');
-    // Семья for the admin and parents, and the first child's avatar screen
+    // Family (family.title) for the admin and parents, and the first child's avatar screen
     const view = await page.request.get(`${base}/api/family`);
     if (view.ok()) {
       await page.goto(`${base}/more/family`);
@@ -288,7 +289,8 @@ async function shootApp(browser, base, family, device, dir, log, lang) {
         await page.goto(`${base}/s/${kid.id}/events`);
         await shot(`events-${i + 1}`);
       }
-      // Расписание on the child's next day with lessons from today on, as the prototype opens День; the first child's
+      // Timetable (screen.schedule) on the child's next day with lessons from today on, as the prototype opens Day
+      // (schedule.day); the first child's
       // week and its lesson menu
       const days = await (await page.request.get(`${base}/api/students/${kid.id}/schedule/days`)).json();
       const next = (days.days ?? []).find((d) => d.date >= days.today)?.date ?? days.today;
@@ -304,14 +306,14 @@ async function shootApp(browser, base, family, device, dir, log, lang) {
         await page.getByRole('button', { name: await say(page, 'period.week'), exact: true }).click();
         await shot('schedule-week');
       }
-      // Школа of the first child: its bells and its school year
+      // School (more.school) of the first child: its bells and its school year
       if (i === 0) {
         await page.goto(`${base}/s/${kid.id}/school`);
         await shot('school-bells');
         await page.goto(`${base}/s/${kid.id}/school?tab=year`);
         await shot('school-year');
       }
-      // Итоги of the first child with marks (a year without marks has none)
+      // Finals (finals.screen) of the first child with marks (a year without marks has none)
       if (kid.gradingScale && kid === kids.find((k) => k.gradingScale)) {
         await page.goto(`${base}/s/${kid.id}/finals`);
         await shot('finals');
@@ -331,7 +333,8 @@ async function shootApp(browser, base, family, device, dir, log, lang) {
 }
 
 /**
- * The demo's student: Главная in student mode («Близко к цели»), then simple mode's Главная and Расписание. Simple mode
+ * The demo's student: Home (screen.home) in student mode ("Close to the goal", home.nearGoal.mixed), then simple
+ * mode's Home and Timetable (screen.schedule). Simple mode
  * is switched on through the API for the shots and back off afterwards, so the seed stays as it was.
  */
 async function shootStudent(browser, base, device, dir, log, lang) {

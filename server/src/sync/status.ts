@@ -15,7 +15,7 @@ import { accountPlan } from './account-plan';
 import type { SyncConfig } from './config';
 import { fromLocal } from './time';
 
-// Синхронизация (docs/design.md 5.6, 10.4): what the state card of one diary account says beyond its last run, from
+// Sync (sync.title; docs/design.md 5.6, 10.4): what the state card of one diary account says beyond its last run, from
 // the planner's own view (accountPlan): today's window and whose school day makes it, when the next run comes and why,
 // what it will take, the re-scan of the current term, and the diary's API drift (kind and place only: the sanitised
 // samples stay in the database). Nothing here logs in.
@@ -35,7 +35,7 @@ export const syncPlanOut = z.object({
     at: z.date().nullable(),
     /** nextSchoolDay: the day, when known (at is its window's opening when that is known too) */
     date: z.string().nullable(),
-    /** nextSchoolDay: holidays come first («следующая после каникул, пн, 9 ноя») */
+    /** nextSchoolDay: holidays come first ("next after the holidays, Mon, 9 Nov", more.sync.nextAfterHolidays) */
     afterHolidays: z.boolean(),
   }),
   /** weeks waiting per set (standing, gap, rescan, post_term, backfill), all children together */
@@ -161,7 +161,7 @@ export async function syncPlanOf(
       apiDriftAcks,
       and(eq(apiDriftAcks.driftEventId, apiDriftEvents.id), eq(apiDriftAcks.familyId, account.familyId)),
     )
-    // what this family has hidden; another family's «Понятно» hides nothing here
+    // what this family has hidden; another family's "Got it" (sync.drift.ack) hides nothing here
     .where(and(eq(apiDriftEvents.providerId, account.providerId), isNull(apiDriftAcks.familyId)));
   return {
     window,

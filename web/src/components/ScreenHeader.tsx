@@ -44,7 +44,7 @@ export function ScreenHeader({
           <button
             type="button"
             aria-label={t('header.back')}
-            // opened from a link with no screen of this app behind it: back is the child's Главная, not out of the app
+            // opened from a link with no screen of this app behind it: back is the child's Home (tabs.home), not out of the app
             onClick={() =>
               (window.history.state as { idx?: number } | null)?.idx ? navigate(-1) : navigate(`/s/${studentId}`)
             }

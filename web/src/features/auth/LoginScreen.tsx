@@ -12,8 +12,9 @@ import { ConnectForm } from './ConnectForm';
 import { errorText } from './errors';
 import { InviteForm } from './InviteForm';
 
-// Вход (docs/design.md 5.1): the wordmark and one line across the full width; Вход (a Marksy login, the default) and
-// Подключить дневник; «У меня есть код приглашения» under the sign-in; the language at the very bottom, remembered
+// Sign-in (docs/design.md 5.1): the wordmark and one line across the full width; Sign-in (login.mode.login, a Marksy
+// login, the default) and Connect a diary (login.mode.connect); "I have an invite code" (invite.have) under the
+// sign-in; the language at the very bottom, remembered
 // on the device and given to the user after sign-in. /join/<code> opens the invite with its code filled in.
 
 /** The wordmark: a name, not a word to translate */
@@ -21,7 +22,8 @@ const BRAND = 'Marksy';
 
 type Mode = 'login' | 'connect' | 'invite';
 
-/** Where a sign-in continues: back to an invite («Уже есть вход в Marksy»), otherwise the app; nothing else is honoured */
+/** Where a sign-in continues: back to an invite ("I already have a Marksy login", invite.haveLogin), otherwise the
+ * app; nothing else is honoured */
 function nextPath(): string {
   const next = new URLSearchParams(window.location.search).get('next');
   return next && /^\/join\/[A-Za-z0-9]{6,12}$/.test(next) ? next : '/';

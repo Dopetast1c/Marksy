@@ -108,7 +108,12 @@ const LESSON_TYPES: Record<string, LessonType> = {
   TRIP: 'excursion',
 };
 /** Cell texts that are not numbers: what they mean on the canonical model */
-const TEXT_MARKS: Record<string, Mark['kind']> = { зач: 'pass', незач: 'fail', осв: 'exempt', 'н/а': 'not_assessed' };
+const TEXT_MARKS: Record<string, Mark['kind']> = {
+  ['зач']: 'pass',
+  ['незач']: 'fail',
+  ['осв']: 'exempt',
+  ['н/а']: 'not_assessed',
+};
 const ABSENT = 'н';
 
 /** The lesson's id, or one built from the slot while the diary has none yet (the collector matches both) */

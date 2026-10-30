@@ -65,7 +65,7 @@ export function Row({
    * it may take two lines, so the app's own words fit in every language without an ellipsis (docs/i18n.md 4)
    */
   subIsData?: boolean;
-  /** a row that is context, not news (an absence in Оценки): muted title */
+  /** a row that is context, not news (an absence in Marks, screen.marks): muted title */
   quiet?: boolean;
 }) {
   return (
@@ -99,7 +99,8 @@ export function Note({ children }: { children: ReactNode }) {
   return <p className="m-0 rounded-md bg-surface2 px-3 py-2.5 text-[13px] text-ink2">{children}</p>;
 }
 
-/** The quiet button under a list ("Все оценки · 6", "Показать все · 12", "Всё расписание") */
+/** The quiet button under a list ("All marks · 6" home.allMarks, "Show all · 12" home.showAll, "Whole timetable"
+ * home.allSchedule) */
 export function MoreButton({ children, onClick }: { children: ReactNode; onClick: () => void }) {
   return (
     <button

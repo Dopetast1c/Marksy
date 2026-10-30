@@ -7,7 +7,7 @@ import { loadFont } from '../lib/fonts';
 export const ownWallpaperUrl = (a: { wallpaperVersion: string | null }) =>
   appPath(`/api/me/wallpaper?v=${a.wallpaperVersion ?? ''}`);
 
-// Оформление applied (docs/design.md 5.6a, D46): the person's theme, palette, body font and wallpaper go on <html> as
+// Appearance (look.title) applied (docs/design.md 5.6a, D46): the person's theme, palette, body font and wallpaper go on <html> as
 // data attributes the generated tokens answer to (tokens.css: data-theme, data-palette, data-font) and as the
 // wallpaper layer's picture and opacity (base.css: data-wall). Before sign-in, and on the login screen, the defaults:
 // light, the sea palette, Manrope, no wallpaper.

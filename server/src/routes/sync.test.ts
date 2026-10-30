@@ -16,7 +16,7 @@ const db = testDb();
 // Wednesday 15 October 2025, 10:00 at the demo school: a school day, inside the window
 const NOW = new Date('2025-10-15T07:00:00Z');
 
-describe('Синхронизация', () => {
+describe('Sync (sync.title)', () => {
   beforeEach(() => resetDb(db));
   afterEach(settle);
 
@@ -71,7 +71,7 @@ describe('Синхронизация', () => {
     expect(before!.date <= addDays(autumn.endDate, 3)).toBe(true);
   });
 
-  it('«Обновить сейчас» within the login budget: right after a run it says when; never for a student or another family', async () => {
+  it('"Refresh now" (sync.refresh) within the login budget: right after a run it says when; never for a student or another family', async () => {
     const mama = agentWith({ now: () => NOW });
     const { connect } = await connectFamily(mama);
     await settle();
@@ -88,7 +88,7 @@ describe('Синхронизация', () => {
     expect((await request(testApp()).post('/api/sync/run').send({ accountId: connect.accountId })).status).toBe(401);
   });
 
-  it('«Перепроверить» takes the checks off the term’s weeks: the planner reads them again', async () => {
+  it('"Check the history again" (sync.rescan.button) takes the checks off the term’s weeks: the planner reads them again', async () => {
     const mama = agentWith({ now: () => NOW });
     const { connect } = await connectFamily(mama);
     await settle();
@@ -104,7 +104,7 @@ describe('Синхронизация', () => {
     expect(plan.sets.backfill ?? 0).toBeGreaterThan(0);
   });
 
-  it('a change in the diary’s API: kind and place, never the sample; «Понятно, скрыть» hides it for the family’s diaries only', async () => {
+  it('a change in the diary’s API: kind and place, never the sample; "Got it, hide" (sync.drift.ack) hides it for the family’s diaries only', async () => {
     const mama = agentWith({ now: () => NOW });
     await connectFamily(mama);
     await settle();
@@ -145,11 +145,11 @@ describe('Синхронизация', () => {
   });
 });
 
-describe('Внимание: a diary that needs a new password', () => {
+describe('Attention (screen.events): a diary that needs a new password', () => {
   beforeEach(() => resetDb(db));
   afterEach(settle);
 
-  it('the admin sees one critical row leading to Синхронизация while the diary refuses the login', async () => {
+  it('the admin sees one critical row leading to Sync (sync.title) while the diary refuses the login', async () => {
     const mama = agentWith({ now: () => NOW });
     const { connect, students } = await connectFamily(mama);
     await settle();

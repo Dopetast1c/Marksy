@@ -16,10 +16,10 @@ import { schoolYearLabel } from '../../lib/finals';
 import { holidayName } from '../../lib/holidays';
 import { roman } from '../../lib/period';
 
-// Школа (docs/design.md 5.9): the selected child's school, for reference, everything the child's own (D51): no other
-// class's bells, no other grade's holidays. Two tabs, each only where the provider has what it needs. Звонки is drawn
-// like the timetable (number on the left axis, accent bar, the time and its length, quiet break rows, «сейчас»);
-// Четверти (the word from the child's term kind) has a card for now with a strip of the year, then the terms and the
+// School (more.school; docs/design.md 5.9): the selected child's school, for reference, everything the child's own
+// (D51): no other class's bells, no other grade's holidays. Two tabs, each only where the provider has what it needs.
+// Bells (school.tab.bells) is drawn like the timetable (number on the left axis, accent bar, the time and its length,
+// quiet break rows, "Now" school.now); the terms tab (term.*.plural, the word from the child's term kind) has a card for now with a strip of the year, then the terms and the
 // holidays in date order. Study is the accent, holidays their own sunny colour, in every palette and theme.
 
 type School = NonNullable<ReturnType<typeof useSchool>['data']>;
@@ -32,7 +32,7 @@ const weekday = (d: number, locale: string) =>
     new Date(Date.UTC(2024, 0, 7 + d, 12)), // 7 January 2024 was a Sunday: d = 0 is Sunday, as in the manifest
   );
 
-/** «пн–сб» for a run of days, «пн, ср, пт» otherwise */
+/** "Mon–Sat" for a run of days, "Mon, Wed, Fri" otherwise */
 function daysLabel(days: readonly number[], locale: string) {
   const sorted = [...days].sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7));
   const run = sorted.every((d, i) => i === 0 || (d - sorted[i - 1]! + 7) % 7 === 1);
@@ -162,7 +162,8 @@ function Year({ school }: { school: School }) {
     const [y, mo] = m.split('-').map(Number);
     m = mo === 12 ? `${y! + 1}-01-01` : `${y}-${String(mo! + 1).padStart(2, '0')}-01`;
   }
-  // a month on its own («май», not the «мая» of a date), the language's own short form where it has one
+  // a month on its own (date.monthAlone.*, not the form inside a date where a language has two), the language's own
+  // short form where it has one
   const monthName = (m: string) => monthAlone(Number(m.slice(5, 7)));
   const termWord = inSentence(t(`term.${terms[0]?.kind ?? 'other'}.plural`), ds.locale);
   const left = current ? daysBetween(today, current.to) + 1 : 0;
@@ -274,7 +275,7 @@ function Year({ school }: { school: School }) {
 export function SchoolScreen() {
   const t = useT();
   const { studentId = '' } = useParams();
-  // Внимание's holidays row opens Четверти (?tab=year)
+  // the holidays row of Attention (screen.events) opens the terms tab (?tab=year)
   const [search] = useSearchParams();
   const caps = useCapabilities(studentId);
   const student = useStudent(studentId);

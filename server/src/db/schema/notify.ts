@@ -28,7 +28,7 @@ export const notifications = pgTable(
     /** null = family-wide */
     studentId: uuid('student_id').references(() => students.id, { onDelete: 'cascade' }),
     ruleId: uuid('rule_id'),
-    /** What fact it was about, for "пришло" on Внимание and for deduplication */
+    /** What fact it was about, for "came in" on Attention (screen.events) and for deduplication */
     eventKey: text('event_key').notNull(),
     severity: text('severity').notNull(),
     /** i18n keys and their parameters; the text is rendered in the reader's language */

@@ -37,7 +37,7 @@ const subjectNamed = async (studentId: string, name: string) =>
 
 type Row = { subject: { id: string; name: string; color: string | null }; count: number; final: unknown };
 
-describe('Предметы and Предмет', () => {
+describe('Subjects (screen.subjects) and the subject screen', () => {
   afterEach(settle);
 
   it('every subject is listed; the comments filter and a tag filter leave no marks, never fewer rows', async () => {
@@ -80,7 +80,7 @@ describe('Предметы and Предмет', () => {
     expect(one.body.attention).toEqual({ goal: null, hints: [] });
   });
 
-  it('the goal: the scale’s default, a row in «Обратить внимание», «Без цели», only values of the scale', async () => {
+  it('the goal: the scale’s default, a row in "Worth a look" (subject.attention), "No goal" (subject.goal.none), only values of the scale', async () => {
     const { milena, mark, signIn } = await setUp(IN_TERM);
     const mama = await signIn(DEMO_LOGINS.parent);
     const algebra = await subjectNamed(milena.id, 'Алгебра');
@@ -104,11 +104,11 @@ describe('Предметы and Предмет', () => {
     expect(noGoal.status).toBe(400);
   });
 
-  it('«Близко к цели» on Главная: subjects one step from their goal with the quickest plan; gone with guidance off', async () => {
+  it('"Close to the goal" (home.nearGoal.mixed) on Home: subjects one step from their goal with the quickest plan; gone with guidance off', async () => {
     const { milena, mark, signIn } = await setUp(IN_TERM);
     const mama = await signIn(DEMO_LOGINS.parent);
     const rows = (await mama.get(`/api/students/${milena.id}/subjects?period=month`)).body.subjects as Row[];
-    // every subject «Без цели» but one, whose goal is set one mark above where its term average stands
+    // every subject at "No goal" (subject.goal.none) but one, whose goal is set one mark above where its term average stands
     let near: { id: string; target: number; average: number } | null = null;
     for (const r of rows) {
       const url = `/api/students/${milena.id}/subjects/${r.subject.id}`;
@@ -161,7 +161,7 @@ describe('Предметы and Предмет', () => {
     expect(off.comparison).not.toBeNull();
   });
 
-  it('the colour is the family’s for the child: on the list, the feed and the lessons; a palette key or «Авто»', async () => {
+  it('the colour is the family’s for the child: on the list, the feed and the lessons; a palette key or "Auto" (color.auto.title)', async () => {
     const { milena, signIn } = await setUp(IN_TERM);
     const mama = await signIn(DEMO_LOGINS.parent);
     const algebra = await subjectNamed(milena.id, 'Алгебра');
@@ -177,7 +177,7 @@ describe('Предметы and Предмет', () => {
       (d: { lessons: { subjectId: string; subjectColor: string | null }[] }) => d.lessons,
     );
     expect(week.find((l: { subjectId: string }) => l.subjectId === algebra.id).subjectColor).toBe('violet');
-    // the child sets their own; back to «Авто»
+    // the child sets their own; back to "Auto" (color.auto.title)
     const kid = await signIn(DEMO_LOGINS.student);
     expect((await kid.put(url).send({ color: null })).body).toEqual({ color: null });
     // another family reaches nothing
@@ -202,7 +202,7 @@ describe('Предметы and Предмет', () => {
     }
   });
 
-  it('«Ближайшие уроки»: the next three lessons of the subject still ahead', async () => {
+  it('"Next lessons" (subject.upcoming): the next three lessons of the subject still ahead', async () => {
     const { milena, signIn } = await setUp(IN_TERM);
     const mama = await signIn(DEMO_LOGINS.parent);
     const algebra = await subjectNamed(milena.id, 'Алгебра');
@@ -217,10 +217,10 @@ describe('Предметы and Предмет', () => {
   });
 });
 
-describe('Итоги', () => {
+describe('Finals (finals.screen)', () => {
   afterEach(settle);
 
-  it('while the term runs: «идёт», the running average in italics, no year value without a term final', async () => {
+  it('while the term runs: "is on" (finals.running), the running average in italics, no year value without a term final', async () => {
     const { milena, signIn } = await setUp(IN_TERM, { pastYear: false });
     const mama = await signIn(DEMO_LOGINS.parent);
     const periods = (await mama.get(`/api/students/${milena.id}/periods`)).body;
@@ -234,7 +234,7 @@ describe('Итоги', () => {
     expect(q.lastYear).toBeNull();
   });
 
-  it('after the term: «выставлена» with the day, framed finals, the year in italics until the teacher posts it', async () => {
+  it('after the term: "posted" (finals.posted) with the day, framed finals, the year in italics until the teacher posts it', async () => {
     const { milena, signIn } = await setUp(HOLIDAYS);
     const mama = await signIn(DEMO_LOGINS.parent);
     const periods = (await mama.get(`/api/students/${milena.id}/periods`)).body;
@@ -263,7 +263,7 @@ describe('Итоги', () => {
     const same = after.rows.find((r: { subject: { id: string } }) => r.subject.id === s!.id);
     expect(same.year).toMatchObject({ kind: 'final', raw: '9', value: 9 });
 
-    // Предметы: «итог I: 8» in place of «было» while the finals are news
+    // Subjects: "final I: 8" (subjects.final) in place of "was" (stat.was) while the finals are news
     const list = (await mama.get(`/api/students/${milena.id}/subjects?period=week`)).body.subjects as Row[];
     expect(list.find((r) => r.subject.id === row.subject.id)!.final).toMatchObject({ term: { index: 1 } });
     // the subject's strip and goal row
@@ -272,7 +272,7 @@ describe('Итоги', () => {
     expect(one.attention.goal).toBeNull();
   });
 
-  it('Оценки: the finals card on the day they were posted, absences as quiet rows after the marks', async () => {
+  it('Marks (screen.marks): the finals card on the day they were posted, absences as quiet rows after the marks', async () => {
     const { milena, signIn } = await setUp(HOLIDAYS);
     const mama = await signIn(DEMO_LOGINS.parent);
     const feed = (await mama.get(`/api/students/${milena.id}/marks?from=2026-10-26&to=2026-11-04&limit=200`)).body;
@@ -298,7 +298,7 @@ describe('Итоги', () => {
     expect(one.timeline.every((i: { type: string }) => i.type !== 'absence' && i.type !== 'finals')).toBe(true);
   });
 
-  it('Годы: last year’s finals by subject name, «новый предмет», the arrow against last year', async () => {
+  it('Years (finals.years): last year’s finals by subject name, "new subject" (finals.newSubject), the arrow against last year', async () => {
     const { milena, signIn } = await setUp(HOLIDAYS, { pastYear: false });
     const mama = await signIn(DEMO_LOGINS.parent);
     const algebra = await subjectNamed(milena.id, 'Алгебра');
@@ -349,13 +349,13 @@ describe('Итоги', () => {
     expect(algebraRow.lastYear).toEqual({ raw: '4', value: 4 });
     const one = (await mama.get(`/api/students/${milena.id}/subjects/${algebra.id}`)).body;
     expect(one.lastYear).toEqual({ label: '2025-2026', raw: '4', value: 4 });
-    // a subject that was not there last year: the year is known, the final is not («новый предмет в этом году»)
+    // a subject that was not there last year: the year is known, the final is not ("a new subject this year", subject.newThisYear)
     const otherId = years.rows.find((r: { isNew: boolean }) => r.isNew).subjectId;
     const fresh = (await mama.get(`/api/students/${milena.id}/subjects/${otherId}`)).body;
     expect(fresh.lastYear).toEqual({ label: '2025-2026', raw: null, value: null });
   });
 
-  it('a past year typed in: on the scale, «введено вручную», replaced as a whole, never over the diary’s years', async () => {
+  it('a past year typed in: on the scale, "entered by hand" (finals.manual.cell), replaced as a whole, never over the diary’s years', async () => {
     const { milena, mark, signIn } = await setUp(IN_TERM, { pastYear: false });
     const mama = await signIn(DEMO_LOGINS.parent);
     const url = `/api/students/${milena.id}/final-marks`;
@@ -381,7 +381,7 @@ describe('Итоги', () => {
       .where(and(eq(finalMarks.schoolYearId, put.body.yearId), eq(finalMarks.subjectName, 'Алгебра')));
     expect(saved!.enteredBy).not.toBeNull();
 
-    // the whole year as it should be: Природоведение goes, Алгебра changes
+    // the whole year as it should be: natural science goes, algebra changes
     await mama.put(url).send({ startYear: 2024, marks: [{ subjectName: 'Алгебра', raw: '8' }] });
     const again = (await mama.get(`/api/students/${milena.id}/finals/years`)).body;
     expect(again.rows.find((r: { subjectName: string }) => r.subjectName === 'Природоведение')).toBeUndefined();

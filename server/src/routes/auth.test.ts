@@ -212,7 +212,7 @@ describe('auth: connect, login, logout, me', () => {
     expect((await agent.patch('/api/me').send({ timezone: 'Mars/Base' })).status).toBe(400);
   });
 
-  it('PATCH /api/me/settings: the person’s own «Подсказки» switch, on until turned off, other settings kept', async () => {
+  it('PATCH /api/me/settings: the person’s own tips switch (more.guidance), on until turned off, other settings kept', async () => {
     const agent = agentWith();
     await connectFamily(agent);
     expect((await agent.get('/api/auth/me')).body.user.guidance).toBe(true);
@@ -232,7 +232,7 @@ describe('auth: connect, login, logout, me', () => {
   });
 });
 
-describe('Оформление', () => {
+describe('Appearance (look.title)', () => {
   beforeEach(() => resetDb(db));
   afterEach(settle);
 

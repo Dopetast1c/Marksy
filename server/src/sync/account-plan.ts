@@ -14,7 +14,7 @@ import type { LocalTime } from './time';
 
 // What the planner thinks of one diary account right now (docs/design.md 10.4), without logging in anywhere: each
 // child's school day today, the account's window, the weeks waiting per set, and whether a scheduled run would start
-// now and if not, why. Shared by `pnpm sync:plan` (text) and Синхронизация (/api/sync/status). It reads the manifest as
+// now and if not, why. Shared by `pnpm sync:plan` (text) and Sync (sync.title, /api/sync/status). It reads the manifest as
 // data and never loads provider code (plan-report.test.ts checks the import graph).
 
 export interface AccountPlan {
@@ -26,7 +26,7 @@ export interface AccountPlan {
   today: AccountToday;
   decision: GateDecision;
   maxRequestsPerRun: number;
-  /** The next school day after today, for «следующая пн, 9 ноя в 08:13» when today's windows are over */
+  /** The next school day after today, for "next Mon, 9 Nov at 08:13" (more.sync.nextOn) when today's windows are over */
   nextSchoolDay: NextSchoolDay | null;
 }
 

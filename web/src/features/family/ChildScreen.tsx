@@ -15,8 +15,9 @@ import { Switch } from '../../components/Switch';
 import { useT } from '../../i18n';
 import { appPath } from '../../lib/base';
 
-// A child in Семья (docs/design.md 5.6, D9, D54): the avatar, drawn from traits (every option shown already applied to
-// the child's current look) or a photo; for the admin, «Перестать следить», «Следить снова» and «Удалить данные» (7.1).
+// A child in Family (family.title; docs/design.md 5.6, D9, D54): the avatar, drawn from traits (every option shown
+// already applied to the child's current look) or a photo; for the admin, "Stop following" (family.child.stop),
+// "Follow again" (family.child.followAgain) and "Delete the data" (family.child.delete) (7.1).
 // A photo is scaled to a 512 px square here, in the browser, and the server checks it again and strips its metadata
 // (14.1). The avatar is the child's: every family that follows the child sees the same one.
 

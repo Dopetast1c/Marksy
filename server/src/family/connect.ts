@@ -16,13 +16,13 @@ import { linkFamily, rebalance } from '../sync/sources';
 import { upsertListedStudent } from '../sync/store-school';
 import { rulesForMember } from './rules';
 
-// Connecting a diary (docs/design.md 7.2): «Подключить дневник» signed out creates the family and its admin;
-// «Добавить дневник» in Семья adds the account to the current family; `pnpm dev:connect` runs the same. One login to
-// the diary through the shared client (it counts as that hour's login for the account), then getAccount(). A child
-// another family already follows is not linked here: the parent chooses «Присоединиться» or «Следить из своей семьи»
-// (matches). The first sync goes on in the same login at once (design.md 10.4: a new account runs at once and
+// Connecting a diary (docs/design.md 7.2): "Connect a diary" (login.mode.connect) signed out creates the family and
+// its admin; "Add a diary" (family.addDiary) in Family (family.title) adds the account to the current family;
+// `pnpm dev:connect` runs the same. One login to the diary through the shared client (it counts as that hour's login
+// for the account), then getAccount(). A child another family already follows is not linked here: the parent chooses
+// "Join that family" (match.join) or "From your own family" (match.follow) (matches). The first sync goes on in the same login at once (design.md 10.4: a new account runs at once and
 // backfills): standing weeks, then the history within the request cap, without a second login. The answer does not wait
-// for it; the app shows «загружаем» from /api/sync/status.
+// for it; the app shows "reading the diary" (sync.status.loading) from /api/sync/status.
 
 export interface ConnectInput {
   providerId: string;

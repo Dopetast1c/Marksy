@@ -18,7 +18,8 @@ import { linkFamily, rebalance } from '../sync/sources';
 import { rulesForMember } from './rules';
 
 // The children a family follows (docs/design.md 7.1, 7.2, D54): the choice at connect for a child another family
-// already follows, and «Перестать следить» / «Следить снова» / «Удалить данные» in Семья.
+// already follows, and "Stop following" (family.child.stop) / "Follow again" (family.child.followAgain) / "Delete
+// the data" (family.child.delete) in Family (family.title).
 
 /** How a child is called in the app: the short name the provider gave, or one made from the full name */
 export function childName(row: typeof students.$inferSelect): string {
@@ -64,8 +65,8 @@ async function otherFamilyFollows(db: Db, familyId: string, studentId: string): 
 
 /**
  * A child of one of the family's logins whom another family follows and this family does not yet: the choice of
- * design.md 7.2 step 3. «Следить из своей семьи» links the child (no approval; the other family is told once);
- * «Присоединиться» asks the other family's admin to take this login into their family.
+ * design.md 7.2 step 3. "From your own family" (match.follow) links the child (no approval; the other family is told
+ * once); "Join that family" (match.join) asks the other family's admin to take this login into their family.
  */
 export async function chooseMatch(
   db: Db,
@@ -235,7 +236,7 @@ export async function decideJoin(
 }
 
 /**
- * «Перестать следить» (design.md 7.1): while a login of the family still shows the child the link is kept as stopped
+ * "Stop following" (family.child.stop, design.md 7.1): while a login of the family still shows the child the link is kept as stopped
  * (nothing is deleted, the collector leaves it alone); otherwise the link goes, and the child with the last link.
  */
 export async function stopFollowing(db: Db, familyId: string, studentId: string): Promise<'stopped' | 'removed'> {
@@ -251,7 +252,7 @@ export async function stopFollowing(db: Db, familyId: string, studentId: string)
   return 'removed';
 }
 
-/** «Следить снова»: a stopped link is active again, with the whole history */
+/** "Follow again" (family.child.followAgain): a stopped link is active again, with the whole history */
 export async function followAgain(db: Db, familyId: string, studentId: string, now: Date): Promise<void> {
   if ((await linkOf(db, familyId, studentId)) !== 'stopped')
     throw new HttpError(404, 'not_found', 'This child is not stopped in this family');
@@ -263,8 +264,9 @@ export async function followAgain(db: Db, familyId: string, studentId: string, n
 }
 
 /**
- * «Удалить данные» of a stopped child: only when no other family follows them; the link goes and the child's data with
- * it (the trigger of migration 0004). The typed confirmation is the child's name as Семья shows it.
+ * "Delete the data" (family.child.delete) of a stopped child: only when no other family follows them; the link goes
+ * and the child's data with it (the trigger of migration 0004). The typed confirmation is the child's name as Family
+ * (family.title) shows it.
  */
 export async function deleteChildData(db: Db, familyId: string, studentId: string, confirm: string): Promise<void> {
   if ((await linkOf(db, familyId, studentId)) !== 'stopped')

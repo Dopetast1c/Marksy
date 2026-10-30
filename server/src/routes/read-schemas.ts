@@ -20,7 +20,7 @@ export const markChip = registry.register(
   }),
 );
 
-/** A subject on a row: its family colour is a palette key of docs/tokens.json, null for «авто» (design.md 6.6) */
+/** A subject on a row: its family colour is a palette key of docs/tokens.json, null for "auto" (color.auto, design.md 6.6) */
 export const subjectRef = z.object({ id: z.string(), name: z.string(), color: z.string().nullable() });
 
 export const periodOut = registry.register(
@@ -33,7 +33,7 @@ export const periodOut = registry.register(
     end: z.string(),
     /** The diary's own name of the term, shown as it is */
     termLabel: z.string().nullable(),
-    /** What a term is called comes from its kind through the app's words (CLAUDE.md, "четверть"), never typed */
+    /** What a term is called comes from its kind through the app's words (CLAUDE.md, "quarter", term.quarter), never typed */
     termKind: termKind.nullable(),
     termIndex: z.number().nullable(),
   }),
@@ -82,7 +82,7 @@ export const bandCount = registry.register(
     from: z.number(),
     to: z.number(),
     count: z.number(),
-    /** The same band in the instance before ("было N"); null when there is no instance before */
+    /** The same band in the instance before ("was N", stat.was); null when there is no instance before */
     prevCount: z.number().nullable(),
   }),
 );
@@ -140,7 +140,7 @@ export const nowLine = registry.register(
     z.object({
       state: z.literal('done'),
       at: z.string(),
-      /** the next school day's first lesson («завтра к 08:00») */
+      /** the next school day's first lesson ("tomorrow from 08:00", nowCard.tomorrowAt) */
       next: z.object({ date: z.string(), at: z.string() }).nullable(),
     }),
   ]),
@@ -187,7 +187,7 @@ export const lessonOut = registry.register(
     homeworkDueDate: z.string().nullable(),
     hasAttachments: z.boolean(),
     cancelled: z.boolean(),
-    /** «готово»: who, only for this family's members; another family's act is otherFamily (design.md 7.1) */
+    /** "Ready" (lesson.ready): who, only for this family's members; another family's act is otherFamily (design.md 7.1) */
     ready: z
       .object({
         at: z.date(),
@@ -206,7 +206,7 @@ export const lessonOut = registry.register(
     absent: z.boolean(),
     /** The teacher's comment without a mark (D56); null without one or without capabilities.behaviour */
     teacherComment: z.string().nullable(),
-    /** The family's tags due at this lesson (the тег note, 6.3); a homework hit carries the text and the day it was set */
+    /** The family's tags due at this lesson (the tag note, 6.3); a homework hit carries the text and the day it was set */
     tags: z.array(
       z.object({
         tag: tagRefOut,
@@ -215,14 +215,14 @@ export const lessonOut = registry.register(
         setOn: z.string().nullable(),
       }),
     ),
-    /** Tagged homework set at this lesson for a later one («Задали: стихотворение, к вт, 20 октября») */
+    /** Tagged homework set at this lesson for a later one ("Set: Poem, for Tue, 20 Oct", lesson.taggedHomework) */
     setHere: z.array(z.object({ tag: tagRefOut, dueDate: z.string() })),
-    /** Carries the tag «Контрольная»: what every "is this a test" asks (CLAUDE.md), never the diary's type alone */
+    /** Carries the family's test tag ("Test"): what every "is this a test" asks (CLAUDE.md), never the diary's type alone */
     isTest: z.boolean(),
   }),
 );
 
-/** A term as the finals show it: its kind and number name it through i18n («I четверть»), its dates under the head */
+/** A term as the finals show it: its kind and number name it through i18n ("Quarter I", period.termN), its dates under the head */
 export const termRefOut = registry.register(
   'TermRef',
   z.object({
@@ -235,7 +235,7 @@ export const termRefOut = registry.register(
   }),
 );
 
-/** The finals entry row on Оценки and Предметы (design.md 5.3): a running term, an ended one, or posted finals */
+/** The finals entry row on Marks and Subjects (screen.marks, screen.subjects; design.md 5.3): a running term, an ended one, or posted finals */
 export const finalsStateOut = registry.register(
   'FinalsState',
   z.discriminatedUnion('state', [
@@ -246,7 +246,7 @@ export const finalsStateOut = registry.register(
 );
 
 /**
- * One cell of Итоги (5.3b): the teacher's final (framed), or a calculation in italics (the running term's average, the
+ * One cell of Finals (finals.screen, 5.3b): the teacher's final (framed), or a calculation in italics (the running term's average, the
  * year's value by the scale's year rule over the term finals posted so far), or a dash
  */
 export const finalCellOut = registry.register(
@@ -256,7 +256,7 @@ export const finalCellOut = registry.register(
     raw: z.string().nullable(),
     value: z.number().nullable(),
     postedOn: z.string().nullable(),
-    /** a final entered by hand from the paper report card is shown with «введено вручную» */
+    /** a final entered by hand from the paper report card is shown with "entered by hand" (finals.manual.cell) */
     source: z.enum(['api', 'manual']).nullable(),
   }),
 );

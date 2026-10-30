@@ -53,15 +53,15 @@ import {
   hintOut,
 } from './read-schemas';
 
-// Предметы and Предмет (docs/design.md 5.3a, 5.4, 6.6): every subject of the child with its average and direction under
-// the mark filter, the subject screen with its settings (goal, colour), «О предмете», «Обратить внимание» (the goal row
-// and the guidance hints, both gone with guidance off), the period's statistics, the coming lessons and the terms.
+// Subjects (screen.subjects) and the subject screen (docs/design.md 5.3a, 5.4, 6.6): every subject of the child with
+// its average and direction under the mark filter, the subject screen with its settings (goal, colour), "About the
+// subject" (subject.about.title), "Worth a look" (subject.attention; the goal row and the guidance hints, both gone with guidance off), the period's statistics, the coming lessons and the terms.
 
 const id = z.string().uuid();
 const childParams = z.object({ id });
 const subjectParams = z.object({ id, subjectId: id });
 
-/** The mark filter (MarkFilter, D27), shared by Оценки, Предметы and Предмет */
+/** The mark filter (MarkFilter, D27), shared by Marks, Subjects and the subject screen */
 const markFilter = {
   tags: z.string().optional(),
   tagMode: z.enum(['any', 'all']).default('any'),
@@ -84,23 +84,26 @@ const subjectInfoSchema = registry.register(
     level: z.string().nullable(),
     levelLabel: z.string().nullable(),
     lessonsPerWeek: z.number().nullable(),
-    /** The family's colour, a palette key of docs/tokens.json; null = «авто» (6.6) */
+    /** The family's colour, a palette key of docs/tokens.json; null = "auto" (color.auto, 6.6) */
     color: z.string().nullable(),
   }),
 );
 
-/** The goal row at the top of «Обратить внимание» (5.4): what the term's marks need for the goal final */
+/** The goal row at the top of "Worth a look" (subject.attention, 5.4): what the term's marks need for the goal final */
 const goalRowOut = registry.register(
   'GoalRow',
   z.object({
     target: z.number(),
-    /** reached: «хватает»; short: «ещё 2 × 9 или 1 × 10»; out_of_reach: not in this term; posted: the final is in */
+    /**
+     * reached: "on track" (goal.reached); short: "2 × 9 or 1 × 10 more" (goal.short); out_of_reach: not in this term;
+     * posted: the final is in
+     */
     state: z.enum(['reached', 'short', 'out_of_reach', 'posted']),
     term: termRefOut,
     average: z.number().nullable(),
-    /** The final the marks point to now («сейчас выходит 8») */
+    /** The final the marks point to now ("heading for 8 now", goal.shortSub) */
     projected: z.number().nullable(),
-    /** The average the goal needs («нужен 7.5») */
+    /** The average the goal needs ("needs 7.5", goal.shortSub) */
     need: z.number(),
     plan: z.array(z.object({ value: z.number(), count: z.number() })),
     /** The worst next mark that keeps a reached goal */
@@ -115,9 +118,9 @@ const subjectRowOut = z.object({
   count: z.number(),
   last: z.array(markChip),
   absences: z.number().nullable(),
-  /** The teacher's comments without a mark in the period (D56): what the row says while the filter is Комментарии */
+  /** The teacher's comments without a mark in the period (D56): what the row says while the filter is Comments (filter.comments) */
   comments: z.number().nullable(),
-  /** «итог I: 8» in place of «было» while the term's finals are news (the next term has not started) */
+  /** "final I: 8" (subjects.final) in place of "was" (stat.was) while the term's finals are news (the next term has not started) */
   final: z.object({ term: termRefOut, raw: z.string(), mark: markChip }).nullable(),
   /** A year without marks (5.3a): lessons and homework in the period and the next lesson with its homework */
   lessons: z
@@ -155,7 +158,8 @@ export function subjectRoutes(deps: AppDeps): Router {
     {
       method: 'get',
       path: '/api/students/:id/subjects',
-      summary: 'Предметы: every subject with its average, direction and last marks under the mark filter',
+      summary:
+        'Subjects (screen.subjects): every subject with its average, direction and last marks under the mark filter',
       tags: ['students'],
       access: 'member',
       params: childParams,
@@ -252,7 +256,7 @@ export function subjectRoutes(deps: AppDeps): Router {
       method: 'get',
       path: '/api/students/:id/subjects/:subjectId',
       summary:
-        'Предмет: settings, «О предмете», «Обратить внимание», stats under the mark filter, the timeline, the coming lessons, the terms',
+        'The subject screen: settings, "About the subject" (subject.about.title), "Worth a look" (subject.attention), stats under the mark filter, the timeline, the coming lessons, the terms',
       tags: ['students'],
       access: 'member',
       params: subjectParams,
@@ -260,9 +264,12 @@ export function subjectRoutes(deps: AppDeps): Router {
       response: z.object({
         subject: subjectInfoSchema,
         period: periodOut,
-        /** «Настройки предмета»: the goal (null = «Без цели»), offered only where goals apply */
+        /** "Subject settings" (subject.settings.title): the goal (null = "No goal", subject.goal.none), offered only where goals apply */
         settings: z.object({ goal: z.number().nullable(), goalAvailable: z.boolean() }),
-        /** «Обратить внимание» (5.4): the goal row and the hints; both empty with guidance off (tags come with M6) */
+        /**
+         * "Worth a look" (subject.attention, 5.4): the goal row and the hints; both empty with guidance off (tags come
+         * with M6)
+         */
         attention: z.object({ goal: goalRowOut.nullable(), hints: z.array(hintOut) }),
         comparison: comparison.nullable(),
         count: z.number(),
@@ -270,9 +277,12 @@ export function subjectRoutes(deps: AppDeps): Router {
         bands: z.array(bandCount),
         distribution: distributionOut,
         timeline: z.array(feedItem),
-        /** «Ближайшие уроки»: the next three lessons of the subject, the compact LessonRow; empty without a future timetable */
+        /**
+         * "Next lessons" (subject.upcoming): the next three lessons of the subject, the compact LessonRow; empty without
+         * a future timetable
+         */
         upcoming: z.array(lessonOut),
-        /** A year without marks: the tiles Уроков and Заданий for the period */
+        /** A year without marks: the tiles Lessons (stat.lessons) and Homework (stat.homework) for the period */
         lessonTiles: z
           .object({
             lessons: z.number(),
@@ -281,12 +291,15 @@ export function subjectRoutes(deps: AppDeps): Router {
             prevHomework: z.number().nullable(),
           })
           .nullable(),
-        /** По четвертям (independent of the period and the filter): each term's cell and the year's */
+        /** By quarter (subject.byTerms; independent of the period and the filter): each term's cell and the year's */
         terms: z.array(termRefOut.extend({ cell: finalCellOut, average: z.number().nullable() })),
         year: finalCellOut.nullable(),
-        /** Last school year in Marksy and this subject's year final in it; raw null: «новый предмет в этом году» */
+        /**
+         * Last school year in Marksy and this subject's year final in it; raw null: "a new subject this year"
+         * (subject.newThisYear)
+         */
         lastYear: z.object({ label: z.string(), raw: z.string().nullable(), value: z.number().nullable() }).nullable(),
-        /** «Когда» in «О предмете»: the subject's lessons of the regular week */
+        /** "When" (subject.about.when) in "About the subject": the subject's lessons of the regular week */
         week: z.array(
           z.object({
             weekday: z.number(),
@@ -324,7 +337,7 @@ export function subjectRoutes(deps: AppDeps): Router {
       const prevYear = last?.byName.get(s.name);
       const goal = goalsApply(ctx) ? await goalOf(deps, ctx, s.id) : null;
 
-      // the term part and «Обратить внимание» follow the running term, never the period or the filter
+      // the term part and "Worth a look" (subject.attention) follow the running term, never the period or the filter
       const term = runningTerm(ctx);
       const termMarks = term ? own.filter((m) => m.date >= term.startDate && m.date <= term.endDate) : [];
       let goalRow: z.infer<typeof goalRowOut> | null = null;
@@ -438,7 +451,7 @@ export function subjectRoutes(deps: AppDeps): Router {
     {
       method: 'get',
       path: '/api/students/:id/subjects/:subjectId/trend',
-      summary: 'Динамика of one subject under the mark filter (TrendCard on Предмет)',
+      summary: 'Trend (stat.trend) of one subject under the mark filter (TrendCard on the subject screen)',
       tags: ['students'],
       access: 'member',
       params: subjectParams,
@@ -458,7 +471,7 @@ export function subjectRoutes(deps: AppDeps): Router {
     {
       method: 'put',
       path: '/api/students/:id/subjects/:subjectId/color',
-      summary: 'The subject’s colour for the whole family (6.6): a palette key, or null for «Авто»',
+      summary: 'The subject’s colour for the whole family (6.6): a palette key, or null for "Auto" (color.auto.title)',
       tags: ['students'],
       access: 'member',
       params: subjectParams,
@@ -483,7 +496,8 @@ export function subjectRoutes(deps: AppDeps): Router {
     {
       method: 'put',
       path: '/api/students/:id/subjects/:subjectId/goal',
-      summary: 'The subject’s goal for the term (5.4): a whole value of the child’s scale, or null for «Без цели»',
+      summary:
+        'The subject’s goal for the term (5.4): a whole value of the child’s scale, or null for "No goal" (subject.goal.none)',
       tags: ['students'],
       access: 'member',
       params: subjectParams,

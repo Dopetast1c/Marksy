@@ -15,8 +15,9 @@ import { roman } from '../../lib/period';
 import { todayIn } from '../../lib/time';
 import { ManualFinals, manualYears } from './ManualFinals';
 
-// Итоги (docs/design.md 5.3b): the marks a teacher sets at the end of a term or a year, on their own screen. Четверти:
-// subject × I–IV and Год for the current year; Годы: subject × school year with the arrow against last year. A posted
+// Finals (finals.screen; docs/design.md 5.3b): the marks a teacher sets at the end of a term or a year, on their own
+// screen. Terms (term.*.plural): subject × I–IV and Year (finals.year) for the current year; Years (finals.years):
+// subject × school year with the arrow against last year. A posted
 // final is a filled chip; a calculation (the running term's average, the year by the scale's year rule over the term
 // finals posted so far) is an italic decimal with no fill, so nobody reads it as the teacher's mark; a dash where there
 // is nothing yet. The legend sits above the table: without it the mix cannot be read. A row opens the subject.
@@ -28,7 +29,7 @@ const shortDay = (iso: string, locale: string) =>
     .map((p) => (p.type === 'day' ? String(Number(p.value)) : p.value))
     .join('');
 
-/** Годы shows the last three school years: more would leave no room for the names at 360 px */
+/** Years (finals.years) shows the last three school years: more would leave no room for the names at 360 px */
 const YEARS_SHOWN = 3;
 
 function TermsView({ studentId, termKind }: { studentId: string; termKind: string }) {

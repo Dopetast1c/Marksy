@@ -86,7 +86,7 @@ export function StudentBar({ activeId }: { activeId: string }) {
       {visible.map((i) => {
         const k = kids[i]!;
         const on = k.id === activeId;
-        // a critical row in this week's Внимание of another child: a red badge on that child (design.md 4)
+        // a critical row in this week's Attention (screen.events) of another child: a red badge on that child (design.md 4)
         const alert = !on && !!cards.data?.find((c) => c.id === k.id)?.alert;
         return (
           <button

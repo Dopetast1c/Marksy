@@ -34,9 +34,9 @@ import { familyPictureKeys, forgetPictures, pictureKeys } from '../uploads/forge
 import { DEFAULT_UPLOADS_DIR } from '../uploads/store';
 import { studentScale } from '../students/scale';
 
-// Семья (docs/design.md 5.6, 7, 9, 14.1): members, diary accounts, the children the family follows, invites, join
-// requests, and the family's data. Names of another family's members never appear: a shared child shows only
-// «Также следит другая семья».
+// Family (family.title; docs/design.md 5.6, 7, 9, 14.1): members, diary accounts, the children the family follows,
+// invites, join requests, and the family's data. Names of another family's members never appear: a shared child shows
+// only "Another family follows too" (family.child.shared).
 
 const role = z.enum(['admin', 'parent', 'student']);
 const id = z.string().uuid();
@@ -46,7 +46,7 @@ const admin = { roles: ['admin'] as ('admin' | 'parent' | 'student')[] };
 const familyView = registry.register(
   'Family',
   z.object({
-    /** guidance: the family's «Подсказки» switch (admin); advice shows when the person's own is on too */
+    /** guidance: the family's "Tips for the whole family" switch (family.guidance, admin); advice shows when the person's own is on too */
     family: z.object({ id: z.string(), name: z.string(), parentsCanInvite: z.boolean(), guidance: z.boolean() }),
     role,
     /** uiMode: a student member's simple mode (5.7), which the admin and parents may switch */
@@ -64,7 +64,7 @@ const familyView = registry.register(
         id: z.string(),
         providerId: z.string(),
         providerName: z.string(),
-        /** The diary login, as the family sees it in Семья */
+        /** The diary login, as the family sees it in Family (family.title) */
         label: z.string(),
         status: z.enum(['ok', 'auth_failed', 'blocked', 'needs_2fa']),
         requiresAction: z.enum(['auth', 'blocked', 'needs_2fa']).nullable(),
@@ -78,7 +78,7 @@ const familyView = registry.register(
         classLabel: z.string().nullable(),
         schoolLabel: z.string().nullable(),
         status: z.enum(['active', 'suspended', 'stopped']),
-        /** «Также следит другая семья»: nothing more about that family */
+        /** "Another family follows too" (family.child.shared): nothing more about that family */
         sharedWithOtherFamily: z.boolean(),
         avatar: avatarOut,
         settings: z.object({
@@ -232,7 +232,7 @@ export function familyRoutes(deps: AppDeps, limiters: Limiters): Router {
     {
       method: 'get',
       path: '/api/family',
-      summary: 'Семья: members, diary accounts, children, choices to make, join requests',
+      summary: 'Family (family.title): members, diary accounts, children, choices to make, join requests',
       tags: ['family'],
       access: adults,
       response: familyView,
@@ -248,7 +248,7 @@ export function familyRoutes(deps: AppDeps, limiters: Limiters): Router {
     {
       method: 'post',
       path: '/api/family/accounts',
-      summary: 'Add a diary to the current family (Семья → «Добавить дневник»)',
+      summary: 'Add a diary to the current family (Family → "Add a diary", family.addDiary)',
       tags: ['family'],
       access: adults,
       status: 201,
@@ -283,7 +283,8 @@ export function familyRoutes(deps: AppDeps, limiters: Limiters): Router {
     {
       method: 'post',
       path: '/api/family/accounts/:id/matches/:studentId',
-      summary: '«Присоединиться» or «Следить из своей семьи» for a child another family follows',
+      summary:
+        '"Join that family" (match.join) or "From your own family" (match.follow) for a child another family follows',
       tags: ['family'],
       access: adults,
       params: z.object({ id, studentId: id }),
@@ -405,7 +406,8 @@ export function familyRoutes(deps: AppDeps, limiters: Limiters): Router {
     {
       method: 'delete',
       path: '/api/family/students/:id',
-      summary: '«Перестать следить» (admin): stopped while a login of the family shows the child, else removed',
+      summary:
+        '"Stop following" (family.child.stop, admin): stopped while a login of the family shows the child, else removed',
       tags: ['family'],
       access: admin,
       params: z.object({ id }),
@@ -420,7 +422,8 @@ export function familyRoutes(deps: AppDeps, limiters: Limiters): Router {
     {
       method: 'post',
       path: '/api/family/students/:id/follow',
-      summary: '«Следить снова» (admin): a stopped child is followed again, with the whole history',
+      summary:
+        '"Follow again" (family.child.followAgain, admin): a stopped child is followed again, with the whole history',
       tags: ['family'],
       access: admin,
       params: z.object({ id }),
@@ -436,7 +439,8 @@ export function familyRoutes(deps: AppDeps, limiters: Limiters): Router {
     {
       method: 'delete',
       path: '/api/family/students/:id/data',
-      summary: '«Удалить данные» of a stopped child (admin), only when no other family follows them',
+      summary:
+        '"Delete the data" (family.child.delete) of a stopped child (admin), only when no other family follows them',
       tags: ['family'],
       access: admin,
       params: z.object({ id }),
@@ -548,7 +552,7 @@ export function familyRoutes(deps: AppDeps, limiters: Limiters): Router {
     {
       method: 'patch',
       path: '/api/family',
-      summary: 'The family’s switches (admin): «Подсказки» for everyone, whether parents may invite',
+      summary: 'The family’s switches (admin): tips for everyone (family.guidance), whether parents may invite',
       tags: ['family'],
       access: admin,
       body: z.object({ guidance: z.boolean().optional(), parentsCanInvite: z.boolean().optional() }),

@@ -371,7 +371,7 @@ async function upsertBehaviour(tx: Tx, scope: UpsertScope, fetched: FetchedRange
 }
 
 /**
- * «Урока не будет» gives way to the diary (docs/design.md 5.5): once the diary records a mark or an attendance record
+ * "Lesson won't take place" (lessonMenu.cancel) gives way to the diary (docs/design.md 5.5): once the diary records a mark or an attendance record
  * for a lesson the family cancelled, the lesson took place, so the override goes, silently. A planned topic does not
  * count: the diary shows topics ahead.
  */

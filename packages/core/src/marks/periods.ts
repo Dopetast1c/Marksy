@@ -114,7 +114,7 @@ export interface TrendBucket extends DateRange {
 }
 
 /**
- * The buckets of the Динамика chart for the selected instance (docs/design.md 5.2): the eight weeks up to it, the
+ * The buckets of the Trend (stat.trend) chart for the selected instance (docs/design.md 5.2): the eight weeks up to it, the
  * months of the school year up to it, every term of the year, or the months of the year. Nothing before the year start.
  */
 export function trendBuckets(ctx: PeriodContext, selected: PeriodInstance): TrendBucket[] {

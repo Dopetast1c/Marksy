@@ -24,7 +24,7 @@ export function ChildAvatar({ avatar, index, size = 34 }: { avatar: AvatarData; 
   return <Avatar traits={avatar?.kind === 'traits' ? avatar.traits : defaultTraits()} index={index} size={size} />;
 }
 
-/** The avatar of a child this person sees, by id (StudentBar, «С кого начнём?») */
+/** The avatar of a child this person sees, by id (StudentBar, "Who first?" pick.title) */
 export function StudentAvatar({ studentId, index, size }: { studentId: string; index: number; size?: number }) {
   const student = useStudent(studentId);
   return <ChildAvatar avatar={student?.avatar ?? null} index={index} {...(size ? { size } : {})} />;

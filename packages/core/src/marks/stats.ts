@@ -60,7 +60,8 @@ export interface Comparison {
 /**
  * The comparison of one instance with the one before it. `previous` is null when that instance does not exist (first
  * term, first week of the school year). The cases of design 6.1 follow from `current` and `previous`; the UI picks
- * the copy ("было 8.4", "прошлая неделя: оценок не было", "сравнить не с чем", "пока нет оценок").
+ * the copy ("was 8.4" (stat.was), "no marks before" (stat.prevEmpty), "nothing to compare with"
+ * (period.nothingToCompare), "no marks yet" (stat.noneYet)).
  */
 export function comparePeriods(scale: GradingScale, current: PeriodStats, previous: PeriodStats | null): Comparison {
   const cur = current.average;
@@ -101,8 +102,8 @@ export function compareSubjects(
 
 /**
  * Movers (docs/design.md 6.1): every subject whose average went up or down against the previous instance, largest
- * change first. The screen applies its own limits (Внимание: up to 3 drops with 2+ marks and 1 rise; Предметы sorts
- * by it), core does not.
+ * change first. The screen applies its own limits (Attention, screen.events: up to 3 drops with 2+ marks and 1 rise;
+ * Subjects, screen.subjects, sorts by it), core does not.
  */
 export function movers(rows: readonly SubjectComparison[]): SubjectComparison[] {
   return rows
@@ -110,7 +111,7 @@ export function movers(rows: readonly SubjectComparison[]): SubjectComparison[] 
     .sort((a, b) => Math.abs(b.delta ?? 0) - Math.abs(a.delta ?? 0));
 }
 
-/** Sort orders of the Предметы list; subjects without marks always go last. */
+/** Sort orders of the Subjects (screen.subjects) list; subjects without marks always go last. */
 export function sortSubjects(
   scale: GradingScale,
   rows: readonly SubjectComparison[],

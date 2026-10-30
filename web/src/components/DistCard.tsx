@@ -3,8 +3,8 @@ import type { GradingScale } from '@marksy/core';
 import { useT } from '../i18n';
 import { numbers } from '../lib/numbers';
 
-// «Распределение» (docs/design.md 5.2, 5.4): one bar per value of the child's scale with the count above every non-
-// empty bar, the same card on Главная and on the subject screen. The bar takes its value's band colour; the value is
+// "Distribution" (stat.distribution; docs/design.md 5.2, 5.4): one bar per value of the child's scale with the count
+// above every non-empty bar, the same card on Home (tabs.home) and on the subject screen. The bar takes its value's band colour; the value is
 // written under it, so colour is never the only signal.
 
 const BAR = {

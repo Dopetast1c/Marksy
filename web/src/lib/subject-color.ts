@@ -2,7 +2,7 @@ import type { CSSProperties } from 'react';
 import tokens from '../../../docs/tokens.json';
 
 // Subject colours (docs/design.md 6.6, ux-principles D36): wayfinding, never meaning. The family picks one of the
-// twelve palette keys of tokens.json → color.subject per subject, or leaves it on «авто», a stable hue from the subject
+// twelve palette keys of tokens.json → color.subject per subject, or leaves it on "auto" (color.auto), a stable hue from the subject
 // name (the prototype's autoHue); the server sends the key or null. The bar is drawn by CSS from the variable --sh
 // (and --ss, the saturation, 0 for grey).
 
@@ -20,7 +20,7 @@ export function autoHue(name: string): number {
   return h;
 }
 
-/** The hue of a palette key (null for grey), or of «авто» when the key is null */
+/** The hue of a palette key (null for grey), or of "auto" when the key is null */
 export function subjectHue(name: string, color: string | null | undefined): number | null {
   if (color == null || !(color in PALETTE)) return autoHue(name);
   const v = PALETTE[color];

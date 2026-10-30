@@ -3711,7 +3711,7 @@
     },
     "/api/me/settings": {
       "patch": {
-        "summary": "Your own settings: «Подсказки» (design.md 5.6) and Оформление (5.6a), any part of it",
+        "summary": "Your own settings: Tips (more.guidance, design.md 5.6) and Appearance (look.title, 5.6a), any part of it",
         "tags": [
           "auth"
         ],
@@ -4062,7 +4062,7 @@
     },
     "/api/family": {
       "get": {
-        "summary": "Семья: members, diary accounts, children, choices to make, join requests",
+        "summary": "Family (family.title): members, diary accounts, children, choices to make, join requests",
         "tags": [
           "family"
         ],
@@ -4095,7 +4095,7 @@
         }
       },
       "patch": {
-        "summary": "The family’s switches (admin): «Подсказки» for everyone, whether parents may invite",
+        "summary": "The family’s switches (admin): tips for everyone (family.guidance), whether parents may invite",
         "tags": [
           "family"
         ],
@@ -4200,7 +4200,7 @@
     },
     "/api/family/accounts": {
       "post": {
-        "summary": "Add a diary to the current family (Семья → «Добавить дневник»)",
+        "summary": "Add a diary to the current family (Family → \"Add a diary\", family.addDiary)",
         "tags": [
           "family"
         ],
@@ -4299,7 +4299,7 @@
     },
     "/api/family/accounts/{id}/matches/{studentId}": {
       "post": {
-        "summary": "«Присоединиться» or «Следить из своей семьи» for a child another family follows",
+        "summary": "\"Join that family\" (match.join) or \"From your own family\" (match.follow) for a child another family follows",
         "tags": [
           "family"
         ],
@@ -4638,7 +4638,7 @@
         }
       },
       "delete": {
-        "summary": "«Перестать следить» (admin): stopped while a login of the family shows the child, else removed",
+        "summary": "\"Stop following\" (family.child.stop, admin): stopped while a login of the family shows the child, else removed",
         "tags": [
           "family"
         ],
@@ -4706,7 +4706,7 @@
     },
     "/api/family/students/{id}/follow": {
       "post": {
-        "summary": "«Следить снова» (admin): a stopped child is followed again, with the whole history",
+        "summary": "\"Follow again\" (family.child.followAgain, admin): a stopped child is followed again, with the whole history",
         "tags": [
           "family"
         ],
@@ -4755,7 +4755,7 @@
     },
     "/api/family/students/{id}/data": {
       "delete": {
-        "summary": "«Удалить данные» of a stopped child (admin), only when no other family follows them",
+        "summary": "\"Delete the data\" (family.child.delete) of a stopped child (admin), only when no other family follows them",
         "tags": [
           "family"
         ],
@@ -5395,7 +5395,7 @@
     },
     "/api/students": {
       "get": {
-        "summary": "«С кого начнём?»: every child the person sees, with what the card shows, in one request",
+        "summary": "\"Who first?\" (pick.title): every child the person sees, with what the card shows, in one request",
         "tags": [
           "students"
         ],
@@ -5687,7 +5687,7 @@
     },
     "/api/students/{id}/overview": {
       "get": {
-        "summary": "Главная: the period on the child scale, last day, movers, Внимание, next day, «Сейчас»",
+        "summary": "Home (screen.home): the period on the child scale, last day, movers, Attention (screen.events), next day, the Now card (nowCard)",
         "tags": [
           "students"
         ],
@@ -6120,7 +6120,7 @@
     },
     "/api/students/{id}/marks": {
       "get": {
-        "summary": "Оценки: marks and teacher comments by day, newest first (cursor pages)",
+        "summary": "Marks (screen.marks): marks and teacher comments by day, newest first (cursor pages)",
         "tags": [
           "students"
         ],
@@ -6314,7 +6314,7 @@
     },
     "/api/students/{id}/trend": {
       "get": {
-        "summary": "Динамика over all marks: the buckets of the selected period (TrendCard on Главная)",
+        "summary": "Trend (stat.trend) over all marks: the buckets of the selected period (TrendCard on Home)",
         "tags": [
           "students"
         ],
@@ -6600,7 +6600,7 @@
     },
     "/api/students/{id}/events": {
       "get": {
-        "summary": "Внимание: ranked facts of the period; Главная shows the first five of the same list",
+        "summary": "Attention (screen.events): ranked facts of the period; Home shows the first five of the same list",
         "tags": [
           "students"
         ],
@@ -6747,7 +6747,7 @@
     },
     "/api/students/{id}/school": {
       "get": {
-        "summary": "Школа: the child’s bells, terms and holidays of the current school year (design.md 5.9)",
+        "summary": "School (more.school): the child’s bells, terms and holidays of the current school year (design.md 5.9)",
         "tags": [
           "students"
         ],
@@ -6966,7 +6966,7 @@
     },
     "/api/students/{id}/subjects": {
       "get": {
-        "summary": "Предметы: every subject with its average, direction and last marks under the mark filter",
+        "summary": "Subjects (screen.subjects): every subject with its average, direction and last marks under the mark filter",
         "tags": [
           "students"
         ],
@@ -7258,7 +7258,7 @@
     },
     "/api/students/{id}/subjects/{subjectId}": {
       "get": {
-        "summary": "Предмет: settings, «О предмете», «Обратить внимание», stats under the mark filter, the timeline, the coming lessons, the terms",
+        "summary": "The subject screen: settings, \"About the subject\" (subject.about.title), \"Worth a look\" (subject.attention), stats under the mark filter, the timeline, the coming lessons, the terms",
         "tags": [
           "students"
         ],
@@ -7687,7 +7687,7 @@
     },
     "/api/students/{id}/subjects/{subjectId}/trend": {
       "get": {
-        "summary": "Динамика of one subject under the mark filter (TrendCard on Предмет)",
+        "summary": "Trend (stat.trend) of one subject under the mark filter (TrendCard on the subject screen)",
         "tags": [
           "students"
         ],
@@ -7835,7 +7835,7 @@
     },
     "/api/students/{id}/subjects/{subjectId}/color": {
       "put": {
-        "summary": "The subject’s colour for the whole family (6.6): a palette key, or null for «Авто»",
+        "summary": "The subject’s colour for the whole family (6.6): a palette key, or null for \"Auto\" (color.auto.title)",
         "tags": [
           "students"
         ],
@@ -7946,7 +7946,7 @@
     },
     "/api/students/{id}/subjects/{subjectId}/goal": {
       "put": {
-        "summary": "The subject’s goal for the term (5.4): a whole value of the child’s scale, or null for «Без цели»",
+        "summary": "The subject’s goal for the term (5.4): a whole value of the child’s scale, or null for \"No goal\" (subject.goal.none)",
         "tags": [
           "students"
         ],
@@ -8052,7 +8052,7 @@
     },
     "/api/students/{id}/schedule": {
       "get": {
-        "summary": "Расписание: today, tomorrow, the next school day, or a week (week=0 this week, 1 next, -1 last)",
+        "summary": "Timetable (screen.schedule): today, tomorrow, the next school day, or a week (week=0 this week, 1 next, -1 last)",
         "tags": [
           "students"
         ],
@@ -8142,7 +8142,7 @@
     },
     "/api/students/{id}/schedule/days": {
       "get": {
-        "summary": "The days of the school year with lessons and how many (the Расписание navigator and its picker, 5.5)",
+        "summary": "The days of the school year with lessons and how many (the Timetable navigator and its picker, 5.5)",
         "tags": [
           "students"
         ],
@@ -8240,7 +8240,7 @@
     },
     "/api/students/{id}/finals/quarters": {
       "get": {
-        "summary": "Итоги by term: the posted final, or the running average until it is posted, and the year",
+        "summary": "Finals (finals.screen) by term: the posted final, or the running average until it is posted, and the year",
         "tags": [
           "students"
         ],
@@ -8296,7 +8296,7 @@
     },
     "/api/students/{id}/finals/years": {
       "get": {
-        "summary": "Итоги by year: each subject’s year final over the school years Marksy has, the running year in italics",
+        "summary": "Finals (finals.screen) by year: each subject’s year final over the school years Marksy has, the running year in italics",
         "tags": [
           "students"
         ],
@@ -8584,7 +8584,7 @@
     },
     "/api/students/{id}/lessons/{lessonId}/prep": {
       "put": {
-        "summary": "«Готово» on a lesson that has not passed (6.5): who and when are kept, the history in lesson_prep_events",
+        "summary": "\"Ready\" (lesson.ready) on a lesson that has not passed (6.5): who and when are kept, the history in lesson_prep_events",
         "tags": [
           "lessons"
         ],
@@ -8695,7 +8695,7 @@
         }
       },
       "delete": {
-        "summary": "Take «готово» off a lesson that has not passed: the lesson goes back to open (6.5)",
+        "summary": "Take \"Ready\" (lesson.ready) off a lesson that has not passed: the lesson goes back to open (6.5)",
         "tags": [
           "lessons"
         ],
@@ -8808,7 +8808,7 @@
     },
     "/api/students/{id}/lessons/{lessonId}/cancel": {
       "put": {
-        "summary": "«Урока не будет» (5.5): out of the counts and reminders; the diary wins once it records the lesson",
+        "summary": "\"Lesson won't take place\" (lessonMenu.cancel, 5.5): out of the counts and reminders; the diary wins once it records the lesson",
         "tags": [
           "lessons"
         ],
@@ -8897,7 +8897,7 @@
         }
       },
       "delete": {
-        "summary": "«Вернуть урок»: the lesson is back exactly as it was (5.5)",
+        "summary": "\"Bring the lesson back\" (lessonMenu.restore): the lesson is back exactly as it was (5.5)",
         "tags": [
           "lessons"
         ],
@@ -8988,7 +8988,7 @@
     },
     "/api/students/{id}/lessons/{lessonId}/homework": {
       "post": {
-        "summary": "«Добавить задание»: homework the diary does not have, shown like the diary’s (6.5); one per lesson",
+        "summary": "\"Add homework\" (lessonMenu.addHomework): homework the diary does not have, shown like the diary’s (6.5); one per lesson",
         "tags": [
           "lessons"
         ],
@@ -9094,7 +9094,7 @@
     },
     "/api/students/{id}/homework/{itemId}": {
       "patch": {
-        "summary": "«Изменить задание»: the family’s own homework only (6.5)",
+        "summary": "\"Edit homework\" (lessonMenu.editHomework): the family’s own homework only (6.5)",
         "tags": [
           "lessons"
         ],
@@ -9198,7 +9198,7 @@
         }
       },
       "delete": {
-        "summary": "«Удалить задание»: the family’s own homework only (6.5)",
+        "summary": "\"Delete homework\" (homeworkSheet.remove): the family’s own homework only (6.5)",
         "tags": [
           "lessons"
         ],
@@ -9784,7 +9784,7 @@
     },
     "/api/sync/run": {
       "post": {
-        "summary": "«Обновить сейчас»: one run of a diary account within its login budget (admin, parent)",
+        "summary": "\"Refresh now\" (sync.refresh): one run of a diary account within its login budget (admin, parent)",
         "tags": [
           "sync"
         ],
@@ -9877,7 +9877,7 @@
     },
     "/api/sync/rescan": {
       "post": {
-        "summary": "«Перепроверить»: the weeks of the current term or school year are read again by the next runs, then one run now",
+        "summary": "\"Check the history again\" (sync.rescan.button): the weeks of the current term or school year are read again by the next runs, then one run now",
         "tags": [
           "sync"
         ],
@@ -9989,7 +9989,7 @@
     },
     "/api/sync/drift/{id}/ack": {
       "post": {
-        "summary": "«Понятно, скрыть» for a change in the diary’s API (admin, parent)",
+        "summary": "\"Got it, hide\" (sync.drift.ack) for a change in the diary’s API (admin, parent)",
         "tags": [
           "sync"
         ],

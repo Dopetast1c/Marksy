@@ -49,7 +49,7 @@ describe('pre-commit guard', () => {
       'непетровская',
     ].join('\n');
     expect(denyHits(text, deny)).toEqual([2, 4, 5]);
-    // ё and е are the same letter for names
+    // Cyrillic yo and ye are the same letter for names
     expect(denyHits('Фёдорова', { words: new Set(['федорова']), phrases: [], ids: [] })).toEqual([1]);
     expect(denyHits('Федорова', { words: new Set(['фёдорова']), phrases: [], ids: [] })).toEqual([1]);
   });

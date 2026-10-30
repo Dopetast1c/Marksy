@@ -23,9 +23,9 @@ const taughtBy = (refs: LessonRefs, subjectId: string, teacherId: string | null 
   !!teacherId && !!refs.teachers.get(subjectId)?.has(teacherId);
 
 const LEVELS: Record<string, Subject['level']> = {
-  Базовый: 'regular',
-  Углубленный: 'advanced',
-  Углублённый: 'advanced',
+  ['Базовый']: 'regular',
+  ['Углубленный']: 'advanced',
+  ['Углублённый']: 'advanced',
 };
 /** e-schools counts weekdays Monday = 1 to Sunday = 7; the model from Sunday = 0 */
 const weekday = (d: number) => d % 7;
@@ -120,7 +120,7 @@ export function mapBellSchedules(
     .filter((b) => b.days.length > 0 && b.periods.length > 0);
 }
 
-/** "Иванова Мария Петровна" as 6.7a gives it, for the student's own teacher only */
+/** "Ivanova Maria Petrovna" (surname, name, patronymic) as 6.7a gives it, for the student's own teacher only */
 function teacherOf(rows: readonly StudentSubjectRow[], id: string | null | undefined) {
   const row = id ? rows.find((r) => r.teacher_id === id && clean(r.teacher)) : undefined;
   return row ? { teacherExternalId: row.teacher_id!, teacherName: clean(row.teacher)! } : {};

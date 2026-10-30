@@ -139,7 +139,7 @@ describe('what answers signed out', () => {
     });
     expect(again.status).toBe(403);
     expect(again.body.error.code).toBe('signup_closed');
-    // the family's own members still see the list (adding a diary from Семья)
+    // the family's own members still see the list (adding a diary from Family, family.title)
     expect((await first.get('/api/providers')).status).toBe(200);
     expect((await agentWith({ signup: 'closed' }).get('/api/providers')).status).toBe(403);
   });
@@ -208,7 +208,7 @@ describe('the internal status and the collector switch', () => {
     expect(new Date(held.body.heldUntil).getTime() - Date.now()).toBeLessThanOrEqual(30 * 60_000 + 1000);
   });
 
-  it('switched off after a restore or held for an update: «Обновить сейчас» answers off and nothing logs in', async () => {
+  it('switched off after a restore or held for an update: "Refresh now" (sync.refresh) answers off and nothing logs in', async () => {
     const agent = agentWith();
     const { connect } = await connectFamily(agent);
     await settle();

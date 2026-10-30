@@ -22,33 +22,33 @@ import {
   termRefOut,
 } from './read-schemas';
 
-// Расписание and Итоги (docs/design.md 5.5, 5.3b, 9): lessons with homework, «готово», «урока не будет», the room, the
-// child's subgroup and the teacher's comment without a mark (D56); term and year finals with the running average where
+// Timetable (screen.schedule) and Finals (finals.screen) (docs/design.md 5.5, 5.3b, 9): lessons with homework, "Ready"
+// (lesson.ready), "Lesson won't take place" (lessonMenu.cancel), the room, the child's subgroup and the teacher's comment without a mark (D56); term and year finals with the running average where
 // a final is not posted yet.
 
 const id = z.string().uuid();
 const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
 
-/** A lesson of Расписание: the shared row plus the пометки of a lesson that has not passed (5.5); null once it has */
+/** A lesson of Timetable (screen.schedule): the shared row plus the lesson notes of a lesson that has not passed (5.5); null once it has */
 const scheduleLessonOut = lessonOut.extend({
   notes: z
     .object({
-      /** факты, as of the lesson; null: no mark in the subject this school year yet */
+      /** the facts note, as of the lesson; null: no mark in the subject this school year yet */
       facts: z
         .object({
           average: z.number().nullable(),
           /** the last five marks this school year, oldest first */
           last: z.array(markChip),
           lastDate: z.string(),
-          /** lessons of the subject since the last mark («2 урока назад»); cancelled ones are skipped */
+          /** lessons of the subject since the last mark ("2 lessons ago", lesson.facts.ago); cancelled ones are skipped */
           since: z.number(),
         })
         .nullable(),
-      /** сигнал (guidance on): call after the family's callAfter lessons, callLow with a low average, push otherwise */
+      /** the signal note (guidance on): call after the family's callAfter lessons, callLow with a low average, push otherwise */
       signal: z
         .object({ kind: z.enum(['call', 'callLow', 'push']), lessons: z.number(), average: z.number().nullable() })
         .nullable(),
-      /** подсказка (6.2, guidance on) */
+      /** the hint note (6.2, guidance on) */
       hint: z.union([hintOut, z.null()]),
     })
     .nullable(),
@@ -59,7 +59,7 @@ const attentionOut = z.object({
   field: z.enum(['topic', 'homework', 'type']),
   /** the diary's words that matched, as written */
   snippet: z.string().nullable(),
-  /** a homework hit: the day it was set («задано ср, 14 окт: …») */
+  /** a homework hit: the day it was set ("set Wed, 14 Oct: …", schedule.attentionHomework) */
   setOn: z.string().nullable(),
   lessonId: z.string(),
   date: z.string(),
@@ -75,7 +75,8 @@ export function scheduleRoutes(deps: AppDeps): Router {
     {
       method: 'get',
       path: '/api/students/:id/schedule',
-      summary: 'Расписание: today, tomorrow, the next school day, or a week (week=0 this week, 1 next, -1 last)',
+      summary:
+        'Timetable (screen.schedule): today, tomorrow, the next school day, or a week (week=0 this week, 1 next, -1 last)',
       tags: ['students'],
       access: 'member',
       params: z.object({ id }),
@@ -90,7 +91,7 @@ export function scheduleRoutes(deps: AppDeps): Router {
           from: z.string(),
           to: z.string(),
           days: z.array(z.object({ date: z.string(), lessons: z.array(scheduleLessonOut) })),
-          /** «Обратить внимание» (5.5): the range's lessons still ahead that carry a tag, by date and lesson number */
+          /** "Worth a look" (subject.attention, 5.5): the range's lessons still ahead that carry a tag, by date and lesson number */
           attention: z.array(attentionOut),
         }),
       ),
@@ -157,19 +158,19 @@ export function scheduleRoutes(deps: AppDeps): Router {
     {
       method: 'get',
       path: '/api/students/:id/schedule/days',
-      summary: 'The days of the school year with lessons and how many (the Расписание navigator and its picker, 5.5)',
+      summary: 'The days of the school year with lessons and how many (the Timetable navigator and its picker, 5.5)',
       tags: ['students'],
       access: 'member',
       params: z.object({ id }),
       response: z.object({
         today: z.string(),
-        /** the first day of the school week, 0 = Sunday (manifest.calendar): where a week of Неделя starts */
+        /** the first day of the school week, 0 = Sunday (manifest.calendar): where a week of Week (period.week) starts */
         weekStart: z.number(),
         /** the school days of the week, 0 = Sunday (manifest.calendar): a week is a holiday week when all of them are */
         schoolDays: z.array(z.number()),
         /**
          * Every day with lessons; `held` leaves out the cancelled ones (the picker's count). A day whose lessons are
-         * all cancelled stays reachable, so «Вернуть урок» is too.
+         * all cancelled stays reachable, so "Bring the lesson back" (lessonMenu.restore) is too.
          */
         days: z.array(z.object({ date: z.string(), lessons: z.number(), held: z.number() })),
       }),
@@ -206,24 +207,28 @@ export function scheduleRoutes(deps: AppDeps): Router {
     {
       method: 'get',
       path: '/api/students/:id/finals/quarters',
-      summary: 'Итоги by term: the posted final, or the running average until it is posted, and the year',
+      summary:
+        'Finals (finals.screen) by term: the posted final, or the running average until it is posted, and the year',
       tags: ['students'],
       access: 'member',
       params: z.object({ id }),
       response: registry.register(
         'TermFinals',
         z.object({
-          /** The header line («I четверть идёт, итоги после 31 окт» / «I четверть выставлена сегодня») */
+          /**
+           * The header line ("Quarter I is on, finals after 31 Oct", finals.running / "Quarter I finals posted today",
+           * finals.postedToday)
+           */
           state: finalsStateOut.nullable(),
           terms: z.array(termRefOut),
-          /** The current school year (the table heading «2026/27 · 7 «Г»») */
+          /** The current school year (the table heading "2026/27 · 7 G") */
           year: z.object({ id: z.string(), label: z.string() }).nullable(),
-          /** The school year the «итог 2025/26: 8» line under a subject comes from */
+          /** The school year the "final 2025/26: 8" (finals.lastYear) line under a subject comes from */
           lastYear: z.object({ id: z.string(), label: z.string() }).nullable(),
           rows: z.array(
             z.object({
               subject: subjectRef,
-              /** Last year's year final of the subject with the same name; null: «новый предмет» (when lastYear) */
+              /** Last year's year final of the subject with the same name; null: "new subject" (finals.newSubject, when lastYear) */
               lastYear: z.object({ raw: z.string(), value: z.number().nullable() }).nullable(),
               terms: z.array(finalCellOut.extend({ termId: z.string() })),
               year: finalCellOut,
@@ -266,7 +271,8 @@ export function scheduleRoutes(deps: AppDeps): Router {
     {
       method: 'get',
       path: '/api/students/:id/finals/years',
-      summary: 'Итоги by year: each subject’s year final over the school years Marksy has, the running year in italics',
+      summary:
+        'Finals (finals.screen) by year: each subject’s year final over the school years Marksy has, the running year in italics',
       tags: ['students'],
       access: 'member',
       params: z.object({ id }),
@@ -285,9 +291,9 @@ export function scheduleRoutes(deps: AppDeps): Router {
         rows: z.array(
           z.object({
             subjectName: z.string(),
-            /** The subject of the current year, for the tap; null: «в этом году нет» */
+            /** The subject of the current year, for the tap; null: "not this year" (finals.notThisYear) */
             subjectId: z.string().nullable(),
-            /** In the current year but not in the one before it: «новый предмет» */
+            /** In the current year but not in the one before it: "new subject" (finals.newSubject) */
             isNew: z.boolean(),
             cells: z.array(finalCellOut.extend({ yearId: z.string() })),
             /** The current year against the one before (D5: the arrow, no signed delta) */

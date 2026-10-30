@@ -5,7 +5,7 @@ import type { GoalRow, Hint } from '../api/queries';
 import { roman } from './period';
 import { numbers } from './numbers';
 
-// The words of «Обратить внимание» on the subject screen (docs/design.md 5.4, 6.2): a guidance hint is a fact and an
+// The words of "Worth a look" (subject.attention) on the subject screen (docs/design.md 5.4, 6.2): a guidance hint is a fact and an
 // optional advice as i18n keys with raw values; the goal row is numbers from the scale. Values are written here with
 // the child's scale (an average with its decimals, a mark as a mark) and dates in the interface language.
 
@@ -20,7 +20,7 @@ export function hintText(t: TFunction, text: Hint['fact'], scale: GradingScale, 
     else if (k === 'date') p[k] = shortDate(v, ds, { weekday: true });
     else p[k] = v;
   }
-  // a low mark's work type only when the diary set one: never «4 · , 14 окт»
+  // a low mark's work type only when the diary set one: never "4 for , 14 Oct"
   if (text.key === 'guidance.lowMark.fact') {
     if (!text.params.workType) return t('guidance.lowMark.factNoWork', p);
     p.work = t(`workType.${text.params.workType as string}`);
@@ -30,7 +30,8 @@ export function hintText(t: TFunction, text: Hint['fact'], scale: GradingScale, 
 
 export type GoalTone = 'good' | 'low' | 'critical' | 'neutral';
 
-/** The goal row (5.4): «Цель итог 8: ещё 2 × 9 или 1 × 10», «Цель итог 8: хватает», «… уже не достичь» */
+/** The goal row (5.4): "Goal: final 8: 2 × 9 or 1 × 10 more" (goal.short), "Goal: final 8: on track" (goal.reached),
+ * "… is out of reach" (goal.outOfReach.*) */
 export function goalText(t: TFunction, g: GoalRow, scale: GradingScale) {
   const v = (x: number | null) => (x == null ? '' : numbers(scale).value(x));
   const a = (x: number | null) => (x == null ? '' : numbers(scale).average(x));
@@ -38,7 +39,7 @@ export function goalText(t: TFunction, g: GoalRow, scale: GradingScale) {
   const target = v(g.target);
   switch (g.state) {
     case 'reached':
-      // the worst mark of the scale still keeps it: say so, not «не ниже 1»
+      // the worst mark of the scale still keeps it: say so, not "no lower than 1"
       if (g.keep === (scale.higherIsBetter ? scale.min : scale.max))
         return {
           tone: 'good' as GoalTone,
@@ -50,7 +51,8 @@ export function goalText(t: TFunction, g: GoalRow, scale: GradingScale) {
         title: t('goal.reached', { target }),
         sub: t(`goal.reachedSub.${kind}`, {
           average: a(g.average),
-          // «не ниже 7» where higher is better, «не хуже 2» where 1 is best
+          // "no lower than 7" (goal.keepHigher) where higher is better, "no worse than 2" (goal.keepBetter) where 1 is
+          // best
           keep: t(scale.higherIsBetter ? 'goal.keepHigher' : 'goal.keepBetter', { mark: v(g.keep) }),
         }),
       };

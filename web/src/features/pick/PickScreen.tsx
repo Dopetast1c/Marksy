@@ -9,10 +9,11 @@ import { dateStyle, useT } from '../../i18n';
 import { todayIn } from '../../lib/time';
 import { useDevice } from '../../state/store';
 
-// «С кого начнём?» (docs/design.md 4, ux-principles D7, D10): one card per child, the whole card is the button; under
-// the cards the switch «Всегда начинать с последнего» and the entry «Настройки», which opens Ещё without a child. No
+// "Who first?" (pick.title; docs/design.md 4, ux-principles D7, D10): one card per child, the whole card is the
+// button; under the cards the switch "Always start with the last one" (pick.alwaysLast) and the entry "Settings"
+// (pick.settings), which opens More (tabs.more) without a child. No
 // bell here until M9 brings the inbox. A person in several families sees the current family's children; the grouping
-// by family and «Сменить семью» come with M5d.
+// by family and "Switch family" (more.switchFamily) come with M5d.
 
 export function PickScreen() {
   const t = useT();

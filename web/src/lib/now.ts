@@ -1,8 +1,8 @@
 import type { TFunction } from 'i18next';
 import type { Schemas } from '../api/client';
 
-// The school day of one child, one line (docs/design.md 4, 5.2, ux-principles D52): on each card of «С кого
-// начнём?» and in «Сейчас» on Главная. The API computes it in the school's timezone from the child's own bells.
+// The school day of one child, one line (docs/design.md 4, 5.2, ux-principles D52): on each card of "Who first?"
+// (pick.title) and in the "Now" card (nowCard.*) on Home (tabs.home). The API computes it in the school's timezone from the child's own bells.
 
 export type NowLine = Schemas['NowLine'];
 

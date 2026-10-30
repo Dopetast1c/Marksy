@@ -11,7 +11,7 @@ import { defineConfig } from 'vite';
 // one, so each device has its own login limit and no client can claim another address.
 const api = { target: 'http://127.0.0.1:3000', xfwd: true };
 
-// the app's version, as Ещё shows it (more.readOnly), and the project's page, where the app links to its docs and to
+// the app's version, as More (tabs.more) shows it (more.readOnly), and the project's page, where the app links to its docs and to
 // the translation form: the root package.json's, one place for the whole workspace; an image build passes its own
 // MARKSY_VERSION, the same one the server reports
 const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as {

@@ -4,15 +4,16 @@ import type { TFunction } from 'i18next';
 import type { FinalsState, TermRef } from '../api/queries';
 import { roman } from './period';
 
-// What the finals entry row and the Итоги header say (docs/design.md 5.3, 5.3b): «I четверть идёт, итоги после 31 окт»,
-// «I четверть закончилась, итогов пока нет», «I четверть выставлена 15 октября» / «… сегодня». The term is named from its
+// What the finals entry row and the Finals (finals.screen) header say (docs/design.md 5.3, 5.3b): "Quarter I is on,
+// finals after 31 Oct" (finals.running), "Quarter I is over, no finals yet" (finals.ended.*), "Quarter I finals posted
+// on 15 October" (finals.posted.*) / "… today" (finals.postedToday.*). The term is named from its
 // kind and number through i18n, never typed; the words agree with the kind in each language.
 
-/** «I четверть» from the term's kind and number */
+/** "Quarter I" (period.termN.*) from the term's kind and number */
 export const termName = (t: TFunction, term: Pick<TermRef, 'kind' | 'index'>) =>
   t(`period.termN.${term.kind}`, { roman: roman(term.index) });
 
-/** «15 октября» */
+/** "15 October" */
 export const longDay = (iso: string, locale: string) =>
   new Intl.DateTimeFormat(locale, { timeZone: 'UTC', day: 'numeric', month: 'long' }).format(
     new Date(`${iso}T12:00:00Z`),

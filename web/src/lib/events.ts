@@ -7,7 +7,7 @@ import type { Kind } from './period';
 import { holidaysFrom } from './holidays';
 import { numbers } from './numbers';
 
-// The words of a Внимание row (docs/design.md 5.2a, ux-principles D43, D56): the API sends facts only (a mark, a
+// The words of an Attention (screen.events) row (docs/design.md 5.2a, ux-principles D43, D56): the API sends facts only (a mark, a
 // subject, a date, two averages), this turns them into the row's two lines in the interface language. No advice:
 // what a row says is what the diary says.
 
@@ -76,7 +76,7 @@ export function eventText(
       const days = daysBetween(start, end) + 1;
       return {
         title: holidaysFrom(t, f.kind as string | null, shortDate(start, ctx.ds)),
-        // the provider's remark about the dates (which grades) stays a quiet note in Школа, not a fact here (D51)
+        // the provider's remark about the dates (which grades) stays a quiet note in School (more.school), not a fact here (D51)
         sub: [t('event.holidaysUntil', { date: shortDate(end, ctx.ds) }), t('days.count', { count: days })].join(' · '),
       };
     }

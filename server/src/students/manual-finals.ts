@@ -7,9 +7,9 @@ import { HttpError } from '../http/errors';
 import type { ChildContext } from './context';
 
 // Year finals of school years before Marksy (docs/design.md 6.1, 5.3b): typed in by the admin or a parent from the
-// paper report card, kept with source = manual and shown with «введено вручную». The diary's own years are never
-// written over: a year the diary sends is not a year to type in. The values are the child's scale's (a past year on
-// another scale is entered on today's, the Годы table says when the scales differ).
+// paper report card, kept with source = manual and shown with "entered by hand" (finals.manual.cell). The diary's own
+// years are never written over: a year the diary sends is not a year to type in. The values are the child's scale's (a
+// past year on another scale is entered on today's, the Years (finals.years) table says when the scales differ).
 
 /** How far back a year may be typed in: the whole of school, and no further */
 const MAX_YEARS_BACK = 11;

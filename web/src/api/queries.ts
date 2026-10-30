@@ -32,7 +32,7 @@ export function useMe() {
   });
 }
 
-/** The cards of «С кого начнём?», one request (docs/design.md 9) */
+/** The cards of "Who first?" (pick.title), one request (docs/design.md 9) */
 export const useStudentCards = () =>
   useQuery({ queryKey: ['students'], queryFn: () => data(api.GET('/api/students')), staleTime: 60_000 });
 
@@ -56,7 +56,7 @@ const sameChild =
 type PeriodQuery = { period: 'week' | 'month' | 'term' | 'year'; offset: number };
 const periodParams = (id: string, q: PeriodQuery) => ({ params: { path: { id }, query: q } });
 
-/** Главная for one child and period */
+/** Home (tabs.home) for one child and period */
 export const useOverview = (id: string, q: PeriodQuery) =>
   useQuery({
     queryKey: ['overview', id, q.period, q.offset],
@@ -64,7 +64,7 @@ export const useOverview = (id: string, q: PeriodQuery) =>
     placeholderData: sameChild(id),
   });
 
-/** Динамика over all marks (TrendCard on Главная) */
+/** Trend (stat.trend) over all marks (TrendCard on Home) */
 export const useTrend = (id: string, q: PeriodQuery) =>
   useQuery({
     queryKey: ['trend', id, q.period, q.offset],
@@ -72,7 +72,7 @@ export const useTrend = (id: string, q: PeriodQuery) =>
     placeholderData: sameChild(id),
   });
 
-/** Every row of Внимание for one child and period */
+/** Every row of Attention (screen.events) for one child and period */
 export const useEvents = (id: string, q: PeriodQuery) =>
   useQuery({
     queryKey: ['events', id, q.period, q.offset],
@@ -80,7 +80,7 @@ export const useEvents = (id: string, q: PeriodQuery) =>
     placeholderData: sameChild(id),
   });
 
-/** The child's school: bells, terms, holidays (Школа, the empty slots of a day) */
+/** The child's school: bells, terms, holidays (School more.school, the empty slots of a day) */
 export const useSchool = (id: string) =>
   useQuery({
     queryKey: ['school', id],
@@ -123,7 +123,7 @@ export type YearFinals =
 type FilterQuery = { comments: 'all' | 'only'; tags?: string; tagMode?: 'any' | 'all' };
 const FEED_PAGE = 100;
 
-/** Оценки: the feed of the period under the mark filter, a page at a time */
+/** Marks (screen.marks): the feed of the period under the mark filter, a page at a time */
 export const useMarksFeed = (id: string, q: PeriodQuery, f: FilterQuery) =>
   useInfiniteQuery({
     queryKey: ['marks', id, q.period, q.offset, f.comments, f.tags ?? '', f.tagMode ?? 'any'],
@@ -138,7 +138,7 @@ export const useMarksFeed = (id: string, q: PeriodQuery, f: FilterQuery) =>
     placeholderData: sameChild(id),
   });
 
-/** Итоги → Четверти: the current year's terms, every subject's cells, last year's finals */
+/** Finals (finals.screen) → terms: the current year's terms, every subject's cells, last year's finals */
 export const useTermFinals = (id: string) =>
   useQuery({
     queryKey: ['finals', id, 'terms'],
@@ -146,7 +146,7 @@ export const useTermFinals = (id: string) =>
     placeholderData: sameChild(id),
   });
 
-/** Итоги → Годы */
+/** Finals → Years (finals.years) */
 export const useYearFinals = (id: string) =>
   useQuery({
     queryKey: ['finals', id, 'years'],
@@ -157,14 +157,14 @@ export const useYearFinals = (id: string) =>
 export type SubjectInfo = Schemas['SubjectInfo'];
 export type Hint = Schemas['Hint'];
 export type GoalRow = Schemas['GoalRow'];
-/** A palette key of docs/tokens.json, or null for «Авто» */
+/** A palette key of docs/tokens.json, or null for "Auto" (color.auto.title) */
 export type SubjectColor = NonNullable<
   paths['/api/students/{id}/subjects/{subjectId}/color']['put']['requestBody']
 >['content']['application/json']['color'];
 
 export type SubjectRowData = NonNullable<ReturnType<typeof useSubjects>['data']>['subjects'][number];
 
-/** Предметы: every subject of the child under the period, the mark filter and the order */
+/** Subjects (screen.subjects): every subject of the child under the period, the mark filter and the order */
 export const useSubjects = (id: string, q: PeriodQuery, f: FilterQuery, sort: SubjectSort) =>
   useQuery({
     queryKey: ['subjects', id, q.period, q.offset, f.comments, f.tags ?? '', f.tagMode ?? 'any', sort],
@@ -176,7 +176,7 @@ export const useSubjects = (id: string, q: PeriodQuery, f: FilterQuery, sort: Su
 const subjectKey = (id: string, subjectId: string, q: PeriodQuery, f: FilterQuery) =>
   ['subject', id, subjectId, q.period, q.offset, f.comments, f.tags ?? '', f.tagMode ?? 'any'] as const;
 
-/** Предмет: everything the subject screen shows for the period and the filter */
+/** The subject screen: everything it shows for the period and the filter */
 export const useSubject = (id: string, subjectId: string, q: PeriodQuery, f: FilterQuery) =>
   useQuery({
     queryKey: subjectKey(id, subjectId, q, f),
@@ -191,7 +191,7 @@ export const useSubject = (id: string, subjectId: string, q: PeriodQuery, f: Fil
 
 export type SubjectDetail = NonNullable<ReturnType<typeof useSubject>['data']>;
 
-/** Динамика of one subject */
+/** Trend (stat.trend) of one subject */
 export const useSubjectTrend = (id: string, subjectId: string, q: PeriodQuery, f: FilterQuery) =>
   useQuery({
     queryKey: ['subject-trend', id, subjectId, q.period, q.offset, f.comments, f.tags ?? '', f.tagMode ?? 'any'],
@@ -205,8 +205,8 @@ export const useSubjectTrend = (id: string, subjectId: string, q: PeriodQuery, f
   });
 
 /**
- * «Настройки предмета» (design.md 5.4, 6.6): the colour and the goal, applied at once behind the sheet (the subject's
- * answers are patched in the cache), then everything of the child is read again: the colour is on every stripe
+ * "Subject settings" (subject.settings.title; design.md 5.4, 6.6): the colour and the goal, applied at once behind the
+ * sheet (the subject's answers are patched in the cache), then everything of the child is read again: the colour is on every stripe
  */
 export function useSubjectSettings(id: string, subjectId: string) {
   const client = useQueryClient();
@@ -242,7 +242,8 @@ export type Schedule = Schemas['Schedule'];
 export type ScheduleLesson = Schedule['days'][number]['lessons'][number];
 export type ScheduleQuery = { day: string } | { week: number };
 
-/** Расписание: one day or one week of lessons with their пометки and «Обратить внимание» (design.md 5.5) */
+/** Timetable (screen.schedule): one day or one week of lessons with their notes and "Worth a look"
+ * (subject.attention; design.md 5.5) */
 export const useSchedule = (id: string, q: ScheduleQuery) =>
   useQuery({
     queryKey: ['schedule', id, 'day' in q ? q.day : `week:${q.week}`],
@@ -259,9 +260,10 @@ export const useScheduleDays = (id: string) =>
   });
 
 /**
- * The lesson menu (design.md 5.5, 6.5, D41): «готово», «Урока не будет» and own homework. The tick and the
+ * The lesson menu (design.md 5.5, 6.5, D41): ready (lessonMenu.ready), "Lesson won't take place"
+ * (lessonMenu.cancel) and own homework. The tick and the
  * cancellation show at once in every cached day and week of the child (the sheet closes, nothing scrolls), then
- * everything of the child is read again: Главная's next day, the subject's coming lessons, the picker card.
+ * everything of the child is read again: Home's next day, the subject's coming lessons, the picker card.
  */
 export function useLessonActions(id: string) {
   const client = useQueryClient();
@@ -275,7 +277,7 @@ export function useLessonActions(id: string) {
           }
         : d,
     );
-  // Главная's next day comes with the overview: its rows change at once too
+  // Home's next day comes with the overview: its rows change at once too
   const patchOverview = (lessonId: string, fn: (l: Lesson) => Lesson) =>
     client.setQueriesData<Overview>({ queryKey: ['overview', id] }, (d) =>
       d?.nextDay
@@ -334,13 +336,13 @@ export function useLessonActions(id: string) {
 
 export type FamilyView = Schemas['Family'];
 
-/** Семья (design.md 5.6): members, diaries, children, join requests; admin and parents */
+/** Family (family.title; design.md 5.6): members, diaries, children, join requests; admin and parents */
 export const useFamily = (enabled = true) =>
   useQuery({ queryKey: ['family'], queryFn: () => data(api.GET('/api/family')), staleTime: 30_000, enabled });
 
 export type SyncStatus = Schemas['SyncStatus'];
 
-/** The run log of Синхронизация (design.md 5.6, 90 days kept) */
+/** The run log of Sync (sync.title; design.md 5.6, 90 days kept) */
 export const useSyncRuns = () =>
   useQuery({
     queryKey: ['sync-runs'],

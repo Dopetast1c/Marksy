@@ -1,8 +1,8 @@
 import type { ISODate } from '../model/schemas';
 
-// Short calendar dates, one formatter for every screen (and later the notifications): "15 окт", "чт, 15 окт",
-// "12–18 окт", "28 сен – 4 окт" (design.md 5, the prototype). Intl's short months carry a dot in some languages
-// ("окт.") that the design does not use, so a language may give its own twelve short month names (packages/i18n,
+// Short calendar dates, one formatter for every screen (and later the notifications): "15 Oct", "Thu, 15 Oct",
+// "12–18 Oct", "28 Sep – 4 Oct" (design.md 5, the prototype). Intl's short months carry a dot in some languages
+// (Russian "Oct.") that the design does not use, so a language may give its own twelve short month names (packages/i18n,
 // date.monthShort.1…12); a language without them gets Intl's. Dates are school-local calendar days: no time zone.
 
 export interface ShortDateStyle {
@@ -23,7 +23,7 @@ function monthOf(d: ISODate, s: ShortDateStyle): string {
 const weekday = (d: ISODate, locale: string) =>
   new Intl.DateTimeFormat(locale, { timeZone: 'UTC', weekday: 'short' }).format(at(d));
 
-/** "15 окт", with the weekday "чт, 15 окт" */
+/** "15 Oct", with the weekday "Thu, 15 Oct" */
 export function shortDate(d: ISODate, s: ShortDateStyle, opts: { weekday?: boolean } = {}): string {
   const text = s.months
     ? `${day(d)} ${monthOf(d, s)}`
@@ -31,7 +31,7 @@ export function shortDate(d: ISODate, s: ShortDateStyle, opts: { weekday?: boole
   return opts.weekday ? `${weekday(d, s.locale)}, ${text}` : text;
 }
 
-/** "12–18 окт", "28 сен – 4 окт"; one day is that day */
+/** "12–18 Oct", "28 Sep – 4 Oct"; one day is that day */
 export function shortRange(from: ISODate, to: ISODate, s: ShortDateStyle): string {
   if (from.slice(0, 10) === to.slice(0, 10)) return shortDate(from, s);
   if (!s.months)

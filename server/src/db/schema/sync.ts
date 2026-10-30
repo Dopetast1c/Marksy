@@ -182,7 +182,7 @@ export const apiDriftEvents = pgTable(
 );
 
 /**
- * «Понятно, скрыть» on a drift notice (design.md 5.6): per family, so one family hiding it never hides it from another
+ * "Got it, hide" (sync.drift.ack) on a drift notice (design.md 5.6): per family, so one family hiding it never hides it from another
  * family whose diaries use the same provider. Goes with the event (retention: 10.4).
  */
 export const apiDriftAcks = pgTable(

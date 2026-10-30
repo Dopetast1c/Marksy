@@ -28,7 +28,7 @@ describe('smoke:lan', () => {
     expect(shape).not.toMatch(/Иванова|Гимназия/);
     expect(countsOf(body)).toBe('1 items');
     // a map keyed by data never shows its keys
-    const keyed = shapeOf({ byStudent: { '00aa11bb-2222-4333-8444-555566667777': 1, Иванова: 2, w20261019: 3 } });
+    const keyed = shapeOf({ byStudent: { '00aa11bb-2222-4333-8444-555566667777': 1, ['Иванова']: 2, w20261019: 3 } });
     expect(keyed).toBe('{byStudent: {<key>: number, <key>: number, <key>: number}}');
     expect(countsOf({ period: {}, subjects: [1, 2], events: [] })).toBe('subjects 2, events 0');
   });

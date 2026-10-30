@@ -2,10 +2,10 @@ import { bandOf, compare, trendTolerance } from './scale';
 import type { BandRole, GradingScale } from './types';
 
 // The family's "what matters to us" rules (docs/design.md 6.4). Defaults come from the scale; the stored values are
-// edited in the app ("Что считать проблемой") and passed in wherever a rule asks "is this low" or "is this a drop".
+// edited in the app ("What counts as a problem") and passed in wherever a rule asks "is this low" or "is this a drop".
 
 export interface FamilyRules {
-  /** Marks in these bands are "low" in Внимание and hints. Default: the critical band. */
+  /** Marks in these bands are "low" in Attention (screen.events) and hints. Default: the critical band. */
   lowMarkBands: BandRole[];
   /** Alternative to bands: a mark worse than this value is low. Wins over lowMarkBands when set. */
   lowMarkBelow?: number;
@@ -13,7 +13,7 @@ export interface FamilyRules {
   dropStep: number;
   /** A drop needs at least this many marks in the current period. */
   dropMinMarks: number;
-  /** Lessons without a mark before a subject counts as "давно без оценки". */
+  /** Lessons without a mark before a subject counts as "No mark for a while" (lesson.signal.call). */
   callAfter: number;
 }
 

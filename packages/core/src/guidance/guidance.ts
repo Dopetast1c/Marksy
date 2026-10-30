@@ -40,7 +40,7 @@ export interface GuidanceLesson {
   id: string;
   date: ISODate;
   subjectId: string;
-  /** Does the lesson carry the family's test tag («Контрольная»)? Decided by the server from tags, never here. */
+  /** Does the lesson carry the family's test tag ("Test")? Decided by the server from tags, never here. */
   isTest: boolean;
   lessonType?: LessonType;
   hasHomework: boolean;
@@ -222,7 +222,7 @@ const SUBJECT_RULES: SubjectRule[] = [
   },
 ];
 
-/** "Обратить внимание" on the subject screen: at most five hints, most severe first; "all is even" when none apply. */
+/** "Worth a look" (subject.attention) on the subject screen: at most five hints, most severe first; "all is even" when none apply. */
 export function subjectHints(input: SubjectGuidanceInput, limit = 5): Hint[] {
   const newestFirst = [...input.termMarks].sort((a, b) => b.date.localeCompare(a.date));
   const termAverage = average(input.scale, input.termMarks);
@@ -312,7 +312,7 @@ export function lessonHint({ scale, rules, caps, lesson, termMarks }: LessonHint
   return null;
 }
 
-/** The timetable day card "Обратить внимание": the top hints of the day's lessons by severity. */
+/** The timetable day card "Worth a look" (subject.attention): the top hints of the day's lessons by severity. */
 export function topHints(hints: readonly (Hint | null)[], limit = 3): Hint[] {
   return hints
     .filter((h): h is Hint => h !== null)

@@ -149,7 +149,7 @@ export async function subjectsOf(db: Db, ctx: ChildContext) {
     .orderBy(asc(subjects.name));
 }
 
-/** A subject as rows carry it: id, name as the diary sends it, and the family's colour (null = «авто», 6.6) */
+/** A subject as rows carry it: id, name as the diary sends it, and the family's colour (null = "auto", color.auto, 6.6) */
 export const refOf = (ctx: Pick<ChildContext, 'colors'>, id: string, name: string) => ({
   id,
   name,
@@ -173,8 +173,8 @@ export const subjectInfo = (ctx: Pick<ChildContext, 'colors'>, s: typeof subject
 });
 
 /**
- * The lessons of a range with everything the schedule shows: «готово» (the author's name only for this family's
- * members, design.md 7.1), «урока не будет», own homework, the teacher's comment
+ * The lessons of a range with everything the schedule shows: "Ready" (lesson.ready; the author's name only for this
+ * family's members, design.md 7.1), "Lesson won't take place" (lessonMenu.cancel), own homework, the teacher's comment
  */
 export async function lessonsIn(db: Db, ctx: ChildContext, range: DateRange) {
   const rows = await db
@@ -228,18 +228,19 @@ export async function lessonsIn(db: Db, ctx: ChildContext, range: DateRange) {
       homework: l.homework,
       homeworkDueDate: l.homeworkDueDate,
       hasAttachments: l.hasAttachments,
-      // the diary's own cancellation, or «Урока не будет» set in the family, which gives way as soon as the diary
-      // records the lesson (the collector drops the override too)
+      // the diary's own cancellation, or "Lesson won't take place" (lessonMenu.cancel) set in the family, which gives
+      // way as soon as the diary records the lesson (the collector drops the override too)
       cancelled: l.cancelled || (!!o?.cancelled && !lm.length && !absent),
       ready: p ? { at: p.doneAt, by: who(p.doneBy) } : null,
       ownHomework: own
         .filter((h) => h.lessonId === l.id)
         .map((h) => ({ id: h.id, text: h.title, by: who(h.createdBy) })),
-      // the пометки «оценка»: the kind of work and the teacher's comment only when the diary has them (D50)
+      // the mark notes ("Mark for the lesson:", lesson.markNote): the kind of work and the teacher's comment only when the diary has them (D50)
       marks: lm.map((m) => ({ ...chipOf(ctx.scale, m), workType: m.workType, comment: m.comment })),
       absent,
       teacherComment: remarks.find((r) => r.lessonId === l.id)?.text ?? null,
-      // the family's tags (6.3): due here (the тег note; «Контрольная» makes it a test), set here («задали»)
+      // the family's tags (6.3): due here (the tag note; the test tag makes it a test), set here ("Set: …",
+      // lesson.taggedHomework)
       tags: hits
         .filter((h) => h.dueLessonId === l.id)
         .map((h) => ({ tag: h.tag, field: h.field, snippet: h.snippet, setOn: h.sourceDate })),

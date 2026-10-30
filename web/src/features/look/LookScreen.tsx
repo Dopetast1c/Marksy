@@ -20,8 +20,8 @@ import { fontFamily, loadFont } from '../../lib/fonts';
 import { subjectStyle } from '../../lib/subject-color';
 import { SubjectColorGrid } from '../subjects/SubjectSettings';
 
-// Оформление (docs/design.md 5.6a, D46): personal, saved to the person and applied on every device they sign in on.
-// Тема and Фон: a palette (it changes only the page and the accent) or a wallpaper (five notebook patterns or an own
+// Appearance (look.title; docs/design.md 5.6a, D46): personal, saved to the person and applied on every device they
+// sign in on. Theme (look.theme) and Background (look.background): a palette (it changes only the page and the accent) or a wallpaper (five notebook patterns or an own
 // picture, with how much it shows between the cards); one of five body fonts, each shown in itself; and the subjects'
 // colours, which are the family's (6.6) and only listed here. Every change applies at once.
 
@@ -32,7 +32,7 @@ const PALETTES = ['sea', 'forest', 'sky', 'plum', 'berry', 'amber', 'mint', 'gra
 const WALLPAPERS = ['cell', 'line', 'dots', 'doodle', 'waves'] as const;
 const FONTS = ['manrope', 'nunito', 'ptsans', 'inter', 'rubik'] as const;
 
-/** The line under «Оформление» in Ещё: theme · palette or wallpaper · font */
+/** The line under Appearance (look.title) in More (tabs.more): theme · palette or wallpaper · font */
 export function lookSummary(t: ReturnType<typeof useT>, a: Appearance): string {
   return [
     t(`look.theme.${a.theme}`),
@@ -331,7 +331,7 @@ export function LookScreen() {
   );
 }
 
-/** Цвета предметов (5.6a): the child this device continues with, their subjects and colours; the family's colours */
+/** Subject colours (look.subjects; 5.6a): the child this device continues with, their subjects and colours; the family's colours */
 function SubjectColors() {
   const t = useT();
   const me = useMe();

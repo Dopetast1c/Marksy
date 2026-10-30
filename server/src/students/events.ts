@@ -7,7 +7,7 @@ import type { MarkDiff } from '../db/schema';
 import type { ChildContext, ResolvedPeriod } from './context';
 import { absencesIn, chipOf, factOf, marksIn, refOf, refOrNull, remarksIn, subjectsOf } from './data';
 
-// Внимание (docs/design.md 5.2a): computed on read from what sync recorded, never stored. Facts only: what a row says
+// Attention (screen.events; docs/design.md 5.2a): computed on read from what sync recorded, never stored. Facts only: what a row says
 // is data (a mark, a subject, a date), the words come from the app's i18n. Rows about the past follow the selected
 // instance; rows about the future (holidays ahead) appear only in the current one. Ranked by severity, then date.
 

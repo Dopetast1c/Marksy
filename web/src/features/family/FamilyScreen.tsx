@@ -17,10 +17,11 @@ import { intlLocale, useT } from '../../i18n';
 import { appPath } from '../../lib/base';
 import { ConnectForm } from '../auth/ConnectForm';
 
-// Семья (docs/design.md 5.6, 7.1–7.3, ux-principles D54), for the admin and parents: the requests to join (admin),
-// the members with their role and which children they see, an invite, the children (avatar, «Также следит другая
-// семья», nothing more about that family), the diaries (system, login, status, children), «Добавить дневник», and the
-// family's own switches (admin): «Подсказки» for everyone, whether parents may invite. Passwords of diaries are never
+// Family (family.title; docs/design.md 5.6, 7.1–7.3, ux-principles D54), for the admin and parents: the requests to
+// join (admin), the members with their role and which children they see, an invite, the children (avatar, "Another
+// family follows too" family.child.shared, nothing more about that family), the diaries (system, login, status,
+// children), "Add a diary" (family.addDiary), and the family's own switches (admin): "Tips for the whole family"
+// (family.guidance), whether parents may invite. Passwords of diaries are never
 // shown; the members sign in to Marksy with their own logins.
 
 type Member = FamilyView['members'][number];

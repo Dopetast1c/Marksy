@@ -4,7 +4,7 @@ import { join } from 'node:path';
 // The local deny-list of the pre-commit guard (CLAUDE.md "Real diary runs", .githooks/pre-commit): the names and ids
 // of the latest real responses, so that none of them can reach a commit. It lives in data/ (gitignored) and holds the
 // values themselves, like the raw responses beside it; the guard reports a file and a line, never the value.
-// Given names and patronymics are left out as single words on purpose: they are common words («Петровна», «Анна»)
+// Given names and patronymics are left out as single words on purpose: they are common words (Petrovna, Anna)
 // that fictional examples use too, and alone they point to nobody; they still count inside a full name.
 
 export interface DenyList {
@@ -32,7 +32,7 @@ export function denyValues(responses: readonly { name: string; raw: unknown }[])
     if (Array.isArray(v)) return v.forEach((x) => walk(x, key, endpoint, depth));
     if (v && typeof v === 'object') {
       const o = v as Record<string, unknown>;
-      // a teacher as an object (6.10.3): "Фамилия Имя" as a phrase, the family name as a word
+      // a teacher as an object (6.10.3): "Surname Name" as a phrase, the family name as a word
       if (key === 'teacher' && typeof o.surname === 'string' && typeof o.name === 'string')
         p.add(`${o.surname} ${o.name}`.trim().toLowerCase());
       // the class itself (6.6): its uuid is in every diary URL of the child

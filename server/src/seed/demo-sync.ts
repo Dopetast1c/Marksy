@@ -8,10 +8,10 @@ import { fromLocal, localTime } from '../sync/time';
 import type { Tx } from '../sync/upsert';
 
 // The demo family's diaries (docs/build-plan.md M5e): one fictional login per child's diary, as the prototype's
-// Синхронизация shows them («a.petrov · Demo diary (full)» for Милена, «andrey.p · Demo diary (lite)» for Марк), with
+// Sync (sync.title) shows them ("a.petrov · Demo diary (full)" for Milena, "andrey.p · Demo diary (lite)" for Mark), with
 // the last school days' runs (one of them failed, one manual try held back by the login interval), the weeks they
 // verified, a finished re-scan and one drift notice. No credentials are stored: the scheduler takes only accounts
-// that have them, and «Обновить сейчас» says it is a demo, so nothing ever reads these diaries.
+// that have them, and "Refresh now" (sync.refresh) says it is a demo, so nothing ever reads these diaries.
 
 /** The prototype's login names (docs/mockups.html), fictional */
 export const DEMO_DIARY_LABELS = { k: 'a.petrov', m: 'andrey.p' } as const;
@@ -96,7 +96,7 @@ export async function insertDemoDiaries(
         });
       }
     });
-    // a parent's «Обновить сейчас» a little after Милена's last run, held back by the login interval
+    // a parent's "Refresh now" (sync.refresh) a little after Milena's last run, held back by the login interval
     const last = runs.at(-1);
     const manualAt = key === 'k' && last && fromLocal(localTime(last.startedAt, tz).date, MANUAL_MINUTE, tz);
     if (manualAt && manualAt < now && manualAt.getTime() - last.startedAt.getTime() < 60 * 60_000)

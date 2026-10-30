@@ -1,5 +1,5 @@
-// The body fonts of Оформление (docs/design.md 5.6a): all served from the app's own origin (@fontsource, 14.1), and
-// only the chosen one is loaded; Manrope, the default, comes with the app's stylesheet.
+// The body fonts of Appearance (look.title; docs/design.md 5.6a): all served from the app's own origin (@fontsource,
+// 14.1), and only the chosen one is loaded; Manrope, the default, comes with the app's stylesheet.
 
 const LOADERS: Record<string, () => Promise<unknown>> = {
   nunito: () =>

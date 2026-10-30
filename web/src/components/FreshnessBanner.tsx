@@ -8,7 +8,7 @@ import { whenText } from '../lib/when';
 import { ChevIcon } from './icons';
 
 // One banner under the header of every student screen when the data is not fresh (ux-principles D22). For the admin
-// and parents it opens Синхронизация, which says what happened and what the next run will take; a student has no
+// and parents it opens Sync (sync.title), which says what happened and what the next run will take; a student has no
 // such screen, so for them it stays a plain line without a chevron. When the server does not answer (an update
 // restarts it, the host is off), the data already on screen stays and the banner says how old it is.
 
@@ -32,7 +32,7 @@ export function FreshnessBanner({ studentId }: { studentId: string }) {
       ? 'bg-accent-soft text-accent'
       : 'bg-band-low-bg text-band-low-fg';
   const cls = `rounded-md px-3 py-2 text-[12.5px] leading-[1.35] ${tone}`;
-  // nothing to open while the server is away, and a student has no Синхронизация
+  // nothing to open while the server is away, and a student has no Sync screen
   if (me.data?.family?.role === 'student' || f.kind === 'unreachable')
     return (
       <p role="status" className={cls}>

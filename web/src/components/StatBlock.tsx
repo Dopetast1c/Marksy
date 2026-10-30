@@ -8,16 +8,16 @@ import { ChangeArrow } from './ChangeArrow';
 import { numbers } from '../lib/numbers';
 
 // StatBlock (CLAUDE.md "One kind of information, one component", ux-principles principle 2, D5, D23): the average and
-// the count with what they were in the instance before, and the band distribution. On Главная it is split: the two
-// tiles under the navigator (StatTiles), the band card in Статистика (BandCard); the subject screen uses the same
+// the count with what they were in the instance before, and the band distribution. On Home (tabs.home) it is split:
+// the two tiles under the navigator (StatTiles), the band card in Statistics (home.stats; BandCard); the subject screen uses the same
 // pieces. Every number comes from the API on the child's scale; formatting and band ranges from core's grading.
 //
-// Missing data is a state, never a zero (D23): no arrow without two real values; "—" for no marks; "было 0" is hidden.
+// Missing data is a state, never a zero (D23): no arrow without two real values; "—" for no marks; "was 0" (stat.was) is hidden.
 
 type Comparison = Schemas['Comparison'];
 type Band = Schemas['BandCount'];
 
-/** A value in its band colour on a plain background (the average of a tile, a lesson's «Средняя оценка») */
+/** A value in its band colour on a plain background (the average of a tile, a lesson's "Average mark:", lesson.facts.average) */
 export const BAND_TEXT = {
   critical: 'text-band-critical-fg',
   low: 'text-band-low-fg',
@@ -49,7 +49,7 @@ function Tile({ label, value, tone, hint }: { label: string; value: ReactNode; t
 
 const was = (text: string) => <b className="font-bold text-ink2">{text}</b>;
 
-/** The two tiles of the brief row: Средний балл and Оценок, each with "было" */
+/** The two tiles of the brief row: Average (stat.average) and Marks (stat.count), each with "was" (stat.was) */
 export function StatTiles({
   scale,
   comparison,
@@ -113,7 +113,7 @@ export function StatTiles({
   );
 }
 
-/** The two tiles of a year without marks (D49): Уроков and Заданий, with "было" */
+/** The two tiles of a year without marks (D49): Lessons (stat.lessons) and Homework (stat.homework), with "was" */
 export function LessonTiles({ tiles }: { tiles: NonNullable<Overview['lessonTiles']> }) {
   const t = useT();
   const tile = (label: string, v: number, p: number | null) => (
@@ -132,7 +132,8 @@ export function LessonTiles({ tiles }: { tiles: NonNullable<Overview['lessonTile
   );
 }
 
-/** «По градациям»: four fixed rows per column (range, count with arrow, bar, "было"), the ranges always on one line */
+/** "By band" (stat.bands): four fixed rows per column (range, count with arrow, bar, "was"), the ranges always on one
+ * line */
 export function BandCard({
   scale,
   bands,

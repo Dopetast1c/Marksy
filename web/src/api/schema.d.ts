@@ -260,7 +260,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** Your own settings: «Подсказки» (design.md 5.6) and Оформление (5.6a), any part of it */
+        /** Your own settings: Tips (more.guidance, design.md 5.6) and Appearance (look.title, 5.6a), any part of it */
         patch: {
             parameters: {
                 query?: never;
@@ -471,7 +471,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Семья: members, diary accounts, children, choices to make, join requests */
+        /** Family (family.title): members, diary accounts, children, choices to make, join requests */
         get: {
             parameters: {
                 query?: never;
@@ -548,7 +548,7 @@ export interface paths {
         };
         options?: never;
         head?: never;
-        /** The family’s switches (admin): «Подсказки» for everyone, whether parents may invite */
+        /** The family’s switches (admin): tips for everyone (family.guidance), whether parents may invite */
         patch: {
             parameters: {
                 query?: never;
@@ -596,7 +596,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Add a diary to the current family (Семья → «Добавить дневник») */
+        /** Add a diary to the current family (Family → "Add a diary", family.addDiary) */
         post: {
             parameters: {
                 query?: never;
@@ -679,7 +679,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** «Присоединиться» or «Следить из своей семьи» for a child another family follows */
+        /** "Join that family" (match.join) or "From your own family" (match.follow) for a child another family follows */
         post: {
             parameters: {
                 query?: never;
@@ -876,7 +876,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** «Перестать следить» (admin): stopped while a login of the family shows the child, else removed */
+        /** "Stop following" (family.child.stop, admin): stopped while a login of the family shows the child, else removed */
         delete: {
             parameters: {
                 query?: never;
@@ -991,7 +991,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** «Следить снова» (admin): a stopped child is followed again, with the whole history */
+        /** "Follow again" (family.child.followAgain, admin): a stopped child is followed again, with the whole history */
         post: {
             parameters: {
                 query?: never;
@@ -1046,7 +1046,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** «Удалить данные» of a stopped child (admin), only when no other family follows them */
+        /** "Delete the data" (family.child.delete) of a stopped child (admin), only when no other family follows them */
         delete: {
             parameters: {
                 query?: never;
@@ -1599,7 +1599,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** «С кого начнём?»: every child the person sees, with what the card shows, in one request */
+        /** "Who first?" (pick.title): every child the person sees, with what the card shows, in one request */
         get: {
             parameters: {
                 query?: never;
@@ -1775,7 +1775,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Главная: the period on the child scale, last day, movers, Внимание, next day, «Сейчас» */
+        /** Home (screen.home): the period on the child scale, last day, movers, Attention (screen.events), next day, the Now card (nowCard) */
         get: {
             parameters: {
                 query?: {
@@ -1900,7 +1900,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Оценки: marks and teacher comments by day, newest first (cursor pages) */
+        /** Marks (screen.marks): marks and teacher comments by day, newest first (cursor pages) */
         get: {
             parameters: {
                 query?: {
@@ -1971,7 +1971,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Динамика over all marks: the buckets of the selected period (TrendCard on Главная) */
+        /** Trend (stat.trend) over all marks: the buckets of the selected period (TrendCard on Home) */
         get: {
             parameters: {
                 query?: {
@@ -2108,7 +2108,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Внимание: ranked facts of the period; Главная shows the first five of the same list */
+        /** Attention (screen.events): ranked facts of the period; Home shows the first five of the same list */
         get: {
             parameters: {
                 query?: {
@@ -2175,7 +2175,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Школа: the child’s bells, terms and holidays of the current school year (design.md 5.9) */
+        /** School (more.school): the child’s bells, terms and holidays of the current school year (design.md 5.9) */
         get: {
             parameters: {
                 query?: never;
@@ -2263,7 +2263,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Предметы: every subject with its average, direction and last marks under the mark filter */
+        /** Subjects (screen.subjects): every subject with its average, direction and last marks under the mark filter */
         get: {
             parameters: {
                 query?: {
@@ -2353,7 +2353,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Предмет: settings, «О предмете», «Обратить внимание», stats under the mark filter, the timeline, the coming lessons, the terms */
+        /** The subject screen: settings, "About the subject" (subject.about.title), "Worth a look" (subject.attention), stats under the mark filter, the timeline, the coming lessons, the terms */
         get: {
             parameters: {
                 query?: {
@@ -2464,7 +2464,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Динамика of one subject under the mark filter (TrendCard on Предмет) */
+        /** Trend (stat.trend) of one subject under the mark filter (TrendCard on the subject screen) */
         get: {
             parameters: {
                 query?: {
@@ -2530,7 +2530,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** The subject’s colour for the whole family (6.6): a palette key, or null for «Авто» */
+        /** The subject’s colour for the whole family (6.6): a palette key, or null for "Auto" (color.auto.title) */
         put: {
             parameters: {
                 query?: never;
@@ -2596,7 +2596,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** The subject’s goal for the term (5.4): a whole value of the child’s scale, or null for «Без цели» */
+        /** The subject’s goal for the term (5.4): a whole value of the child’s scale, or null for "No goal" (subject.goal.none) */
         put: {
             parameters: {
                 query?: never;
@@ -2669,7 +2669,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Расписание: today, tomorrow, the next school day, or a week (week=0 this week, 1 next, -1 last) */
+        /** Timetable (screen.schedule): today, tomorrow, the next school day, or a week (week=0 this week, 1 next, -1 last) */
         get: {
             parameters: {
                 query?: {
@@ -2728,7 +2728,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The days of the school year with lessons and how many (the Расписание navigator and its picker, 5.5) */
+        /** The days of the school year with lessons and how many (the Timetable navigator and its picker, 5.5) */
         get: {
             parameters: {
                 query?: never;
@@ -2793,7 +2793,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Итоги by term: the posted final, or the running average until it is posted, and the year */
+        /** Finals (finals.screen) by term: the posted final, or the running average until it is posted, and the year */
         get: {
             parameters: {
                 query?: never;
@@ -2849,7 +2849,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Итоги by year: each subject’s year final over the school years Marksy has, the running year in italics */
+        /** Finals (finals.screen) by year: each subject’s year final over the school years Marksy has, the running year in italics */
         get: {
             parameters: {
                 query?: never;
@@ -3012,7 +3012,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** «Готово» on a lesson that has not passed (6.5): who and when are kept, the history in lesson_prep_events */
+        /** "Ready" (lesson.ready) on a lesson that has not passed (6.5): who and when are kept, the history in lesson_prep_events */
         put: {
             parameters: {
                 query?: never;
@@ -3072,7 +3072,7 @@ export interface paths {
             };
         };
         post?: never;
-        /** Take «готово» off a lesson that has not passed: the lesson goes back to open (6.5) */
+        /** Take "Ready" (lesson.ready) off a lesson that has not passed: the lesson goes back to open (6.5) */
         delete: {
             parameters: {
                 query?: never;
@@ -3144,7 +3144,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** «Урока не будет» (5.5): out of the counts and reminders; the diary wins once it records the lesson */
+        /** "Lesson won't take place" (lessonMenu.cancel, 5.5): out of the counts and reminders; the diary wins once it records the lesson */
         put: {
             parameters: {
                 query?: never;
@@ -3200,7 +3200,7 @@ export interface paths {
             };
         };
         post?: never;
-        /** «Вернуть урок»: the lesson is back exactly as it was (5.5) */
+        /** "Bring the lesson back" (lessonMenu.restore): the lesson is back exactly as it was (5.5) */
         delete: {
             parameters: {
                 query?: never;
@@ -3269,7 +3269,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** «Добавить задание»: homework the diary does not have, shown like the diary’s (6.5); one per lesson */
+        /** "Add homework" (lessonMenu.addHomework): homework the diary does not have, shown like the diary’s (6.5); one per lesson */
         post: {
             parameters: {
                 query?: never;
@@ -3345,7 +3345,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** «Удалить задание»: the family’s own homework only (6.5) */
+        /** "Delete homework" (homeworkSheet.remove): the family’s own homework only (6.5) */
         delete: {
             parameters: {
                 query?: never;
@@ -3400,7 +3400,7 @@ export interface paths {
         };
         options?: never;
         head?: never;
-        /** «Изменить задание»: the family’s own homework only (6.5) */
+        /** "Edit homework" (lessonMenu.editHomework): the family’s own homework only (6.5) */
         patch: {
             parameters: {
                 query?: never;
@@ -3892,7 +3892,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** «Обновить сейчас»: one run of a diary account within its login budget (admin, parent) */
+        /** "Refresh now" (sync.refresh): one run of a diary account within its login budget (admin, parent) */
         post: {
             parameters: {
                 query?: never;
@@ -3959,7 +3959,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** «Перепроверить»: the weeks of the current term or school year are read again by the next runs, then one run now */
+        /** "Check the history again" (sync.rescan.button): the weeks of the current term or school year are read again by the next runs, then one run now */
         post: {
             parameters: {
                 query?: never;
@@ -4030,7 +4030,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** «Понятно, скрыть» for a change in the diary’s API (admin, parent) */
+        /** "Got it, hide" (sync.drift.ack) for a change in the diary’s API (admin, parent) */
         post: {
             parameters: {
                 query?: never;

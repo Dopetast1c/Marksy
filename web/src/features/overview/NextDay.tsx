@@ -7,10 +7,11 @@ import { MoreButton, SectionHeader } from '../../components/Section';
 import { dateStyle, useT } from '../../i18n';
 import { todayIn } from '../../lib/time';
 
-// The next school day on Главная (docs/design.md 5.2, ux-principles D33, D37): the same two-bar rows as Расписание in
-// compact mode, with the ⋯ menu, missing slots as rows of their own («урока нет» before a late start, «окно» mid-day,
-// with «ко 2-му, к 09:25» in the heading), the lesson count in the heading and «Всё расписание» under the list, which
-// opens День on this day.
+// The next school day on Home (tabs.home; docs/design.md 5.2, ux-principles D33, D37): the same two-bar rows as
+// Timetable (screen.schedule) in compact mode, with the ⋯ menu, missing slots as rows of their own ("no lesson"
+// lesson.noLesson before a late start, "free period" lesson.window mid-day, with "from lesson 2, at 09:25"
+// home.startsLater in the heading), the lesson count in the heading and "Whole timetable" (home.allSchedule) under the
+// list, which opens Day (schedule.day) on this day.
 
 export function NextDay({
   studentId,
@@ -29,11 +30,12 @@ export function NextDay({
   const first = [...held].filter((l) => l.slot != null).sort((a, b) => a.slot! - b.slot!)[0];
 
   const tomorrow = day.date === addDays(todayIn(tz), 1);
-  // short, so the lesson count and «ко 2-му, к 09:25» fit beside it on a 360 px phone: «Завтра, 22 окт», «пн, 26 окт»
+  // short, so the lesson count and "from lesson 2, at 09:25" fit beside it on a 360 px phone: "Tomorrow, 22 Oct",
+  // "Mon, 26 Oct"
   const title = tomorrow
     ? `${t('home.tomorrow')}, ${shortDate(day.date, ds)}`
     : shortDate(day.date, ds, { weekday: true });
-  // «ко 2-му», «к 3-му»: the second lesson takes its own form in some languages
+  // home.startsLater and its _second form: the second lesson takes its own wording in some languages (Russian)
   const late =
     first && first.slot! > 1
       ? t(first.start ? 'home.startsLater' : 'home.startsLaterNoTime', {

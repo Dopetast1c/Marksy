@@ -137,7 +137,8 @@ export function authRoutes(deps: AppDeps, limiters: Limiters): Router {
     {
       method: 'patch',
       path: '/api/me/settings',
-      summary: 'Your own settings: «Подсказки» (design.md 5.6) and Оформление (5.6a), any part of it',
+      summary:
+        'Your own settings: Tips (more.guidance, design.md 5.6) and Appearance (look.title, 5.6a), any part of it',
       tags: ['auth'],
       access: 'session',
       body: z.object({ guidance: z.boolean().optional(), appearance: appearanceIn.optional() }),

@@ -4,8 +4,8 @@ import { students, users } from './family';
 import { lessons } from './diary';
 import { subjects } from './school';
 
-// What the family does around lessons: "готово" ticks, "урока не будет", study sessions (docs/design.md 5.5, 6.5,
-// 6.7). These rows belong to the family, not to the diary: a lesson keeps them when its external id changes.
+// What the family does around lessons: "Ready" ticks (lesson.ready), "Lesson won't take place" (lessonMenu.cancel),
+// study sessions (docs/design.md 5.5, 6.5, 6.7). These rows belong to the family, not to the diary: a lesson keeps them when its external id changes.
 
 const studentRef = () =>
   uuid('student_id')
@@ -78,7 +78,7 @@ export const studySessionEvents = pgTable(
   (t) => [index('study_session_events_session_idx').on(t.sessionId), index('study_session_events_at_idx').on(t.at)],
 );
 
-/** "Урока не будет"; dropped when the diary records a mark or an absence for the lesson (docs/design.md 5.5) */
+/** "Lesson won't take place" (lessonMenu.cancel); dropped when the diary records a mark or an absence for the lesson (docs/design.md 5.5) */
 export const lessonOverrides = pgTable(
   'lesson_overrides',
   {

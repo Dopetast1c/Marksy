@@ -2,7 +2,7 @@ import { formatAverage, formatBandRange, formatValue } from '@marksy/core';
 import type { GradingScale } from '@marksy/core';
 import { intlLocale } from '../i18n';
 
-// The one way the app writes a number of the scale (docs/i18n.md 2): averages, "было", goals, finals, band ranges.
+// The one way the app writes a number of the scale (docs/i18n.md 2): averages, "was" (stat.was), goals, finals, band ranges.
 // The decimals are the child's scale's, the separator the interface language's (ru «8,3», en «8.3»); nothing is
 // written with toFixed or a separator of its own. Lint keeps core's formatters out of every other file.
 

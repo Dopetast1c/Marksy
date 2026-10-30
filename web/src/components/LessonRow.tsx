@@ -38,10 +38,11 @@ import { BAND_TEXT } from './StatBlock';
 
 // A lesson (docs/design.md 5.5, ux-principles D33, D34, D38, D39, D41): the two-bar row. Time on a left axis (number,
 // start, end with bells), a 3 px square bar in the subject colour, subject bold, the room and subgroup, topic muted,
-// homework plain (the diary's and the family's own, both when both exist); under it the пометки, each with its icon on
-// the left axis and a short bar in its own colour, one fact per note, in the order of 5.5. A lesson that has passed
-// (core's lessonPassed) keeps only its оценка, пропуск and the teacher's comment, and has no ⋯ menu. `compact`
-// (Главная, «Ближайшие уроки») keeps готово, тип урока, тег and задали: no факты, сигнал or подсказка. Everything you
+// homework plain (the diary's and the family's own, both when both exist); under it the notes (LessonNote), each with
+// its icon on the left axis and a short bar in its own colour, one fact per note, in the order of 5.5. A lesson that
+// has passed (core's lessonPassed) keeps only its mark, absence and the teacher's comment, and has no ⋯ menu.
+// `compact` (Home tabs.home, "Next lessons" subject.upcoming) keeps ready, lesson type, tag and homework set: no facts,
+// signal or advice. Everything you
 // can do with a lesson is its ⋯ menu (LessonMenu): the button, or a tap anywhere on the row but the subject name.
 // Missing slots are rows of their own (GapRow, D37).
 
@@ -193,7 +194,7 @@ export function LessonRow({
       </LessonNote>,
     );
   }
-  // оценка: one fact per note, the mark first (its band's bar), then the kind of work and the teacher's comment
+  // mark: one fact per note, the mark first (its band's bar), then the kind of work and the teacher's comment
   // without labels, only when the diary set them (D50)
   for (const m of lesson.marks) {
     notes.push(
@@ -235,7 +236,7 @@ export function LessonRow({
           <b className="text-ink">{t(`lesson.typeNote.${lesson.lessonType}`)}</b>
         </LessonNote>,
       );
-    // тег: due here, in the tag's tone; a homework hit says what was set and when
+    // tag: due here, in the tag's tone; a homework hit says what was set and when
     for (const h of lesson.tags)
       notes.push(
         <LessonNote
@@ -374,8 +375,8 @@ export function LessonRow({
 }
 
 /**
- * The large «готово» of simple mode (D41's one exception, design.md 5.7): the same lesson_prep tick as the menu's first
- * action, as a button a first-grader finds; pressed when the lesson is ready, a second press takes it back.
+ * The large "Ready" (lesson.simple.ready) of simple mode (D41's one exception, design.md 5.7): the same lesson_prep
+ * tick as the menu's first action, as a button a first-grader finds; pressed when the lesson is ready, a second press takes it back.
  */
 function ReadyButton({ studentId, lesson }: { studentId: string; lesson: RowLesson }) {
   const t = useT();
@@ -405,7 +406,8 @@ function ReadyButton({ studentId, lesson }: { studentId: string; lesson: RowLess
   );
 }
 
-/** An empty slot: «урока нет» before a late start, «окно» in the middle of the day (D37) */
+/** An empty slot: "no lesson" (lesson.noLesson) before a late start, "free period" (lesson.window) in the middle of
+ * the day (D37) */
 export function GapRow({
   slot,
   start,
@@ -437,7 +439,8 @@ type Bells = { days: number[]; periods: { slot: number; start: string; end: stri
 
 /**
  * The lessons of one day as one list (D34, D37): rows in slot order, the slots from 1 to the last lesson filled with
- * gap rows (a missing one before the first lesson that takes place is «урока нет», later an «окно»), their times from
+ * gap rows (a missing one before the first lesson that takes place is lesson.noLesson, later a lesson.window), their
+ * times from
  * the child's bells for that weekday. Without slot numbers the lessons are listed as they are.
  */
 export function DayLessons({

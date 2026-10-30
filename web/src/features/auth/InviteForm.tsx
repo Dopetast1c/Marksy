@@ -9,7 +9,7 @@ import { Button, Field } from '../../components/Field';
 import { i18n, rememberForUser, useT } from '../../i18n';
 import { errorText } from './errors';
 
-// «У меня есть код приглашения» (docs/design.md 5.1, 7.3): the code (or the /join/<code> link), what it is for (the
+// "I have an invite code" (invite.have; docs/design.md 5.1, 7.3): the code (or the /join/<code> link), what it is for (the
 // family, the role, the children), then a display name and a Marksy login and password; the person lands on the
 // children the admin assigned.
 

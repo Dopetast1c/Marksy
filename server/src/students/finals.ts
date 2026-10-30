@@ -7,7 +7,7 @@ import { localTime } from '../sync/time';
 import type { ChildContext, TermRow } from './context';
 
 // Finals as the screens read them (docs/design.md 5.3, 5.3a, 5.3b): the state of the current term for the entry row
-// («I четверть идёт, итоги после 31 окт» / «I четверть выставлена 15 октября»), the day a term's finals were posted,
+// ("Quarter I is on, finals after 31 Oct", finals.running / "Quarter I finals posted on 15 Oct", finals.posted), the day a term's finals were posted,
 // and the italic year value until the teacher posts the year final. A final is the teacher's; nothing here invents one.
 
 export type FinalRow = typeof finalMarks.$inferSelect;
@@ -70,8 +70,8 @@ export function finalsState(ctx: ChildContext, finals: readonly FinalRow[]): Fin
 }
 
 /**
- * Last school year's year finals by subject name ("итог 2025/26: 8" under a subject): subjects are matched across years
- * by the name the diary gives them (6.1). Synced or entered by hand.
+ * Last school year's year finals by subject name ("final 2025/26: 8" under a subject, finals.lastYear): subjects are
+ * matched across years by the name the diary gives them (6.1). Synced or entered by hand.
  */
 export async function lastYearFinals(db: Db, ctx: ChildContext) {
   if (!ctx.year) return null;

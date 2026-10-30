@@ -20,8 +20,8 @@ import { subjectStyle } from '../../lib/subject-color';
 import { todayIn } from '../../lib/time';
 import { usePeriod } from '../../state/store';
 
-// Оценки (docs/design.md 5.3, ux-principles D27, D28, D30, D56): the list, nothing else; the average and the bands are on
-// Главная. The period control and the mark filter in the header, the navigator, the finals entry row, then the days,
+// Marks (screen.marks; docs/design.md 5.3, ux-principles D27, D28, D30, D56): the list, nothing else; the average and
+// the bands are on Home (tabs.home). The period control and the mark filter in the header, the navigator, the finals entry row, then the days,
 // newest first. In a day: the finals card on the day a term's finals were posted, the marks (the work type only when
 // the diary set one, no placeholder), the absences as quiet rows (never marks), the teacher's comments without a mark,
 // the marks the teacher changed or removed. No "new" dot (D28) and no StatBlock (D30).
@@ -101,7 +101,7 @@ export function MarksScreen() {
           />
         );
       case 'comment':
-        // a teacher's comment opens its lesson's day in Расписание (D56)
+        // a teacher's comment opens its lesson's day in Timetable (screen.schedule; D56)
         return <CommentRow key={i.id} item={i} onClick={() => navigate(`/s/${studentId}/schedule?day=${i.date}`)} />;
       case 'markChanged':
       case 'markRemoved':

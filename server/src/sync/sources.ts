@@ -18,10 +18,10 @@ export const followKey = (studentId: string, familyId: string) =>
   `follow:${studentId}:${createHash('sha256').update(`${studentId}:${familyId}`).digest('hex').slice(0, 16)}`;
 
 /**
- * The family follows the child (again). A new link to a child another family already follows is «Следить из своей
- * семьи»: no approval, and that family's admins get one notice in their inbox naming only their own child, never this
- * family. Joining the other family is offered at connect only, never here. A link the family stopped («Перестать
- * следить», design.md 7.1) is left alone: no re-link, no notice. A new link gets every member's default rules.
+ * The family follows the child (again). A new link to a child another family already follows is "From your own
+ * family" (match.follow): no approval, and that family's admins get one notice in their inbox naming only their own
+ * child, never this family. Joining the other family is offered at connect only, never here. A link the family stopped
+ * ("Stop following", family.child.stop, design.md 7.1) is left alone: no re-link, no notice. A new link gets every member's default rules.
  */
 export async function linkFamily(
   db: Db,

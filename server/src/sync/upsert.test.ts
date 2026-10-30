@@ -89,7 +89,7 @@ describe('upsertRange: teacher remarks on lessons', () => {
   });
 });
 
-describe('upsertRange: «Урока не будет» gives way to the diary', () => {
+describe('upsertRange: "Lesson won\'t take place" (lessonMenu.cancel) gives way to the diary', () => {
   beforeEach(() => resetDb(db));
 
   it('a topic keeps the family’s cancellation; a mark for the lesson removes it', async () => {
