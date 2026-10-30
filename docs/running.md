@@ -397,6 +397,8 @@ To set it up, print the secret once and put it, with the address, into the repos
 
 The hook path is outside `BASE_PATH` and outside Cloudflare Access (section 11, step 4).
 
+**Without a tunnel** the hook cannot reach the host, and that is fine: the host learns about every release by polling, within about 5 minutes. Leave the two GitHub secrets unset until the tunnel exists. Until then, the release workflow ends with the warning that the nudge did not go through; it is expected, and the release itself is complete.
+
 ### Going back to an earlier release
 
 Every update leaves a backup taken just before it in `BACKUP_DIR/pre-update/`. To return to the release before an update:
