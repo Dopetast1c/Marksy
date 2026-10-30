@@ -37,7 +37,7 @@ const USAGE = `marksy <command>
                                 restore a backup into an empty database; the collector stays off afterwards
   sync enable|disable           switch the collector on this instance
   status                        versions, sync, backups, disk
-  init-env <file> [--credentials-key-from <file>] [--tz <zone>] [--show-hook-secret]
+  init-env <file> [--credentials-key-from <file>] [--tz <zone>] [--channel <c>] [--show-hook-secret]
                                 create or complete the production settings file
   connect [--provider <id>]     connect the diary from DIARY_LOGIN, DIARY_PASSWORD, MARKSY_DEV_EMAIL, MARKSY_DEV_PASSWORD
   seed [--reset]                the fictional demo family, to try Marksy without a diary account
@@ -164,7 +164,9 @@ async function cmdStatus(): Promise<number> {
 
 function cmdInitEnv(args: string[]): number {
   const target = args.find(
-    (a) => !a.startsWith('--') && a !== option(args, '--credentials-key-from') && a !== option(args, '--tz'),
+    (a) =>
+      !a.startsWith('--') &&
+      ![option(args, '--credentials-key-from'), option(args, '--tz'), option(args, '--channel')].includes(a),
   );
   if (!target) {
     console.error('init-env needs the file to write: marksy init-env /work/.env.production');
@@ -178,6 +180,7 @@ function cmdInitEnv(args: string[]): number {
     existing: existsSync(target) ? readFileSync(target, 'utf8') : null,
     credentialsFrom: from ? readFileSync(from, 'utf8') : null,
     ...(option(args, '--tz') && { tz: option(args, '--tz')! }),
+    ...(option(args, '--channel') && { channel: option(args, '--channel')! }),
   });
   mkdirSync(dirname(target), { recursive: true });
   writeFileSync(target, result.text, { mode: 0o600 });

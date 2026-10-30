@@ -32,8 +32,13 @@ describe('init-env', () => {
     ]);
   });
 
-  it('UTC unless a zone is given', () => {
-    expect(parseEnv(initEnv({ template, existing: null }).text).get('TZ')).toBe('UTC');
+  it('UTC unless a zone is given; channel 1 unless another is given', () => {
+    const plain = parseEnv(initEnv({ template, existing: null }).text);
+    expect(plain.get('TZ')).toBe('UTC');
+    expect(plain.get('UPDATE_CHANNEL')).toBe('1');
+    expect(parseEnv(initEnv({ template, existing: null, channel: 'preview' }).text).get('UPDATE_CHANNEL')).toBe(
+      'preview',
+    );
   });
 
   it('a second run changes no value: secrets stay, a missing key is appended, an empty secret is filled', () => {

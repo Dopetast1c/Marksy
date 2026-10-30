@@ -89,6 +89,8 @@ export interface InitEnvOptions {
   /** another env file (the development .env) to take CREDENTIALS_KEY from, so its stored diary passwords stay readable */
   credentialsFrom?: string | null;
   tz?: string;
+  /** UPDATE_CHANNEL of a new file (preview until the first release) */
+  channel?: string;
 }
 
 export interface InitEnvResult {
@@ -116,6 +118,7 @@ export function initEnv(opts: InitEnvOptions): InitEnvResult {
       return fresh[key as (typeof GENERATED)[number]];
     }
     if (key === 'TZ' && opts.tz) return opts.tz;
+    if (key === 'UPDATE_CHANNEL' && opts.channel) return opts.channel;
     return key in PRODUCTION ? PRODUCTION[key]! : templateValue;
   };
 

@@ -1,9 +1,9 @@
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { isAbsolute, resolve } from 'node:path';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, isAbsolute, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { initEnv } from '../src/ops/init-env';
 
-// `pnpm env:prod --out <file> [--credentials-key-from .env] [--tz <zone>]`: the production settings file on the
+// `pnpm env:prod --out <file> [--credentials-key-from .env] [--tz <zone>] [--channel <c>]`: the production settings file on the
 // development computer, the same as `marksy init-env` in the server image (docs/running.md, secrets). With
 // --credentials-key-from it takes CREDENTIALS_KEY from that file, so the diary passwords stored in a copied
 // development database stay readable. Prints key names only; it reads the other file but shows nothing of it.
@@ -31,7 +31,9 @@ const result = initEnv({
   existing: existsSync(out) ? readFileSync(out, 'utf8') : null,
   credentialsFrom: from ? readFileSync(resolve(repo, from), 'utf8') : null,
   ...(opt('--tz') && { tz: opt('--tz')! }),
+  ...(opt('--channel') && { channel: opt('--channel')! }),
 });
+mkdirSync(dirname(out), { recursive: true });
 writeFileSync(out, result.text, { mode: 0o600 });
 console.log(`${out}: ${result.added.length} keys added, ${result.kept.length} secrets kept as they were`);
 if (result.generated.length) console.log(`generated: ${result.generated.join(', ')}`);
