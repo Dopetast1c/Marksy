@@ -11,7 +11,7 @@ Check:
 - One kind of information, one component (`CLAUDE.md`): StatBlock, TrendCard, MarkChip, SubjectRow, LessonRow, LessonNote, LessonMenu, StudyBar, SessionRow, MarkFilter, PeriodBar plus PeriodNav. No local copies of these.
 - Every period screen has PeriodBar and PeriodNav; switching a child keeps screen, period and filters.
 - Colours only from tokens; subject colour for wayfinding, band colours for judgement, never swapped; 3 px square stripes.
-- Copy: i18n keys, Russian values match the prototype, neutral wording about study time and ready ticks, «беларуский» spelling.
+- Copy: i18n keys, Russian values match the prototype, neutral wording about study time and ready ticks, the Russian spelling of Belarusian from `packages/i18n/src/locales/GLOSSARY.md`.
 - Touch targets, 360 px width, no horizontal scroll.
 
 Report differences most important first, each with the file, what is wrong and what the prototype or the doc says.

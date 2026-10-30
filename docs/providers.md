@@ -52,7 +52,7 @@ docs/                   product docs (this file, design.md, api-spec.md, tokens.
 ```jsonc
 {
   "id": "by-eschools",
-  "name": "Электронная школа (e-schools.by)",
+  "name": "E-school (e-schools.by)",     // the system's own name; the real manifest has it as the system writes it
   "country": "BY",
   "region": null,                       // e.g. "DE-HE" for a German state, or a city
   "scope": "national",                  // national | regional | school
@@ -68,8 +68,8 @@ docs/                   product docs (this file, design.md, api-spec.md, tokens.
   "auth": {
     "kind": "password",                 // password | token | oauth (oauth: see section 6)
     "fields": [
-      { "key": "login", "label": { "ru": "Логин", "en": "Login" }, "type": "text" },
-      { "key": "password", "label": { "ru": "Пароль", "en": "Password" }, "type": "password" }
+      { "key": "login", "label": { "en": "Login", "ru": "…" }, "type": "text" },          // one label per interface language
+      { "key": "password", "label": { "en": "Password", "ru": "…" }, "type": "password" }
     ],
     "loginRequest": "POST /auth/login/*"   // the allow-list entry of the login call: every matching request is a login for the client (never retried, one per run), whatever the provider code says; null for token auth without a call
   },
@@ -214,9 +214,9 @@ export interface StudentRef {
                                         // or per tenant prefixes the id with it ("<tenant>:<pupil>")
   fullName: string;                     // as the system shows it
   givenName?: string; familyName?: string; middleName?: string;   // when the system has separate fields
-  displayName?: string;                 // short form for headers and notifications ("Кира", "Yuki"); the core derives it from givenName or the first token of fullName per manifest.nameOrder when absent
+  displayName?: string;                 // short form for headers and notifications ("Kira", "Yuki"); the core derives it from givenName or the first token of fullName per manifest.nameOrder when absent
   classExternalId?: string;             // the class or year group in the system, when its URLs or data need it (e-schools: every diary URL)
-  schoolId?: string; schoolName?: string; className?: string; grade?: number; gradeLabel?: string /* "Year 7", "K", "7Д" */
+  schoolId?: string; schoolName?: string; className?: string; grade?: number; gradeLabel?: string /* "Year 7", "K", "7D" (a class letter, in the system's own alphabet) */
   timezone?: string;                    // the school's IANA zone when it differs from the manifest's (a national system over several zones)
 }
 
@@ -235,8 +235,8 @@ export interface Subject {
   externalId: string; name: string;
   shortName?: string;                                             // the system's abbreviation, for narrow grids
   teacherExternalId?: string; teacherName?: string;               // the student's teacher (of the student's group on a split subject)
-  groupLabel?: string;                                            // the student's subgroup / set / section, as the system names it ("2-я подгруппа (мальчики)", "Set 3"); absent when the class is not split
-  level?: 'regular' | 'advanced' | 'honors' | 'ap' | 'ib' | 'other';   // regular is not shown; advanced: post-Soviet "углублённый"; honors / ap / ib: US course levels for weighted GPA
+  groupLabel?: string;                                            // the student's subgroup / set / section, as the system names it ("2nd subgroup (boys)", "Set 3"); absent when the class is not split
+  level?: 'regular' | 'advanced' | 'honors' | 'ap' | 'ib' | 'other';   // regular is not shown; advanced: the post-Soviet "advanced study" level; honors / ap / ib: US course levels for weighted GPA
   levelLabel?: string;                                            // the system's own wording, shown when level is not 'regular'
   lessonsPerWeek?: number;                                        // from the teaching plan; omitted when the system plans per fortnight or not at all
   credits?: number;                                               // US credit hours
@@ -248,7 +248,7 @@ export interface Lesson {
   date: ISODate; slot?: number; startTime?: string; endTime?: string;
   subjectExternalId: string; subjectName: string;
   teacherExternalId?: string; teacherName?: string;
-  room?: string;             // as the timetable shows it ("201", "Лаб. 2", "S12"); from the lesson or, on the server, the week template
+  room?: string;             // as the timetable shows it ("201", "Lab 2", "S12"); from the lesson or, on the server, the week template
   groupLabel?: string;       // the student's subgroup when the subject is split
   templateRef?: string;      // opaque key of the timetable entry the lesson comes from (e-schools: lesson_template_id); absent when the system has none
   topic?: string; homework?: string; homeworkDueDate?: ISODate; hasAttachments?: boolean;   // homeworkDueDate when the system states it; otherwise the core assumes the next lesson of the subject
@@ -300,7 +300,7 @@ export interface Mark {
   date: ISODate;             // the day the mark belongs to (the lesson date when attached)
   subjectExternalId: string; subjectName: string;
   lessonExternalId?: string; // absent for gradebook-style marks that are not tied to a lesson
-  raw: string;               // exactly what the system shows: "8", "7/9", "A-", "зач.", "17/20"
+  raw: string;               // exactly what the system shows: "8", "7/9", "A-", a "pass" abbreviation, "17/20"
   kind: 'numeric' | 'pass' | 'fail' | 'exempt' | 'not_assessed' | 'other';
   values: number[];          // numeric values on the provider's grading scale; [] for non-numeric
   workType?: WorkType;       // canonical category when it maps: 'classwork' | 'homework' | 'test' | 'quiz' | 'lab' | 'practical' | 'essay' | 'dictation' | 'oral' | 'project' | 'other'
@@ -323,7 +323,7 @@ export interface Mark {
 export interface HomeworkItem { externalId: string; subjectExternalId: string; subjectName: string; title: string; description?: string; setDate: ISODate; dueDate: ISODate; status?: 'set' | 'submitted' | 'late' | 'missing' | 'marked'; markExternalId?: string }
 
 // Behaviour and achievement events (merits, house points, demerits, detentions, praise notes).
-// A teacher's remark tied to a lesson (by-eschools: a comment without a mark, «нет домашнего задания») is one too, with
+// A teacher's remark tied to a lesson (by-eschools: a comment without a mark, such as "no homework") is one too, with
 // lessonExternalId and category 'lesson_comment'; it comes on Lesson.behaviour and is never a mark.
 export interface BehaviourEvent { externalId: string; date: ISODate; points?: number; polarity: 'positive' | 'negative' | 'neutral'; category?: string; comment?: string; subjectExternalId?: string; authorExternalId?: string; lessonExternalId?: string }
 
@@ -340,8 +340,8 @@ export interface FinalMark {
   raw: string; value: number | null; kind: Mark['kind'];
   role?: 'final' | 'current' | 'predicted' | 'proposed' | 'adjusted' | 'target' | 'thematic' | 'effort' | 'behaviour';
   // final: the official term or year mark. current: running grade a US/UK system computes. predicted / target: UK.
-  // proposed: Poland's ocena przewidywana before the semester closes. adjusted: Ukraine's скоригована semester mark.
-  // thematic: Ukraine's тематична, a summary mark after a topic block (label = topic, date = when given); semester finals derive from these.
+  // proposed: Poland's ocena przewidywana before the semester closes. adjusted: Ukraine's adjusted ("skorygovana") semester mark.
+  // thematic: Ukraine's thematic ("tematychna") mark, a summary mark after a topic block (label = topic, date = when given); semester finals derive from these.
   // effort, behaviour: separate dimensions (UK effort, Poland ocena z zachowania). Default 'final'.
   label?: string; date?: ISODate;                                   // for thematic and proposed marks
 }
@@ -381,7 +381,7 @@ export interface GradingScale {
   bands: Record<BandRole, { from: number; to: number; labelKey: string } | null>;   // labelKey is an i18n key
 
   // "Worse than X" quick filters and notification thresholds, in scale values, ordered from strictest.
-  // by-10: [5, 7] ("ниже 5", "ниже 7"). de-1-6 (lower is better): [4, 3] ("хуже 4", "хуже 3").
+  // by-10: [5, 7] ("below 5", "below 7"). de-1-6 (lower is better): [4, 3] ("worse than 4", "worse than 3").
   thresholds: number[];
 
   // Finals offered in the goal picker. by-10: [7, 8, 9]. ru-5: [4, 5]. us-letter: ['B', 'A'] as values.
@@ -395,7 +395,7 @@ export interface GradingScale {
 
   // How the official final mark for a term is derived from the marks. Used only for the goal projection.
   finalRule: 'round-half-up' | 'round-half-even' | 'floor' | 'ceil' | 'weighted-round' | 'teacher-decides' | 'unknown';
-  yearRule: 'mean-of-term-finals' | 'mean-of-all-marks' | 'last-term' | 'weighted-terms' | 'teacher-decides' | 'unknown';   // how the year final relates to the terms; drives the italic year estimate in the Итоги tables (by-10: mean-of-term-finals)
+  yearRule: 'mean-of-term-finals' | 'mean-of-all-marks' | 'last-term' | 'weighted-terms' | 'teacher-decides' | 'unknown';   // how the year final relates to the terms; drives the italic year estimate in the Finals tables (by-10: mean-of-term-finals)
 
   // Distribution chart buckets: 'each-value' for small integer scales, or a fixed bucket width.
   distribution: { mode: 'each-value' } | { mode: 'buckets'; width: number };
@@ -417,10 +417,10 @@ trendTolerance(scale): number                   // 0.3 × scaleUnit: 0.3 on by-1
 average(scale, marks): number | null            // arithmetic, weighted, GPA or mode per scale.averaging, rounded to its decimals
 projectFinal(scale, average): number | null     // per finalRule, half rounds toward the better mark; null for 'teacher-decides' and 'unknown'
 neededAverage(scale, final): number | null      // the average that still gives `final` (7.5 for an 8); null when finalRule cannot be inverted
-targetPlan(scale, sum, count, need)             // the fewest marks of each value that reach `need`, best first ("2 × 9 или 1 × 10")
+targetPlan(scale, sum, count, need)             // the fewest marks of each value that reach `need`, best first ("2 × 9 or 1 × 10")
 keepMark(scale, need, sum, count)               // the worst next mark that keeps `need`
 marksNeeded(scale, sum, count, targetFinal)     // the goal card: projected, need, reached, plan, keep; null when the goal card is hidden
-estimateYear(scale, termFinals[], marks[]): number | null   // per yearRule; the decimal shown in the Год cell until the year final is posted
+estimateYear(scale, termFinals[], marks[]): number | null   // per yearRule; the decimal shown in the Year cell until the year final is posted
 boundaryLines(scale): number[]                  // sparkline reference lines: the edge into the low band and the edge into the top band
 distributionBuckets(scale)                      // columns of the distribution chart
 defaultFamilyRules(scale), isLowMark(scale, v, rules)   // the family's "what is low" (design.md 6.4), defaults from the scale
@@ -456,7 +456,7 @@ When `finalRule` is `teacher-decides` or `unknown`, `neededAverage` and `marksNe
 | `us-percent` | percent with letters | 0–100+, letters by `fromPercent` (A 90, B 80, C 70, D 60, F) | higher | 0–59 / 60–69 / 70–89 / 90–100 | 60, 70 | 80, 90 | weighted by course `gradingScheme`; letter by cut-off |
 | `us-gpa-4` | letter | F–A+ as 0–4.3 (5.0 weighted for honors / AP via `Subject.level`) | higher | F–D / C / B / A | D+, C+ | B, A | GPA |
 | `us-standards-1-4` | ordinal | 1 Beginning / 2 Developing / 3 Proficient / 4 Advanced, per standard | ordered | 1 → critical, 2 → low, 3 → good, 4 → top | none | 3, 4 | mode |
-| `ua-12` (listed above) | numeric | 1–12, levels початковий / середній / достатній / високий | higher | 1–3 / 4–6 / 7–9 / 10–12 | 4, 7 | 7, 9, 10 | semester from thematic marks, teacher decides |
+| `ua-12` (listed above) | numeric | 1–12, levels initial / intermediate / sufficient / high | higher | 1–3 / 4–6 / 7–9 / 10–12 | 4, 7 | 7, 9, 10 | semester from thematic marks, teacher decides |
 
 Bands for scales other than `by-10` are starting points taken from each country's official descriptors; the maintainer of the first provider on a scale confirms or adjusts them. Implemented today: `by-10`, `ru-5`, `ua-12`, `de-1-6` (the direction test) and `pct-100` (used by `demo-minimal`); the other rows are specifications that become files when their first provider arrives.
 
@@ -464,9 +464,9 @@ Bands for scales other than `by-10` are starting points taken from each country'
 
 - `provider.json` → `gradingScale` sets the default for every student on the provider.
 - `student_years.grading_scale_id` records the scale per student per school year, filled from the provider at sync. A school that switches systems, or a child who changes schools, keeps correct history.
-- `Mark.scaleId` is an optional override for a single mark when a system mixes scales within one student (a pass/fail subject inside a numeric school, points-based assignments next to letter grades). The provider's mapper sets it; the mapper is also where raw strings like `"7/9"`, `"A-"`, `"17/20"` or `"зач."` are parsed into `kind`, `values` and `weight`, because only the provider knows the notation.
-- Comparing across years with different scales (section 6.1 of `design.md`) is done on `toQuality()` and the UI marks the row with "другая шкала" so nobody reads 4.0 (GPA) next to 8.3 (by-10) as a drop.
-- Years without marks (Belarusian grades 1 and 2, narrative-assessment schools) have **no scale**: the provider returns `Calendar.gradingScaleId = null` for that student and year, it is stored as `student_years.grading_scale_id = null`, and `studentYearScale()` returns `null`. The no-marks mode of Главная, Предметы and Предмет is switched by this alone, never by a grade number, since the age at which marks start differs per country; knowing that a Belarusian first grader gets no marks is the provider's job. The UI hides averages and bands and leads with the schedule and homework, exactly as the first-grader screen in the prototype does.
+- `Mark.scaleId` is an optional override for a single mark when a system mixes scales within one student (a pass/fail subject inside a numeric school, points-based assignments next to letter grades). The provider's mapper sets it; the mapper is also where raw strings like `"7/9"`, `"A-"`, `"17/20"` or a "pass" abbreviation are parsed into `kind`, `values` and `weight`, because only the provider knows the notation.
+- Comparing across years with different scales (section 6.1 of `design.md`) is done on `toQuality()` and the UI marks the row as "another scale" so nobody reads 4.0 (GPA) next to 8.3 (by-10) as a drop.
+- Years without marks (Belarusian grades 1 and 2, narrative-assessment schools) have **no scale**: the provider returns `Calendar.gradingScaleId = null` for that student and year, it is stored as `student_years.grading_scale_id = null`, and `studentYearScale()` returns `null`. The no-marks mode of Home, Subjects and Subject is switched by this alone, never by a grade number, since the age at which marks start differs per country; knowing that a Belarusian first grader gets no marks is the provider's job. The UI hides averages and bands and leads with the schedule and homework, exactly as the first-grader screen in the prototype does.
 
 ### 5.4 What the scale drives in the UI
 
@@ -477,14 +477,14 @@ Every scale-dependent element, how it is derived, and what `by-10` yields (which
 | Mark chip colour | `bandOf(scale, min(values))` | 3 red, 6 orange, 8 green, 10 filled green |
 | Average and its colour | `average(scale, marks)`, `format.average`, `bandOf` | one decimal, same four colours |
 | Overview distribution card | one column per band role with `bands[role].label`, plus absences | 1–4, 5–6, 7–8, 9–10 |
-| Feed filter chips | one chip per `thresholds` entry, label "ниже X" or "хуже X" by direction | Ниже 5, Ниже 7 |
-| Notification rule "below" | `isWorseThan(scale, value, threshold)` with the same thresholds | ниже 5 default on, ниже 7 off |
+| Feed filter chips | one chip per `thresholds` entry, label "below X" or "worse than X" by direction | Below 5, Below 7 |
+| Notification rule "below" | `isWorseThan(scale, value, threshold)` with the same thresholds | below 5 default on, below 7 off |
 | Trend arrow | `compare(scale, current, previous)` with `trendTolerance(scale)`, 0.3 of a by-10 point scaled to the range (`0.3 × (max - min) / 9`) | 0.3 as today |
 | Subject distribution chart | `distribution.mode` | ten bars, one per value |
 | Sparkline reference lines | `boundaryLines(scale)` | dashed lines at 5 and 9 |
-| Quarter goal picker | `goalTargets`, `format.final` | итог 7 / 8 / 9 |
+| Quarter goal picker | `goalTargets`, `format.final` | final 7 / 8 / 9 |
 | Projected final | `projectFinal(scale, average)` | rounded average, labelled as an assumption |
-| Marks needed | `marksNeeded(scale, sum, count, target)` | "ещё 2 × 9 или 1 × 10" |
+| Marks needed | `marksNeeded(scale, sum, count, target)` | "2 more × 9 or 1 × 10" |
 | Guidance thresholds | "low mark" = `bandOf` is critical; gaps between work types compared in scale units (1.0 on by-10 = 10 % of the range) | 4 and below; 1.0 |
 | Quarter and year tables | `format.final` for finals, `format.average` in italics for running values | as today |
 | Target calculator for letters | runs on mapped values, shows letters | n/a |
@@ -496,7 +496,7 @@ A snapshot test in `packages/core` locks this table for `by-10`: if a change to 
 ### 5.5 Rules for scale authors
 
 - Keep the four roles. If a scale has fewer meaningful levels, leave a band empty rather than inventing a fifth role; the UI collapses empty columns.
-- Thresholds and goal targets are scale values, not percentages, so that labels read naturally ("ниже 5", "unter 4", "below C"). The words around them come from the interface language, not from the scale.
+- Thresholds and goal targets are scale values, not percentages, so that labels read naturally ("below 5", "unter 4", "below C"). The words around them come from the interface language, not from the scale.
 - Do not encode a school's policy in the scale (for example "a 4 is failing in this school"). That belongs to the family's settings later, not to the scale shared by a whole country.
 - `finalRule` is an assumption until verified against real finals; say so in the scale's test file and keep `unknown` when you do not know.
 
@@ -560,29 +560,29 @@ The first provider shaped the first model, so every e-schools concept was re-exa
 |---|---|---|---|
 | Parent login that sees several children | Common, not universal (some systems have one login per child, some have no parent accounts) | `AccountInfo.students[]`, 1..n; a family may link several diary accounts | Nothing changes; a family with one account per child links several |
 | JWT, 2-hour tokens, `Authorization: <raw>` | e-schools only | Hidden in the provider | n/a |
-| School, class `7Д`, grade `level` | Universal (a student belongs to a school and a year group) | `StudentRef.className?`, `grade?` | Header shows the name only |
+| School, class `7D` (the letter in the system's alphabet), grade `level` | Universal (a student belongs to a school and a year group) | `StudentRef.className?`, `grade?` | Header shows the name only |
 | School year with dates | Universal | `Calendar.schoolYear` | n/a (required) |
-| Four quarters plus holidays | Belarus and the post-Soviet systems; elsewhere trimesters, semesters, or no formal terms | `Term.kind`, `capabilities.terms` | Period presets week / 2 weeks / month always exist; the fourth preset and the Subjects table are named after the term kind ("Триместры", "Семестры"); with `terms: none` both disappear and the quarter goal becomes a year goal or is hidden when there are no finals either |
+| Four quarters plus holidays | Belarus and the post-Soviet systems; elsewhere trimesters, semesters, or no formal terms | `Term.kind`, `capabilities.terms` | Period presets week / 2 weeks / month always exist; the fourth preset and the Subjects table are named after the term kind ("Trimesters", "Semesters", `term.kind.*`); with `terms: none` both disappear and the quarter goal becomes a year goal or is hidden when there are no finals either |
 | 36 numbered school weeks with uuids | e-schools API chunking | Not in the model; providers chunk ranges as they like | n/a |
 | Six-day week, Mon to Sat | Belarus (many schools); most countries five days | Derived from the data | The schedule shows the days that have lessons; "next school day" skips days without lessons |
-| Lessons with slot number, start time, topic, homework, attachments, substitution | Universal in structure, optional in detail | `Lesson` with every detail optional; `capabilities.lessons`, `futureTimetable`, `topics`, `homework`, `attachments` | No lessons at all: the Расписание tab is hidden (when no child the user sees has lessons; otherwise the tab stays and says so for this child), marks are listed by date in the feed and in the subject, tags have nothing to match and the Теги screen is hidden. No future timetable: "tomorrow" and "Обратить внимание" are hidden, watch rules work on homework already seen. No topics or homework: those lines are not rendered; watch rules search only the fields that exist |
-| Lesson type (test, lab, practical, excursion) | Common in post-Soviet systems; rare elsewhere | `Lesson.lessonType?`, `capabilities.lessonTypes` | No badges; the tag preset "Контрольная" relies on keywords only; "test tomorrow" hints come from work types or tags instead |
+| Lessons with slot number, start time, topic, homework, attachments, substitution | Universal in structure, optional in detail | `Lesson` with every detail optional; `capabilities.lessons`, `futureTimetable`, `topics`, `homework`, `attachments` | No lessons at all: the Timetable tab is hidden (when no child the user sees has lessons; otherwise the tab stays and says so for this child), marks are listed by date in the feed and in the subject, tags have nothing to match and the Tags screen is hidden. No future timetable: "tomorrow" and "Watch out for" are hidden, watch rules work on homework already seen. No topics or homework: those lines are not rendered; watch rules search only the fields that exist |
+| Lesson type (test, lab, practical, excursion) | Common in post-Soviet systems; rare elsewhere | `Lesson.lessonType?`, `capabilities.lessonTypes` | No badges; the tag preset "Test" relies on keywords only; "test tomorrow" hints come from work types or tags instead |
 | Exactly one `lesson_mark` per lesson, tied to the lesson | e-schools. Others: several marks per lesson, or a gradebook of assignments with dates and no lessons | `Lesson.marks[]` 0..n, plus `getMarks()` for unattached marks with `date` and subject; `capabilities.marksPerLesson`, `unattachedMarks` | Feed, averages, subjects and goals work on marks by date; the lesson card shows several chips; unattached marks appear in the feed and the subject but not in the schedule |
 | Mark kinds SINGLE, DOUBLE ("7/9"), PASS, EXEMPT, MASTERED, NOT_TAKEN | DOUBLE is Belarusian; pass/exempt exist widely under other names | `Mark.values[]` carries any number of values; `kind` is a small canonical set, everything else is `other` with `raw` shown | Chips show `raw`; non-numeric kinds are excluded from averages everywhere |
-| ABSENT as a mark kind ("н" in the mark cell) | e-schools. Most systems have an attendance register with absent / late / excused | `Attendance` records, separate from marks; `capabilities.attendance: separate / derived / none` | `none`: the absences column and tile, the absence filter, the absence hint and the absence notification are hidden. `separate`: late and excused appear as their own chips in the feed |
-| Work type on a mark (13 values: classwork, homework, test, dictation, essay...) | Common in post-Soviet systems; elsewhere assignment categories, weights, or nothing | `Mark.workType?` canonical set + `workTypeRaw`; `capabilities.workTypes` | Filters "Контрольные" and "Домашние" are hidden; the hints "homework is the weak spot" and "tests go worse" are disabled; "tests only" uses lesson types when those exist; the row shows `workTypeRaw` or nothing |
-| Teacher comment on a mark | Common, not universal | `Mark.comment?`, `capabilities.comments` | No comment icon, no "разобрать: …" hint; the low-mark hint still appears without the quote |
+| ABSENT as a mark kind (the absence letter in the mark cell) | e-schools. Most systems have an attendance register with absent / late / excused | `Attendance` records, separate from marks; `capabilities.attendance: separate / derived / none` | `none`: the absences column and tile, the absence filter, the absence hint and the absence notification are hidden. `separate`: late and excused appear as their own chips in the feed |
+| Work type on a mark (13 values: classwork, homework, test, dictation, essay...) | Common in post-Soviet systems; elsewhere assignment categories, weights, or nothing | `Mark.workType?` canonical set + `workTypeRaw`; `capabilities.workTypes` | Filters "Tests" and "Homework" are hidden; the hints "homework is the weak spot" and "tests go worse" are disabled; "tests only" uses lesson types when those exist; the row shows `workTypeRaw` or nothing |
+| Teacher comment on a mark | Common, not universal | `Mark.comment?`, `capabilities.comments` | No comment icon, no "go through: …" hint; the low-mark hint still appears without the quote |
 | Mark author (teacher uuid), teacher name by separate call | Optional everywhere | `authorExternalId?`, `teacherName?`, `capabilities.teacherNames` | Teacher line not rendered |
 | Weighted marks | Not in e-schools; common in US and Western European gradebooks | `Mark.weight?`, scale `averaging.method = weighted`, `capabilities.weights` | Plain arithmetic average |
 | Points out of a maximum ("17/20") | Not in e-schools; common elsewhere | `Mark.maxPoints?`, scale kind `points` normalises | n/a for by-eschools |
 | Final marks per quarter and year (`final/whole`) | Common, shape varies; some systems compute a live grade instead | `FinalMark[]` optional; `capabilities.finalMarks` | Quarter and year tables show running averages only, labelled as such; the goal card is hidden (no official final to aim at), the target calculator still works on averages |
 | 10-point scale, marks below 4 highlighted | Belarus | `GradingScale by-10` (section 5) | Another scale, same screens |
 | Grades 1 and 2 without marks | Belarus (and several other countries have unmarked early years) | `student_years.grading_scale_id = none` | The first-grader screens: schedule and homework first, no averages |
-| Rooms, the student's subgroup, teachers, bell times, a regular weekly timetable, lessons per week, level of study | Universal in idea: UK sets and Week A/B timetables, US sections and periods, Polish groups and "sala", post-Soviet подгруппы and углублённый уровень | `Lesson.room?`, `groupLabel?`, `teacherName?`, `endTime?`; `Subject.groupLabel?`, `teacherName?`, `level?` + `levelLabel?`, `lessonsPerWeek?`; `getBellSchedule()`, `getWeekTemplate()`; `capabilities.rooms`, `teachingGroups`, `teacherNames`, `bellSchedule`, `weekTemplate` | Each detail is simply not shown: no room, no group, no teacher; without bells there is no "сейчас" and no breaks, end times only when lessons carry them; without a week template the subject shows no lessons per week and no «Когда» |
-| Shifts (смены), separate bells for grade 1, a school-wide room list, the class timetable with every subgroup, grade-specific holiday dates written as prose | e-schools | Inside the provider: it picks the student's bells, resolves rooms and the student's group, applies the holidays it can (ADDITIONAL_HOLIDAYS for grades 1 and 2) and passes other remarks as `note` | n/a |
+| Rooms, the student's subgroup, teachers, bell times, a regular weekly timetable, lessons per week, level of study | Universal in idea: UK sets and Week A/B timetables, US sections and periods, Polish groups and "sala", post-Soviet subgroups and the advanced study level | `Lesson.room?`, `groupLabel?`, `teacherName?`, `endTime?`; `Subject.groupLabel?`, `teacherName?`, `level?` + `levelLabel?`, `lessonsPerWeek?`; `getBellSchedule()`, `getWeekTemplate()`; `capabilities.rooms`, `teachingGroups`, `teacherNames`, `bellSchedule`, `weekTemplate` | Each detail is simply not shown: no room, no group, no teacher; without bells there is no "now" and no breaks, end times only when lessons carry them; without a week template the subject shows no lessons per week and no "When" |
+| Shifts (morning and afternoon), separate bells for grade 1, a school-wide room list, the class timetable with every subgroup, grade-specific holiday dates written as prose | e-schools | Inside the provider: it picks the student's bells, resolves rooms and the student's group, applies the holidays it can (ADDITIONAL_HOLIDAYS for grades 1 and 2) and passes other remarks as `note` | n/a |
 | Behaviour marks, diary signatures, class-teacher messages | e-schools extras | Out of scope; signatures are write endpoints and forbidden | n/a. Class messages may become an "announcements" capability when a second provider has them |
 | Timestamps in ms, Europe/Minsk | Provider | Mapped to ISO dates; timezone from the manifest | n/a |
-| Russian and Belarusian subject names, "вывучыць верш на памяць" in homework | Data, not model | Shown as the diary sends them; tag presets per interface language | Presets for the family's language; keywords are editable |
+| Russian and Belarusian subject names, "learn the poem by heart" written in Belarusian in homework | Data, not model | Shown as the diary sends them; tag presets per interface language | Presets for the family's language; keywords are editable |
 | Homework shown on the lesson it was set at, due at the next lesson | e-schools convention | `homeworkSemantics` in the manifest, `homeworkDueDate` when known | Due dates follow the manifest |
 
 ### Beyond the post-Soviet model: the United Kingdom
@@ -595,7 +595,7 @@ There is no national diary in the UK. Schools run a management system (SIMS, Arb
 | Secondary GCSE grades 9 to 1, with **current**, **predicted** and **target** grades per subject on termly reports | `FinalMark.role` (`final`, `current`, `predicted`, `target`), capability `targets`; the subject hero shows "target 7 · predicted 6 · current 6" when present |
 | Effort or attitude-to-learning scores (1 to 4) beside attainment | `Mark.dimension = 'effort'`, separate scale `gb-effort-1-4`, capability `criteria`; never mixed into attainment averages |
 | Homework set in a separate system with set and due dates and submission status | `HomeworkItem`, capability `homeworkAssignments`; tags and the schedule use real due dates |
-| Behaviour and achievement points (merits, house points, demerits, detentions) | `BehaviourEvent`, capability `behaviour`; an optional Поведение card on Overview and a feed item type |
+| Behaviour and achievement points (merits, house points, demerits, detentions) | `BehaviourEvent`, capability `behaviour`; an optional Behaviour card on Overview and a feed item type |
 | Teacher's remark on a lesson without a mark (by-eschools: a comment with no mark) | `BehaviourEvent` with `lessonExternalId` on `Lesson.behaviour`, `behaviour: 'derived'`; shown with the lesson, never as a mark (ux-principles D56) |
 | Attendance as a percentage with lates and authorised / unauthorised absences | `Attendance` with `status` and `reason`; percentage derived |
 | Three terms with half-terms | `Term.kind = 'other'` with labels, or six terms; reports per term |
@@ -650,16 +650,16 @@ What this changes in the interface, all behind capabilities: a mark chip can car
 | Attendance: obecność, nieobecność usprawiedliwiona / nieusprawiedliwiona, spóźnienie, zwolnienie | `Attendance.status`, `excused`, `code` |
 | Terminarz: announced tests and events in a calendar; zadania domowe module with due dates; zastępstwa | `lessonType = 'test'` on the lesson or `HomeworkItem`, tags; `Lesson.substituteTeacherName?` |
 
-**Ukraine.** Multi-vendor and per school: Нові знання (nz.ua), Єдина школа, Human, Мій клас, Класна оцінка; `tenant` per school. What Ukraine adds beyond the Belarusian model (which it otherwise resembles closely):
+**Ukraine.** Multi-vendor and per school: Novi Znannia (nz.ua), Yedyna Shkola, Human, Mii Klas, Klasna Otsinka; `tenant` per school. What Ukraine adds beyond the Belarusian model (which it otherwise resembles closely):
 
 | Ukrainian practice | Model |
 |---|---|
 | 12-point scale with four levels | scale `ua-12`, bands match the levels |
-| Тематична оцінка: a summary mark after each topic block; the semester mark is derived from thematic marks, not from all current marks | `FinalMark.role = 'thematic'` with `label` (topic) and `date`; the semester projection uses thematic marks when the provider has them (`finalRule = 'teacher-decides'` with thematic input) |
-| Скоригована semester mark after an appeal or retake | `FinalMark.role = 'adjusted'` |
+| Thematic mark ("tematychna otsinka"): a summary mark after each topic block; the semester mark is derived from thematic marks, not from all current marks | `FinalMark.role = 'thematic'` with `label` (topic) and `date`; the semester projection uses thematic marks when the provider has them (`finalRule = 'teacher-decides'` with thematic input) |
+| Adjusted ("skorygovana") semester mark after an appeal or retake | `FinalMark.role = 'adjusted'` |
 | Semesters I and II, year | `Term.kind = 'semester'` |
-| "н" in the mark cell, "зарах." / "не зарах.", "звільнений" | derived attendance, pass / fail, exempt (as in Belarus) |
-| Formative verbal assessment in grades 1 to 4 (НУШ) with levels | `student_years.grading_scale_id = null` (no marks) or an ordinal scale, per school |
+| The absence letter in the mark cell, "credited" / "not credited", "exempt" abbreviations | derived attendance, pass / fail, exempt (as in Belarus) |
+| Formative verbal assessment in grades 1 to 4 (the New Ukrainian School) with levels | `student_years.grading_scale_id = null` (no marks) or an ordinal scale, per school |
 | Distance-learning links and files on lessons | `hasAttachments`, attachments capability |
 
 The three countries also share two things the first model lacked and now has: **multi-tenant providers** (one vendor, many schools or districts, chosen at connect time) and **status-bearing marks** (missing, excused, proposed), which the feed shows as their own chip styles and which never silently enter an average.
@@ -670,12 +670,12 @@ The remaining assumptions found in the screen audit are now part of the model ra
 
 | Assumption | Now |
 |---|---|
-| Week starts on Monday, weekend is Saturday and Sunday | `manifest.calendar { weekStart, weekend, schoolDays }`, falling back to the user's locale. `period.ts` builds the week and 2-week presets from `weekStart`; "next school day" skips `weekend` and days without lessons; tag advice says "в выходные" only for the provider's weekend |
+| Week starts on Monday, weekend is Saturday and Sunday | `manifest.calendar { weekStart, weekend, schoolDays }`, falling back to the user's locale. `period.ts` builds the week and 2-week presets from `weekStart`; "next school day" skips `weekend` and days without lessons; tag advice says "at the weekend" only for the provider's weekend |
 | One `fullName`, given name first | `givenName / familyName / displayName` on `StudentRef`, `manifest.nameOrder`; the UI shows `displayName` in headers and notifications and `fullName` in Family |
 | A student belongs to one family | A child is not owned by a family. The connect flow looks up `(provider_id, student external id)` across the installation: a child already followed by another family (the other parent connected their own login) is offered to the second parent as **join that family as a parent** (a request the admin approves) or **follow from your own family**; the second shares the one child, the child's diary and own work, and nothing else of either family. Access always comes from a diary login that shows the child (`design.md` 7.1, 7.2) |
 | A family uses one diary system | A family connects as many accounts as it needs, on any providers; capabilities, scale, calendar, bells and the sync window are the selected child's, so two children in different systems each get the interface their diary allows (`design.md` 16) |
-| Student mode assumes a reader | `users.ui_mode: full / simple`; simple mode for the youngest shows today's marks as big chips, "не забыть" with ticks and tomorrow's lessons with homework checkboxes, nothing else (`design.md` 5.7) |
-| Guidance is one culture's common sense | `families.settings.guidance` and `users.settings.guidance`: off hides goals, Что сделать, Обратить внимание and lesson hints; facts (marks, attention, watch items) stay |
+| Student mode assumes a reader | `users.ui_mode: full / simple`; simple mode for the youngest shows today's marks as big chips, "don't forget" with ticks and tomorrow's lessons with homework checkboxes, nothing else (`design.md` 5.7) |
+| Guidance is one culture's common sense | `families.settings.guidance` and `users.settings.guidance`: off hides goals, "What to do", "Watch out for" and lesson hints; facts (marks, attention, watch items) stay |
 | No data-protection rules | `design.md` 14.1: consent record on connect, retention setting, family export and erasure, per-family encryption keys for hosted instances |
 | Universality is a claim | `providers/demo-minimal`: a fixture-only provider with no network, five-day week starting Sunday, gradebook without lessons, no work types, comments, attendance, terms or finals, on a 100-point scale. The conformance suite and the UI snapshot tests run against it in CI, so every change is checked against the thinnest system as well as the richest |
 

@@ -155,7 +155,7 @@ Vite prints a `Network:` address such as `http://192.168.1.20:5173`; open it on 
 
 `pnpm smoke:lan` checks the API the way a phone sees it, without a phone: while `pnpm dev:lan` runs, it finds this computer's home-network address, signs in at `http://<address>:5173/api` with `MARKSY_DEV_EMAIL` and `MARKSY_DEV_PASSWORD` from `.env`, and reads every child's data. It prints statuses, counts and the shape of each response (keys and types, no values) and fails when a response carries a password or the session token, or when the session cookie would not work over plain http. `--host <ip>` picks the address yourself.
 
-`pnpm smoke:ui` does the same for the screens: with `pnpm dev:lan` running it opens the app over the home-network address in a headless browser at a phone size (360 px, touch) and a tablet size, signs in as the demo parent (and as you, when `MARKSY_DEV_EMAIL` is set), walks the login, the student pick, Главная and Внимание, and shoots the same states of the clickable prototype (`docs/mockups.html`) for comparison. The screenshots land in `data/ui/` (the last three runs), which is never committed. It needs Chromium for Playwright once: `pnpm exec playwright install chromium`.
+`pnpm smoke:ui` does the same for the screens: with `pnpm dev:lan` running it opens the app over the home-network address in a headless browser at a phone size (360 px, touch) and a tablet size, signs in as the demo parent (and as you, when `MARKSY_DEV_EMAIL` is set), walks every screen of each child, and shoots the same states of the clickable prototype (`docs/mockups.html`) for comparison. The screenshots land in `data/ui/` (the last three runs), which is never committed. It needs Chromium for Playwright once: `pnpm exec playwright install chromium`.
 
 ## Running in production
 
@@ -240,10 +240,6 @@ The project is built with Claude Code following `docs/build-plan.md`; the skills
 ## Disclaimer
 
 Marksy is an independent, source-available project. It is not affiliated with, endorsed by or supported by any school, education authority or diary vendor. It uses a diary's API on behalf of a parent or student who has an account there, only reads data, and is meant for your own family.
-
-## По-русски
-
-Marksy: семейное приложение для школьных оценок, бесплатное для личного и любого некоммерческого использования; исходный код доступен для чтения. Оно подключается к электронному дневнику, которым уже пользуется школа, получает через его API оценки, расписание и домашние задания и строит поверх них то, что удобно семье: средние баллы по предметам за неделю, месяц, четверть и год со сравнением с прошлым периодом, полную историю каждой оценки, план на ближайшие дни с контрольными и тем, что выучить или принести, таймер занятий, уведомления в телефон и Telegram и отдельные входы для каждого родителя и ребёнка. Приложение работает на вашем компьютере, ставится на телефон как приложение и говорит на двенадцати языках. Подключить другую систему дневников можно отдельным модулем по инструкции в `docs/providers.md`, весь интерфейс при этом общий. Проект независимый и ни с одной школой или дневником не связан. Лицензия PolyForm Noncommercial 1.0.0: пользоваться можно семье, для учёбы и хобби, школам, некоммерческим и государственным организациям; коммерческое использование (продажа, платный хостинг, включение в платный продукт) не разрешено, коммерческую лицензию можно запросить у автора. Пул-реквесты не принимаются; ошибки, идеи и изменения API дневника присылайте через [Issues](https://github.com/Dopetast1c/Marksy/issues).
 
 ## License
 
