@@ -362,11 +362,16 @@ Then, in this order, and nothing stops before everything is ready:
 1. It checks the signature of every image with cosign: the image must be signed by this project's release workflow. An image without that signature is refused, and nothing is downloaded.
 2. Inside quiet hours (`UPDATE_QUIET_HOURS`, e.g. `22:00-07:00`; empty by default) it waits until they end.
 3. It asks the server not to start a new diary read, and waits for a running one to finish.
-4. It checks the free disk space and takes a backup (section 14), named with both versions.
-5. It downloads the new images by their digest.
+4. It checks the free disk space and downloads the new images by their digest.
+5. Only now, right before the install, it takes a backup (section 14), named with both versions. An attempt that stopped earlier took none.
 6. It replaces the server, waits until it is healthy and reports the new version, then the backup service, the web app and, when its configuration changed, the proxy.
-7. If any of them does not become healthy, it puts every old container back, and the previous version runs as before. A release that was rolled back is not tried again by itself.
+7. If any of them does not become healthy, it puts every old container back, and the previous version runs as before.
 8. It removes old images, but keeps the previous release for a quick way back, and finally replaces itself.
+
+When an attempt does not finish, two rules decide whether it is tried again by itself (`update now` ignores both):
+
+- **A release that was installed and rolled back** because it did not become healthy (a failing database change included) is never installed again by itself. A newer release is tried as usual.
+- **An attempt that stopped for any other reason**, before the install or during it (too little disk space, a download that failed, a diary read still running, a Docker error), is tried again an hour after it.
 
 The server applies database changes when it starts, all in one transaction: if one fails, nothing changes, the server stops, and step 7 puts the previous version back on the unchanged database. Database changes are always made so that the previous version still works on them, which is what makes that way back safe.
 
@@ -477,7 +482,7 @@ Then the manual runs against the real diary from the development computer (`pnpm
 | `check-network` says the diary host is not reachable | check the internet connection and a VPN on the host (section 10) |
 | The phone shows a certificate warning | use the Cloudflare address for the phone (section 9) |
 | A backup fails | `./marksy.sh status` shows when; check the free space and the owner of `BACKUP_DIR` (id 1000) |
-| A release is out but not installed | `./marksy.sh update status`: paused, quiet hours, a diary read still running, a refused signature, or a release rolled back before (`update history`) |
+| A release is out but not installed | `./marksy.sh update status`: paused, quiet hours, a diary read still running, a refused signature, an attempt that stopped less than an hour ago, or a release rolled back before (`update history`) |
 | `update history` says *rolled_back* | the new release did not start; the previous one runs. `./marksy.sh logs server` shows why; a fixed release installs by itself |
 | `update history` says *refused_signature* | the image was not signed by this project's release workflow; nothing was installed. Report it as an issue |
 | The updater says the free space is too low | remove old backups you copied elsewhere, or `docker image prune` |
