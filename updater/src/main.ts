@@ -1,6 +1,7 @@
 import { statfs } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import { connect, createServer as createNetServer } from 'node:net';
 import { readSettings } from './config';
 import type { Settings } from './config';
 import { dockerClient } from './docker';
@@ -96,7 +97,26 @@ function send(res: ServerResponse, status: number, body: unknown) {
   res.end(JSON.stringify(body));
 }
 
+/** The end-to-end test only: localhost:<port> of this container goes to the test registry's container */
+function forwardTestRegistry(prefix: string, target: string): void {
+  const port = Number(prefix.match(/^(?:localhost|127\.0\.0\.1):(\d+)\//)?.[1]);
+  const [host, targetPort] = target.split(':');
+  if (!port || !host || !targetPort) throw new Error('UPDATE_TEST_REGISTRY_FORWARD must be host:port');
+  createNetServer((socket) => {
+    const upstream = connect(Number(targetPort), host);
+    socket.pipe(upstream).pipe(socket);
+    const close = () => {
+      socket.destroy();
+      upstream.destroy();
+    };
+    socket.on('error', close);
+    upstream.on('error', close);
+  }).listen(port, '127.0.0.1');
+  log.warn('test registry forwarded', { port });
+}
+
 async function service(s: Settings): Promise<void> {
+  if (s.testForward) forwardTestRegistry(s.prefix, s.testForward);
   const docker = dockerClient(s.guardUrl);
   const store = stateStore(s.stateDir);
   const self = await docker.inspectContainer(process.env.HOSTNAME ?? '');

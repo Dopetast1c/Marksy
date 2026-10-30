@@ -341,6 +341,12 @@ describe('the update procedure', () => {
     );
     expect(failures.map((f) => f.outcome)).toEqual(['rolled_back']);
     expect(docker.serviceImageVersion('web')).toBe('1.0.0');
+    // not tried again on its own: no second backup, no second rollback
+    const u = make({}, { server: tags, web: tags, updater: ['1.0.0'] });
+    const before = docker.log.length;
+    expect(await u.check('poll')).toMatchObject({ outcome: 'rolled_back', reason: 'rolled back before' });
+    expect(docker.log.length).toBe(before);
+    expect(failures).toHaveLength(1);
   });
 
   it('a failing migration (the server exits) is rolled back at once', async () => {

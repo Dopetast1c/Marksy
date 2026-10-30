@@ -26,6 +26,7 @@ export interface Settings {
   backupUrl: string;
   internalToken: string;
   testKey: string | undefined;
+  testForward: string | undefined;
 }
 
 const number = (v: string | undefined, fallback: number, min: number) => {
@@ -59,5 +60,7 @@ export function readSettings(env: NodeJS.ProcessEnv = process.env): Settings {
     backupUrl: env.BACKUP_INTERNAL_URL || 'http://backup:3002',
     internalToken: env.MARKSY_INTERNAL_TOKEN ?? '',
     testKey: prefix === DEFAULT_PREFIX ? undefined : env.UPDATE_TEST_COSIGN_KEY || undefined,
+    // the test registry runs in another container: localhost:<port> inside this one is forwarded to it
+    testForward: prefix === DEFAULT_PREFIX ? undefined : env.UPDATE_TEST_REGISTRY_FORWARD || undefined,
   };
 }

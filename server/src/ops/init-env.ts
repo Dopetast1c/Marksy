@@ -56,6 +56,7 @@ const LEFT_OUT = new Set([
   'GUARD_PORT',
   'UPDATE_IMAGE_PREFIX',
   'UPDATE_TEST_COSIGN_KEY',
+  'UPDATE_TEST_REGISTRY_FORWARD',
 ]);
 
 function vapidKeys() {

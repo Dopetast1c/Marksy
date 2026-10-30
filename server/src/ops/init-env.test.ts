@@ -35,6 +35,7 @@ describe('init-env', () => {
       'GUARD_PORT',
       'UPDATE_IMAGE_PREFIX',
       'UPDATE_TEST_COSIGN_KEY',
+      'UPDATE_TEST_REGISTRY_FORWARD',
       'MARKSY_UPDATE_EXPECTED',
       'MARKSY_PROBE_DRY_RUN',
     ]);

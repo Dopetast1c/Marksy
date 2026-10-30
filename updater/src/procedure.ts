@@ -1,5 +1,6 @@
 import { channelTag, compareVersions, formatVersion, parseChannel, parseVersion, pickRelease } from './channel';
 import type { ContainerSummary, Docker } from './docker';
+import { KEEP } from './history';
 import type { Attempt, StateStore } from './history';
 import { errorText, log } from './log';
 import { inQuietHours } from './quiet';
@@ -226,6 +227,15 @@ export function createUpdater(cfg: UpdaterConfig, deps: Deps) {
       noticed.add(key);
       await store.append(a);
     };
+
+    // a release that was rolled back here is not tried again on its own (a backup and a rollback every few minutes);
+    // `marksy update now` still installs it, and a newer release is tried as usual
+    const shortKey = JSON.stringify(attempt('updated').digests);
+    if (
+      !manual &&
+      (await store.list(KEEP)).some((a) => a.outcome === 'rolled_back' && JSON.stringify(a.digests) === shortKey)
+    )
+      return result({ available: target.label, outcome: 'rolled_back', reason: 'rolled back before' });
 
     // 1. signatures, before anything is pulled
     const key = Object.values(target.digests).join(',');
