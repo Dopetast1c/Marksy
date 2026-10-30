@@ -1,0 +1,69 @@
+name: CI
+
+# Every push and pull request (CLAUDE.md, "Commits and releases"): the whole `pnpm check` (formatting, types, lint,
+# tests against PostgreSQL in a service container, the privacy and language checks), every interface language
+# strictly, and the commit messages of the push. Nothing here talks to a real diary and no secret is needed.
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    services:
+      # the test database the server tests expect (docker-compose.yml: marksy-postgres-test on 5434)
+      postgres-test:
+        image: postgres:16.10-bookworm
+        env:
+          POSTGRES_USER: marksy
+          POSTGRES_PASSWORD: marksy
+          POSTGRES_DB: marksy_test
+        ports:
+          - 5434:5432
+        options: >-
+          --health-cmd "pg_isready -U marksy -d marksy_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      TEST_DATABASE_URL: postgres://marksy:marksy@localhost:5434/marksy_test
+      # the restore tests run pg_dump and pg_restore inside this container
+      MARKSY_PG_TOOLS_CONTAINER: ${{ job.services.postgres-test.id }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install
+        run: |
+          corepack enable
+          pnpm install --frozen-lockfile
+
+      - name: Commit messages
+        env:
+          BEFORE: ${{ github.event.before }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          if [ -n "$BASE" ]; then range="$BASE..$HEAD"
+          elif [ -n "$BEFORE" ] && [ "$BEFORE" != "0000000000000000000000000000000000000000" ]; then range="$BEFORE..$HEAD"
+          else range="$(git merge-base origin/main "$HEAD")..$HEAD"; fi
+          pnpm commit:lint --range "$range"
+
+      - name: Check
+        run: pnpm check
+
+      - name: Every interface language, strictly
+        run: pnpm i18n:check --strict

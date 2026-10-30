@@ -1,3 +1,5 @@
 #!/bin/sh
-# The commit message passes the same deny-list check as the staged files (scripts/commit-guard.mjs).
-exec node scripts/commit-guard.mjs --message "$1"
+# The commit message passes the same deny-list check as the staged files (scripts/commit-guard.mjs), and follows
+# Conventional Commits in English (scripts/commit-lint.mjs).
+node scripts/commit-guard.mjs --message "$1" || exit 1
+exec node scripts/commit-lint.mjs --message "$1"
