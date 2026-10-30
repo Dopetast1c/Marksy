@@ -37,6 +37,7 @@ Everything runs in containers. The computer that runs them (the *host*) needs no
                                   │  proxy ──► server (API, collector)   │
                                   │  server ──► postgres                 │
                                   │  backup ──► postgres, BACKUP_DIR     │
+ GitHub release ──signed nudge──► │  updater ──► socket-guard ──► Docker │
                                   └──────────────────────────────────────┘
 ```
 
@@ -45,6 +46,8 @@ Everything runs in containers. The computer that runs them (the *host*) needs no
 - **server**: the API and the collector, which reads your diary system during school days and never writes anything to it.
 - **postgres**: the database, in a Docker volume of its own.
 - **backup**: takes a backup every night and on demand, into a folder you choose.
+- **updater**: installs new releases by itself, with a backup before and a rollback if anything goes wrong (section 16).
+- **socket-guard**: the only container that can talk to Docker; it lets the updater touch Marksy's own containers and images and nothing else.
 - **cloudflared**: optional, the encrypted tunnel to Cloudflare for access from outside. Nothing on your router has to be opened.
 
 ## 2. Choose a host
@@ -244,6 +247,8 @@ Before the tunnel goes on, check each line. Most are covered by Marksy's tests; 
 - [ ] Every page carries security headers and a content security policy that allows nothing from other sites.
 - [ ] Plain http is answered only from your home network.
 - [ ] Signing up without an invite works only on an empty instance (`SIGNUP=first`).
+- [ ] Only signed releases install; the update hook takes nothing from the request but "check now".
+- [ ] Only the socket guard sees the Docker socket, and it lets through Marksy's own containers and images only.
 - [ ] *You:* no port of the router is forwarded to the host (section 8).
 - [ ] *You:* Cloudflare Access protects `BASE_PATH`, and only the update hook bypasses it (section 11).
 - [ ] *You:* `.env.production` is in your password manager, and nowhere public (section 19).
@@ -332,14 +337,85 @@ Marksy's versions are `MAJOR.MINOR.PATCH`:
 - **MINOR**: new features: 1.1.0, 1.2.0.
 - **PATCH**: corrections and fixes: 1.1.1, 1.1.2.
 
-The images are published with the version tags and the release lines: `1.4.2`, `1.4`, `1`, `stable`. `UPDATE_CHANNEL` in `.env.production` is the line your host follows (`1` by default). To update by hand:
+Each release is published as images with the version and the lines it belongs to: `1.4.2`, `1.4`, `1`, `stable`, and signed by this project's release workflow on GitHub.
+
+### Channels
+
+`UPDATE_CHANNEL` in `.env.production` is the line your host follows. It is also the tag of the images the host runs, so a manual `./marksy.sh up` never moves away from what the updater installed.
+
+| `UPDATE_CHANNEL` | Installs | Use it when |
+|---|---|---|
+| `1` (default) | every new 1.x release, features and fixes, never 2.0 | almost always |
+| `1.4` | only fixes of 1.4: 1.4.1, 1.4.2 | you want no new features for a while |
+| `1.4.2` | nothing: the host stays on 1.4.2 | you update only by hand |
+| `stable` | every release, a new major version too | you accept larger changes without asking |
+| `edge` | every build of the main branch | testing only; not for your family's data |
+
+A host never goes to a lower version by itself. To change the channel, edit the line in `.env.production` and run `./marksy.sh up`.
+
+### How an update happens
+
+The updater learns about a release in two ways: the release workflow sends a signed nudge to `/_marksy/update-hook` the moment a release is published (the update then starts within a minute or two), and every 5 minutes, a little later on each host, it asks the registry anyway. Asking costs a few small requests; nothing is downloaded until there is something new.
+
+Then, in this order, and nothing stops before everything is ready:
+
+1. It checks the signature of every image with cosign: the image must be signed by this project's release workflow. An image without that signature is refused, and nothing is downloaded.
+2. Inside quiet hours (`UPDATE_QUIET_HOURS`, e.g. `22:00-07:00`; empty by default) it waits until they end.
+3. It asks the server not to start a new diary read, and waits for a running one to finish.
+4. It checks the free disk space and takes a backup (section 14), named with both versions.
+5. It downloads the new images by their digest.
+6. It replaces the server, waits until it is healthy and reports the new version, then the backup service, the web app and, when its configuration changed, the proxy.
+7. If any of them does not become healthy, it puts every old container back, and the previous version runs as before. A release that was rolled back is not tried again by itself.
+8. It removes old images, but keeps the previous release for a quick way back, and finally replaces itself.
+
+The server applies database changes when it starts, all in one transaction: if one fails, nothing changes, the server stops, and step 7 puts the previous version back on the unchanged database. Database changes are always made so that the previous version still works on them, which is what makes that way back safe.
+
+While the server restarts (a few seconds; longer when the database changes), the proxy holds requests for up to 30 seconds, and an open app keeps showing what it has. When the new version runs, the app offers to reload and names the version.
+
+### Commands
+
+```sh
+./marksy.sh update status          # channel, the last check, what is available, memory of every container
+./marksy.sh update history 20      # the last attempts: from, to, outcome, backup, downtime
+./marksy.sh update pause           # no automatic update until resume
+./marksy.sh update resume
+./marksy.sh update now             # check and install now, quiet hours or not
+./marksy.sh update now --to 1.4.2  # install exactly this release (never a lower one)
+```
+
+`UPDATE_PAUSED=true` in `.env.production` pauses as well; a manual `update now` works in both cases. Other settings, all optional: `UPDATE_POLL_MINUTES` (5), `UPDATE_HEALTH_TIMEOUT_SECONDS` (300; raise it on a slow host), `UPDATE_COLLECTOR_WAIT_MINUTES` (20), `UPDATE_MIN_FREE_MB` (1024).
+
+### The update hook
+
+The nudge is a `POST` with an HMAC-SHA256 signature over a timestamp and the body, made with `UPDATE_HOOK_SECRET`. The updater accepts it only when the signature is right, the timestamp is within 5 minutes of the host's clock, and the same signature has not been seen; a few a minute at most. It only means "check now": the updater never takes a version or an image from it. Without the hook, updates still arrive by polling, at most a few minutes later.
+
+To set it up, print the secret once and put it, with the address, into the repository's secrets on GitHub (`MARKSY_UPDATE_HOOK_SECRET` and `MARKSY_UPDATE_HOOK_URL`, e.g. `https://<your subdomain>/_marksy/update-hook`):
+
+```sh
+./marksy.sh init-env --show-hook-secret
+```
+
+The hook path is outside `BASE_PATH` and outside Cloudflare Access (section 11, step 4).
+
+### Going back to an earlier release
+
+Every update leaves a backup taken just before it in `BACKUP_DIR/pre-update/`. To return to the release before an update:
+
+1. `./marksy.sh update pause`
+2. Set `UPDATE_CHANNEL` to that exact version (e.g. `1.4.1`) and run `./marksy.sh pull`, then `./marksy.sh up`. The previous release's images are usually still on the host.
+3. Only if the newer release changed data the older one cannot read (the history says so under migrations), restore its pre-update backup: `./marksy.sh restore pre-update/<name>.dump --replace --yes`. Everything entered since that backup is lost.
+4. Set the channel back and `./marksy.sh update resume` when a fixed release is out.
+
+### Updating by hand
+
+With a pinned channel, or when the updater is stopped:
 
 ```sh
 ./marksy.sh pull
 ./marksy.sh up
 ```
 
-The server applies database changes when it starts, all in one transaction: if one fails, nothing changes and the server does not start, so the previous version runs on as before. While the server restarts, an open app keeps showing what it has and says there is no connection; when a new version is running, the app offers to update itself and names the version.
+Take a backup first (`./marksy.sh backup`). The socket guard is updated this way too: the updater replaces every other container, and the guard follows the next time you run `up`.
 
 ## 17. Status and health
 
@@ -347,13 +423,13 @@ The server applies database changes when it starts, all in one transaction: if o
 ./marksy.sh status
 ```
 
-shows the containers, the running version and commit, whether the server answers, the collector (on, off on this instance, runs in progress), the last successful sync, the last backup and its file, the number of backups and the free space on their disk. `./marksy.sh logs` shows the last lines of every container (`./marksy.sh logs server` for one). Logs never contain passwords, tokens or names.
+shows the containers, the running version and commit, whether the server answers, the collector (on, off on this instance, runs in progress), the last successful sync, the last backup and its file, the number of backups and the free space on their disk, background data changes still running after an update, and the updater: its channel, the last check, a release waiting, the last attempts and the memory of every container. `./marksy.sh logs` shows the last lines of every container (`./marksy.sh logs server` for one). Logs never contain passwords, tokens or names.
 
 `/marksy/api/health` answers with the version and whether the database answers, nothing else; Docker checks every container's health by itself and restarts what stops.
 
 ## 18. Small hosts and memory
 
-The stack runs on a 1 GB Raspberry Pi. Each container has a memory limit in `docker-compose.prod.yml` (PostgreSQL 256 MB, server 320 MB, backup 128 MB, web and proxy 48 MB each, cloudflared 96 MB), and the server's memory and connection pools are capped.
+The stack runs on a 1 GB Raspberry Pi. Each container has a memory limit in `docker-compose.prod.yml` (PostgreSQL 256 MB, server 320 MB, backup 128 MB, updater 128 MB, web and proxy 48 MB each, socket guard 64 MB, cloudflared 96 MB), and the server's memory and connection pools are capped.
 
 Measured with the demo family, idle after opening every screen, on a test laptop: PostgreSQL 53 MB, server 78 MB, backup 43 MB, web 18 MB, proxy 17 MB, about 210 MB in all.
 
@@ -399,3 +475,7 @@ Then the manual runs against the real diary from the development computer (`pnpm
 | `check-network` says the diary host is not reachable | check the internet connection and a VPN on the host (section 10) |
 | The phone shows a certificate warning | use the Cloudflare address for the phone (section 9) |
 | A backup fails | `./marksy.sh status` shows when; check the free space and the owner of `BACKUP_DIR` (id 1000) |
+| A release is out but not installed | `./marksy.sh update status`: paused, quiet hours, a diary read still running, a refused signature, or a release rolled back before (`update history`) |
+| `update history` says *rolled_back* | the new release did not start; the previous one runs. `./marksy.sh logs server` shows why; a fixed release installs by itself |
+| `update history` says *refused_signature* | the image was not signed by this project's release workflow; nothing was installed. Report it as an issue |
+| The updater says the free space is too low | remove old backups you copied elsewhere, or `docker image prune` |
