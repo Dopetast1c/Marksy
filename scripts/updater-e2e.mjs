@@ -8,7 +8,8 @@
 //   is not tried again within the hour, while `update now` installs it with one backup;
 //   a release that never becomes healthy and one whose migration fails are rolled back, the schema unchanged, and
 //   a rolled-back release is not tried again by itself;
-//   an unsigned image and one signed by another key are refused; the updater replaces itself.
+//   an unsigned image and one signed by another key are refused; with polling off, a release with a migration
+//   arrives by the signed nudge alone; the updater replaces itself.
 // Expects the images marksy-server:e2e, marksy-web:e2e and marksy-updater:e2e (built by the workflow) and cosign on
 // PATH. Prints versions, outcomes and timings; the history of the updater is printed at the end.
 import { spawnSync } from 'node:child_process';
@@ -356,17 +357,21 @@ async function main() {
     ].join('\n'),
   );
   const migrationsBefore14 = Number(migrations());
+  // polling every ten hours and the start check over: only the signed nudge can bring 1.4.0
+  compose(['up', '-d', '--no-deps', 'updater'], { env: { E2E_POLL_MINUTES: '600' } });
+  await sleep(45_000);
+  const attemptsBefore14 = history().length;
   release('1.4.0', {
     serverContext: okCtx,
     serverExtra: 'USER root\nCOPY add.mjs /tmp/add.mjs\nRUN node /tmp/add.mjs && rm /tmp/add.mjs\nUSER node',
   });
-  const nudged = Date.now();
-  await nudge(secret);
+  await sleep(10_000);
+  check((await serverVersion()) === '1.2.1', 'with polling off, 1.4.0 waits for the nudge');
+  check(history().length === attemptsBefore14, 'and no attempt was made');
+  check((await nudge(secret)) === 202, 'nudge accepted');
   const t14 = await waitFor('1.4.0', async () => (await serverVersion()) === '1.4.0', 300_000);
-  check(
-    t14 !== null && t14 < 150_000,
-    `1.4.0 installed ${t14 && Math.round((Date.now() - nudged) / 1000)} s after the nudge`,
-  );
+  check(t14 !== null && t14 < 150_000, `1.4.0 running ${t14 && Math.round(t14 / 1000)} s after the nudge`);
+  check(history().find((a) => a.to === '1.4.0')?.trigger === 'hook', 'the hook started it');
   check(Number(migrations()) === migrationsBefore14 + 1, 'its migration ran');
   const selfVersion = () => {
     try {

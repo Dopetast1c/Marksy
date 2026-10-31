@@ -1,6 +1,6 @@
 # The updater's end-to-end test (scripts/updater-e2e.mjs, CI only), over docker-compose.prod.yml: the images come from
 # a registry on localhost signed with a test key, volumes and the network have names of their own so that nothing
-# meets a real installation, and the updater polls every minute with a short health timeout.
+# meets a real installation, and the updater polls every minute (E2E_POLL_MINUTES) with a short health timeout.
 
 x-image: &prefix
   UPDATE_IMAGE_PREFIX: localhost:5000/marksy-
@@ -31,7 +31,7 @@ services:
       <<: *prefix
       UPDATE_TEST_COSIGN_KEY: /keys/cosign.pub
       UPDATE_TEST_REGISTRY_FORWARD: registry:5000
-      UPDATE_POLL_MINUTES: '1'
+      UPDATE_POLL_MINUTES: ${E2E_POLL_MINUTES:-1}
       UPDATE_HEALTH_TIMEOUT_SECONDS: '90'
     volumes:
       - ./keys:/keys:ro
