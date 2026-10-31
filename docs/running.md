@@ -355,7 +355,7 @@ A host never goes to a lower version by itself. To change the channel, edit the 
 
 ### How an update happens
 
-The updater learns about a release in two ways: the release workflow sends a signed nudge to `/_marksy/update-hook` the moment a release is published (the update then starts at once), and every 5 minutes, a little later on each host, it asks the registry anyway. Asking costs a few small requests; nothing is downloaded until there is something new.
+The updater learns about a release in two ways: the release workflow sends a signed nudge to `/_marksy/update-hook` the moment a release is published (the update then starts at once), and every 5 minutes, a little later on each host, it asks the registry anyway. Asking costs a few small requests; nothing is downloaded until there is something new. After the nudge, the new version runs as soon as the changed image layers are downloaded, usually in under a minute on a home connection; the 3 s and 6.3 s measured below come from a local registry, where that download takes no time.
 
 Then, in this order, and nothing stops before everything is ready:
 
