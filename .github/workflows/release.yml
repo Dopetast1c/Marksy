@@ -107,14 +107,19 @@ jobs:
           TARGET: ${{ steps.what.outputs.target }}
           TAGS: ${{ steps.what.outputs.tags }}
           VERSION: ${{ steps.what.outputs.version }}
+        # A host finds a release by the server's version tag and installs only signed images: so every image is signed
+        # before it gets a tag, and the server is tagged last, when the others are complete
         run: |
-          for image in server web updater; do
+          for image in updater web server; do
+            source="$(docker buildx imagetools inspect "$REGISTRY/marksy-$image:sha-$COMMIT" --format '{{ json .Manifest }}' | jq -r .digest)"
+            if [ "$TARGET" = "marksy" ]; then cosign sign --yes "$REGISTRY/marksy-$image@$source"; fi
             args=""
             for tag in $TAGS; do args="$args -t $REGISTRY/$TARGET-$image:$tag"; done
             # shellcheck disable=SC2086
-            docker buildx imagetools create $args "$REGISTRY/marksy-$image:sha-$COMMIT"
+            docker buildx imagetools create $args "$REGISTRY/marksy-$image@$source"
             digest="$(docker buildx imagetools inspect "$REGISTRY/$TARGET-$image:$VERSION" --format '{{ json .Manifest }}' | jq -r .digest)"
-            cosign sign --yes "$REGISTRY/$TARGET-$image@$digest"
+            # a copy with another digest (the rehearsal's own packages) is signed as it is
+            if [ "$digest" != "$source" ] || [ "$TARGET" != "marksy" ]; then cosign sign --yes "$REGISTRY/$TARGET-$image@$digest"; fi
             echo "$TARGET-$image $VERSION: $TAGS, $digest, signed"
           done
 

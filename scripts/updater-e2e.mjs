@@ -101,16 +101,17 @@ function build(name, version, extra = '', context = null) {
   sh('docker', ['build', '-q', '-t', `${PREFIX}${name}:${version}`, dir]);
 }
 
-/** Pushes a version and its moving tags (X.Y, X, as release.yml does) and signs it unless told otherwise */
+/**
+ * Publishes a version as release.yml does: the image is pushed under a tag no channel reads, signed (unless told
+ * otherwise), and only then tagged with its version and moving tags (X.Y, X)
+ */
 function publish(name, version, opts = {}) {
   const ref = `${PREFIX}${name}:${version}`;
+  const pending = `${PREFIX}${name}:pending-${version}`;
   const [major, minor] = version.split('.');
-  sh('docker', ['push', '-q', ref]);
-  for (const tag of opts.moving === false ? [] : [`${major}.${minor}`, major]) {
-    sh('docker', ['tag', ref, `${PREFIX}${name}:${tag}`]);
-    sh('docker', ['push', '-q', `${PREFIX}${name}:${tag}`]);
-  }
-  const digest = sh('docker', ['inspect', '--format', '{{index .RepoDigests 0}}', ref]);
+  sh('docker', ['tag', ref, pending]);
+  sh('docker', ['push', '-q', pending]);
+  const digest = sh('docker', ['inspect', '--format', '{{index .RepoDigests 0}}', pending]);
   if (opts.sign !== false)
     sh(
       'cosign',
@@ -126,11 +127,17 @@ function publish(name, version, opts = {}) {
       ],
       { env: { ...process.env, COSIGN_PASSWORD: '' } },
     );
+  sh('docker', ['push', '-q', ref]);
+  for (const tag of opts.moving === false ? [] : [`${major}.${minor}`, major]) {
+    sh('docker', ['tag', ref, `${PREFIX}${name}:${tag}`]);
+    sh('docker', ['push', '-q', `${PREFIX}${name}:${tag}`]);
+  }
   return digest;
 }
 
+/** Every image of a version, the server last: a host finds a release by the server's version tag */
 function release(version, opts = {}) {
-  for (const name of opts.only ?? ['server', 'web', 'updater']) {
+  for (const name of opts.only ?? ['updater', 'web', 'server']) {
     if (name === 'server' && opts.serverExtra) build(name, version, opts.serverExtra, opts.serverContext);
     else build(name, version);
     publish(name, version, opts);
@@ -334,11 +341,33 @@ async function main() {
   check(history().at(-1)?.outcome === 'refused_signature', '1.3.3 signed by another key refused');
   check((await serverVersion()) === '1.2.1', 'the server still runs 1.2.1');
 
-  step('a good release, the updater included, and the updater replaces itself');
-  release('1.4.0');
+  step('a good release with a migration, the updater included, and the updater replaces itself');
+  const okCtx = mkdtempSync(join(work, 'ctx-'));
+  writeFileSync(
+    join(okCtx, 'add.mjs'),
+    [
+      "import { readFileSync, writeFileSync } from 'node:fs';",
+      "const path = '/app/drizzle/meta/_journal.json';",
+      'const j = JSON.parse(readFileSync(path, "utf8"));',
+      'const last = j.entries.at(-1);',
+      "j.entries.push({ ...last, idx: last.idx + 1, when: last.when + 1000, tag: '9998_e2e_added' });",
+      'writeFileSync(path, JSON.stringify(j));',
+      `writeFileSync('/app/drizzle/9998_e2e_added.sql', 'CREATE TABLE "e2e_added" ("id" integer);');`,
+    ].join('\n'),
+  );
+  const migrationsBefore14 = Number(migrations());
+  release('1.4.0', {
+    serverContext: okCtx,
+    serverExtra: 'USER root\nCOPY add.mjs /tmp/add.mjs\nRUN node /tmp/add.mjs && rm /tmp/add.mjs\nUSER node',
+  });
+  const nudged = Date.now();
   await nudge(secret);
   const t14 = await waitFor('1.4.0', async () => (await serverVersion()) === '1.4.0', 300_000);
-  check(t14 !== null, `1.4.0 installed (${t14 && Math.round(t14 / 1000)} s)`);
+  check(
+    t14 !== null && t14 < 150_000,
+    `1.4.0 installed ${t14 && Math.round((Date.now() - nudged) / 1000)} s after the nudge`,
+  );
+  check(Number(migrations()) === migrationsBefore14 + 1, 'its migration ran');
   const selfVersion = () => {
     try {
       return updaterCli(['status'])?.updater ?? null;
@@ -349,8 +378,11 @@ async function main() {
   };
   const tSelf = await waitFor('the new updater', async () => selfVersion() === '1.4.0', 180_000);
   check(tSelf !== null, `the updater replaced itself and runs ${selfVersion()}`);
-  const last = history().at(-1);
-  console.log(`   downtime of the server: ${last?.downtimeMs} ms, whole update ${last?.durationMs} ms`);
+  const last = history().findLast((a) => a.to === '1.4.0' && a.outcome === 'updated');
+  check(last?.migrations?.after === (last?.migrations?.before ?? 0) + 1, 'the history records the migration');
+  console.log(
+    `   with a migration: downtime of the server ${last?.downtimeMs} ms, whole update ${last?.durationMs} ms`,
+  );
 }
 
 try {

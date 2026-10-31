@@ -371,11 +371,11 @@ Then, in this order, and nothing stops before everything is ready:
 When an attempt does not finish, two rules decide whether it is tried again by itself (`update now` ignores both):
 
 - **A release that was installed and rolled back** because it did not become healthy (a failing database change included) is never installed again by itself. A newer release is tried as usual.
-- **An attempt that stopped for any other reason**, before the install or during it (too little disk space, a download that failed, a diary read still running, a Docker error), is tried again an hour after it.
+- **An attempt that stopped for any other reason**, before the install or during it (a signature not found, too little disk space, a download that failed, a diary read still running, a Docker error), is tried again an hour after it.
 
 The server applies database changes when it starts, all in one transaction: if one fails, nothing changes, the server stops, and step 7 puts the previous version back on the unchanged database. Database changes are always made so that the previous version still works on them, which is what makes that way back safe.
 
-While the server restarts (a few seconds; longer when the database changes), the proxy holds requests for up to 30 seconds, and an open app keeps showing what it has. When the new version runs, the app offers to reload and names the version.
+While the server restarts, the proxy holds requests for up to 30 seconds, and an open app keeps showing what it has. Measured on a GitHub runner: the server was away for about 6 seconds, and a whole update, from the nudge to the last container, took about a minute and a half, most of it the backup and waiting for health checks. A Raspberry Pi is slower; its numbers will be added here once measured. When the new version runs, the app offers to reload and names the version.
 
 ### Commands
 
@@ -438,7 +438,7 @@ shows the containers, the running version and commit, whether the server answers
 
 The stack runs on a 1 GB Raspberry Pi. Each container has a memory limit in `docker-compose.prod.yml` (PostgreSQL 256 MB, server 320 MB, backup 128 MB, updater 128 MB, web and proxy 48 MB each, socket guard 64 MB, cloudflared 96 MB), and the server's memory and connection pools are capped.
 
-Measured with the demo family, idle after opening every screen, on a test laptop: PostgreSQL 53 MB, server 78 MB, backup 43 MB, web 18 MB, proxy 17 MB, about 210 MB in all.
+Measured with the demo family, idle after opening every screen, on a test laptop: PostgreSQL 53 MB, server 78 MB, backup 43 MB, web 18 MB, proxy 17 MB, about 210 MB in all. The updater and the socket guard add about 19 MB and 18 MB (measured by the updater's end-to-end test on a GitHub runner, after six updates).
 
 PostgreSQL's memory comes from `.env.production`. The defaults are the small profile for 1 GB. On a laptop or a NAS with memory to spare you can use the large one:
 
@@ -484,5 +484,5 @@ Then the manual runs against the real diary from the development computer (`pnpm
 | A backup fails | `./marksy.sh status` shows when; check the free space and the owner of `BACKUP_DIR` (id 1000) |
 | A release is out but not installed | `./marksy.sh update status`: paused, quiet hours, a diary read still running, a refused signature, an attempt that stopped less than an hour ago, or a release rolled back before (`update history`) |
 | `update history` says *rolled_back* | the new release did not start; the previous one runs. `./marksy.sh logs server` shows why; a fixed release installs by itself |
-| `update history` says *refused_signature* | the image was not signed by this project's release workflow; nothing was installed. Report it as an issue |
+| `update history` says *refused_signature* | the image was not signed by this project's release workflow; nothing was installed, and it is checked again an hour later. If it stays refused, report it as an issue |
 | The updater says the free space is too low | remove old backups you copied elsewhere, or `docker image prune` |

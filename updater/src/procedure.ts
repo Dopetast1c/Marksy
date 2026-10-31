@@ -96,7 +96,7 @@ class Abort extends Error {
 
 export const RETRY_AFTER_FAILURE_MS = 60 * 60_000;
 /** Outcomes that stopped before the install or during it for a reason other than health: tried again after an hour */
-const RETRY_LATER: Attempt['outcome'][] = ['failed', 'waiting_collector'];
+const RETRY_LATER: Attempt['outcome'][] = ['failed', 'waiting_collector', 'refused_signature'];
 
 const short = (digest: string) => digest.replace(/^sha256:/, '').slice(0, 12);
 
@@ -104,7 +104,6 @@ export function createUpdater(cfg: UpdaterConfig, deps: Deps) {
   const { docker, registry, store } = deps;
   const channel = parseChannel(cfg.channel);
   const localTag = channelTag(cfg.channel);
-  const refused = new Set<string>();
   const noticed = new Set<string>();
   let busy = false;
 
@@ -236,8 +235,8 @@ export function createUpdater(cfg: UpdaterConfig, deps: Deps) {
     // Two rules decide whether this release is tried again by itself; `marksy update now` ignores both, and a newer
     // release is always tried:
     //   installed and rolled back because it did not become healthy (a failing migration included): never again;
-    //   stopped before or during the install for any other reason (the disk, a pull, the backup, a busy collector,
-    //   Docker): again an hour after the last try.
+    //   stopped before or during the install for any other reason (a signature not found, the disk, a pull, the
+    //   backup, a busy collector, Docker): again an hour after the last try.
     const shortKey = JSON.stringify(attempt('updated').digests);
     if (!manual) {
       const same = (await store.list(KEEP)).filter((a) => JSON.stringify(a.digests) === shortKey);
@@ -248,16 +247,15 @@ export function createUpdater(cfg: UpdaterConfig, deps: Deps) {
         return result({ available: target.label, outcome: last.outcome, reason: 'tried less than an hour ago' });
     }
 
-    // 1. signatures, before anything is pulled
+    // 1. signatures, before anything is pulled; a refusal is checked again an hour later (rule 1), since a release
+    // being published may be found a moment before its signature
     const key = Object.values(target.digests).join(',');
-    if (refused.has(key)) return result({ available: target.label, outcome: 'refused_signature' });
     try {
       for (const img of IMAGES) {
         const d = target.digests[img];
         if (d) await deps.verify(`${repo(img)}@${d}`, target.kind);
       }
     } catch (err) {
-      refused.add(key);
       const a = attempt('refused_signature', { reason: errorText(err) });
       await store.append(a);
       deps.onFailed(a);

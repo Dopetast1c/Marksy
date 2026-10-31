@@ -378,6 +378,10 @@ describe('the update procedure', () => {
     expect(failures).toHaveLength(1);
     expect(docker.serviceImageVersion('server')).toBe('1.0.0');
     expect(backups).toEqual([]);
+    // found a moment before its signature was published: checked again an hour later
+    refusedDigests.clear();
+    clock += 61 * 60_000;
+    expect((await make({}, { server: tags, web: tags, updater: [] }).check('poll'))?.outcome).toBe('updated');
   });
 
   it('nothing installs inside quiet hours or while the collector reads, and no backup is taken', async () => {
