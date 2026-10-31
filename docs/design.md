@@ -1124,14 +1124,17 @@ packages/core/        canonical types, DiaryProvider interface, grading scales, 
                       guidance rules, throttled HTTP client, provider conformance tests
 providers/_template/  starting point for a new provider
 providers/by-eschools/  Belarus, diary.e-schools.by: manifest, schemas, mapper, fixtures
-server/               Express API + collector + Drizzle schema and migrations, Vitest + Supertest
+server/               Express API + collector + backups + Drizzle schema and migrations, Vitest + Supertest
 web/                  Vite + React PWA, Vitest
+updater/              production updates: channels, signature checks, rollback, the Docker socket guard
+docker/               the reverse proxy's and the web server's Caddy configuration
 docs/                 design.md, providers.md, api-spec.md (by-eschools system notes), tokens.json,
-                      mockups.html
+                      mockups.html; running.md and adding-a-diary.md for the public
 docker-compose.yml    postgres:16 with a named volume, port 5432; docker/postgres/init.sql adds marksy_test
+docker-compose.prod.yml  the production stack (docs/running.md)
 env.example          every variable the code reads, with a comment
-pnpm-workspace.yaml   packages/*, providers/*, server, web
-scripts/              privacy-check.mjs (pnpm privacy)
+pnpm-workspace.yaml   packages/*, providers/*, server, updater, web
+scripts/              checks (privacy, language, documentation, migrations, commits), releases, the e2e of the updater
 .claude/              Claude Code: settings.json (permissions), skills next, check, ui-check, privacy-check;
                       agents privacy-reviewer, ux-reviewer
 .vscode/              recommended extensions and shared editor settings
@@ -1219,4 +1222,4 @@ Each of these was a hidden assumption in the first design and is now an explicit
 - `final/whole` populated shape (after 2026-10-31).
 - Whether `subjects.id` is stable across school years and shared across classes of the same school.
 - Whether the API can return a past school year (a `school_year` parameter on the diary routes, or a different `school_year` uuid in `time_activities`). If yes, backfill previous years automatically; if not, manual entry of year finals stays the only source for history before Marksy.
-- **Hosting (decided, owner 2026-10-29, R1).** A home host runs the whole stack: a Windows laptop with Docker Desktop, a Raspberry Pi (3B and newer, 64-bit) or a Synology NAS, interchangeable by a restore from backup (`docs/running.md` 15). A reverse proxy on the host serves the app under `BASE_PATH` (`/marksy` by default, a runtime setting of one public image) with the ways in A to E of `docs/running.md` 7 (a path on the host's address, an own macvlan address, another port, a local name through the NAS's reverse proxy; a hand-made DSM location is documented and not recommended), leaving the rest of the host's address to other home services. The home network uses plain http; outside, Cloudflare Tunnel with Cloudflare Access gives https without an open port, and phones install the app from that address. Releases are GitHub Releases numbered MAJOR.MINOR.PATCH (build-plan "Versions"); production installs them by itself: an updater follows a release line (`UPDATE_CHANNEL`), learns of a release from a signed hook through the tunnel with polling of GHCR as the fallback, verifies the images' signatures, backs up, migrates in one transaction with backward-compatible (expand and contract) migrations, and rolls back to the previous images when the new one does not come up healthy. The public documentation is in every interface language (`docs/i18n.md`). A split setup with the API in the cloud stays possible (`SYNC_ENABLED`) but is not planned.
+- **Hosting (decided, owner 2026-10-29, R1).** A home host runs the whole stack: a Windows laptop with Docker Desktop, a Raspberry Pi (3B and newer, 64-bit) or a Synology NAS, interchangeable by a restore from backup (`docs/running.md` 15). A reverse proxy on the host serves the app under `BASE_PATH` (`/marksy` by default, a runtime setting of one public image) with the ways in A to E of `docs/running.md` 7 (a path on the host's address, an own macvlan address, another port, a local name through the NAS's reverse proxy; a hand-made DSM location is documented and not recommended), leaving the rest of the host's address to other home services. The home network uses plain http; outside, Cloudflare Tunnel with Cloudflare Access gives https without an open port, and phones install the app from that address. Releases are GitHub Releases numbered MAJOR.MINOR.PATCH (build-plan "Versions"); production installs them by itself: an updater follows a release line (`UPDATE_CHANNEL`), learns of a release from a signed hook through the tunnel with polling of GHCR as the fallback, verifies the images' signatures, backs up, migrates in one transaction with backward-compatible (expand and contract) migrations, and rolls back to the previous images when the new one does not come up healthy. The README is in every interface language, the guides (`docs/running.md`, `docs/adding-a-diary.md`) in English only (owner, 2026-10-31; `docs/i18n.md` 7). A split setup with the API in the cloud stays possible (`SYNC_ENABLED`) but is not planned.

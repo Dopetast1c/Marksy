@@ -78,20 +78,22 @@ export function codeBlocks(text) {
 // A country or diary host named in public copy (CLAUDE.md, "Public-facing copy"), in every language of the
 // documentation. The country's name, never the language's: the Belarusian language is one of the twelve. Cyrillic is
 // written as escapes in strings (a formatter keeps those, not the ones in a regular expression literal), so that this
-// file stays English.
+// file stays English. A word ends where no letter of any script follows (\b knows only ASCII: the Romanian language
+// "belarusă" is fine).
 const FORBIDDEN = [
   'e-?schools',
-  '\\bbelarus\\b',
-  '\\bminsk\\b',
-  '\\bbia\\u0142oru(\\u015b|si\\b)',
-  '\\bbielorr?[u\\u00fa]ss?ia\\b',
-  '\\bbi[e\\u00e9]lorussie\\b',
-  '\\bwei(\\u00df|ss)russland\\b',
-  '\\bwit-?rusland\\b',
-  // Belarus (be, ru, kk, its cases), the older Russian name, the Ukrainian name, Minsk
-  '\\u0431\\u0435\\u043b\\u0430\\u0440\\u0443\\u0441[\\u044c\\u0438\\u0456]',
+  '(?<!\\p{L})belarus(?!\\p{L})',
+  '(?<!\\p{L})minsk(?!\\p{L})',
+  '(?<!\\p{L})bia\\u0142oru(\\u015b|si)(?!\\p{L})',
+  '(?<!\\p{L})bielorr?[u\\u00fa]ss?ia(?!\\p{L})',
+  '(?<!\\p{L})bi[e\\u00e9]lorussie(?!\\p{L})',
+  '(?<!\\p{L})wei(\\u00df|ss)russland(?!\\p{L})',
+  '(?<!\\p{L})wit-?rusland(?!\\p{L})',
+  // Belarus (be, ru, kk, its cases), the older Russian name, the Ukrainian name, Minsk; a soft sign followed by k is the
+  // adjective (the Ukrainian language), not the country
+  '\\u0431\\u0435\\u043b\\u0430\\u0440\\u0443\\u0441(\\u044c(?!\\u043a)|[\\u0438\\u0456](?!\\p{L}))',
   '\\u0431\\u0435\\u043b\\u043e\\u0440\\u0443\\u0441\\u0441',
-  '\\u0431\\u0456\\u043b\\u043e\\u0440\\u0443\\u0441[\\u044c\\u0456]',
+  '\\u0431\\u0456\\u043b\\u043e\\u0440\\u0443\\u0441(\\u044c(?!\\u043a)|\\u0456(?!\\p{L}))',
   '\\u043c[\\u0438\\u0456]\\u043d\\u0441\\u043a',
   '[a-z0-9-]+\\.by(/|\\b)',
 ].map((source) => new RegExp(source, 'iu'));
@@ -116,6 +118,36 @@ function links(text) {
       for (const m of line.matchAll(/\]\(([^)\s]+)\)/g)) out.push([i + 1, m[1]]);
     });
   return out;
+}
+
+const NBSP = ' ';
+
+/**
+ * French typography (packages/i18n/src/locales/GLOSSARY.md): a no-break space before : ; ? ! and inside « », in prose
+ * only (never in fenced or inline code, or a link's target). pnpm docs:stamp fr puts them in, since an editor rarely
+ * types one; the check refuses a plain space there.
+ */
+export function frenchSpaces(text) {
+  let fenced = false;
+  return lf(text)
+    .split('\n')
+    .map((line, i) => {
+      if (/^\s*```/.test(line)) fenced = !fenced;
+      if (fenced || i === 0 || /^\s*```/.test(line)) return line;
+      // the prose between inline code spans and link targets
+      return line
+        .split(/(`[^`]*`|\]\([^)]*\))/)
+        .map((part, j) =>
+          j % 2
+            ? part
+            : part
+                .replace(/ +([:;?!])(?=\s|$|[*_)\]])/g, `${NBSP}$1`)
+                .replace(/« +/g, `«${NBSP}`)
+                .replace(/ +»/g, `${NBSP}»`),
+        )
+        .join('');
+    })
+    .join('\n');
 }
 
 /**
@@ -157,6 +189,13 @@ export function translationProblems({ lang, text, sourceText, languages, exists 
     if (!exists(posix.normalize(file))) err(line, `link to ${file}, which does not exist`);
     else if (/^README(\.[a-z]+)?\.md$/.test(file) && file !== path)
       err(line, `link to ${file}: another language's README; link this one's sections or the English pages`);
+  }
+  if (lang === 'fr') {
+    const fixed = frenchSpaces(text).split('\n');
+    lines.forEach((line, i) => {
+      if (line !== fixed[i])
+        err(i + 1, 'a plain space where French takes a no-break one: pnpm docs:stamp fr puts it in');
+    });
   }
   errors.push(...forbiddenProblems(path, text));
   return { errors, warnings };
@@ -261,7 +300,7 @@ function stamp(args) {
       console.error(`${file}: no translation to stamp`);
       return 2;
     }
-    const lines = lf(text).split('\n');
+    const lines = lf(lang === 'fr' ? frenchSpaces(text) : text).split('\n');
     const old = parseHeader(text);
     const line = header(hash, status ?? old?.status ?? 'machine');
     if (old) lines[0] = line;

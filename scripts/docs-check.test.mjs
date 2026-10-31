@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   codeBlocks,
   forbiddenProblems,
+  frenchSpaces,
   header,
   ISSUE_FORM,
   languageBar,
@@ -124,6 +125,9 @@ describe('docs check', () => {
       'у Беларусі',
       'в Беларуси',
       'в Минске',
+      // Ukrainian: in Belarus, Belarus
+      'в Білорусі',
+      'Білорусь.',
     ];
     for (const line of bad) expect(forbiddenProblems('README.md', line), line).toHaveLength(1);
     const fine = [
@@ -131,8 +135,30 @@ describe('docs check', () => {
       'беларуский язык',
       '[Беларуская](README.be.md)',
       'followed by a backup',
+      // the language in Romanian; its last letter is not ASCII
+      'rusă, belarusă, ucraineană',
+      // the language in Ukrainian and in Belarusian
+      'білоруська мова',
+      'беларуская мова',
     ];
     for (const line of fine) expect(forbiddenProblems('README.md', line), line).toEqual([]);
+  });
+
+  it('French: no-break spaces in prose, never in code or a link target', () => {
+    const nb = ' ';
+    const text = [
+      '<!-- source: README.md sha256:000000000000 · machine -->',
+      'Les **notes** : un tableau ; vraiment ? Oui ! Comme « Contrôle ».',
+      'Lancez `pnpm a : b` puis [le guide](docs/x.md?a=1) : fini.',
+      fence + 'sh',
+      'echo "a : b"',
+      fence,
+    ].join('\n');
+    const out = frenchSpaces(text).split('\n');
+    expect(out[1]).toBe(`Les **notes**${nb}: un tableau${nb}; vraiment${nb}? Oui${nb}! Comme «${nb}Contrôle${nb}».`);
+    expect(out[2]).toBe(`Lancez \`pnpm a : b\` puis [le guide](docs/x.md?a=1)${nb}: fini.`);
+    expect(out[4]).toBe('echo "a : b"');
+    expect(frenchSpaces(frenchSpaces(text))).toBe(frenchSpaces(text));
   });
 
   it('the status page lists every translation with its status', () => {
