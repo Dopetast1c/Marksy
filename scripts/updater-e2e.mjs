@@ -83,6 +83,14 @@ async function waitFor(what, test, ms) {
 
 const updaterCli = (args) => JSON.parse(compose(['exec', '-T', 'updater', 'marksy-updater', ...args]) || 'null');
 const history = () => updaterCli(['history', '50']) ?? [];
+/** The updater's own version; null while it replaces itself */
+const selfVersion = () => {
+  try {
+    return updaterCli(['status'])?.updater ?? null;
+  } catch {
+    return null;
+  }
+};
 const lastOutcome = () => history().at(-1)?.outcome ?? null;
 const psql = (sql) => compose(['exec', '-T', 'postgres', 'psql', '-U', 'marksy', '-d', 'marksy', '-tAc', sql]).trim();
 
@@ -219,6 +227,8 @@ async function main() {
   step('a signed nudge brings 1.1.1 within about two minutes, not 1.2.0');
   // the update to 1.1.0 goes on after the server runs it (the other containers); the nudge comes after it
   await waitFor('the end of 1.1.0', async () => history().some((a) => a.to === '1.1.0'), 180_000);
+  // a release brings the updater too: it replaces itself last, and nothing touches it meanwhile
+  await waitFor('the updater 1.1.0', async () => selfVersion() === '1.1.0', 180_000);
   release('1.1.1');
   release('1.2.0');
   await sleep(5000);
@@ -230,6 +240,7 @@ async function main() {
   const h1 = history().findLast((a) => a.to === '1.1.1');
   check(h1?.trigger === 'hook', 'the hook started it');
   console.log(`   downtime of the server: ${h1?.downtimeMs} ms, whole update ${h1?.durationMs} ms`);
+  await waitFor('the updater 1.1.1', async () => selfVersion() === '1.1.1', 180_000);
 
   step('channel 1 picks 1.2.0 up by polling, never 2.0.0');
   channel = '1';
@@ -239,6 +250,7 @@ async function main() {
   check(tPoll !== null, `1.2.0 installed by polling (${tPoll && Math.round(tPoll / 1000)} s)`);
   await sleep(70_000);
   check((await serverVersion()) === '1.2.0', 'channel 1 did not take 2.0.0');
+  await waitFor('the updater 1.2.0', async () => selfVersion() === '1.2.0', 180_000);
 
   // pre-update backups in BACKUP_DIR: one only for an attempt that got as far as the install
   const dumps = () => {
@@ -372,14 +384,6 @@ async function main() {
   const t14 = await waitFor('1.4.0', async () => (await serverVersion()) === '1.4.0', 300_000);
   check(t14 !== null && t14 < 150_000, `1.4.0 running ${t14 && Math.round(t14 / 1000)} s after the nudge`);
   check(Number(migrations()) === migrationsBefore14 + 1, 'its migration ran');
-  const selfVersion = () => {
-    try {
-      return updaterCli(['status'])?.updater ?? null;
-    } catch {
-      // between the old updater and the new one
-      return null;
-    }
-  };
   const tSelf = await waitFor('the new updater', async () => selfVersion() === '1.4.0', 180_000);
   check(tSelf !== null, `the updater replaced itself and runs ${selfVersion()}`);
   const last = history().findLast((a) => a.to === '1.4.0' && a.outcome === 'updated');
