@@ -355,7 +355,7 @@ A host never goes to a lower version by itself. To change the channel, edit the 
 
 ### How an update happens
 
-The updater learns about a release in two ways: the release workflow sends a signed nudge to `/_marksy/update-hook` the moment a release is published (the update then starts within a minute or two), and every 5 minutes, a little later on each host, it asks the registry anyway. Asking costs a few small requests; nothing is downloaded until there is something new.
+The updater learns about a release in two ways: the release workflow sends a signed nudge to `/_marksy/update-hook` the moment a release is published (the update then starts at once), and every 5 minutes, a little later on each host, it asks the registry anyway. Asking costs a few small requests; nothing is downloaded until there is something new.
 
 Then, in this order, and nothing stops before everything is ready:
 
@@ -375,7 +375,14 @@ When an attempt does not finish, two rules decide whether it is tried again by i
 
 The server applies database changes when it starts, all in one transaction: if one fails, nothing changes, the server stops, and step 7 puts the previous version back on the unchanged database. Database changes are always made so that the previous version still works on them, which is what makes that way back safe.
 
-While the server restarts, the proxy holds requests for up to 30 seconds, and an open app keeps showing what it has. Measured on a GitHub runner: the server was away for about 6 seconds, and a whole update, from the nudge to the last container, took about a minute and a half, most of it the backup and waiting for health checks. A Raspberry Pi is slower; its numbers will be added here once measured. When the new version runs, the app offers to reload and names the version.
+While the server restarts, the proxy holds requests for up to 30 seconds, and an open app keeps showing what it has. Measured by the updater's end-to-end test on a GitHub runner, both updates started by the signed nudge (for 1.4.0 with polling off, so that nothing else could start it), the images in a registry on the same machine (a real host first downloads what changed):
+
+| Release                    | Nudge to the server running it | Server away | Whole update |
+| -------------------------- | ------------------------------ | ----------- | ------------ |
+| 1.1.1, no database change  | 3 s                            | 6.3 s       | 85 s         |
+| 1.4.0, with a migration    | 3 s                            | 6.3 s       | 85 s         |
+
+The whole update is mostly waiting for the backup service, the web app and the proxy to report healthy after the server already runs the new version. A Raspberry Pi is slower; its numbers will be added here once measured. When the new version runs, the app offers to reload and names the version.
 
 ### Commands
 
