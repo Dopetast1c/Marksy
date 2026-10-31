@@ -6,14 +6,14 @@ Written by `pnpm docs:stamp`; `pnpm docs:check` fails when it does not match the
 
 | Language | Code | Page | Status |
 |---|---|---|---|
-| Russian | `ru` | missing | - |
-| Belarusian | `be` | missing | - |
-| Ukrainian | `uk` | missing | - |
-| Kazakh | `kk` | missing | - |
-| Polish | `pl` | missing | - |
-| German | `de` | missing | - |
-| Spanish | `es` | missing | - |
-| Portuguese | `pt` | missing | - |
-| French | `fr` | missing | - |
-| Dutch | `nl` | missing | - |
-| Romanian | `ro` | missing | - |
+| Russian | `ru` | [README.ru.md](../README.ru.md) | machine |
+| Belarusian | `be` | [README.be.md](../README.be.md) | machine |
+| Ukrainian | `uk` | [README.uk.md](../README.uk.md) | machine |
+| Kazakh | `kk` | [README.kk.md](../README.kk.md) | machine |
+| Polish | `pl` | [README.pl.md](../README.pl.md) | machine |
+| German | `de` | [README.de.md](../README.de.md) | machine |
+| Spanish | `es` | [README.es.md](../README.es.md) | machine |
+| Portuguese | `pt` | [README.pt.md](../README.pt.md) | machine |
+| French | `fr` | [README.fr.md](../README.fr.md) | machine |
+| Dutch | `nl` | [README.nl.md](../README.nl.md) | machine |
+| Romanian | `ro` | [README.ro.md](../README.ro.md) | machine |
