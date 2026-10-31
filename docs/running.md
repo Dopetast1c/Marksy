@@ -66,15 +66,15 @@ The images are built for `linux/amd64` and `linux/arm64`.
 
 These steps are the same on every host. Do the host setup of your host (sections 4 to 6) first.
 
-**1. Get the files.** Make a folder for Marksy (for example `C:\marksy`, `/home/pi/marksy` or `/volume1/docker/marksy`) and put these files from the repository into it: `docker-compose.prod.yml`, `docker-compose.macvlan.yml`, `marksy.sh`, `marksy.ps1`. You can clone the repository with git, or download them from the repository page. On Linux, make the script executable: `chmod +x marksy.sh`.
+**1. Get the files.** Make a folder for Marksy (for example `C:\marksy`, `/home/pi/marksy` or `/volume1/docker/marksy`). Download `marksy-deploy-vX.Y.Z.zip` from the [latest release](https://github.com/Dopetast1c/Marksy/releases/latest) and unpack it there: `docker-compose.prod.yml`, `docker-compose.macvlan.yml`, `marksy.sh`, `marksy.ps1` and `env.example`. On Linux, make the script executable: `chmod +x marksy.sh`.
 
-**2. Create the settings file.** This makes `.env.production` with fresh secrets. Until the first release is published, add `--channel preview`; leave it out afterwards.
+**2. Create the settings file.** This makes `.env.production` with fresh secrets:
 
 ```sh
-./marksy.sh init-env --tz Europe/Vienna --channel preview
+./marksy.sh init-env --tz Europe/Vienna
 ```
 ```powershell
-.\marksy.ps1 init-env --tz Europe/Vienna --channel preview
+.\marksy.ps1 init-env --tz Europe/Vienna
 ```
 
 Use your school's time zone. The command prints only the names of the keys it wrote. Open `.env.production` in a text editor and check these lines:
@@ -269,7 +269,7 @@ DIARY_LOGIN=… DIARY_PASSWORD=… MARKSY_DEV_EMAIL=… MARKSY_DEV_PASSWORD=… 
 
    ```sh
    pnpm db:export --out D:/marksy-transfer
-   pnpm env:prod --out D:/marksy-secrets/.env.production --credentials-key-from .env --tz Europe/Vienna --channel preview
+   pnpm env:prod --out D:/marksy-secrets/.env.production --credentials-key-from .env --tz Europe/Vienna
    ```
 
    The same key keeps the stored diary passwords readable.

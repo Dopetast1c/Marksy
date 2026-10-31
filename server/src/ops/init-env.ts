@@ -98,7 +98,7 @@ export interface InitEnvOptions {
   /** another env file (the development .env) to take CREDENTIALS_KEY from, so its stored diary passwords stay readable */
   credentialsFrom?: string | null;
   tz?: string;
-  /** UPDATE_CHANNEL of a new file (preview until the first release) */
+  /** UPDATE_CHANNEL of a new file instead of env.example's 1 */
   channel?: string;
 }
 
