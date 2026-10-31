@@ -53,7 +53,7 @@ describe('image tags of a release', () => {
 });
 
 describe('release notes', () => {
-  it('Features and Fixes from the subjects, the migrations, the documentation in twelve languages', () => {
+  it('Features and Fixes from the subjects, the migrations, the README in twelve languages', () => {
     const notes = releaseNotes('1.2.0', ['feat(web): tags on lessons', 'fix: the cookie path', 'chore: tidy'], {
       migrations: ['0014_tags'],
     });
@@ -62,10 +62,11 @@ describe('release notes', () => {
     expect(notes).not.toContain('Tidy');
     expect(notes).toContain('1 migration: 0014_tags');
     expect(notes).toContain('/blob/v1.2.0/docs/running.md');
-    expect(notes).toContain('/blob/v1.2.0/docs/ro/running.md');
+    expect(notes).toContain('/blob/v1.2.0/docs/adding-a-diary.md');
     expect(notes).toContain('/blob/v1.2.0/README.kk.md');
-    expect(notes.match(/\]\(https/g)).toHaveLength(24);
+    expect(notes.match(/\]\(https/g)).toHaveLength(14);
     expect(notes).toContain('marksy-docs-v1.2.0.zip');
+    expect(notes).toContain('marksy-deploy-v1.2.0.zip');
   });
 
   it('no migration: says so', () => {

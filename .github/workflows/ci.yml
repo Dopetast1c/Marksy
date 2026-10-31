@@ -1,8 +1,9 @@
 name: CI
 
 # Every push and pull request (CLAUDE.md, "Commits and releases"): the whole `pnpm check` (formatting, types, lint,
-# tests against PostgreSQL in a service container, the privacy and language checks), every interface language
-# strictly, the commit messages of the push, and the previous release on this commit's migrated schema. Nothing here
+# tests against PostgreSQL in a service container, the privacy, language and documentation checks), every interface
+# language strictly, on main every README translation strictly, the commit messages of the push, and the previous
+# release on this commit's migrated schema. Nothing here
 # talks to a real diary and no secret is needed.
 
 on:
@@ -70,6 +71,11 @@ jobs:
 
       - name: Every interface language, strictly
         run: pnpm i18n:check --strict
+
+      # on a branch the README's translations may lag (warnings in pnpm check); main has them all, current
+      - name: Every README translation, strictly
+        if: github.ref == 'refs/heads/main'
+        run: pnpm docs:check --strict
 
       # the previous release must still run on the schema this commit migrates to: the updater rolls back that way
       - name: Migrations keep the previous release working

@@ -14,7 +14,7 @@ import { RULE_STARTS_AFTER } from './commit-lint.mjs';
 
 export const FIRST_VERSION = '1.0.0';
 const REPO = 'https://github.com/Dopetast1c/Marksy';
-/** The twelve languages of the public documentation, English first (docs/i18n.md) */
+/** The twelve languages of the README, English first (docs/i18n.md 7); the other pages are English only */
 export const DOC_LANGUAGES = [
   ['en', 'English'],
   ['ru', 'Russian'],
@@ -105,10 +105,7 @@ export function releaseNotes(version, messages, { migrations = [] } = {}) {
   const features = list(['feat']);
   const fixes = list(['fix', 'perf']);
   const tag = `v${version}`;
-  const docLink = (lang, page) =>
-    lang === 'en'
-      ? `${REPO}/blob/${tag}/${page === 'README' ? 'README.md' : `docs/${page}.md`}`
-      : `${REPO}/blob/${tag}/${page === 'README' ? `README.${lang}.md` : `docs/${lang}/${page}.md`}`;
+  const readme = (lang) => `${REPO}/blob/${tag}/${lang === 'en' ? 'README.md' : `README.${lang}.md`}`;
   const lines = [`## Marksy ${version}`, ''];
   if (features.length) lines.push('### Features', '', ...features, '');
   if (fixes.length) lines.push('### Fixes', '', ...fixes, '');
@@ -121,10 +118,10 @@ export function releaseNotes(version, messages, { migrations = [] } = {}) {
     '',
     '### Documentation',
     '',
-    `- README: ${DOC_LANGUAGES.map(([lang, name]) => `[${name}](${docLink(lang, 'README')})`).join(' · ')}`,
-    `- Running Marksy at home: ${DOC_LANGUAGES.map(([lang, name]) => `[${name}](${docLink(lang, 'running')})`).join(' · ')}`,
+    `- README: ${DOC_LANGUAGES.map(([lang, name]) => `[${name}](${readme(lang)})`).join(' · ')}`,
+    `- [Running Marksy at home](${REPO}/blob/${tag}/docs/running.md) · [Adding a diary system](${REPO}/blob/${tag}/docs/adding-a-diary.md)`,
     '',
-    `Images: \`ghcr.io/dopetast1c/marksy-server:${version}\` and \`ghcr.io/dopetast1c/marksy-web:${version}\`, for linux/amd64 and linux/arm64, signed. The documentation of this version in every language is attached as \`marksy-docs-${tag}.zip\`.`,
+    `Images: \`ghcr.io/dopetast1c/marksy-server:${version}\`, \`ghcr.io/dopetast1c/marksy-web:${version}\` and \`ghcr.io/dopetast1c/marksy-updater:${version}\`, for linux/amd64 and linux/arm64, signed. The files a host needs are attached as \`marksy-deploy-${tag}.zip\`, the documentation of this version as \`marksy-docs-${tag}.zip\`.`,
     '',
   );
   return lines.join('\n');

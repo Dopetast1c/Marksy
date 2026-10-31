@@ -3,7 +3,8 @@ name: Release
 # A GitHub Release vX.Y.Z (CLAUDE.md, "Commits and releases"): the images built for the tag's commit (images.yml,
 # sha-<commit>) get the tags X.Y.Z and, when this is the newest of each line, X.Y, X and stable, without a rebuild;
 # they are signed with cosign through GitHub's OIDC (keyless; the updater checks that this workflow signed them); the
-# deploy files and the documentation in every language are attached; the last step nudges production through its
+# deploy files and the documentation (the README in every language, the English guides) are attached, and a README
+# translation that does not follow the English text stops the release; the last step nudges production through its
 # update hook. The nudge may fail: the host polls the registry anyway.
 #
 # Rehearsal (workflow_dispatch): the same steps on a version you give, into the packages marksy-rehearsal-*, with the
@@ -59,6 +60,10 @@ jobs:
           echo "target=$target" >> "$GITHUB_OUTPUT"
           echo "commit=$commit" >> "$GITHUB_OUTPUT"
           echo "tags=$(node scripts/release.mjs tags "$version")" >> "$GITHUB_OUTPUT"
+
+      # a release ships the README in every language, each one following the English text
+      - name: The README in every language is current
+        run: node scripts/docs-check.mjs --strict
 
       - uses: docker/setup-buildx-action@v3
 
@@ -129,10 +134,7 @@ jobs:
         run: |
           mkdir -p out
           zip -q "out/marksy-deploy-v$VERSION.zip" docker-compose.prod.yml docker-compose.macvlan.yml marksy.sh marksy.ps1 env.example
-          docs="README.md docs/running.md"
-          for f in README.*.md docs/adding-a-diary.md docs/*/running.md docs/*/adding-a-diary.md; do [ -f "$f" ] && docs="$docs $f"; done
-          # shellcheck disable=SC2086
-          zip -q "out/marksy-docs-v$VERSION.zip" $docs
+          zip -q "out/marksy-docs-v$VERSION.zip" README.md README.*.md docs/running.md docs/adding-a-diary.md docs/locales-status.md LICENSE
           ls -l out
 
       - name: Attach to the release

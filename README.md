@@ -1,3 +1,5 @@
+**English** · [Русский](README.ru.md) · [Беларуская](README.be.md) · [Українська](README.uk.md) · [Қазақша](README.kk.md) · [Polski](README.pl.md) · [Deutsch](README.de.md) · [Español](README.es.md) · [Português](README.pt.md) · [Français](README.fr.md) · [Nederlands](README.nl.md) · [Română](README.ro.md)
+
 # Marksy
 
 **Your children's school year, in one calm, clear place.**
@@ -9,7 +11,7 @@ Marksy is a family app for school marks, source-available and free for personal 
 ![PWA](https://img.shields.io/badge/app-PWA-5a0fc8.svg)
 ![Self-hosted](https://img.shields.io/badge/data-self--hosted-2f7a4a.svg)
 
-> **Status: early development.** The product design, the data model, the API contract and a clickable prototype of every screen are finished and live in `docs/`. The code is being built from them milestone by milestone (`docs/build-plan.md`).
+> **Status: 1.0, the first release.** Marks, final marks, subjects, the timetable with homework, the family and the look of the app work and are used every day, at home on a computer that updates itself. Tags, study time, the installable app with offline mode and notifications come next, in this order ([`docs/build-plan.md`](docs/build-plan.md)). The sections below describe the whole product.
 
 ## The idea
 
@@ -98,7 +100,7 @@ Marksy works on a common model (students, terms, subjects, lessons, marks, final
 
 Everything a diary may or may not have is optional: lesson types, mark categories, comments, attendance, terms, official finals, even a timetable. A provider declares what is there, and every screen shows what exists instead of empty columns.
 
-To connect a new system you write one provider: a manifest (credentials, scale, capabilities, rate limits), a sign-in function, a handful of fetch functions that map responses to the common types, a `sanitize()` for test fixtures, and the shared conformance test. The contract, a step-by-step guide and a review checklist are in [`docs/providers.md`](docs/providers.md); `providers/_template` is a compiling starting point. If you would like Marksy to support your school's system, open an issue describing it.
+To connect a new system you write one provider: a manifest (credentials, scale, capabilities, rate limits), a sign-in function, a handful of fetch functions that map responses to the common types, a `sanitize()` for test fixtures, and the shared conformance test. [`docs/adding-a-diary.md`](docs/adding-a-diary.md) explains what that takes and how to ask for your school's system; the full contract and a review checklist are in [`docs/providers.md`](docs/providers.md), and `providers/_template` is a compiling starting point.
 
 ## Respectful by design
 
@@ -112,7 +114,7 @@ To connect a new system you write one provider: a manifest (credentials, scale, 
 
 Marksy handles data about children, and its defaults reflect that.
 
-- **Your data stays with you.** No analytics, no third-party scripts except fonts, nothing leaves your server.
+- **Your data stays with you.** No analytics, no third-party scripts or fonts, nothing leaves your server.
 - **Sessions everywhere.** Every route except sign-in, health and API docs requires a session, and every query is scoped to one family.
 - **Secrets protected.** Diary passwords are encrypted at rest (AES-256-GCM); Marksy passwords are hashed with argon2id. Logs never contain passwords, tokens or full names.
 - **Nothing real in the repository.** Test fixtures are fictional or sanitised; `pnpm privacy` checks for secrets, personal data and files that must never be committed.
@@ -121,12 +123,19 @@ Marksy handles data about children, and its defaults reflect that.
 ## Requirements
 
 - An account on a supported school diary (a parent's or a student's).
-- A computer that is on during the school day, with Docker and Node.js 22: a home PC, a mini PC, a Raspberry Pi or a NAS.
-- Optional: a Telegram bot token for Telegram notifications, and a public HTTPS address (Cloudflare Tunnel or Tailscale work well) for using the app outside the home network and for Web Push.
+- A computer that is on during the school day, with Docker and nothing else: a home PC or laptop, a mini PC, a Raspberry Pi or a NAS.
+- Optional: a domain on Cloudflare, for using the app outside the home network through Cloudflare Tunnel, installing it on phones and Web Push; a Telegram bot token for Telegram notifications.
+- To develop Marksy: Node.js 22, pnpm and Docker.
 
-## Quick start
+## Running in production
 
-The workspace runs today: the database schema, the collector with its planner, a fictional demo family, the API health route and API docs, and a placeholder app. The screens arrive milestone by milestone, see `docs/build-plan.md`. You need Node.js 22, pnpm (`npm install -g pnpm` or `corepack enable`) and Docker.
+To run Marksy for your family every day, on a laptop, a Raspberry Pi or a NAS, with only Docker on that computer: [docs/running.md](docs/running.md). It covers the install, the ways to reach the app at home and from outside (Cloudflare Tunnel), backups, restoring and moving to another computer, and updates. Every release has the files a host needs attached as `marksy-deploy-vX.Y.Z.zip`.
+
+Releases are numbered MAJOR.MINOR.PATCH: MAJOR is a global rework of the app (rare), MINOR brings new features, PATCH brings corrections and fixes. A host installs new releases by itself, within minutes, after checking that this project signed them, with a backup before and a way back if something goes wrong.
+
+## Quick start for developers
+
+The workspace runs the whole app from the source code: the database, the collector with its planner, the API with its docs, the app, and a fictional demo family to explore it without a diary account. You need Node.js 22, pnpm (`npm install -g pnpm` or `corepack enable`) and Docker.
 
 ```bash
 git clone https://github.com/Dopetast1c/Marksy.git
@@ -157,15 +166,9 @@ Vite prints a `Network:` address such as `http://192.168.1.20:5173`; open it on 
 
 `pnpm smoke:ui` does the same for the screens: with `pnpm dev:lan` running it opens the app over the home-network address in a headless browser at a phone size (360 px, touch) and a tablet size, signs in as the demo parent (and as you, when `MARKSY_DEV_EMAIL` is set), walks every screen of each child, and shoots the same states of the clickable prototype (`docs/mockups.html`) for comparison. The screenshots land in `data/ui/` (the last three runs), which is never committed. It needs Chromium for Playwright once: `pnpm exec playwright install chromium`.
 
-## Running in production
-
-To run Marksy for your family every day, on a laptop, a Raspberry Pi or a NAS, with only Docker on that computer: [docs/running.md](docs/running.md). It covers the install, the ways to reach the app at home and from outside (Cloudflare Tunnel), backups, restoring and moving to another computer, and updates.
-
-Releases are numbered MAJOR.MINOR.PATCH: MAJOR is a global rework of the app (rare), MINOR brings new features, PATCH brings corrections and fixes.
-
 ## Configuration
 
-All configuration is in `.env` (created by `pnpm setup:env` from `env.example`). Secrets never go into the repository.
+For development, all configuration is in `.env` (created by `pnpm setup:env` from `env.example`); a production host has its own `.env.production` ([docs/running.md](docs/running.md), section 3). Secrets never go into the repository.
 
 | Variable | Purpose |
 |---|---|
@@ -199,39 +202,48 @@ providers/demo-full/    a fictional diary with many features: the demo family an
 providers/demo-lite/    the same fictional diary with fewer features: the demo family's second school
 packages/demo-diary/    the fictional diary and school behind the demo providers and the demo family
 providers/<id>/         one folder per diary system: manifest, schemas, mapper, fixtures
-server/                 Express API, collector, Drizzle schema and migrations
+server/                 Express API, collector, backups, Drizzle schema and migrations, the production command line
 web/                    React + Vite PWA, Tailwind driven by docs/tokens.json
-scripts/                privacy check, .env setup
-docs/                   ux-principles.md   why the interface is the way it is
+updater/                automatic updates: channels, signature checks, rollback, the Docker socket guard
+docker/                 the reverse proxy's and the web server's configuration
+scripts/                checks (privacy, language, documentation, migrations, commits), releases, .env setup
+docs/                   running.md         running Marksy at home
+                        adding-a-diary.md  what connecting another diary system takes
+                        ux-principles.md   why the interface is the way it is
                         design.md          product and technical design
                         build-plan.md      milestones and how the project is built
-                        providers.md       how to connect a diary system
+                        providers.md       the provider contract
                         i18n.md            how to add a language
                         api-spec.md        notes on the first provider's API
                         tokens.json        design tokens
                         mockups.html       clickable prototype
 ```
 
-Start with `docs/ux-principles.md` to see why the interface is the way it is, `docs/design.md` to understand or change the product, and `docs/providers.md` to connect another diary system.
+Start with `docs/running.md` to run Marksy, `docs/ux-principles.md` to see why the interface is the way it is, `docs/design.md` to understand or change the product, and `docs/adding-a-diary.md` to connect another diary system.
 
 ## Roadmap
 
 The full plan with acceptance criteria is in [`docs/build-plan.md`](docs/build-plan.md).
+
+Done:
 
 1. Core: common model, grading scales, marks math, HTTP client, languages.
 2. The first provider and its conformance tests.
 3. Server: database, collector, planner, fictional seed data.
 4. Accounts, families, invites and the read API.
 5. The app: home, attention, marks, finals, subjects, subject page, timetable, settings, appearance; then translations into the other ten languages.
-6. Tags.
-7. Study time.
-8. Installable PWA with offline mode.
-9. Notifications: inbox, rules, Web Push, Telegram.
-10. Running at home: production setup, backups, remote access.
+6. Running at home (1.0): production images, backups, remote access, signed automatic updates.
+
+Next:
+
+7. Tags.
+8. Study time.
+9. Installable PWA with offline mode.
+10. Notifications: inbox, rules, Web Push, Telegram.
 
 ## Contributing
 
-Pull requests are not accepted. Bug reports, ideas and translation fixes are very welcome as [Issues](https://github.com/Dopetast1c/Marksy/issues), in English or Russian.
+Pull requests are not accepted. Bug reports, ideas and translation fixes, of the app or of this page in your language, are very welcome as [Issues](https://github.com/Dopetast1c/Marksy/issues), in English or Russian.
 
 If a diary API changes, open an issue with a sanitised response (names, ids and comments replaced), the provider id and the date.
 

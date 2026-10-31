@@ -2,7 +2,8 @@
 // `pnpm language` (also part of `pnpm privacy`): English everywhere in the repository, except where another language is
 // the content itself (CLAUDE.md, "Language"). Cyrillic is allowed only in:
 // - the app's locale files (packages/i18n/src/locales/);
-// - the translated public pages (README.<lang>.md, docs/<lang>/);
+// - the translated README (README.<lang>.md), and the language bar on the first line of README.md (languages by their own
+//   names, exactly as scripts/docs-check.mjs writes it);
 // - the clickable prototype (docs/mockups.html);
 // - the seed, the demo diary and the diaries' sanitised fixtures and test data, as data: string literals in code,
 //   anything in a data file; never in a comment;
@@ -20,6 +21,7 @@ import { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import ts from 'typescript';
+import { languageBar, readLanguages, SOURCE } from './docs-check.mjs';
 
 // U+0400 to U+04FF, written as escapes so this file stays English itself
 const CYRILLIC = new RegExp('[\\u0400-\\u04FF]');
@@ -30,7 +32,6 @@ const RUSSIAN_PROSE = new RegExp('[\\u0400-\\u04FF]+(?:\\s+[\\u0400-\\u04FF]+){3
 const WHOLE = [
   /^packages\/i18n\/src\/locales\//,
   /^README\.(?!md$)[a-z]{2,3}\.md$/,
-  /^docs\/(?!en\/)[a-z]{2,3}\//,
   /^docs\/mockups\.html$/,
   // data files of the seed, the demo diary and the diaries' fixtures
   /^providers\/[^/]+\/fixtures\//,
@@ -119,7 +120,9 @@ export function checkText(path, text) {
     });
     return problems;
   }
+  const bar = path === SOURCE ? languageBar(readLanguages(), 'en') : null;
   text.split('\n').forEach((line, i) => {
+    if (i === 0 && line.replace(/\r$/, '') === bar) return;
     if (CYRILLIC.test(line)) problems.push([i + 1, 'Cyrillic in a file that must be English']);
   });
   return problems;

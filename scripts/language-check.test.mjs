@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { languageBar, readLanguages } from './docs-check.mjs';
 import { checkText, messageProblems } from './language-check.mjs';
 
 // Fictional Russian words, put together from escapes so this file follows its own rule
@@ -23,14 +24,21 @@ describe('language check', () => {
     for (const path of [
       'packages/i18n/src/locales/ru.json',
       'README.ru.md',
-      'docs/be/running.md',
       'docs/mockups.html',
       'providers/demo-full/fixtures/profile.json',
     ])
       expect(checkText(path, SENTENCE), path).toEqual([]);
     expect(checkText('README.md', SENTENCE)).toHaveLength(1);
     expect(checkText('docs/running.md', SENTENCE)).toHaveLength(1);
-    expect(checkText('docs/en/running.md', SENTENCE)).toHaveLength(1);
+    // only the README is translated
+    expect(checkText('docs/be/running.md', SENTENCE)).toHaveLength(1);
+  });
+
+  it('README.md: the language bar on the first line, and nowhere else', () => {
+    const bar = languageBar(readLanguages(), 'en');
+    expect(checkText('README.md', `${bar}\n\n# Marksy\n`)).toEqual([]);
+    expect(checkText('README.md', `# Marksy\n\n${bar}\n`)).toEqual([[3, expect.any(String)]]);
+    expect(checkText('docs/running.md', `${bar}\n`)).toHaveLength(1);
   });
 
   it('the four specs: UI words in English prose pass, a Russian sentence fails', () => {
