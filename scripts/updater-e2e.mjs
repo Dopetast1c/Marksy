@@ -217,18 +217,18 @@ async function main() {
   check((await nudge(secret, fixed)) === 401, 'the same nudge again is refused');
 
   step('a signed nudge brings 1.1.1 within about two minutes, not 1.2.0');
+  // the update to 1.1.0 goes on after the server runs it (the other containers); the nudge comes after it
+  await waitFor('the end of 1.1.0', async () => history().some((a) => a.to === '1.1.0'), 180_000);
   release('1.1.1');
   release('1.2.0');
-  // the last check may still run; a fresh nudge after it
   await sleep(5000);
   check((await nudge(secret)) === 202, 'nudge accepted');
   const tNudge = await waitFor('1.1.1', async () => (await serverVersion()) === '1.1.1', 180_000);
-  check(
-    tNudge !== null && tNudge < 150_000,
-    `1.1.1 installed ${tNudge && Math.round(tNudge / 1000)} s after the nudge`,
-  );
+  check(tNudge !== null && tNudge < 150_000, `1.1.1 running ${tNudge && Math.round(tNudge / 1000)} s after the nudge`);
   check((await serverVersion()) !== '1.2.0', 'channel 1.1 did not take 1.2.0');
-  const h1 = history().at(-1);
+  await waitFor('the end of 1.1.1', async () => history().some((a) => a.to === '1.1.1'), 180_000);
+  const h1 = history().findLast((a) => a.to === '1.1.1');
+  check(h1?.trigger === 'hook', 'the hook started it');
   console.log(`   downtime of the server: ${h1?.downtimeMs} ms, whole update ${h1?.durationMs} ms`);
 
   step('channel 1 picks 1.2.0 up by polling, never 2.0.0');
@@ -371,7 +371,6 @@ async function main() {
   check((await nudge(secret)) === 202, 'nudge accepted');
   const t14 = await waitFor('1.4.0', async () => (await serverVersion()) === '1.4.0', 300_000);
   check(t14 !== null && t14 < 150_000, `1.4.0 running ${t14 && Math.round(t14 / 1000)} s after the nudge`);
-  check(history().find((a) => a.to === '1.4.0')?.trigger === 'hook', 'the hook started it');
   check(Number(migrations()) === migrationsBefore14 + 1, 'its migration ran');
   const selfVersion = () => {
     try {
@@ -384,6 +383,7 @@ async function main() {
   const tSelf = await waitFor('the new updater', async () => selfVersion() === '1.4.0', 180_000);
   check(tSelf !== null, `the updater replaced itself and runs ${selfVersion()}`);
   const last = history().findLast((a) => a.to === '1.4.0' && a.outcome === 'updated');
+  check(last?.trigger === 'hook', 'the hook started it');
   check(last?.migrations?.after === (last?.migrations?.before ?? 0) + 1, 'the history records the migration');
   console.log(
     `   with a migration: downtime of the server ${last?.downtimeMs} ms, whole update ${last?.durationMs} ms`,

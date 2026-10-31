@@ -150,18 +150,20 @@ async function service(s: Settings): Promise<void> {
   );
 
   let last: CheckResult | null = null;
-  let again = false;
+  // a check asked for while one runs follows it, under its own trigger (a nudge stays a nudge in the history)
+  let again: Attempt['trigger'] | null = null;
   let timer: NodeJS.Timeout | undefined;
   const run = async (trigger: Attempt['trigger'], to?: string): Promise<CheckResult | null> => {
     if (updater.busy) {
-      again = true;
+      again = trigger;
       return null;
     }
     const r = await updater.check(trigger, to);
     if (r) last = r;
     if (again) {
-      again = false;
-      void run(trigger);
+      const next = again;
+      again = null;
+      void run(next);
     }
     return r;
   };
