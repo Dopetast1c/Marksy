@@ -14,7 +14,7 @@
 // PATH. Prints versions, outcomes and timings; the history of the updater is printed at the end.
 import { spawnSync } from 'node:child_process';
 import { createHmac } from 'node:crypto';
-import { chmodSync, copyFileSync, mkdirSync, mkdtempSync, readdirSync, writeFileSync } from 'node:fs';
+import { chmodSync, copyFileSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -265,14 +265,12 @@ async function main() {
   check((await serverVersion()) === '1.2.0', 'channel 1 did not take 2.0.0');
   await waitFor('the updater 1.2.0', async () => updaterSettled('1.2.0'), 180_000);
 
-  // pre-update backups in BACKUP_DIR: one only for an attempt that got as far as the install
-  const dumps = () => {
-    try {
-      return readdirSync(join(work, 'backups', 'pre-update')).filter((f) => f.endsWith('.dump')).length;
-    } catch {
-      return 0;
-    }
-  };
+  // pre-update backups in BACKUP_DIR: one only for an attempt that got as far as the install. Counted inside the backup
+  // container: the folder is readable by the containers' user only, not by the user running this script
+  const dumps = () =>
+    compose(['exec', '-T', 'backup', 'ls', '-1', '/backups/pre-update'], { ok: true })
+      .split('\n')
+      .filter((f) => f.endsWith('.dump')).length;
   const dumpsBefore = dumps();
 
   step('quiet hours and an open collector run hold 1.2.1 back');
