@@ -423,8 +423,12 @@ async function main() {
   }
   const families = [SEED];
   const ownLogin = process.env.MARKSY_DEV_EMAIL?.trim();
-  if (ownLogin && process.env.MARKSY_DEV_PASSWORD)
+  // the owner's own password goes only to this computer, or over https: never in clear text to another host
+  const ownSafe =
+    !url || /^https:\/\//.test(url) || /^http:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?(\/|$)/.test(url);
+  if (ownLogin && process.env.MARKSY_DEV_PASSWORD && ownSafe)
     families.push({ key: 'own', login: ownLogin, password: process.env.MARKSY_DEV_PASSWORD });
+  else if (ownLogin && !ownSafe) console.log(`your own login is not sent to ${url} over plain http: the seed only`);
   const chosen = only ? families.filter((f) => f.key === only) : families;
 
   const { chromium } = await import('playwright');
