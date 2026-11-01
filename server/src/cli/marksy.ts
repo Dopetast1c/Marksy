@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { statfs } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -186,6 +186,8 @@ function cmdInitEnv(args: string[]): number {
   });
   mkdirSync(dirname(target), { recursive: true });
   writeFileSync(target, result.text, { mode: 0o600 });
+  // the mode applies only when the file is new: an older file with looser rights is tightened too
+  chmodSync(target, 0o600);
   console.log(`${target}: ${result.added.length} keys added, ${result.kept.length} secrets kept as they were`);
   if (result.generated.length) console.log(`generated: ${result.generated.join(', ')}`);
   if (result.copied.length) console.log(`copied from the other file: ${result.copied.join(', ')}`);
@@ -236,9 +238,10 @@ async function cmdConnect(args: string[]): Promise<number> {
  * password: never on an instance that strangers can reach, and never next to a real family (docs/running.md).
  */
 async function cmdSeed(args: string[]): Promise<number> {
-  if (!seedAllowed(env('PUBLIC_URL')) && !flag(args, '--allow-public')) {
+  // a tunnel token means the instance can be reached from outside (docs/running.md 11)
+  if ((!seedAllowed(env('PUBLIC_URL')) || env('TUNNEL_TOKEN')) && !flag(args, '--allow-public')) {
     console.error(
-      'PUBLIC_URL is a public address: the demo logins have a published password (--allow-public to seed anyway)',
+      'this instance can be reached from outside (PUBLIC_URL or TUNNEL_TOKEN): the demo logins have a published password (--allow-public to seed anyway)',
     );
     return 2;
   }
@@ -295,8 +298,11 @@ export async function main(argv: string[]): Promise<number> {
       }
     }
     case 'backup':
+      // a backup holds the children's marks: readable by the containers' user only, never by other accounts on the host
+      process.umask(0o077);
       return cmdBackup();
     case 'backup-daemon': {
+      process.umask(0o077);
       const token = env('MARKSY_INTERNAL_TOKEN');
       if (!token) throw new Error('MARKSY_INTERNAL_TOKEN must be set (init-env generates it)');
       await backupDaemon({

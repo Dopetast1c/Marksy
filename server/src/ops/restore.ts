@@ -123,8 +123,19 @@ export async function restoreBackup(opts: RestoreOptions): Promise<RestoreReport
   const check = new pg.Client({ connectionString: opts.databaseUrl });
   await check.connect();
   let counts: Record<string, number>;
+  const note = `restored from ${basename(manifest.dump.file)}`;
   try {
     counts = await tableCounts(check, Object.keys(manifest.tables));
+    // before anything below can fail: no session of the old host stays valid, and the collector stays off, so that a
+    // half-finished restore never starts reading a diary another host may still read
+    await check.query('delete from sessions');
+    const state = await check.query<{ t: string | null }>("select to_regclass('public.instance_state') as t");
+    if (state.rows[0]?.t)
+      await check.query(
+        `insert into instance_state (id, sync_enabled, sync_note, updated_at) values (1, false, $1, now())
+         on conflict (id) do update set sync_enabled = false, sync_note = $1, updated_at = now()`,
+        [note],
+      );
   } finally {
     await check.end();
   }
@@ -145,9 +156,10 @@ export async function restoreBackup(opts: RestoreOptions): Promise<RestoreReport
   try {
     const applied = await migrateDb(db);
     log(`migrations applied: ${applied}`);
+    // a dump older than the switch gets it from the migrations, switched on: off at once
+    await setSyncEnabled(db, false, note);
     if (opts.withoutDemo) await db.transaction((tx) => removeDemoFamilies(tx));
     await db.delete(sessions);
-    await setSyncEnabled(db, false, `restored from ${basename(manifest.dump.file)}`);
     return {
       manifest,
       tables: Object.keys(counts).length,
