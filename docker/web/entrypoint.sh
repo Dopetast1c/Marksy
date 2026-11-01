@@ -29,7 +29,7 @@ case "$role" in
     ;;
 
   proxy)
-    subnet="${MARKSY_EDGE_SUBNET:-172.30.57.0/24}"
+    tunnel="${MARKSY_TUNNEL_IP:-172.30.57.250}"
     extra="${PROXY_TRUSTED_EXTRA:-}"
     hook="${UPDATE_HOOK_UPSTREAM:-}"
     {
@@ -38,13 +38,20 @@ case "$role" in
       echo "  auto_https off"
       echo "  persist_config off"
       echo "  servers {"
-      # forwarded headers are believed only from cloudflared on the compose network and an optional proxy in front
-      echo "    trusted_proxies static ${subnet} ${extra}"
+      # forwarded headers are believed only from cloudflared's fixed address and an optional proxy in front, never from
+      # the rest of the compose network: on Docker Desktop every client arrives from that network's gateway
+      echo "    trusted_proxies static ${tunnel} ${extra}"
       echo "  }"
       echo "}"
       echo ""
       echo "(marksy) {"
       echo "  header -Server"
+      # in written order, the first that matches answers
+      echo "  route {"
+      # plain http only from the home network (and the tunnel, a container): a port forwarded to the internet by
+      # mistake shows nothing, not even the login page
+      echo "  @outside not remote_ip private_ranges"
+      echo "  respond @outside \"Marksy answers plain http only on the home network\" 403"
       echo "  handle /_marksy/proxy-health {"
       echo "    respond \"ok\" 200"
       echo "  }"
@@ -82,6 +89,7 @@ case "$role" in
         echo "    respond 404"
         echo "  }"
       fi
+      echo "  }"
       echo "  handle_errors 502 503 504 {"
       echo "    root * /srv/proxy"
       echo "    rewrite * /updating.html"

@@ -105,11 +105,13 @@ To try Marksy without a diary account, `./marksy.sh seed` creates a fictional de
 
 - **Docker Desktop**: install it with the WSL 2 backend. In its settings, turn on *Start Docker Desktop when you sign in*. Docker Desktop starts when you sign in to Windows, so after a restart the laptop must be signed in (or set to sign in by itself) before Marksy is back.
 - **Stay awake**: in *Settings, System, Power*, set sleep to *Never* when plugged in. In *Control Panel, Power Options, Choose what closing the lid does*, choose *Do nothing* when plugged in.
-- **Firewall**: your home network must be a *Private* network in Windows. Then allow the proxy's port on private networks only, in PowerShell as administrator:
+- **Firewall**: your home network must be a *Private* network in Windows. Then allow the proxy's port on private networks and from your local network only, in PowerShell as administrator:
 
   ```powershell
-  New-NetFirewallRule -DisplayName "Marksy" -Direction Inbound -Protocol TCP -LocalPort 80 -Profile Private -Action Allow
+  New-NetFirewallRule -DisplayName "Marksy" -Direction Inbound -Protocol TCP -LocalPort 80 -Profile Private -RemoteAddress LocalSubnet -Action Allow
   ```
+
+  This rule matters more here than on other hosts: with Docker Desktop, the containers do not see the address a request came from, so Marksy itself cannot tell your home network from the internet, and the firewall is what keeps the internet out. For the same reason the limits on sign-in attempts per address count all your devices at home as one; the limits per login still apply to each.
 
 - **Backups**: a folder on another drive if you have one, for example `BACKUP_DIR=D:/marksy-backups`.
 - **When the laptop was off**: Marksy catches up on its own when it is back: the collector reads the days it missed, and a backup missed at night is taken a few minutes after the start.
@@ -191,7 +193,7 @@ PROXY_PORT=8088
 
 - **A fixed address for the host**: a DHCP reservation for the host's network card, so its address never changes. With option B, also keep the macvlan address free (outside the DHCP range, or reserved).
 - **A local name** (optional): if your router has local DNS, give the host or the macvlan address a name, such as `marksy.lan`.
-- **No port forwarding.** Do not forward any port to the host, and turn off UPnP if you do not need it. The tunnel of section 11 needs no open port. Marksy refuses plain http from addresses outside your home network anyway, so a forwarded port by mistake never shows a login form to the internet.
+- **No port forwarding.** Do not forward any port to the host, and turn off UPnP if you do not need it. The tunnel of section 11 needs no open port. The proxy refuses plain http from addresses outside your home network anyway, so on a Linux host, a Pi or a NAS a port forwarded by mistake shows nothing to the internet, not even the login page. On Windows with Docker Desktop every request looks local to the containers, so there the firewall rule of section 4 does that job.
 
 ## 9. Two addresses, one app
 
@@ -245,7 +247,8 @@ Before the tunnel goes on, check each line. Most are covered by Marksy's tests; 
 - [ ] Swagger (`/api/docs`) and the API document need a session in production (`API_DOCS=session`).
 - [ ] Nothing answers without a session except the login, invites, health and the signed update hook; health shows only the version.
 - [ ] Every page carries security headers and a content security policy that allows nothing from other sites.
-- [ ] Plain http is answered only from your home network.
+- [ ] Plain http is answered only from your home network; forwarded headers are believed only from the tunnel (and `PROXY_TRUSTED_EXTRA`).
+- [ ] *You, on Windows:* the firewall rule of section 4 allows the local subnet only.
 - [ ] Signing up without an invite works only on an empty instance (`SIGNUP=first`).
 - [ ] Only signed releases install; the update hook takes nothing from the request but "check now".
 - [ ] Only the socket guard sees the Docker socket, and it lets through Marksy's own containers and images only.

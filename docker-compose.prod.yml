@@ -59,7 +59,7 @@ services:
       TZ: ${TZ:-UTC}
       # one BASE_PATH for the server (the cookie's Path), the web app and the proxy
       BASE_PATH: ${BASE_PATH:-/}
-      # the proxy and cloudflared on the compose network are the only proxies whose headers are believed
+      # the server is reached only through the proxy on the compose network, which sets the forwarded headers itself
       TRUST_PROXY: loopback, ${MARKSY_EDGE_SUBNET:-172.30.57.0/24}
       SERVER_INTERNAL_URL: http://server:3001
       BACKUP_INTERNAL_URL: http://backup:3002
@@ -118,7 +118,8 @@ services:
       BASE_PATH: ${BASE_PATH:-/}
       PROXY_HOST: ${PROXY_HOST:-}
       PROXY_TRUSTED_EXTRA: ${PROXY_TRUSTED_EXTRA:-}
-      MARKSY_EDGE_SUBNET: ${MARKSY_EDGE_SUBNET:-172.30.57.0/24}
+      # cloudflared's fixed address: the only container whose forwarded headers the proxy believes
+      MARKSY_TUNNEL_IP: ${MARKSY_TUNNEL_IP:-172.30.57.250}
       # /_marksy/update-hook, outside BASE_PATH (and outside Cloudflare Access): the release workflow's signed nudge
       UPDATE_HOOK_UPSTREAM: updater:8090
     # the only published port of the stack (options A, C and D); cloudflared reaches the proxy inside the network
@@ -240,7 +241,10 @@ services:
     environment:
       # from the Cloudflare dashboard (docs/running.md, Cloudflare Tunnel); without it the tunnel does not start
       TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
-    networks: [edge]
+    networks:
+      edge:
+        # high in the subnet, away from the addresses Docker hands out from the bottom
+        ipv4_address: ${MARKSY_TUNNEL_IP:-172.30.57.250}
     depends_on:
       - proxy
     mem_limit: 96m
@@ -255,7 +259,8 @@ volumes:
     name: marksy-prod-updater-state
 
 networks:
-  # the proxy, the web app, the server and cloudflared; its subnet is what TRUST_PROXY and the proxy trust
+  # the proxy, the web app, the server and cloudflared; the server trusts its subnet (TRUST_PROXY), the proxy only
+  # cloudflared's address in it (MARKSY_TUNNEL_IP)
   edge:
     ipam:
       config:
