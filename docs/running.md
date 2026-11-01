@@ -398,7 +398,7 @@ The whole update is mostly waiting for the backup service, the web app and the p
 ./marksy.sh update now --to 1.4.2  # install exactly this release (never a lower one)
 ```
 
-`UPDATE_PAUSED=true` in `.env.production` pauses as well; a manual `update now` works in both cases. Other settings, all optional: `UPDATE_POLL_MINUTES` (5), `UPDATE_HEALTH_TIMEOUT_SECONDS` (300; raise it on a slow host), `UPDATE_COLLECTOR_WAIT_MINUTES` (20), `UPDATE_MIN_FREE_MB` (1024).
+`UPDATE_PAUSED=true` in `.env.production` pauses as well; a manual `update now` works in both cases. When the updater is asked to stop while it installs (`./marksy.sh up`, a restart of Docker), it finishes that update first, which takes a few minutes at most, and never leaves one half done. Other settings, all optional: `UPDATE_POLL_MINUTES` (5), `UPDATE_HEALTH_TIMEOUT_SECONDS` (300; raise it on a slow host), `UPDATE_COLLECTOR_WAIT_MINUTES` (20), `UPDATE_MIN_FREE_MB` (1024).
 
 ### The update hook
 

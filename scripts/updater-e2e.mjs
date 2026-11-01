@@ -83,22 +83,25 @@ async function waitFor(what, test, ms) {
 
 const updaterCli = (args) => JSON.parse(compose(['exec', '-T', 'updater', 'marksy-updater', ...args]) || 'null');
 const history = () => updaterCli(['history', '50']) ?? [];
-/** The updater's own version; null while it replaces itself */
-const selfVersion = () => {
+const status = () => {
   try {
-    return updaterCli(['status'])?.updater ?? null;
+    return updaterCli(['status']);
   } catch {
+    // between the old updater and the new one
     return null;
   }
 };
+/** The updater's own version; null while it replaces itself */
+const selfVersion = () => status()?.updater ?? null;
 /**
- * The updater runs this version and its swap is over: the new one answers before the swap container has seen it
- * healthy and removed the old one, and nothing may touch the updater until then
+ * The updater runs this version, no update is running and its swap is over (the new one answers before the swap
+ * container has seen it healthy and removed the old one): only then may the test touch the updater
  */
 const updaterSettled = (version) => {
   const names = sh('docker', ['ps', '-a', '--format', '{{.Names}}']).split('\n');
   const swapping = names.some((n) => n === `${PROJECT}-updater-swap` || n === `${PROJECT}-updater-1-previous`);
-  return !swapping && selfVersion() === version;
+  const s = status();
+  return !swapping && s?.updater === version && s?.busy === false;
 };
 const lastOutcome = () => history().at(-1)?.outcome ?? null;
 const psql = (sql) => compose(['exec', '-T', 'postgres', 'psql', '-U', 'marksy', '-d', 'marksy', '-tAc', sql]).trim();
@@ -220,7 +223,8 @@ async function main() {
 
   step('channel 1.1: the start check installs 1.1.0');
   channel = '1.1';
-  compose(['up', '-d', '--no-deps', 'updater']);
+  // polling off until channel 1: the start check brings 1.1.0, and only the signed nudge may bring 1.1.1
+  compose(['up', '-d', '--no-deps', 'updater'], { env: { E2E_POLL_MINUTES: '600' } });
   const t11 = await waitFor('1.1.0', async () => (await serverVersion()) === '1.1.0', 180_000);
   check(t11 !== null, `1.1.0 installed (${t11 && Math.round(t11 / 1000)} s)`);
 

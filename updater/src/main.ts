@@ -153,14 +153,28 @@ async function service(s: Settings): Promise<void> {
   // a check asked for while one runs follows it, under its own trigger (a nudge stays a nudge in the history)
   let again: Attempt['trigger'] | null = null;
   let timer: NodeJS.Timeout | undefined;
+  // asked to stop (`docker compose up` replacing it, a restart): no new check starts, and a running update is finished,
+  // never cut off half-way with some containers replaced and others not (compose gives it stop_grace_period)
+  let stopping = false;
+  const stop = () => {
+    if (stopping) return;
+    stopping = true;
+    clearTimeout(timer);
+    log.info('stopping', { waitingForUpdate: updater.busy });
+    const exitWhenIdle = () => (updater.busy ? setTimeout(exitWhenIdle, 1000) : process.exit(0));
+    exitWhenIdle();
+  };
+  process.on('SIGTERM', stop);
+  process.on('SIGINT', stop);
   const run = async (trigger: Attempt['trigger'], to?: string): Promise<CheckResult | null> => {
+    if (stopping) return null;
     if (updater.busy) {
       again = trigger;
       return null;
     }
     const r = await updater.check(trigger, to);
     if (r) last = r;
-    if (again) {
+    if (again && !stopping) {
       const next = again;
       again = null;
       void run(next);

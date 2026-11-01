@@ -196,6 +196,8 @@ services:
     networks: [edge, backend, docker]
     depends_on:
       - socket-guard
+    # asked to stop during an update, it finishes the update first (a few minutes at most), never half of it
+    stop_grace_period: 5m
     read_only: true
     tmpfs:
       - /tmp
