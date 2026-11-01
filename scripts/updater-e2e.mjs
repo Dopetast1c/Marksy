@@ -91,6 +91,15 @@ const selfVersion = () => {
     return null;
   }
 };
+/**
+ * The updater runs this version and its swap is over: the new one answers before the swap container has seen it
+ * healthy and removed the old one, and nothing may touch the updater until then
+ */
+const updaterSettled = (version) => {
+  const names = sh('docker', ['ps', '-a', '--format', '{{.Names}}']).split('\n');
+  const swapping = names.some((n) => n === `${PROJECT}-updater-swap` || n === `${PROJECT}-updater-1-previous`);
+  return !swapping && selfVersion() === version;
+};
 const lastOutcome = () => history().at(-1)?.outcome ?? null;
 const psql = (sql) => compose(['exec', '-T', 'postgres', 'psql', '-U', 'marksy', '-d', 'marksy', '-tAc', sql]).trim();
 
@@ -228,7 +237,7 @@ async function main() {
   // the update to 1.1.0 goes on after the server runs it (the other containers); the nudge comes after it
   await waitFor('the end of 1.1.0', async () => history().some((a) => a.to === '1.1.0'), 180_000);
   // a release brings the updater too: it replaces itself last, and nothing touches it meanwhile
-  await waitFor('the updater 1.1.0', async () => selfVersion() === '1.1.0', 180_000);
+  await waitFor('the updater 1.1.0', async () => updaterSettled('1.1.0'), 180_000);
   release('1.1.1');
   release('1.2.0');
   await sleep(5000);
@@ -240,7 +249,7 @@ async function main() {
   const h1 = history().findLast((a) => a.to === '1.1.1');
   check(h1?.trigger === 'hook', 'the hook started it');
   console.log(`   downtime of the server: ${h1?.downtimeMs} ms, whole update ${h1?.durationMs} ms`);
-  await waitFor('the updater 1.1.1', async () => selfVersion() === '1.1.1', 180_000);
+  await waitFor('the updater 1.1.1', async () => updaterSettled('1.1.1'), 180_000);
 
   step('channel 1 picks 1.2.0 up by polling, never 2.0.0');
   channel = '1';
@@ -250,7 +259,7 @@ async function main() {
   check(tPoll !== null, `1.2.0 installed by polling (${tPoll && Math.round(tPoll / 1000)} s)`);
   await sleep(70_000);
   check((await serverVersion()) === '1.2.0', 'channel 1 did not take 2.0.0');
-  await waitFor('the updater 1.2.0', async () => selfVersion() === '1.2.0', 180_000);
+  await waitFor('the updater 1.2.0', async () => updaterSettled('1.2.0'), 180_000);
 
   // pre-update backups in BACKUP_DIR: one only for an attempt that got as far as the install
   const dumps = () => {
@@ -384,8 +393,18 @@ async function main() {
   const t14 = await waitFor('1.4.0', async () => (await serverVersion()) === '1.4.0', 300_000);
   check(t14 !== null && t14 < 150_000, `1.4.0 running ${t14 && Math.round(t14 / 1000)} s after the nudge`);
   check(Number(migrations()) === migrationsBefore14 + 1, 'its migration ran');
-  const tSelf = await waitFor('the new updater', async () => selfVersion() === '1.4.0', 180_000);
+  const tSelf = await waitFor('the new updater', async () => updaterSettled('1.4.0'), 180_000);
   check(tSelf !== null, `the updater replaced itself and runs ${selfVersion()}`);
+  const updaters = sh('docker', [
+    'ps',
+    '--filter',
+    `label=com.docker.compose.project=${PROJECT}`,
+    '--filter',
+    'label=com.docker.compose.service=updater',
+    '--format',
+    '{{.Names}}',
+  ]);
+  check(updaters.split('\n').filter(Boolean).length === 1, `one updater runs (${updaters.replace(/\n/g, ', ')})`);
   const last = history().findLast((a) => a.to === '1.4.0' && a.outcome === 'updated');
   check(last?.trigger === 'hook', 'the hook started it');
   check(last?.migrations?.after === (last?.migrations?.before ?? 0) + 1, 'the history records the migration');

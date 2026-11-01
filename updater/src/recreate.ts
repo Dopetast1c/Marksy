@@ -131,6 +131,21 @@ export async function restore(docker: Docker, r: Replaced): Promise<void> {
   await docker.start(r.oldId);
 }
 
+/**
+ * A replacement that did not come up: the old container is put back, unless someone else (`docker compose up`) has
+ * taken the name meanwhile; then theirs stays and the parked one goes, so that never two of a service run. True when
+ * the old one runs again.
+ */
+export async function undo(docker: Docker, r: Replaced): Promise<boolean> {
+  const now = await docker.inspectContainer(r.name).catch(() => null);
+  if (now && now.Id !== r.newId) {
+    await docker.remove(r.oldId).catch(() => undefined);
+    return false;
+  }
+  await restore(docker, r);
+  return true;
+}
+
 /** The update succeeded: the parked old container goes */
 export async function commit(docker: Docker, r: Replaced): Promise<void> {
   await docker.remove(r.oldId).catch(() => undefined);

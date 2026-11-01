@@ -46,6 +46,18 @@ describe('the update hook', () => {
     expect(check(nudge, '{}')).toBe('replayed');
   });
 
+  it('remembers a nudge stamped ahead of the clock for as long as its stamp is fresh', () => {
+    let clock = at * 1000;
+    const check = createNudgeChecker(secret, { now: () => clock });
+    const ahead = signed(at + 240);
+    expect(check(ahead, '{}')).toBe('ok');
+    // six minutes on, the stamp is two minutes old: still fresh, so still refused as a repeat
+    clock += 6 * 60_000;
+    expect(check(ahead, '{}')).toBe('replayed');
+    clock += 4 * 60_000;
+    expect(check(ahead, '{}')).toBe('stale');
+  });
+
   it('refuses an unsigned, a wrongly signed, a changed body and a stale nudge', () => {
     const check = createNudgeChecker(secret, { now: () => at * 1000 });
     expect(check({}, '{}')).toBe('unsigned');

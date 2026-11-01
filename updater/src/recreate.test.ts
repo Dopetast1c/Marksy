@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { ContainerInspect, ImageInspect } from './docker';
-import { containerSpec } from './recreate';
+import type { ContainerInspect, Docker, ImageInspect } from './docker';
+import { containerSpec, undo } from './recreate';
 
 // The new container is the old one on a new image: what compose set stays, what the old image brought goes, so that
 // the new image's environment, labels, command and health check apply.
@@ -70,5 +70,38 @@ describe('the replacement container', () => {
   it("is created on the network of NetworkMode and connected to the others, without the old container's id", () => {
     expect(spec.body.NetworkingConfig).toEqual({ EndpointsConfig: { 'marksy-prod_backend': { Aliases: ['backup'] } } });
     expect(spec.more).toEqual([['marksy-prod_edge', { Aliases: ['backup'] }]]);
+  });
+});
+
+describe('a replacement that did not come up', () => {
+  // containers by name; the parked old one, the new one, and what holds the name now
+  function fakeDocker(holder: string | null) {
+    const calls: string[] = [];
+    const docker = {
+      inspectContainer: async (name: string) =>
+        name === 'marksy-prod-updater-1' && holder ? { ...old, Id: holder } : null,
+      remove: async (id: string) => void calls.push(`remove ${id}`),
+      rename: async (id: string, name: string) => void calls.push(`rename ${id} ${name}`),
+      start: async (id: string) => void calls.push(`start ${id}`),
+    } as unknown as Docker;
+    return { docker, calls };
+  }
+  const replaced = {
+    name: 'marksy-prod-updater-1',
+    oldId: 'old',
+    newId: 'new',
+    parked: 'marksy-prod-updater-1-previous',
+  };
+
+  it('puts the old one back when the new one failed', async () => {
+    const { docker, calls } = fakeDocker('new');
+    expect(await undo(docker, replaced)).toBe(true);
+    expect(calls).toEqual(['remove new', 'rename old marksy-prod-updater-1', 'start old']);
+  });
+
+  it('leaves a container someone else started under the name, and removes the old one: never two', async () => {
+    const { docker, calls } = fakeDocker('from-compose');
+    expect(await undo(docker, replaced)).toBe(false);
+    expect(calls).toEqual(['remove old']);
   });
 });

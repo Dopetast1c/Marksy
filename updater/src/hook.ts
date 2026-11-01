@@ -23,11 +23,13 @@ function sameSignature(a: string, b: string): boolean {
 export function createNudgeChecker(secret: string, opts: { perMinute?: number; now?: () => number } = {}) {
   const now = opts.now ?? Date.now;
   const perMinute = opts.perMinute ?? 6;
+  // each accepted signature with the moment its timestamp leaves the window: a nudge stamped ahead of this host's clock
+  // stays refused for as long as it could still be accepted
   const seen = new Map<string, number>();
   const accepted: number[] = [];
   return (headers: { timestamp?: string; signature?: string }, body: string): NudgeVerdict => {
     const t = now();
-    for (const [sig, at] of seen) if (t - at > REPLAY_WINDOW_MS) seen.delete(sig);
+    for (const [sig, until] of seen) if (t > until) seen.delete(sig);
     while (accepted.length && t - accepted[0]! > 60_000) accepted.shift();
     if (!secret || !headers.timestamp || !headers.signature) return 'unsigned';
     if (!/^\d{1,12}$/.test(headers.timestamp)) return 'bad_signature';
@@ -35,7 +37,7 @@ export function createNudgeChecker(secret: string, opts: { perMinute?: number; n
     if (Math.abs(t - Number(headers.timestamp) * 1000) > REPLAY_WINDOW_MS) return 'stale';
     if (seen.has(headers.signature)) return 'replayed';
     if (accepted.length >= perMinute) return 'too_many';
-    seen.set(headers.signature, t);
+    seen.set(headers.signature, Number(headers.timestamp) * 1000 + REPLAY_WINDOW_MS);
     accepted.push(t);
     return 'ok';
   };

@@ -12,7 +12,7 @@ import { createNudgeChecker } from './hook';
 import { errorText, log } from './log';
 import { createUpdater } from './procedure';
 import type { CheckResult, ServerApi, Updater } from './procedure';
-import { commit, replace, restore } from './recreate';
+import { commit, replace, undo } from './recreate';
 import { registryClient } from './registry';
 import { cosignVerifier } from './verify';
 
@@ -258,10 +258,11 @@ async function swap(s: Settings, id: string): Promise<void> {
   if (ok) {
     await commit(docker, replaced);
     log.info('updater replaced', { version: image.Config.Labels?.['org.opencontainers.image.version'] ?? null });
-  } else {
-    await restore(docker, replaced);
-    log.error('the new updater did not start; the old one runs again');
+    return;
   }
+  // `docker compose up` may have replaced the updater meanwhile: then that one stays, and never two updaters run
+  if (await undo(docker, replaced)) log.error('the new updater did not start; the old one runs again');
+  else log.info('the updater was replaced by someone else meanwhile; the old one is removed');
 }
 
 async function control(path: string, method = 'GET'): Promise<void> {
