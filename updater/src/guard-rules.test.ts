@@ -1,13 +1,42 @@
 import { describe, expect, it } from 'vitest';
 import { createProblems, decide, filterImageList, isMarksyImage, unversioned } from './guard-rules';
-import type { GuardLookup } from './guard-rules';
+import type { ExistingContainer, GuardLookup } from './guard-rules';
 
 const PREFIX = 'ghcr.io/dopetast1c/marksy-';
 const project = { 'com.docker.compose.project': 'marksy-prod' };
+const backupLabels = {
+  'marksy.updatable': 'true',
+  ...project,
+  'com.docker.compose.service': 'backup',
+  'com.docker.compose.image': 'sha256:old',
+};
+const backupHost = {
+  Binds: ['/srv/backups:/backups'],
+  Mounts: [{ Type: 'volume', Source: 'marksy-prod-uploads' }],
+  NetworkMode: 'marksy-prod_backend',
+};
+/** the backup container compose made: what a create for that service must copy */
+const backup1: ExistingContainer = {
+  Config: {
+    Labels: backupLabels,
+    Env: ['PATH=/usr/bin', 'TZ=Europe/Vienna', 'BACKUP_DIR=/backups'],
+    Cmd: ['backup-daemon'],
+    User: 'node',
+  },
+  HostConfig: backupHost,
+  NetworkSettings: { Networks: { 'marksy-prod_backend': {} } },
+};
 
 const lookup: GuardLookup = {
   containerLabels: async (id) =>
-    id === 'server1' ? { 'marksy.updatable': 'true', ...project } : id === 'postgres1' ? { ...project } : null,
+    id === 'server1'
+      ? { 'marksy.updatable': 'true', ...project }
+      : id === 'updater1'
+        ? { 'marksy.updatable': 'true', ...project, 'com.docker.compose.service': 'updater' }
+        : id === 'postgres1'
+          ? { ...project }
+          : null,
+  serviceContainers: async (p, s) => (p === 'marksy-prod' && s === 'backup' ? [backup1] : []),
   imageNames: async (id) =>
     id === 'sha256:aaaaaaaaaaaa'
       ? [`${PREFIX}server:1`, `${PREFIX}server@sha256:${'1'.repeat(64)}`]
@@ -15,16 +44,31 @@ const lookup: GuardLookup = {
         ? ['postgres:16']
         : null,
   networkLabels: async (id) =>
-    id === 'marksy-prod_edge' ? project : id === 'other_net' ? { 'com.docker.compose.project': 'other' } : null,
+    id === 'marksy-prod_edge' || id === 'marksy-prod_docker'
+      ? project
+      : id === 'other_net'
+        ? { 'com.docker.compose.project': 'other' }
+        : null,
 };
 
 const ask = (method: string, path: string, query = '', body?: unknown) =>
   decide({ method, path, query: new URLSearchParams(query), body }, lookup, PREFIX);
 
+// what recreate.ts sends for the backup service: the container's own settings on a new image
 const goodCreate = {
   Image: `${PREFIX}server:1`,
-  Labels: { 'marksy.updatable': 'true' },
-  HostConfig: { Binds: ['/srv/backups:/backups:ro'], Mounts: [{ Type: 'volume', Source: 'marksy-prod-uploads' }] },
+  Env: ['TZ=Europe/Vienna', 'BACKUP_DIR=/backups'],
+  Labels: { ...backupLabels, 'com.docker.compose.image': 'sha256:new' },
+  HostConfig: backupHost,
+  Cmd: ['backup-daemon'],
+  NetworkingConfig: { EndpointsConfig: { 'marksy-prod_backend': { Aliases: ['backup'] } } },
+};
+const swapCreate = {
+  Image: `${PREFIX}updater:1`,
+  Cmd: ['swap', 'updater1'],
+  Env: ['DOCKER_GUARD_URL=http://socket-guard:2375', `UPDATE_IMAGE_PREFIX=${PREFIX}`, 'UPDATE_CHANNEL=1'],
+  Labels: { 'marksy.updatable': 'true', ...project },
+  HostConfig: { AutoRemove: true, NetworkMode: 'marksy-prod_docker' },
 };
 
 describe('the socket guard', () => {
@@ -72,6 +116,37 @@ describe('the socket guard', () => {
     expect(host({ Mounts: [{ Type: 'bind', Source: '/run/docker.sock' }] })).toEqual(['socket']);
     expect(host({ SecurityOpt: ['seccomp=unconfined'] })).toEqual(['security']);
     expect(host({ VolumesFrom: ['postgres1'] })).toEqual(['volumes_from']);
+  });
+
+  it("creates only a copy of the service's own container: no other host path, user, command or environment", async () => {
+    const create = async (change: object) =>
+      ask('POST', '/containers/create', 'name=x', { ...goodCreate, ...change }) as Promise<{ reason?: string }>;
+    // a whole host folder, or the folder that holds the Docker socket, under a service that never had it
+    expect((await create({ HostConfig: { ...backupHost, Binds: ['/:/host'] } })).reason).toContain('host settings');
+    expect((await create({ HostConfig: { ...backupHost, Binds: ['/var/run:/r'] } })).reason).toContain('host settings');
+    expect((await create({ User: 'root' })).reason).toContain('User');
+    expect((await create({ Cmd: ['sh', '-c', 'x'] })).reason).toContain('Cmd');
+    expect((await create({ Entrypoint: ['sh'] })).reason).toContain('Entrypoint');
+    expect((await create({ Env: ['NODE_OPTIONS=--require /tmp/x'] })).reason).toContain('environment');
+    expect((await create({ Volumes: { '/x': {} } })).reason).toContain('fields');
+    expect((await create({ NetworkingConfig: { EndpointsConfig: { other_net: {} } } })).reason).toContain('network');
+    expect((await create({ Labels: { ...goodCreate.Labels, 'com.docker.compose.service': 'web' } })).reason).toContain(
+      'no container of this service',
+    );
+    expect((await create({ Labels: { 'marksy.updatable': 'true' } })).reason).toContain('project');
+  });
+
+  it("creates the updater's swap container only in its one shape", async () => {
+    const swap = async (change: object) =>
+      ask('POST', '/containers/create', 'name=marksy-prod-updater-swap', { ...swapCreate, ...change });
+    expect((await swap({})).allow).toBe(true);
+    expect((await swap({ Cmd: ['swap', 'server1'] })).allow).toBe(false);
+    expect((await swap({ Cmd: ['sh'] })).allow).toBe(false);
+    expect((await swap({ Image: `${PREFIX}server:1` })).allow).toBe(false);
+    expect((await swap({ HostConfig: { AutoRemove: true, Binds: ['/:/host'] } })).allow).toBe(false);
+    expect((await swap({ HostConfig: { NetworkMode: 'other_net' } })).allow).toBe(false);
+    expect((await swap({ Env: ['NODE_OPTIONS=x'] })).allow).toBe(false);
+    expect((await swap({ User: 'root' })).allow).toBe(false);
   });
 
   it('pulls, tags, inspects and removes only Marksy images', async () => {

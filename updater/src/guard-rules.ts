@@ -3,13 +3,33 @@
 //   ping, version, disk usage;
 //   list, inspect, stats, start, stop, rename, remove, wait of containers labelled marksy.updatable=true;
 //   create of such a container from a Marksy image, with nothing that reaches the host (no privileged mode, no added
-//   capabilities, devices, host namespaces or Docker socket);
+//   capabilities, devices, host namespaces or Docker socket), and only as a copy of a container compose already made
+//   for that service: the same host settings (mounts, networks, limits), user, command, environment and networks, so
+//   that a create can never ask for a host path or a setting the operator did not give that service; or as the
+//   updater's own one-off swap container, in its one fixed shape;
 //   connect of such a container to a network of its own compose project;
 //   pull, inspect, tag, remove and list of Marksy images.
 // Everything else is refused with 403.
 
 export const UPDATABLE = 'marksy.updatable';
 const PROJECT = 'com.docker.compose.project';
+const SERVICE = 'com.docker.compose.service';
+const COMPOSE_IMAGE = 'com.docker.compose.image';
+
+/** What the guard needs to know of an existing container to compare a create with it */
+export interface ExistingContainer {
+  Config: {
+    Labels?: Record<string, string>;
+    Env?: string[];
+    Cmd?: string[] | null;
+    Entrypoint?: string[] | null;
+    User?: string;
+    WorkingDir?: string;
+    Healthcheck?: unknown;
+  };
+  HostConfig: unknown;
+  NetworkSettings: { Networks?: Record<string, unknown> };
+}
 
 export interface GuardRequest {
   method: string;
@@ -23,6 +43,8 @@ export interface GuardLookup {
   containerLabels(id: string): Promise<Record<string, string> | null>;
   imageNames(id: string): Promise<string[] | null>;
   networkLabels(id: string): Promise<Record<string, string> | null>;
+  /** the updatable containers compose made for one service of one project, stopped ones included */
+  serviceContainers(project: string, service: string): Promise<ExistingContainer[]>;
 }
 
 export type GuardDecision =
@@ -82,6 +104,88 @@ export function createProblems(body: unknown, prefix: string): string[] {
   return problems;
 }
 
+const same = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+
+/** The fields recreate.ts sends; anything else in a create is refused */
+const REPLICA_KEYS = new Set([
+  'Image',
+  'Env',
+  'Labels',
+  'HostConfig',
+  'Cmd',
+  'Entrypoint',
+  'Healthcheck',
+  'User',
+  'WorkingDir',
+  'StopSignal',
+  'StopTimeout',
+  'Tty',
+  'OpenStdin',
+  'NetworkingConfig',
+]);
+
+/** Why a create is not a copy of this existing container of its service (empty when it is) */
+export function replicaProblems(body: unknown, existing: ExistingContainer): string[] {
+  const spec = (body ?? {}) as Spec;
+  const c = existing.Config;
+  const problems: string[] = [];
+  const extra = Object.keys(spec).filter((k) => !REPLICA_KEYS.has(k));
+  if (extra.length) problems.push(`fields ${extra.join(' ')}`);
+  if (!same(spec.HostConfig, existing.HostConfig)) problems.push('host settings');
+  // a field the create leaves out comes from the (signed) image; one it sets must be the container's own
+  for (const key of ['Cmd', 'Entrypoint', 'User', 'WorkingDir', 'Healthcheck'] as const)
+    if (key in spec && !same(spec[key], c[key])) problems.push(key);
+  const env = new Set(c.Env ?? []);
+  if (list(spec.Env).some((e) => !env.has(String(e)))) problems.push('environment');
+  const labels = c.Labels ?? {};
+  for (const [k, v] of Object.entries((spec.Labels ?? {}) as Record<string, string>))
+    if (k !== COMPOSE_IMAGE && labels[k] !== v) problems.push(`label ${k}`);
+  const endpoints = Object.keys(((spec.NetworkingConfig ?? {}) as Spec).EndpointsConfig ?? {});
+  const networks = existing.NetworkSettings.Networks ?? {};
+  if (endpoints.some((n) => !(n in networks))) problems.push('network');
+  return problems;
+}
+
+/** The updater's one-off swap container (procedure.ts, launchSwap): nothing but this shape */
+async function swapProblems(spec: Spec, lookup: GuardLookup, prefix: string): Promise<string[]> {
+  const problems: string[] = [];
+  const labels = (spec.Labels ?? {}) as Record<string, string>;
+  const project = labels[PROJECT] ?? '';
+  const host = (spec.HostConfig ?? {}) as Spec;
+  if (Object.keys(spec).some((k) => !['Image', 'Cmd', 'Env', 'Labels', 'HostConfig'].includes(k)))
+    problems.push('fields');
+  if (typeof spec.Image !== 'string' || !spec.Image.startsWith(`${prefix}updater`)) problems.push('image');
+  if (Object.keys(labels).some((k) => k !== PROJECT && k !== UPDATABLE)) problems.push('labels');
+  if (Object.keys(host).some((k) => k !== 'AutoRemove' && k !== 'NetworkMode')) problems.push('host settings');
+  if (list(spec.Env).some((e) => !/^(DOCKER_GUARD_URL|UPDATE_IMAGE_PREFIX|UPDATE_CHANNEL)=/.test(String(e))))
+    problems.push('environment');
+  const cmd = list(spec.Cmd).map(String);
+  const target = cmd.length === 2 && cmd[0] === 'swap' ? await lookup.containerLabels(cmd[1]!) : null;
+  if (!target || target[UPDATABLE] !== 'true' || target[PROJECT] !== project || target[SERVICE] !== 'updater')
+    problems.push('command');
+  if (host.NetworkMode !== undefined) {
+    const network = await lookup.networkLabels(String(host.NetworkMode));
+    if (!network || network[PROJECT] !== project) problems.push('network');
+  }
+  return problems;
+}
+
+/** Everything a create must satisfy: the fixed rules, then a copy of its service's container or the swap shape */
+export async function createDecision(body: unknown, lookup: GuardLookup, prefix: string): Promise<string[]> {
+  const problems = createProblems(body, prefix);
+  if (problems.length) return problems;
+  const spec = (body ?? {}) as Spec;
+  const labels = (spec.Labels ?? {}) as Record<string, string>;
+  const project = labels[PROJECT];
+  if (!project) return ['project'];
+  const service = labels[SERVICE];
+  if (!service) return swapProblems(spec, lookup, prefix);
+  const existing = await lookup.serviceContainers(project, service);
+  if (!existing.length) return ['no container of this service to copy'];
+  const tries = existing.map((e) => replicaProblems(body, e));
+  return tries.some((p) => p.length === 0) ? [] : tries[0]!;
+}
+
 export async function decide(req: GuardRequest, lookup: GuardLookup, prefix: string): Promise<GuardDecision> {
   const { method, query } = req;
   const path = unversioned(req.path);
@@ -105,7 +209,7 @@ export async function decide(req: GuardRequest, lookup: GuardLookup, prefix: str
       return { allow: true, query: next };
     }
     if (method === 'POST' && path === '/containers/create') {
-      const problems = createProblems(req.body, prefix);
+      const problems = await createDecision(req.body, lookup, prefix);
       return problems.length ? deny(`create: ${problems.join(', ')}`) : ALLOW;
     }
     const [, id, action] = parts;

@@ -1,7 +1,7 @@
 import { createServer, request } from 'node:http';
 import type { IncomingMessage } from 'node:http';
 import { decide, filterImageList } from './guard-rules';
-import type { GuardLookup } from './guard-rules';
+import type { ExistingContainer, GuardLookup } from './guard-rules';
 import { log } from './log';
 
 // The socket guard (docs/running.md, updates): a small HTTP proxy in front of the Docker socket, on a network only
@@ -66,6 +66,26 @@ export function socketLookup(socketPath: string): GuardLookup {
         Labels?: Record<string, string>;
       } | null;
       return n ? (n.Labels ?? {}) : null;
+    },
+    async serviceContainers(project, service) {
+      const filters = JSON.stringify({
+        label: [
+          `com.docker.compose.project=${project}`,
+          `com.docker.compose.service=${service}`,
+          'marksy.updatable=true',
+        ],
+      });
+      const found = ((await dockerJson(socketPath, `/containers/json?all=1&filters=${encodeURIComponent(filters)}`)) ??
+        []) as { Id: string }[];
+      const out: ExistingContainer[] = [];
+      for (const { Id } of found) {
+        const c = (await dockerJson(
+          socketPath,
+          `/containers/${encodeURIComponent(Id)}/json`,
+        )) as ExistingContainer | null;
+        if (c) out.push(c);
+      }
+      return out;
     },
   };
 }
