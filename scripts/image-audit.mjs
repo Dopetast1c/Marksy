@@ -22,7 +22,7 @@ const FORBIDDEN_PATHS = [
   { re: /\.test\.(ts|tsx|mjs|js)$/, why: 'test file' },
 ];
 /** The app's own files; third-party packages and the OS are not ours to scan for words */
-const OWN = /^(app\/(dist|drizzle|env\.example)|srv\/|etc\/marksy\/|usr\/local\/bin\/marksy)/;
+const OWN = /^(app\/(dist|drizzle|env\.example|marksy-updater\.mjs)|srv\/|etc\/marksy\/|usr\/local\/bin\/marksy)/;
 const SECRETS = [
   /-----BEGIN [A-Z ]*PRIVATE KEY-----/,
   /\b(?:token|password|secret|api[_-]?key)\s*[:=]\s*['"][A-Za-z0-9._~+/=-]{24,}['"]/i,
