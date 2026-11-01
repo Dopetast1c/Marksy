@@ -56,7 +56,10 @@ export const term = z.object({
 });
 export type Term = z.infer<typeof term>;
 
-/** Which holidays these are, when the system says so; the app names them from it ('Осенние каникулы'), never by month */
+/**
+ * Which holidays these are, when the system says so; the app names them from it ("Autumn holidays",
+ * holiday.name.autumn), never by month
+ */
 export const holidayKind = z.enum(['autumn', 'winter', 'spring', 'summer', 'additional', 'other']);
 export type HolidayKind = z.infer<typeof holidayKind>;
 
@@ -88,7 +91,7 @@ export const subject = z.object({
   teacherName: z.string().optional(),
   /** The student's subgroup, set or section as the system names it; absent when the class is not split */
   groupLabel: z.string().optional(),
-  /** regular is never shown; advanced is the post-Soviet "углублённый"; honors, ap, ib are US course levels */
+  /** regular is never shown; advanced is the post-Soviet "advanced" (in-depth) level; honors, ap, ib are US course levels */
   level: z.enum(['regular', 'advanced', 'honors', 'ap', 'ib', 'other']).optional(),
   /** The system's own wording of the level, shown when it is not regular */
   levelLabel: z.string().optional(),
@@ -209,7 +212,7 @@ export const lesson = z.object({
   hasAttachments: z.boolean().optional(),
   lessonType: lessonType.optional(),
   substituteTeacherName: z.string().optional(),
-  /** As the timetable shows it ("201", "Лаб. 2"); from the lesson or, on the server, from the week template */
+  /** As the timetable shows it ("201", "Lab 2"); from the lesson or, on the server, from the week template */
   room: z.string().optional(),
   /** The student's subgroup when the subject is split */
   groupLabel: z.string().optional(),

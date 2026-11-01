@@ -35,8 +35,10 @@ export function loadDenyList(root) {
   return { words: new Set(low(raw.words)), phrases: low(raw.phrases), ids: low(raw.ids) };
 }
 
-/** Lower case, ё as е: a name written either way is the same name */
-const fold = (s) => s.toLowerCase().replace(/ё/g, 'е');
+const YO = String.fromCodePoint(0x451);
+const YE = String.fromCodePoint(0x435);
+/** Lower case, Cyrillic yo (U+0451) as ye (U+0435): a name written either way is the same name */
+const fold = (s) => s.toLowerCase().replaceAll(YO, YE);
 
 const tokens = (line) =>
   fold(line)

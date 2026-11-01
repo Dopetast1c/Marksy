@@ -9,8 +9,8 @@ import { ListCard } from '../../components/Section';
 import { useT } from '../../i18n';
 import { usePeriod } from '../../state/store';
 
-// Внимание (docs/design.md 5.2a, ux-principles D29), reached from «Показать все» on Главная: the same rows, all of
-// them, ranked by severity then date, with the same period control, navigator and swipe; no second caption (the
+// Attention (screen.events; docs/design.md 5.2a, ux-principles D29), reached from "Show all" (home.showAll) on Home
+// (tabs.home): the same rows, all of them, ranked by severity then date, with the same period control, navigator and swipe; no second caption (the
 // navigator names the period). Rows about the future appear only in the current instance, which the note says.
 
 export function EventsScreen() {

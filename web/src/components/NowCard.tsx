@@ -8,9 +8,9 @@ import { todayIn } from '../lib/time';
 import { ChevIcon } from './icons';
 import { Stripe } from './Section';
 
-// «Сейчас» (docs/design.md 5.2, ux-principles D52): the one card above the period navigator, during the child's school
+// "Now" (nowCard.*; docs/design.md 5.2, ux-principles D52): the one card above the period navigator, during the child's school
 // day only (the API sends nothing outside it). One line in caps and two lines of content with the subject's colour
-// stripe; a tap opens Расписание on today. Needs times (bells or the diary's); without them there is no card.
+// stripe; a tap opens Timetable (screen.schedule) on today. Needs times (bells or the diary's); without them there is no card.
 
 export function NowCard({ studentId, now, tz }: { studentId: string; now: NonNullable<Overview['now']>; tz: string }) {
   const t = useT();

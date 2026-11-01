@@ -47,7 +47,7 @@ export default tseslint.config(
         {
           // user-facing attributes are words too (docs/i18n.md 5)
           selector:
-            'JSXAttribute[name.name=/^(aria-label|title|alt|placeholder)$/] > Literal[value=/[A-Za-zА-Яа-яЁё]/]',
+            'JSXAttribute[name.name=/^(aria-label|title|alt|placeholder)$/] > Literal[value=/[A-Za-z\\u0410-\\u044f\\u0401\\u0451]/]',
           message: 'User-facing attributes come from t(), never a literal string.',
         },
       ],

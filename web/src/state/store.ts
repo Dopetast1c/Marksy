@@ -3,7 +3,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import type { StoredPick } from '../lib/pick';
 
 // The app's small client state (docs/design.md 13): the child picked on this device and when, the device's
-// «Всегда начинать с последнего», and the period the screens show. Switching the child never changes the screen,
+// "Always start with the last one" (pick.alwaysLast), and the period the screens show. Switching the child never changes the screen,
 // the period or the filters (CLAUDE.md, ScreenHeader), so the period lives here, not per child.
 
 export type PeriodKind = 'week' | 'month' | 'term' | 'year';
@@ -58,12 +58,12 @@ export const usePeriod = create<PeriodState>()((set) => ({
 export type TagMode = 'any' | 'all';
 
 interface MarkFilterState {
-  /** Комментарии: only the teacher's comments without a mark (D56) */
+  /** Comments (filter.comments): only the teacher's comments without a mark (D56) */
   comments: boolean;
   /** Ticked tags (M6); several combine by tagMode */
   tags: string[];
   tagMode: TagMode;
-  /** Все: no filter */
+  /** All (filter.all): no filter */
   clear: () => void;
   setComments: (on: boolean) => void;
   toggleTag: (id: string) => void;
@@ -72,8 +72,9 @@ interface MarkFilterState {
 }
 
 /**
- * The mark filter (MarkFilter, docs/design.md 5.3, D27): one piece of state for Оценки, Предметы and Предмет, so moving
- * between them never changes what is being looked at; switching the child keeps it too. Комментарии and tags exclude
+ * The mark filter (MarkFilter, docs/design.md 5.3, D27): one piece of state for Marks, Subjects and the subject
+ * screen, so moving between them never changes what is being looked at; switching the child keeps it too. Comments
+ * and tags exclude
  * each other: the comments have no tags.
  */
 export const useMarkFilter = create<MarkFilterState>()((set) => ({
@@ -98,7 +99,7 @@ export function markFilterQuery(f: Pick<MarkFilterState, 'comments' | 'tags' | '
 
 export type SubjectSort = 'alpha' | 'weak' | 'strong' | 'fell' | 'rose';
 
-/** The order of Предметы (design.md 5.3a): kept when the child or the period changes */
+/** The order of Subjects (screen.subjects; design.md 5.3a): kept when the child or the period changes */
 export const useSubjectSort = create<{ sort: SubjectSort; setSort: (s: SubjectSort) => void }>()((set) => ({
   sort: 'alpha',
   setSort: (sort) => set({ sort }),
@@ -108,17 +109,18 @@ export type ScheduleKind = 'day' | 'week';
 
 interface ScheduleViewState {
   kind: ScheduleKind;
-  /** the day shown in День; null: today */
+  /** the day shown in Day (schedule.day); null: today */
   day: string | null;
-  /** the week shown in Неделя: 0 this week, 1 next, -1 last */
+  /** the week shown in Week (period.week): 0 this week, 1 next, -1 last */
   week: number;
   showDay: (day: string | null) => void;
   showWeek: (week: number) => void;
 }
 
 /**
- * What Расписание shows (docs/design.md 5.5): День or Неделя and which one. Like the period of the marks screens it
- * survives a child switch and moving between tabs; «Всё расписание» and «Сейчас» set it before opening the screen.
+ * What Timetable (screen.schedule) shows (docs/design.md 5.5): Day or Week and which one. Like the period of the marks
+ * screens it survives a child switch and moving between tabs; "Whole timetable" (home.allSchedule) and the "Now" card
+ * (nowCard.*) set it before opening the screen.
  */
 export const useScheduleView = create<ScheduleViewState>()((set) => ({
   kind: 'day',

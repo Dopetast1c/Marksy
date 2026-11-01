@@ -3,10 +3,10 @@ import { useCapabilities } from '../hooks/useStudent';
 import { useT } from '../i18n';
 import { markFilterQuery, useMarkFilter } from '../state/store';
 
-// The mark filter chips (docs/design.md 5.3, D27, D56): one component and one piece of state for Оценки, Предметы and
-// Предмет. Все; Теги ▾ with its sheet once the family has tags (M6; the state and the API parameters are already
-// there); Комментарии where the diary has the teacher's comments without a mark. No work-type, threshold or absence
-// chips. A row left with only Все says nothing and is not shown. It scrolls sideways, so a swipe on it never steps
+// The mark filter chips (docs/design.md 5.3, D27, D56): one component and one piece of state for Marks, Subjects and
+// the subject screen. All (filter.all); Tags ▾ with its sheet once the family has tags (M6; the state and the API
+// parameters are already there); Comments (filter.comments) where the diary has the teacher's comments without a
+// mark. No work-type, threshold or absence chips. A row left with only All says nothing and is not shown. It scrolls sideways, so a swipe on it never steps
 // the period (data-hscroll). Simple mode (5.7) has no filter at all: the row is gone and the marks are all of them.
 
 export function MarkFilter({ studentId }: { studentId: string }) {
@@ -40,7 +40,7 @@ export function MarkFilter({ studentId }: { studentId: string }) {
 }
 
 /**
- * The filter as it applies to this child: Комментарии only where the diary has them (the state is shared by the
+ * The filter as it applies to this child: Comments (filter.comments) only where the diary has them (the state is shared by the
  * children, D27, and must not leave a child whose diary has none with an empty list and no chip to undo it)
  */
 export function useMarkFilterFor(studentId: string) {

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { ChevIcon } from './icons';
 
-// The rows of Ещё and the settings screens (docs/design.md 5.6, the prototype's .list-card and .menu): a card of rows
+// The rows of More (tabs.more) and the settings screens (docs/design.md 5.6, the prototype's .list-card and .menu): a card of rows
 // separated by hairlines; a row is an icon tile, a bold title, one quiet line and, on the right, a chevron when it
 // opens something or a control (a switch) when it is set in place. The whole row is the target of an opening row.
 
@@ -26,11 +26,11 @@ export function MenuRow({
   onClick?: () => void;
   /** set in place (a switch): the row is not a button */
   control?: ReactNode;
-  /** quiet: a grey tile (Выйти); avatar: the icon is a person's or a child's picture, shown as it is, no tile */
+  /** quiet: a grey tile (Sign out, more.signOut); avatar: the icon is a person's or a child's picture, shown as it is, no tile */
   tone?: 'accent' | 'quiet' | 'avatar';
-  /** an action done in place (Выйти) has no chevron */
+  /** an action done in place (Sign out) has no chevron */
   chevron?: boolean;
-  /** a short state at the right edge, before the chevron (a diary's «пароль изменился») */
+  /** a short state at the right edge, before the chevron (a diary's "the password changed", family.status.auth_failed) */
   aside?: ReactNode;
 }) {
   const body = (

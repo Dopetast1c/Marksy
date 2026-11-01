@@ -18,10 +18,12 @@ import { familyLine, schoolLine, syncLine } from './summaries';
 import { setLanguage, useT } from '../../i18n';
 import { useDevice } from '../../state/store';
 
-// Ещё (docs/design.md 5.6) opens without a picked child. Order, from the most important down: who is signed in; what
-// the app does for the family (Семья, Школа, Синхронизация; Настройки уведомлений with M9, Теги with M6); how the app
-// looks and behaves (Оформление, Простой режим, Подсказки, Всегда начинать с последнего, Язык, Сменить семью); last
-// and apart, Выйти. While nobody is picked it starts with «Ученик не выбран», which leads back to the choice (design 4).
+// More (tabs.more; docs/design.md 5.6) opens without a picked child. Order, from the most important down: who is
+// signed in; what the app does for the family (Family family.title, School more.school, Sync sync.title; the
+// notification settings with M9, tags with M6); how the app looks and behaves (Appearance look.title, Simple mode
+// more.simple, Tips more.guidance, Always start with the last one pick.alwaysLast, Language lang.title, Switch family
+// more.switchFamily); last and apart, Sign out (more.signOut). While nobody is picked it starts with "No student
+// chosen" (more.unpicked), which leads back to the choice (design 4).
 
 const SYNC_TONE = { low: 'font-semibold text-band-low-fg', critical: 'font-semibold text-band-critical-fg' } as const;
 
@@ -40,7 +42,7 @@ export function MoreScreen() {
   const kids = me.data?.students ?? [];
   const parent = family?.role !== 'student';
   const child = kids.find((k) => k.id === continueWith) ?? null;
-  // the live lines of Семья and Синхронизация are the adults' (a student has neither row)
+  // the live lines of Family and Sync are the adults' (a student has neither row)
   const view = useFamily(parent).data;
   const sync = useSyncStatus();
   const line = syncLine(
@@ -48,7 +50,8 @@ export function MoreScreen() {
     parent ? sync.data : undefined,
     (a) => kids.find((k) => a.studentIds.includes(k.id))?.timezone ?? kids[0]?.timezone ?? 'UTC',
   );
-  // a problem in its warning colour; the times, «нет дневников» and a run in progress stay neutral
+  // a problem in its warning colour; the times, "no diary connected" (more.sync.none) and a run in progress stay
+  // neutral
   const syncSub =
     line && (line.tone === 'neutral' ? line.text : <span className={SYNC_TONE[line.tone]}>{line.text}</span>);
   const signOut = async () => {
@@ -56,7 +59,7 @@ export function MoreScreen() {
     queries.clear();
     navigate('/login', { replace: true });
   };
-  // Школа is the selected child's (5.9): shown when the provider has bells or terms, for the child or, before a pick,
+  // School (more.school) is the selected child's (5.9): shown when the provider has bells or terms, for the child or, before a pick,
   // for any child; without a pick it asks for the child first
   const hasSchool = (k: (typeof kids)[number]) => !!k.capabilities.bellSchedule || k.capabilities.terms !== 'none';
   const school = child ? hasSchool(child) : kids.some(hasSchool);
@@ -65,7 +68,7 @@ export function MoreScreen() {
     // advice comes and goes on every child's screen
     await queries.invalidateQueries();
   };
-  // simple mode (5.7) is the student's own; a parent switches it on the child's screen in Семья
+  // simple mode (5.7) is the student's own; a parent switches it on the child's screen in Family
   const simple = async (on: boolean) => {
     await data(api.PATCH('/api/me', { body: { uiMode: on ? 'simple' : 'full' } }));
     await queries.invalidateQueries();

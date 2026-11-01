@@ -6,12 +6,12 @@ import { i18n, initialLanguage, initI18n, languageOverride, setLanguage, setLang
 
 describe('language override in development', () => {
   afterEach(async () => {
-    await setLanguage('ru');
+    await setLanguage('en');
   });
 
   it('wins over the device language and shows the pseudo-locale', async () => {
-    initI18n('ru');
-    localStorage.setItem('marksy.lang', 'en');
+    initI18n('en');
+    localStorage.setItem('marksy.lang', 'de');
     await setLanguageOverride('qps');
     expect(languageOverride()).toBe('qps');
     expect(initialLanguage()).toBe('qps');
@@ -19,12 +19,12 @@ describe('language override in development', () => {
   });
 
   it('ignores an unknown code, and picking a language clears it', async () => {
-    initI18n('ru');
+    initI18n('en');
     localStorage.setItem('marksy.lang.override', 'xx');
     expect(languageOverride()).toBeNull();
     await setLanguageOverride('de');
-    await setLanguage('en');
+    await setLanguage('fr');
     expect(languageOverride()).toBeNull();
-    expect(i18n.language).toBe('en');
+    expect(i18n.language).toBe('fr');
   });
 });

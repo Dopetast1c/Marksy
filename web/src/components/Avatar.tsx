@@ -3,7 +3,7 @@ import type { Schemas } from '../api/client';
 import tokens from '../../../docs/tokens.json';
 
 // A child's avatar (ux-principles D9): an SVG drawn from a few traits, the generator of docs/mockups.html. The family
-// sets the traits in Семья (or uploads a photo, ChildAvatar); until then every child has the neutral look. The
+// sets the traits in Family (family.title; or uploads a photo, ChildAvatar); until then every child has the neutral look. The
 // background, a hue of the subject palette by the child's place in the family order, tells children apart, never
 // anything guessed from the child's id or name.
 

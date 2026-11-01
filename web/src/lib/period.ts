@@ -4,9 +4,10 @@ import type { ShortDateStyle } from '@marksy/core';
 import type { TFunction } from 'i18next';
 import type { Schemas } from '../api/client';
 
-// What the period controls say (docs/design.md 6, ux-principles D2): the kind ("Неделя", "Четверть" from the term's
-// kind), the instance ("Эта неделя · 12–18 окт", "Этот месяц · октябрь", the diary's own term name) and, once, what
-// "было" is compared with ("против 5–11 окт"). Short dates come from core's shortRange in the interface language;
+// What the period controls say (docs/design.md 6, ux-principles D2): the kind ("Week" period.week, "Quarter" term.*
+// from the term's kind), the instance ("This week · 12–18 Oct" period.thisWeek, "This month · October"
+// period.thisMonth, the diary's own term name) and, once, what "was" (stat.was) is compared with ("vs 5–11 Oct",
+// period.vs). Short dates come from core's shortRange in the interface language;
 // full month names from Intl.
 
 export type Instance = Schemas['Period'];
@@ -37,7 +38,7 @@ export function instanceTitle(t: TFunction, i: Instance, ds: ShortDateStyle): st
           ? t('period.lastMonth')
           : capital(monthName(i.from, ds.locale), ds.locale);
     case 'term': {
-      // the diary's own name of the term when it has one; else «I четверть» from the term's kind and number
+      // the diary's own name of the term when it has one; else "Quarter I" (period.termN.*) from the term's kind and number
       const index = i.termIndex ?? i.offset + 1;
       return i.termLabel ?? t(`period.termN.${i.termKind ?? 'other'}`, { roman: roman(index) });
     }
@@ -58,9 +59,10 @@ export function instanceSub(t: TFunction, i: Instance, ds: ShortDateStyle): stri
 }
 
 /**
- * What "было" compares with, said once in the navigator: the instance right before the selected one. A week by its
- * dates ("против 5–11 окт"), a month by its name in the form a date uses ("против сентября", from Intl's day-and-month
- * format, so no month name is typed in a translation), a term by its kind ("против прошлой четверти"), a year by its label.
+ * What "was" (stat.was) compares with, said once in the navigator: the instance right before the selected one. A week
+ * by its dates ("vs 5–11 Oct", period.vs), a month by its name in the form a date uses ("vs September", from Intl's
+ * day-and-month format, so no month name is typed in a translation), a term by its kind ("vs the previous quarter",
+ * period.vsPrevTerm.*), a year by its label.
  */
 export function comparedWith(t: TFunction, list: readonly Instance[], i: Instance, ds: ShortDateStyle): string {
   const prev = list.find((x) => x.offset === i.offset + 1);
@@ -95,7 +97,7 @@ export function roman(n: number): string {
   return out;
 }
 
-/** «за неделю», «за четверть»: the period's span in a phrase («нет оценок за неделю») */
+/** "over the week", "over the quarter" (period.for.*): the period's span in a phrase ("no marks over the week") */
 export function forPeriod(t: TFunction, kind: Kind, termKind: Instance['termKind'], locale: string): string {
   return t(`period.for.${kind}`, { name: inSentence(t(`term.${termKind ?? 'other'}`), locale) });
 }

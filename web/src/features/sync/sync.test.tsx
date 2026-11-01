@@ -6,7 +6,7 @@ import { initI18n } from '../../i18n';
 import { fakeApi } from '../../test/fake-api';
 
 beforeAll(() => {
-  initI18n('ru');
+  initI18n('en');
 });
 
 // the fixtures' clock: Wednesday 21 October 2026, 19:12 at the school (test/setup.ts)
@@ -50,7 +50,7 @@ const account = {
   },
 };
 
-describe('Синхронизация', () => {
+describe('Sync', () => {
   it('the state card, what the next run takes, the re-scan, the drift and the log', async () => {
     fakeApi({
       signedIn: true,
@@ -72,35 +72,35 @@ describe('Синхронизация', () => {
     });
     render(<App at="/more/sync" />);
     expect(await screen.findByText('demo-login · Школьный портал (демо)')).toBeTruthy();
-    expect(screen.getByText('всё свежо')).toBeTruthy();
-    expect(screen.getByText('сегодня 07:30–16:20 · учебный день: Милена, Марк')).toBeTruthy();
-    expect(screen.getByText('в ближайший учебный день')).toBeTruthy();
-    expect(screen.getByText('текущая, следующая и прошлая неделя')).toBeTruthy();
-    expect(screen.getByText('6 недель')).toBeTruthy();
-    expect(screen.getByText('около 8 запросов: по одному на неделю и ребёнка, по очереди, с паузами')).toBeTruthy();
+    expect(screen.getByText('all fresh')).toBeTruthy();
+    expect(screen.getByText('today 07:30–16:20 · school day: Милена, Марк')).toBeTruthy();
+    expect(screen.getByText('on the next school day')).toBeTruthy();
+    expect(screen.getByText('this, the next and the last week')).toBeTruthy();
+    expect(screen.getByText('6 weeks')).toBeTruthy();
+    expect(screen.getByText('about 8 requests: one per week and child, one after another, with pauses')).toBeTruthy();
     expect(screen.getByText('days[].lessons[].extra')).toBeTruthy();
-    expect(screen.getByText('по расписанию · успешно · 9 запросов')).toBeTruthy();
+    expect(screen.getByText('scheduled · done · 9 requests')).toBeTruthy();
   });
 
-  it('«Обновить сейчас» within the login budget says when the next login is possible; a refused password leads to Семья', async () => {
+  it('"Refresh now" (sync.refresh) within the login budget says when the next login is possible; a refused password leads to Family', async () => {
     const api = fakeApi({ signedIn: true, syncStatus: { accounts: [account], students: [] } });
     const user = userEvent.setup();
     const { unmount } = render(<App at="/more/sync" />);
-    await user.click(await screen.findByRole('button', { name: 'Обновить сейчас' }));
+    await user.click(await screen.findByRole('button', { name: 'Refresh now' }));
     expect(api.bodies['POST /api/sync/run']).toEqual({ accountId: 'acc-1' });
-    expect(await screen.findByText('следующий вход в дневник можно в 20:12')).toBeTruthy();
-    // «Перепроверить историю»: whom and the period, the children's term word
-    await user.click(screen.getByRole('button', { name: 'Перепроверить историю' }));
+    expect(await screen.findByText('the next diary login is possible at 20:12')).toBeTruthy();
+    // "Check the history again" (sync.rescan.button): whom and the period, the children's term word
+    await user.click(screen.getByRole('button', { name: 'Check the history again' }));
     const sheet = screen.getByRole('dialog');
-    await user.click(within(sheet).getByRole('button', { name: 'Учебный год' }));
-    await user.click(within(sheet).getByRole('button', { name: 'Поставить в очередь' }));
+    await user.click(within(sheet).getByRole('button', { name: 'School year' }));
+    await user.click(within(sheet).getByRole('button', { name: 'Queue it' }));
     expect(api.bodies['POST /api/sync/rescan']).toEqual({ accountId: 'acc-1', period: 'year' });
-    expect(await screen.findByText('7 недель снова в очереди на чтение')).toBeTruthy();
+    expect(await screen.findByText('7 weeks are queued to be read again')).toBeTruthy();
     unmount();
 
     fakeApi({ signedIn: true, syncStatus: { accounts: [{ ...account, status: 'auth_failed' }], students: [] } });
     render(<App at="/more/sync" />);
-    expect(await screen.findByRole('button', { name: 'Обновить пароль дневника' })).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Обновить сейчас' })).toBeNull();
+    expect(await screen.findByRole('button', { name: 'Update the diary password' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Refresh now' })).toBeNull();
   });
 });

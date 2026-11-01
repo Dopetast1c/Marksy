@@ -12,13 +12,13 @@ import { useT } from '../../i18n';
 import { schoolYearLabel } from '../../lib/finals';
 import { numbers } from '../../lib/numbers';
 
-// «Ввести итоги прошлого года» (docs/design.md 5.3b, 6.1): the admin or a parent types a school year before Marksy in
-// from the paper report card, one year final per subject on the child's scale. The years the diary sends are not
-// offered; a year already typed in opens with its values. Saving writes the whole year: a subject left at «—» goes.
+// "Enter last year's finals" (finals.manual.button; docs/design.md 5.3b, 6.1): the admin or a parent types a school
+// year before Marksy in from the paper report card, one year final per subject on the child's scale. The years the diary sends are not
+// offered; a year already typed in opens with its values. Saving writes the whole year: a subject left at "—" (finals.manual.none) goes.
 
 type Years = NonNullable<ReturnType<typeof useYearFinals>['data']>;
 
-/** How many years back are offered: as many as Годы shows next to the current one (its YEARS_SHOWN less one) */
+/** How many years back are offered: as many as Years (finals.years) shows next to the current one (its YEARS_SHOWN less one) */
 const YEARS_BACK = 2;
 
 /** The past years that may be typed in: the ones before the current year the diary does not send */
@@ -29,7 +29,7 @@ export function manualYears(years: Years): number[] {
   return Array.from({ length: YEARS_BACK }, (_, i) => current.startYear - 1 - i).filter((y) => !fromDiary.has(y));
 }
 
-/** A year's name from its first calendar year, in Годы' own short form («2024/25») */
+/** A year's name from its first calendar year, in the Years tab's own short form ("2024/25") */
 const yearLabel = (y: number) => schoolYearLabel(`${y}-${y + 1}`);
 
 export function ManualFinals({

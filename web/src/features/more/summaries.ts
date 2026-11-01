@@ -6,12 +6,12 @@ import { dateStyle, intlLocale } from '../../i18n';
 import { formatTime, todayIn } from '../../lib/time';
 import { whenText } from '../../lib/when';
 
-// The live lines under Ещё's rows (docs/design.md 5.6): what the family has, what this child's school has, how the
+// The live lines under the rows of More (tabs.more) (docs/design.md 5.6): what the family has, what this child's school has, how the
 // diaries are read. Each says the state in a few words; a problem replaces the times, so it is what is read first.
 
 type TermKind = 'quarter' | 'trimester' | 'semester' | 'other' | 'none';
 
-/** «4 участника · Милена, Марк · 1 дневник» */
+/** "4 members · Anna, Mark · 1 diary" (more.family.members, the children's names, more.family.diaries) */
 export function familyLine(t: TFunction, view: FamilyView): string {
   return [
     t('more.family.members', { count: view.members.length }),
@@ -22,7 +22,7 @@ export function familyLine(t: TFunction, view: FamilyView): string {
     .join(' · ');
 }
 
-/** «Милена: звонки, четверти и каникулы»: the periods' word from Term.kind, never typed; without terms, only bells */
+/** "Anna: bells, quarters and holidays" (more.school.subFor): the periods' word from Term.kind, never typed; without terms, only bells */
 export function schoolLine(t: TFunction, terms: TermKind, name: string | null): string {
   if (terms === 'none') return name ? t('more.school.subForPlain', { name }) : t('more.school.subPlain');
   const words = inSentence(t(`term.${terms}.plural`), intlLocale());
@@ -43,13 +43,15 @@ const capitalised = (s: string) => s.charAt(0).toLocaleUpperCase(intlLocale()) +
 
 export interface SyncLine {
   text: string;
-  /** a problem's weight; neutral for the times, for «нет дневников» and for a run in progress */
+  /** a problem's weight; neutral for the times, for "no diary connected" (more.sync.none) and for a run in
+   * progress */
   tone: 'neutral' | 'low' | 'critical';
 }
 
 /**
- * When the next run is (Ещё and Синхронизация): «около 13:00» today, «пн, 26 окт в 08:13» on another day, «после
- * каникул, пн, 9 ноя» across holidays; the general «в учебный день» only when the planner does not know the day.
+ * When the next run is (More and Sync): "next at about 13:00" (more.sync.nextAt) today, "next Mon, 26 Oct at 08:13"
+ * (more.sync.nextOn) on another day, "next after the holidays, Mon, 9 Nov" (more.sync.nextAfterHolidays) across
+ * holidays; the general "next on a school day" (more.sync.nextSchoolDay) only when the planner does not know the day.
  */
 export function nextRunText(t: TFunction, n: Next | undefined, tz: string): string | null {
   if (!n) return null;
@@ -70,8 +72,9 @@ export function nextRunText(t: TFunction, n: Next | undefined, tz: string): stri
 }
 
 /**
- * «Сегодня в 12:17 · следующая около 13:00»; a diary with a problem says it instead («Нужен новый пароль», «Дневник
- * не отвечает»), in the warning colour. A run in progress is a state, not a problem: «Читаем дневник», neutral.
+ * "Today at 12:17 · next at about 13:00"; a diary with a problem says it instead ("A new password is needed",
+ * "The diary does not answer": more.sync.problem.*), in the warning colour. A run in progress is a state, not a
+ * problem: "Reading the diary" (more.sync.reading), neutral.
  * Several diaries: a problem first, then a run in progress, otherwise the one read longest ago.
  */
 export function syncLine(t: TFunction, status: SyncStatus | undefined, tzOf: (a: Account) => string): SyncLine | null {

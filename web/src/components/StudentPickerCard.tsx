@@ -9,7 +9,7 @@ import { ChangeArrow } from './ChangeArrow';
 import { ClockIcon } from './icons';
 import { numbers } from '../lib/numbers';
 
-// One card of «С кого начнём?» (docs/design.md 4, ux-principles D10): avatar, name and class (and the school when
+// One card of "Who first?" (pick.title; docs/design.md 4, ux-principles D10): avatar, name and class (and the school when
 // the children's schools differ), two or three small stat cells, and during school hours the child's own line. The
 // whole card is the button; nothing else on it. The nearest lesson with a tag comes with tags (M6); until then the
 // card has no such line at all (owner, M5a).
@@ -36,7 +36,7 @@ function Cell({
 }) {
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-0.5 rounded-md bg-surface2 px-3 py-2.5">
-      {/* three cells share 288 px on a 360 px phone: a little less tracking keeps «Пропуски» whole */}
+      {/* three cells share 288 px on a 360 px phone: a little less tracking keeps pick.absences whole */}
       <span className="text-label tracking-[0.03em] text-ink3 uppercase">{label}</span>
       <span className={`font-display text-[24px] leading-[1.1] font-semibold ${tone}`}>{value}</span>
       {hint && <span className="truncate text-[11px] text-ink3">{hint}</span>}

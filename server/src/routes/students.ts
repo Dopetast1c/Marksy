@@ -56,8 +56,9 @@ import {
   subjectRef,
 } from './read-schemas';
 
-// The read API of one child (docs/design.md 5.2 to 5.4, 5.9, 9): the picker cards, Главная, the marks feed, Предметы,
-// Предмет with its trend and regular week, absences, Внимание, Школа. Everything is on the child's scale and calendar;
+// The read API of one child (docs/design.md 5.2 to 5.4, 5.9, 9): the picker cards, Home (screen.home), the marks feed,
+// Subjects (screen.subjects), the subject screen with its trend and regular week, absences, Attention (screen.events),
+// School (more.school). Everything is on the child's scale and calendar;
 // the teacher's comments without a mark (D56) come only where the provider has behaviour, never as marks.
 
 const id = z.string().uuid();
@@ -72,7 +73,7 @@ export function studentRoutes(deps: AppDeps): Router {
     {
       method: 'get',
       path: '/api/students',
-      summary: '«С кого начнём?»: every child the person sees, with what the card shows, in one request',
+      summary: '"Who first?" (pick.title): every child the person sees, with what the card shows, in one request',
       tags: ['students'],
       access: 'member',
       response: z.array(
@@ -94,7 +95,7 @@ export function studentRoutes(deps: AppDeps): Router {
            */
           nextDay: z.object({ date: z.string(), lessons: z.number(), homework: z.number() }).nullable(),
           now: nowLineSchema.nullable(),
-          /** A critical row in this week's Внимание: the red badge on the child's avatar in the StudentBar (design 4) */
+          /** A critical row in this week's Attention (screen.events): the red badge on the child's avatar in the StudentBar (design 4) */
           alert: z.boolean(),
           /** The nearest lesson with a tag (M6) */
           nearestTag: z.null(),
@@ -175,7 +176,7 @@ export function studentRoutes(deps: AppDeps): Router {
         instances: z.record(z.string(), z.array(periodOut.extend({ count: z.number() }))),
         /** What the counts are */
         counts: z.enum(['marks', 'lessons']),
-        /** The finals entry row on Оценки and Предметы (design.md 5.3); null without terms or finals */
+        /** The finals entry row on Marks and Subjects (design.md 5.3); null without terms or finals */
         finals: finalsStateOut.nullable(),
       }),
       errors: { 404: 'No such child' },
@@ -234,7 +235,8 @@ export function studentRoutes(deps: AppDeps): Router {
     {
       method: 'get',
       path: '/api/students/:id/overview',
-      summary: 'Главная: the period on the child scale, last day, movers, Внимание, next day, «Сейчас»',
+      summary:
+        'Home (screen.home): the period on the child scale, last day, movers, Attention (screen.events), next day, the Now card (nowCard)',
       tags: ['students'],
       access: 'member',
       params: childParams,
@@ -244,10 +246,10 @@ export function studentRoutes(deps: AppDeps): Router {
         hasMarks: z.boolean(),
         comparison: comparison.nullable(),
         marksCount: z.number(),
-        /** The count of the instance before ("было N" under Оценок); null when there is none */
+        /** The count of the instance before ("was N", stat.was, under Marks, stat.count); null when there is none */
         prevMarksCount: z.number().nullable(),
         bands: z.array(bandCount),
-        /** One bucket per value of the scale (the Распределение card); empty without a scale */
+        /** One bucket per value of the scale (the Distribution card, stat.distribution); empty without a scale */
         distribution: distributionOut,
         absences: z.number().nullable(),
         prevAbsences: z.number().nullable(),
@@ -281,10 +283,10 @@ export function studentRoutes(deps: AppDeps): Router {
         movers: z.array(z.object({ subject: subjectRef, comparison, count: z.number() })),
         attention: z.array(childEvent),
         attentionTotal: z.number(),
-        /** The next school day after today with its lessons as Расписание has them (the compact LessonRow) */
+        /** The next school day after today with its lessons as Timetable (screen.schedule) has them (the compact LessonRow) */
         nextDay: z.object({ date: z.string(), lessons: z.array(lessonOut) }).nullable(),
         now: nowLineSchema.nullable(),
-        /** «Близко к цели» (5.7): subjects one step from their goal, for a student's Главная; null with guidance off */
+        /** "Close to the goal" (home.nearGoal.mixed, 5.7): subjects one step from their goal, for a student's Home; null with guidance off */
         nearGoals: z.array(nearGoalOut).nullable(),
       }),
       errors: { 404: 'No such child or period' },
@@ -380,7 +382,7 @@ export function studentRoutes(deps: AppDeps): Router {
     {
       method: 'get',
       path: '/api/students/:id/marks',
-      summary: 'Оценки: marks and teacher comments by day, newest first (cursor pages)',
+      summary: 'Marks (screen.marks): marks and teacher comments by day, newest first (cursor pages)',
       tags: ['students'],
       access: 'member',
       params: childParams,
@@ -416,7 +418,7 @@ export function studentRoutes(deps: AppDeps): Router {
     {
       method: 'get',
       path: '/api/students/:id/trend',
-      summary: 'Динамика over all marks: the buckets of the selected period (TrendCard on Главная)',
+      summary: 'Trend (stat.trend) over all marks: the buckets of the selected period (TrendCard on Home)',
       tags: ['students'],
       access: 'member',
       params: childParams,
@@ -477,7 +479,7 @@ export function studentRoutes(deps: AppDeps): Router {
     {
       method: 'get',
       path: '/api/students/:id/events',
-      summary: 'Внимание: ranked facts of the period; Главная shows the first five of the same list',
+      summary: 'Attention (screen.events): ranked facts of the period; Home shows the first five of the same list',
       tags: ['students'],
       access: 'member',
       params: childParams,
@@ -501,7 +503,7 @@ export function studentRoutes(deps: AppDeps): Router {
     {
       method: 'get',
       path: '/api/students/:id/school',
-      summary: 'Школа: the child’s bells, terms and holidays of the current school year (design.md 5.9)',
+      summary: 'School (more.school): the child’s bells, terms and holidays of the current school year (design.md 5.9)',
       tags: ['students'],
       access: 'member',
       params: childParams,
@@ -519,7 +521,7 @@ export function studentRoutes(deps: AppDeps): Router {
             note: z.string().nullable(),
           }),
         ),
-        /** kind names them in the app («Осенние каникулы»); null when the diary does not say */
+        /** kind names them in the app ("Autumn holidays", holiday.name.autumn); null when the diary does not say */
         holidays: z.array(
           z.object({ from: z.string(), to: z.string(), note: z.string().nullable(), kind: holidayKind.nullable() }),
         ),

@@ -176,7 +176,7 @@ export interface NextSchoolDay {
   date: ISODate;
   /** When that day's window opens, minutes of the school's day; null when the day's times are not known */
   from: number | null;
-  /** Holidays lie between today and that day: «следующая после каникул» */
+  /** Holidays lie between today and that day: "next after the holidays" (more.sync.nextAfterHolidays) */
   afterHolidays: boolean;
 }
 
@@ -184,7 +184,7 @@ export interface NextSchoolDay {
 const NEXT_DAY_HORIZON = 60;
 
 /**
- * The account's next school day after today (Синхронизация, design.md 5.6): the earliest of its children's, with that
+ * The account's next school day after today (Sync, sync.title, design.md 5.6): the earliest of its children's, with that
  * day's window as the planner will compute it (the child's lessons and bells, or the manifest's window when the day's
  * times are unknown). Null when no child has one within the horizon or in the stored school year.
  */

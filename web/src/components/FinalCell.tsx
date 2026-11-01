@@ -6,10 +6,10 @@ import { PenNoteIcon } from './icons';
 import { MarkChip } from './MarkChip';
 import { numbers } from '../lib/numbers';
 
-// A cell of Итоги and of the subject's «По четвертям» (docs/design.md 5.3b, 5.4): the teacher's final as a filled chip;
-// a calculation (the running term's average, the year by the scale's year rule) as an italic decimal with no fill, so
-// it is never read as a mark; a dash where there is nothing yet. A final typed in from the report card (6.1) carries a
-// small pen: «введено вручную».
+// A cell of Finals (finals.screen) and of the subject's "By quarter" (subject.byTerms.*; docs/design.md 5.3b, 5.4):
+// the teacher's final as a filled chip; a calculation (the running term's average, the year by the scale's year rule)
+// as an italic decimal with no fill, so it is never read as a mark; a dash where there is nothing yet. A final typed in from the report card (6.1) carries a
+// small pen: "entered by hand" (finals.manual.cell).
 
 const LIVE = {
   critical: 'text-band-critical-fg',

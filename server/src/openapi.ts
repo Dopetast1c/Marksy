@@ -17,15 +17,19 @@ export const apiError = registry.register(
   }),
 );
 
-export function openApiDocument() {
+/**
+ * The document; a running server names its version and its BASE_PATH (so "Try it out" calls the right address), the
+ * exported one for the web app's types stays the same from one version to the next
+ */
+export function openApiDocument(opts: { basePath?: string; version?: string } = {}) {
   return new OpenApiGeneratorV31(registry.definitions).generateDocument({
     openapi: '3.1.0',
     info: {
       title: 'Marksy API',
-      version: '0.0.0',
+      version: opts.version ?? '0.0.0',
       description:
-        'The API of the Marksy PWA. JSON, camelCase, dates as ISO strings. Every route except login, health and docs needs a session (from M4).',
+        'The API of the Marksy PWA. JSON, camelCase, dates as ISO strings. Every route except login, invites, health and docs needs a session; connecting a diary signed out only where signing up is open.',
     },
-    servers: [{ url: '/' }],
+    servers: [{ url: opts.basePath || '/' }],
   });
 }

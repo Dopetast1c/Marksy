@@ -23,17 +23,18 @@ import { HomeSimple } from './HomeSimple';
 import { NearGoals } from './NearGoals';
 import { NextDay } from './NextDay';
 
-// Главная (docs/design.md 5.2, ux-principles D30, D31, D52): «Сейчас» above the navigator during the school day; the
-// brief row (average and count, or lessons and homework in a class without marks, D49); the last school day's marks
-// (five, then «Все оценки»); Внимание (five, then «Показать все»); the next school day in brief; Статистика (bands,
-// Распределение, Динамика) at the bottom; the sync line. A student gets «Близко к цели» after Внимание (5.7). «Занятия
-// сегодня» comes with M7.
+// Home (tabs.home; docs/design.md 5.2, ux-principles D30, D31, D52): the "Now" card (nowCard.*) above the navigator
+// during the school day; the brief row (average and count, or lessons and homework in a class without marks, D49);
+// the last school day's marks (five, then "All marks", home.allMarks); Attention (screen.events; five, then "Show
+// all", home.showAll); the next school day in brief; Statistics (home.stats: bands, Distribution, Trend) at the
+// bottom; the sync line. A student gets "Close to the goal" (home.nearGoal.*) after Attention (5.7). Today's study
+// sessions come with M7.
 
 const FIVE = 5;
 
 export function HomeScreen() {
   const { studentId = '' } = useParams();
-  // simple mode (5.7) has a Главная of its own
+  // simple mode (5.7) has a Home of its own
   return useSimpleMode() ? <HomeSimple studentId={studentId} /> : <HomeFull studentId={studentId} />;
 }
 

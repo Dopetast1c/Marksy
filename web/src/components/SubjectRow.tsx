@@ -6,8 +6,9 @@ import { ChevIcon } from './icons';
 import { Stripe } from './Section';
 
 // A subject line (docs/design.md 5.3a): the subject's colour stripe, its name as the diary sends it with a quiet
-// «углубл.» for a level other than the regular one, the lines the screen gives (the last marks, or lessons and the
-// next lesson in a class without marks), the right-hand box (the average with "было", or study time) and a chevron.
+// "adv." (subject.levelShort.*) for a level other than the regular one, the lines the screen gives (the last marks, or
+// lessons and the next lesson in a class without marks), the right-hand box (the average with "was" stat.was, or study
+// time) and a chevron.
 
 export function SubjectRow({
   subject,

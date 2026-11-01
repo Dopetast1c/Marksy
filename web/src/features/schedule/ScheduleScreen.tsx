@@ -22,11 +22,12 @@ import { todayIn } from '../../lib/time';
 import { useScheduleView } from '../../state/store';
 import type { ScheduleKind } from '../../state/store';
 
-// Расписание (docs/design.md 5.5, ux-principles D2, D33 to D41): the same two period controls as everywhere, with the
-// kinds День / Неделя and a navigator that also goes forward: a day steps over days without lessons, a week by
-// calendar weeks while the diary has lessons in them (or holidays). «Обратить внимание» covers exactly the selected
-// range (the lessons still ahead that carry a tag; hidden without one): in День under the line of counts, in Неделя
-// above the days. Then «Ко 2-му уроку» and the lessons as one two-bar list with gaps (DayLessons). Неделя shows every
+// Timetable (screen.schedule; docs/design.md 5.5, ux-principles D2, D33 to D41): the same two period controls as
+// everywhere, with the kinds Day / Week (schedule.day, period.week) and a navigator that also goes forward: a day
+// steps over days without lessons, a week by calendar weeks while the diary has lessons in them (or holidays). "Worth
+// a look" (subject.attention) covers exactly the selected range (the lessons still ahead that carry a tag; hidden
+// without one): in Day under the line of counts, in Week above the days. Then "From lesson 2" (schedule.startsLater*)
+// and the lessons as one two-bar list with gaps (DayLessons). Week shows every
 // school day of the manifest's calendar (and any other day with lessons); a day in the child's holidays is a holiday
 // card, a week whose school days are all holidays is one card.
 
@@ -48,7 +49,8 @@ function HolidayCard({ h }: { h: Holiday }) {
   );
 }
 
-/** «08:00–13:35 · 6 уроков · 1 не будет, 4 д/з · готово 2 из 5, 1 контрольная»: only lessons that take place count */
+/** "08:00–13:35 · 6 lessons · 1 cancelled, 4 homework · ready 2 of 5, 1 test" (lessons.count, schedule.cancelled,
+ * schedule.homework, schedule.ready, schedule.tests): only lessons that take place count */
 function dayCounts(t: TFunction, lessons: readonly ScheduleLesson[], now: Date, tz: string) {
   const held = lessons.filter((l) => !l.cancelled);
   const timed = held.filter((l) => l.start && l.end);
@@ -87,7 +89,8 @@ function dayCounts(t: TFunction, lessons: readonly ScheduleLesson[], now: Date, 
   );
 }
 
-/** «Обратить внимание» (5.5, D43): facts from tags only, about the selected range, «Тег · Предмет» / when / the words */
+/** "Worth a look" (subject.attention; 5.5, D43): facts from tags only, about the selected range, "Tag · Subject" /
+ * when / the words */
 function Attention({ studentId, items, today }: { studentId: string; items: Schedule['attention']; today: string }) {
   const t = useT();
   const navigate = useNavigate();
@@ -146,7 +149,8 @@ export function ScheduleScreen() {
   const locale = intlLocale();
   const now = useClock();
   const view = useScheduleView();
-  // a link with ?day= (Главная's «Всё расписание», «Сейчас», a teacher's comment, Внимание) opens День on that day
+  // a link with ?day= (Home's "Whole timetable" home.allSchedule, the "Now" card, a teacher's comment, Attention
+  // screen.events) opens Day on that day
   const [search, setSearch] = useSearchParams();
   const linked = search.get('day');
   const { showDay } = view;
@@ -162,8 +166,8 @@ export function ScheduleScreen() {
   const schoolDays = days.data?.schoolDays ?? [];
   const holidays = school.data?.holidays;
   const lessonDays = useMemo(() => days.data?.days ?? [], [days.data]);
-  // День opens on today; on a day without lessons (a weekend, the holidays) on the next day with lessons, like
-  // «Всё расписание» on Главная (5.5)
+  // Day opens on today; on a day without lessons (a weekend, the holidays) on the next day with lessons, like
+  // "Whole timetable" (home.allSchedule) on Home (5.5)
   const day =
     view.day ??
     (lessonDays.some((d) => d.date === today) ? today : (lessonDays.find((d) => d.date > today)?.date ?? today));
@@ -185,7 +189,7 @@ export function ScheduleScreen() {
       { value: 'day', label: t('schedule.day') },
       { value: 'week', label: t('period.week') },
     ],
-    // День keeps the day in view: the week that holds it; a week back to День opens today when it is this week
+    // Day keeps the day in view: the week that holds it; a week back to Day opens today when it is this week
     onChange: (k: string) => {
       if ((k as ScheduleKind) === 'week')
         view.showWeek(Math.round(daysBetween(weekStartOf(today, weekStart), weekStartOf(day, weekStart)) / 7));

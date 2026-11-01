@@ -6,7 +6,7 @@ import { meKey } from '../../api/queries';
 import { Button } from '../../components/Field';
 import { useT } from '../../i18n';
 
-// «Дневник подключён» (docs/design.md 7.2, ux-principles D54): the connected login shows a child another family
+// "Diary connected" (match.title; docs/design.md 7.2, ux-principles D54): the connected login shows a child another family
 // already follows. Never a second copy of the child: the parent chooses, once per child, to follow from their own
 // family (no approval, the diary gives this login access; the other family gets one notice without names) or to ask
 // to join that family (its admin decides).

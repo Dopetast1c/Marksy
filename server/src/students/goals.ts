@@ -8,9 +8,9 @@ import type { ChildContext } from './context';
 import { factOf, marksIn, refOf, subjectsOf } from './data';
 import { finalsOf } from './finals';
 
-// A subject's goal (docs/design.md 5.4, 6.2): the family's choice per subject, null for «Без цели», the scale's default
-// until one is chosen. The subject screen shows it as the goal row; a student's Главная pins the subjects that are
-// close to theirs (5.7, «Близко к цели»).
+// A subject's goal (docs/design.md 5.4, 6.2): the family's choice per subject, null for "No goal" (subject.goal.none),
+// the scale's default until one is chosen. The subject screen shows it as the goal row; a student's Home (screen.home)
+// pins the subjects that are close to theirs (5.7, "Close to the goal", home.nearGoal.mixed).
 
 /** The goal needs terms, finals and a scale whose final rule can be inverted (6.2) */
 export const goalsApply = (ctx: ChildContext) =>
@@ -19,7 +19,7 @@ export const goalsApply = (ctx: ChildContext) =>
 export const runningTerm = (ctx: ChildContext) =>
   ctx.termRows.find((t) => t.startDate <= ctx.today && ctx.today <= t.endDate) ?? null;
 
-/** The goal of a subject: the family's choice, null for «Без цели», the scale's default until one is chosen */
+/** The goal of a subject: the family's choice, null for "No goal" (subject.goal.none), the scale's default until one is chosen */
 export async function goalOf(deps: AppDeps, ctx: ChildContext, subjectId: string): Promise<number | null> {
   if (!ctx.scale) return null;
   const [row] = await deps.db
@@ -39,14 +39,14 @@ export const nearGoalOut = z.object({
   plan: z.object({ value: z.number(), count: z.number() }),
 });
 
-/** How many subjects «Близко к цели» names at most */
+/** How many subjects "Close to the goal" (home.nearGoal.mixed) names at most */
 const NEAR_MAX = 2;
 /** A term average needs this many marks before it says anything about a goal */
 const NEAR_MIN_MARKS = 3;
 
 /**
- * «Близко к цели» on a student's Главная (5.7): the running term's subjects whose goal is not reached yet and is at
- * most one step of the scale away, with at least three marks and no final posted, nearest first. Advice: null with
+ * "Close to the goal" (home.nearGoal.mixed) on a student's Home (5.7): the running term's subjects whose goal is not
+ * reached yet and is at most one step of the scale away, with at least three marks and no final posted, nearest first. Advice: null with
  * guidance off or where goals do not apply.
  */
 export async function nearGoals(deps: AppDeps, ctx: ChildContext): Promise<z.infer<typeof nearGoalOut>[] | null> {

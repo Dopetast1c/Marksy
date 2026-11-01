@@ -82,7 +82,10 @@ export async function upsertListedStudent(
   return row!;
 }
 
-/** No link of this family to the child, and another family follows them: «Присоединиться» or «Следить» is pending */
+/**
+ * No link of this family to the child, and another family follows them: "Join that family" (match.join) or "From your
+ * own family" (match.follow) is pending
+ */
 async function awaitingChoice(db: Db, familyId: string, studentId: string): Promise<boolean> {
   const links = await db
     .select({ familyId: familyStudents.familyId })

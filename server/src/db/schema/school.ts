@@ -131,7 +131,7 @@ export const subjectGoals = pgTable(
     subjectId: uuid('subject_id')
       .notNull()
       .references(() => subjects.id, { onDelete: 'cascade' }),
-    /** Any value of the student's scale; null = без цели */
+    /** Any value of the student's scale; null = "No goal" (subject.goal.none) */
     termGoal: text('term_goal'),
     setBy: uuid('set_by').references(() => users.id, { onDelete: 'set null' }),
     updatedAt: ts('updated_at').notNull().defaultNow(),

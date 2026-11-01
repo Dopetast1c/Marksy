@@ -2,8 +2,8 @@ import { addDays } from '@marksy/core';
 import type { ShortDateStyle } from '@marksy/core';
 import type { TFunction } from 'i18next';
 
-// The caption of a day in a list (Оценки, the subject's marks, Расписание): «Сегодня · 15 октября», «Завтра»,
-// «Вчера · 14 октября», «Понедельник · 12 октября». Today is the school's (lib/time.ts); weekday and month names come from Intl.
+// The caption of a day in a list (Marks, the subject's marks, Timetable): "Today · 15 October" (day.today), "Tomorrow"
+// (home.tomorrow), "Yesterday · 14 October" (day.yesterday), "Monday · 12 October". Today is the school's (lib/time.ts); weekday and month names come from Intl.
 
 const plain = (iso: string) => new Date(`${iso}T12:00:00Z`);
 

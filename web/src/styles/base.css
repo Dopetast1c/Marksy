@@ -23,7 +23,7 @@
 }
 
 /* The period stepped (PeriodNav, ux-principles D2): the content under the navigator slides in a short way from the side
-   the new period lies on, older from the left, newer from the right; the navigator and what is above it (Сейчас) stay. */
+   the new period lies on, older from the left, newer from the right; the navigator and what is above it (the "Now" card) stay. */
 @keyframes period-from-older {
   from {
     transform: translateX(calc(-1 * var(--slide-distance)));
@@ -48,7 +48,7 @@
   }
 }
 
-/* Оформление's wallpaper (design.md 5.6a): a fixed layer behind the app, the picture at the chosen opacity; cards stay
+/* The wallpaper of Appearance (look.title; design.md 5.6a): a fixed layer behind the app, the picture at the chosen opacity; cards stay
    solid so data is never on the pattern, and the sticky navigator gets a translucent, blurred background instead of
    the solid one (the subject screen's tinted navigator keeps its tint). Patterns tile, an own picture covers. */
 html[data-wall]::before {

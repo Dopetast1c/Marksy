@@ -1,5 +1,5 @@
 // The subject palette (docs/design.md 6.6): the twelve keys of docs/tokens.json → color.subject that the family picks
-// from; a subject without a pick is «авто». A test keeps this list equal to the tokens.
+// from; a subject without a pick is "auto" (color.auto). A test keeps this list equal to the tokens.
 
 export const SUBJECT_COLORS = [
   'red',

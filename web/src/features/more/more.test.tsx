@@ -8,7 +8,7 @@ import { FIXTURE_NOW } from '../../test/setup';
 import { fakeApi, KIDS } from '../../test/fake-api';
 
 beforeAll(() => {
-  initI18n('ru');
+  initI18n('en');
 });
 beforeEach(() => {
   useDevice.setState({ pick: null, alwaysLast: false });
@@ -16,46 +16,46 @@ beforeEach(() => {
 
 const [milena] = KIDS as [(typeof KIDS)[number]];
 
-describe('Ещё', () => {
-  it('in the documented order: the choice, who is signed in, Школа, the switches, the language, Выйти last', async () => {
+describe('More', () => {
+  it('in the documented order: the choice, who is signed in, School, the switches, the language, Sign out last', async () => {
     fakeApi({ signedIn: true });
     render(<App at="/more" />);
-    expect(await screen.findByText('Родитель (администратор)')).toBeTruthy();
+    expect(await screen.findByText('Родитель (admin)')).toBeTruthy();
     const titles = [...document.querySelectorAll('main b')].map((b) => b.textContent);
     const order = [
-      'Ученик не выбран',
-      'Родитель (администратор)',
-      'Школа',
-      'Подсказки',
-      'Всегда начинать с последнего',
-      'Язык',
-      'Выйти',
+      'No student chosen',
+      'Родитель (admin)',
+      'School',
+      'Tips',
+      'Always start with the last one',
+      'Language',
+      'Sign out',
     ];
     expect(titles.filter((x) => order.includes(x ?? ''))).toEqual(order);
-    expect(screen.getByText('Семья · 2 ученика')).toBeTruthy();
-    // no child picked: Школа asks for one first
-    await userEvent.setup().click(screen.getByText('Школа'));
-    expect(await screen.findByText('С кого начнём?')).toBeTruthy();
+    expect(screen.getByText('Семья · 2 students')).toBeTruthy();
+    // no child picked: School asks for one first
+    await userEvent.setup().click(screen.getByText('School'));
+    expect(await screen.findByText('Who first?')).toBeTruthy();
   });
 
-  it('«Подсказки» is the person’s own switch, saved at once', async () => {
+  it('"Tips" (more.guidance) is the person’s own switch, saved at once', async () => {
     const api = fakeApi({ signedIn: true });
     const user = userEvent.setup();
     render(<App at="/more" />);
-    const guidance = await screen.findByRole('switch', { name: 'Подсказки' });
+    const guidance = await screen.findByRole('switch', { name: 'Tips' });
     expect(guidance.getAttribute('aria-checked')).toBe('true');
     await user.click(guidance);
     expect(api.bodies['PATCH /api/me/settings']).toEqual({ guidance: false });
-    expect((await screen.findByRole('switch', { name: 'Подсказки' })).getAttribute('aria-checked')).toBe('false');
+    expect((await screen.findByRole('switch', { name: 'Tips' })).getAttribute('aria-checked')).toBe('false');
   });
 
-  it('with a child picked, Школа opens that child’s school', async () => {
+  it('with a child picked, School opens that child’s school', async () => {
     useDevice.setState({ pick: { id: milena.id, lastActive: FIXTURE_NOW.getTime() }, alwaysLast: false });
     fakeApi({ signedIn: true });
     render(<App at="/more" />);
     // the periods' word comes from the provider's term kind
-    await userEvent.setup().click(await screen.findByText('Милена: звонки, четверти и каникулы'));
-    expect(await screen.findByRole('button', { name: 'Звонки' })).toBeTruthy();
+    await userEvent.setup().click(await screen.findByText('Милена: bells, quarters and holidays'));
+    expect(await screen.findByRole('button', { name: 'Bells' })).toBeTruthy();
   });
 
   it('live lines: the family, the diaries’ state or its problem, the language’s review, the version', async () => {
@@ -76,10 +76,10 @@ describe('Ещё', () => {
       },
     });
     const { unmount } = render(<App at="/more" />);
-    expect(await screen.findByText('3 участника · Милена, Марк · 1 дневник')).toBeTruthy();
-    expect(await screen.findByText(/^Сегодня в 12:17 · следующая около 20:00$/)).toBeTruthy();
-    expect(screen.getByText('Русский')).toBeTruthy();
-    expect(screen.getByText(/^Marksy \d+\.\d+\.\d+ · дневник только читается/)).toBeTruthy();
+    expect(await screen.findByText('3 members · Милена, Марк · 1 diary')).toBeTruthy();
+    expect(await screen.findByText(/^Today at 12:17 · next at about 20:00$/)).toBeTruthy();
+    expect(screen.getByText('English')).toBeTruthy();
+    expect(screen.getByText(/^Marksy \d+\.\d+\.\d+ · the diary is only read/)).toBeTruthy();
     unmount();
     // a problem says itself instead of the times
     fakeApi({
@@ -88,11 +88,11 @@ describe('Ещё', () => {
     });
     const { unmount: done } = render(<App at="/more" />);
     // a problem in the warning colour
-    expect((await screen.findByText('Нужен новый пароль')).className).toContain('text-band-critical-fg');
+    expect((await screen.findByText('A new password is needed')).className).toContain('text-band-critical-fg');
     done();
   });
 
-  it('the next run on another day: its date and time; across holidays «после каникул»; a run in progress is neutral', async () => {
+  it('the next run on another day: its date and time; across holidays "after the holidays"; a run in progress is neutral', async () => {
     const account = (next: object, status = 'ok') => ({
       signedIn: true,
       syncStatus: {
@@ -117,40 +117,41 @@ describe('Ещё', () => {
     };
     await shown(
       account({ kind: 'nextSchoolDay', date: '2026-10-26', at: '2026-10-26T05:13:00Z' }),
-      /^Сегодня в 12:17 · следующая пн, 26 окт в 08:13$/,
+      /^Today at 12:17 · next Mon, 26 Oct at 08:13$/,
     );
     await shown(
       account({ kind: 'nextSchoolDay', date: '2026-11-09', afterHolidays: true }),
-      /^Сегодня в 12:17 · следующая после каникул, пн, 9 ноя$/,
+      /^Today at 12:17 · next after the holidays, Mon, 9 Nov$/,
     );
-    await shown(account({ kind: 'nextSchoolDay' }), /^Сегодня в 12:17 · следующая в учебный день$/);
-    const reading = await shown(account({ kind: 'now' }, 'loading'), /^Читаем дневник$/);
+    await shown(account({ kind: 'nextSchoolDay' }), /^Today at 12:17 · next on a school day$/);
+    const reading = await shown(account({ kind: 'now' }, 'loading'), /^Reading the diary$/);
     expect(reading.className).not.toContain('band');
   });
 });
 
-describe('Школа', () => {
-  it('Звонки: every lesson with its time and length, the breaks between them', async () => {
+describe('School', () => {
+  it('Bells: every lesson with its time and length, the breaks between them', async () => {
     fakeApi({ signedIn: true });
     render(<App at={`/s/${milena.id}/school`} />);
     expect(await screen.findByText('08:30 – 09:15')).toBeTruthy();
-    expect(screen.getAllByText('45 мин').length).toBe(4);
-    expect(screen.getAllByText('перемена 10 мин')).toHaveLength(2);
-    expect(screen.getByText('перемена 20 мин')).toBeTruthy();
-    expect(screen.getByText('пн–пт · 08:30–12:10 · 4 урока')).toBeTruthy();
-    expect(screen.getByText(/Звонки класса 7 «Г»/)).toBeTruthy();
+    expect(screen.getAllByText('45 min').length).toBe(4);
+    expect(screen.getAllByText('break 10 min')).toHaveLength(2);
+    expect(screen.getByText('break 20 min')).toBeTruthy();
+    expect(screen.getByText('Mon–Fri · 08:30–12:10 · 4 lessons')).toBeTruthy();
+    expect(screen.getByText(/The bells of class 7 «Г»/)).toBeTruthy();
   });
 
-  it('Четверти: the term going on, the holidays named from their kind, from Внимание straight to it', async () => {
+  it('Quarters: the term going on, the holidays named from their kind, from Attention straight to it', async () => {
     fakeApi({ signedIn: true });
     render(<App at={`/s/${milena.id}/school?tab=year`} />);
     // today is 21 October: the first term runs, the autumn holidays are next
-    const now = await screen.findByText('Сейчас');
+    const now = await screen.findByText('Now');
     const card = now.closest('section')!;
-    expect(within(card).getByText('I четверть')).toBeTruthy();
-    expect(within(card).getByText(/осталось 11 дней · до каникул 11 дней/)).toBeTruthy();
-    expect(screen.getByText('Осенние каникулы')).toBeTruthy();
-    expect(screen.getByText('8 дней')).toBeTruthy();
-    expect(screen.getByText('идёт')).toBeTruthy();
+    expect(within(card).getByText('Quarter I')).toBeTruthy();
+    expect(within(card).getByText(/11 days left · 11 days until the holidays/)).toBeTruthy();
+    expect(screen.getByText('Autumn holidays')).toBeTruthy();
+    expect(screen.getByText('8 days')).toBeTruthy();
+    // "now" (school.running): the term going on
+    expect(screen.getByText('now')).toBeTruthy();
   });
 });

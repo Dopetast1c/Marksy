@@ -4,7 +4,7 @@ import { createHash, createHmac, randomBytes } from 'node:crypto';
 // real values into fixtures"). An allow-list: only values under keys known to be safe, at the place they are known
 // to be safe, survive; every other string becomes a placeholder and every other number 0, under any key and at any
 // depth. Real values that are kept in shape are replaced in value: marks get random values of the same form, class
-// letters become "А". Ids become fake uuids made with a random key that lives only as long as the process: the same
+// letters become a Cyrillic "A". Ids become fake uuids made with a random key that lives only as long as the process: the same
 // real id gives the same fake id across one probe run, and nobody holding the real ids can match them afterwards.
 // Running it twice changes nothing.
 
@@ -16,13 +16,13 @@ const UUID_ANYWHERE = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
 const SCHEMA_KEY = /^[A-Za-z_][A-Za-z0-9_]{0,40}$/;
 
 const ENUM = /^[A-Z][A-Z0-9_]{0,39}$/;
-/** Looks like a person: initials ("И.О.") or three capitalised words ("Иванова Мария Петровна"). */
+/** Looks like a person: initials ("I.O.") or three capitalised words ("Ivanova Maria Petrovna"). */
 const PERSON_LIKE = /\p{Lu}\.\s?\p{Lu}\.|(\p{Lu}\p{Ll}+[\s-]+){2}\p{Lu}\p{Ll}+/u;
 const MARK_LABELS = /^(н|зач\.|незач\.|освоб\.|осв\.|не осв\.|н\/а)$/;
-/** A teaching group as the diary names it: "1-я подгруппа", "2-я подгруппа (мальчики)" (api-spec 6.7a) */
+/** A teaching group as the diary names it: "subgroup 1", "subgroup 2 (boys)", in Russian (api-spec 6.7a) */
 const GROUP_NAME = /^\d-я подгруппа( \((девочки|мальчики)\))?$/;
 const LEVEL_OF_STUDY = /^(Базовый|Углубленный|Углублённый)$/;
-/** A room number as the timetable shows it: "201", "спортзал", "Лаб. 2"; never something with a person's shape */
+/** A room number as the timetable shows it: "201", "gym", "Lab 2" (in Russian); never something with a person's shape */
 const ROOM = /^[\p{L}\d][\p{L}\d .-]{0,15}$/u;
 const CLOCK = /^\d{1,2}:\d{2}(:\d{2})?$/;
 /** A school year label: "2026-2027" in real responses (second probe), "2026/2027" in the bundle */
@@ -44,7 +44,7 @@ export interface Place {
  */
 const SCHOOL_LISTS = /^(planning|premises|timetables?)(-|$)/;
 const SCHOOL_LIST_TEXT = new Set(['summary', 'author']);
-/** A premise type is the same few words in every school ("Учебный кабинет", "уч.каб."); one typical value stands for all */
+/** A premise type is the same few words in every school ("classroom", "cl.room", in Russian); one typical value stands for all */
 export const PREMISE_TYPE_NAME = 'Кабинет';
 export const PREMISE_TYPE_SHORT = 'каб.';
 
@@ -118,7 +118,7 @@ export function keepsString({ endpoint, key, container, outer, depth }: Place, v
     case 'class_number':
       return /^\d{1,2}А$/.test(value);
     case 'summary':
-      // a week's "01 сентября - 06 сентября"
+      // a week's "01 September - 06 September", in Russian
       return /^\d{1,2} \p{Ll}+ - \d{1,2} \p{Ll}+$/u.test(value);
     case 'mark':
       return MARK_LABELS.test(value);
@@ -209,7 +209,7 @@ export function createSanitizer(key: Buffer = randomBytes(32)): Sanitizer {
     return real.replace(/\d{1,2}/g, digit);
   };
 
-  /** Every digit replaced one for one from the same kind of seed, so the length and the form stay: "101С" -> "374А" */
+  /** Every digit replaced one for one from the same kind of seed, so the length and the form stay: "101S" -> "374A" (Cyrillic letters) */
   const fakeDigits = (real: string, seed: string) => {
     let i = 0;
     return real.replace(/\d/g, () => String(createHash('sha256').update(`${seed}:${i++}`).digest()[0]! % 10));
@@ -254,7 +254,7 @@ export function createSanitizer(key: Buffer = randomBytes(32)): Sanitizer {
     if (TOKENS.has(key)) return 'fixture-token';
     // the school's bells are a fingerprint: every lesson time becomes one fictional scheme with the same lessons
     if ((key === 'start_time' || key === 'end_time') && CLOCK.test(value)) return fakeClock(value, key, ctx.period);
-    // a subgroup keeps its number, never who is in it («(девочки)»)
+    // a subgroup keeps its number, never who is in it ("(girls)")
     if ((key === 'group_name' || (key === 'name' && place.container === 'study_group')) && GROUP_NAME.test(value))
       return value.replace(/ \(.*\)$/, '');
     if (
@@ -270,7 +270,7 @@ export function createSanitizer(key: Buffer = randomBytes(32)): Sanitizer {
     // a numeric mark keeps its form ("8", "7/9"), never its value
     if (key === 'mark' && /^\d{1,2}(\/\d{1,2})?$/.test(value)) return fakeMark(value, ctx.seed);
     // a room number keeps its form, never its value: a school's whole room list (6.10.4), with its buildings' letters,
-    // and the bells could point to the school. A room named in words only ("спортзал") is the same everywhere
+    // and the bells could point to the school. A room named in words only ("gym") is the same everywhere
     if (key === 'audience_number' && /\d/.test(value) && keepsString(place, value))
       return fakeDigits(value.replace(/\p{L}+/gu, 'А'), ctx.seed);
     if (key === 'label' && /^\p{L}{1,3}$/u.test(value)) return 'А';

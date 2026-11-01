@@ -20,4 +20,4 @@ All paths are relative to `https://api.diary.demo.example.com`.
 | `GET /api/v2/pupils/{id}/diary?week=YYYY-MM-DD` | `diary-1-w1`, `diary-1-w2`, `diary-2-w1`, `diary-empty` | Monday-to-Saturday week; a lesson `uid` may be `null` until the school fills it in |
 | `GET /api/v2/pupils/{id}/finals` | `finals-1`, `finals-2` | rows of subject, period (`null` = year) and value |
 
-Mark cells: a number or `n/m` is numeric on the 10-point scale; `зач`, `незач`, `осв`, `н/а` are pass, fail, exempt and not assessed; `н` is an absence and becomes attendance, never a mark. Work types: `CLASS`, `HOME`, `TEST`, `QUIZ`, `LAB`, `ESSAY`, `DICTATION`, `ORAL`; anything else is reported as drift and kept as `other`.
+Mark cells: a number or `n/m` is numeric on the 10-point scale; the diary's abbreviations for pass, fail, exempt and not assessed are non-numeric; its abbreviation for an absence (see `fixtures/`) is an absence and becomes attendance, never a mark. Work types: `CLASS`, `HOME`, `TEST`, `QUIZ`, `LAB`, `ESSAY`, `DICTATION`, `ORAL`; anything else is reported as drift and kept as `other`.

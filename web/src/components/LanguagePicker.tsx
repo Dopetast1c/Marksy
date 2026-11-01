@@ -7,7 +7,7 @@ import { BottomSheet, SheetOption } from './BottomSheet';
 import { DownIcon, GlobeIcon } from './icons';
 
 // The language choice (docs/i18n.md 3): twelve native names in a sheet (more than four options, D32). Used at the
-// bottom of the login screen and in Ещё; the caller decides what else happens (remember for the user after sign-in,
+// bottom of the login screen and in More (tabs.more); the caller decides what else happens (remember for the user after sign-in,
 // or save it now).
 
 export function LanguagePicker({

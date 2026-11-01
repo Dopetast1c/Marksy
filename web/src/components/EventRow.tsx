@@ -7,9 +7,9 @@ import type { Kind } from '../lib/period';
 import { usePeriod } from '../state/store';
 import { Row, Stripe } from './Section';
 
-// One row of Внимание (docs/design.md 5.2a), on Главная and on the Внимание screen alike: the severity stripe, the
-// fact in two lines, and a tap to where it belongs (the subject, the day in Расписание, Школа). «пришло в Telegram»
-// joins the row with the inbox (M9).
+// One row of Attention (screen.events; docs/design.md 5.2a), on Home (tabs.home) and on the Attention screen alike: the
+// severity stripe, the fact in two lines, and a tap to where it belongs (the subject, the day in Timetable
+// (screen.schedule), School (more.school)). A "sent to Telegram" line joins the row with the inbox (M9).
 
 export function EventRow({ studentId, event, termWord }: { studentId: string; event: ChildEvent; termWord: string }) {
   const t = useT();

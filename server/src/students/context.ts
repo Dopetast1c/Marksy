@@ -59,7 +59,7 @@ export interface ChildContext {
   termRows: TermRow[];
   holidayRows: { start: ISODate; end: ISODate; note: string | null; kind: HolidayKind | null }[];
   period: PeriodContext;
-  /** The family's subject colours (6.6): a palette key per subject; a subject not in the map is «авто» */
+  /** The family's subject colours (6.6): a palette key per subject; a subject not in the map is "auto" (color.auto) */
   colors: Map<string, string | null>;
   /** Advice on (families.settings.guidance and the person's own switch, both on unless turned off): goals and hints */
   guidance: boolean;

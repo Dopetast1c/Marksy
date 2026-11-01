@@ -1,6 +1,6 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { generateGrade1, renderFixtures, seedCalendar } from '../src/index';
+import { DEMO_LITE_SCHOOL_TITLE, generateGrade1, renderFixtures, seedCalendar } from '../src/index';
 
 // `pnpm --filter @marksy/demo-diary fixtures`: writes providers/demo-lite/fixtures from the shared fictional school,
 // on the prototype's demo day (Thursday 15 October 2026), so the provider's fixtures and the seed show the same child.
@@ -13,7 +13,7 @@ const cal = seedCalendar(TODAY, MON_SAT, 1);
 const { fixtures, routes } = renderFixtures(generateGrade1(TODAY, cal), cal, {
   weeks: ['2026-10-05', '2026-10-12'],
   termCode: 'q1',
-  schoolTitle: 'Гимназия № 2',
+  schoolTitle: DEMO_LITE_SCHOOL_TITLE,
 });
 
 const dir = fileURLToPath(new URL('../../../providers/demo-lite/fixtures/', import.meta.url));

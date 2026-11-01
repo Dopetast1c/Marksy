@@ -2,9 +2,9 @@ import type { Schemas } from '../api/client';
 import { CommentIcon } from './icons';
 
 // A mark (ux-principles principle 5, D3): the raw mark as the diary wrote it, on the band's fill; colour is never the
-// only signal, the value is always on the chip. Non-numeric kinds (зач., осв.) use the neutral style. A mark the
+// only signal, the value is always on the chip. Non-numeric kinds (pass, exempt) use the neutral style. A mark the
 // teacher corrected or removed is shown quietly (an outline, struck through when removed), so it is never counted by
-// eye next to the live marks. The test pencil comes with the tag «Контрольная» (M6). Absences and the teacher's
+// eye next to the live marks. The test pencil comes with the family's test tag (M6). Absences and the teacher's
 // comments sit in lists of marks with chips of their own shape below, never a mark's.
 
 export type Mark = Schemas['MarkChip'];
@@ -19,7 +19,7 @@ const FILL = {
 const SIZE = {
   normal: 'h-[30px] min-w-[30px] rounded-[9px] px-[7px] text-[14px]',
   small: 'h-6 min-w-6 rounded-[7px] px-[5px] text-[12px]',
-  // simple mode's «Сегодня» (5.7)
+  // simple mode's "Today" (day.today, 5.7)
   large: 'h-11 min-w-11 rounded-[12px] px-2 text-[20px]',
 } as const;
 
@@ -51,7 +51,8 @@ export function MarkChip({
   );
 }
 
-/** An absence in Оценки (design.md 5.3, D58): the diary's code («н») in a dashed frame; never a mark, never counted */
+/** An absence in Marks (screen.marks; design.md 5.3, D58): the diary's code (marks.absentCode) in a dashed frame; never
+ * a mark, never counted */
 export function AbsenceChip({ code }: { code: string }) {
   return (
     <span

@@ -47,9 +47,12 @@ export const meResponse = registry.register(
       locale: z.string(),
       timezone: z.string().nullable(),
       uiMode: z.enum(['full', 'simple']),
-      /** The person's own «Подсказки» switch (users.settings.guidance); advice shows when the family's is on too */
+      /**
+       * The person's own "Tips" switch (more.guidance; users.settings.guidance); advice shows when the family's is on
+       * too
+       */
       guidance: z.boolean(),
-      /** Оформление (5.6a): personal, applied on every device the person signs in on */
+      /** Appearance (look.title, 5.6a): personal, applied on every device the person signs in on */
       appearance: appearanceOut,
     }),
     memberships: z.array(z.object({ familyId: z.string(), familyName: z.string(), role })),

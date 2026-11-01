@@ -6,10 +6,10 @@ import { lessonOverrides, lessons } from '../db/schema';
 import type { ChildContext } from './context';
 import { chipOf, factOf, guidanceMark, marksIn } from './data';
 
-// What Расписание says under an upcoming lesson beyond the diary's own rows (docs/design.md 5.5, D38): the пометки
-// факты (the subject's average this school year, its last five marks, when the last one was given and how many lessons
-// ago, as of the lesson), сигнал (давно без оценки / нужно поднажать, a family rule, guidance on) and подсказка (6.2,
-// guidance on). The tag notes are in students/tags.ts. A passed lesson keeps only its mark, so it gets none of this.
+// What Timetable (screen.schedule) says under an upcoming lesson beyond the diary's own rows (docs/design.md 5.5, D38):
+// the lesson notes facts (the subject's average this school year, its last five marks, when the last one was given
+// and how many lessons ago, as of the lesson), signal ("No mark for a while" (lesson.signal.call) / "Needs a push"
+// (lesson.signal.push), a family rule, guidance on) and hint (6.2, guidance on). The tag notes are in students/tags.ts. A passed lesson keeps only its mark, so it gets none of this.
 
 type LessonLike = { id: string; date: string; end: string | null; subjectId: string; cancelled: boolean };
 
@@ -22,7 +22,7 @@ export interface LessonFacts {
 }
 
 export interface LessonNotes {
-  /** null: no mark in the subject this school year yet («Оценок по предмету в этом году ещё нет») */
+  /** null: no mark in the subject this school year yet ("No marks in this subject this year yet", lesson.facts.none) */
   facts: LessonFacts | null;
   signal: { kind: 'call' | 'callLow' | 'push'; lessons: number; average: number | null } | null;
   hint: Hint | null;
@@ -30,7 +30,7 @@ export interface LessonNotes {
 
 /**
  * The notes of the lessons that have not passed, by lesson id. Nothing for a year without marks (no scale) or before
- * the first sync. `isTest` comes from the family's tag «Контрольная» (CLAUDE.md), never from the diary's types.
+ * the first sync. `isTest` comes from the family's test tag (CLAUDE.md), never from the diary's types.
  */
 export async function lessonNotes(
   db: Db,

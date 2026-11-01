@@ -2,8 +2,8 @@ import type { ReactNode } from 'react';
 import { Stripe } from './Section';
 import type { Severity } from './Section';
 
-// «Обратить внимание» (docs/design.md 5.4, 5.5): a tinted card with a small caps title and rows of a severity stripe, a
-// bold line and a quiet line. One component for the subject screen's block and the timetable's. A hint is a HintRow;
+// "Worth a look" (subject.attention; docs/design.md 5.4, 5.5): a tinted card with a small caps title and rows of a
+// severity stripe, a bold line and a quiet line. One component for the subject screen's block and the timetable's. A hint is a HintRow;
 // so is the goal row and a lesson that carries a tag (with the tag's icon before its bold line).
 
 export function AttentionCard({ title, children }: { title: string; children: ReactNode }) {
@@ -28,7 +28,7 @@ export function HintRow({
   sub?: string | null;
   /** a third, quieter line */
   note?: string | null;
-  /** a line icon before the bold line (a tag's icon in Расписание's «Обратить внимание», 5.5) */
+  /** a line icon before the bold line (a tag's icon in the timetable's "Worth a look", subject.attention, 5.5) */
   icon?: ReactNode;
 }) {
   return (

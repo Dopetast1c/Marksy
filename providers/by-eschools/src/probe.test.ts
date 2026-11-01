@@ -154,7 +154,7 @@ describe('second review: places, real values, keys', () => {
     ]);
   });
 
-  it('marks keep their form but not their value, the class letter becomes А, both stay stable', () => {
+  it('marks keep their form but not their value, the class letter becomes a Cyrillic A, both stay stable', () => {
     const raw = [{ slots: [{ lesson_mark: { uuid: S1, mark: '7/9', kind: 'DOUBLE' } }] }];
     const once = sanitize('lessons-1-w1', raw) as [{ slots: [{ lesson_mark: { mark: string } }] }];
     expect(once[0].slots[0].lesson_mark.mark).toMatch(/^\d{1,2}\/\d{1,2}$/);

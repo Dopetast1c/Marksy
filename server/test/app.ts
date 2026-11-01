@@ -24,7 +24,6 @@ export function testDeps(over: Partial<AppDeps> = {}): AppDeps {
     db: testDb(),
     credentialsKey: TEST_CREDENTIALS_KEY,
     secret: TEST_SESSION_SECRET,
-    secureCookies: false,
     // pictures of a test run go to a folder of their own, never to data/uploads
     uploadsDir: TEST_UPLOADS_DIR,
     allowDemoProviders: true,

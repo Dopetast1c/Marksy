@@ -17,7 +17,7 @@ try {
   console.log(r.created ? 'demo family created' : 'demo family already exists (pnpm db:seed --reset replaces it)');
   for (const [table, n] of Object.entries(r.counts)) console.log(`  ${table}: ${n}`);
   console.log(
-    `logins: ${DEMO_LOGINS.parent} (parent, admin), ${DEMO_LOGINS.student} (student), ${DEMO_LOGINS.otherParent} (the second family, follows Марк)`,
+    `logins: ${DEMO_LOGINS.parent} (parent, admin), ${DEMO_LOGINS.student} (student), ${DEMO_LOGINS.otherParent} (the second family, follows the younger child)`,
   );
   console.log(`password for all three: ${DEMO_PASSWORD}`); // privacy-ok: the published password of the fictional demo family
 } finally {

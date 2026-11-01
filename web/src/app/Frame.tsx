@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react';
 import { TabBar } from '../components/TabBar';
+import { UpdatePrompt } from '../components/UpdatePrompt';
 
 // The app column: a phone-width column centred on a tablet or a desktop (ux-principles 5 keeps wider layouts open),
-// the body that scrolls (the period swipe listens on it) and the tab bar at the bottom.
+// the body that scrolls (the period swipe listens on it), and at the bottom the update prompt and the tab bar.
 
 export function Frame({
   children,
@@ -16,7 +17,11 @@ export function Frame({
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-[560px] flex-col">
       <div className="flex flex-1 flex-col">{children}</div>
-      {tabs && <TabBar studentId={studentId} />}
+      {/* the update prompt rides on top of the tab bar, so it stays in view while the screen scrolls */}
+      <div className="sticky bottom-0 z-10">
+        <UpdatePrompt />
+        {tabs && <TabBar studentId={studentId} />}
+      </div>
     </div>
   );
 }

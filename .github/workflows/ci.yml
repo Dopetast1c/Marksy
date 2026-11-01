@@ -1,0 +1,82 @@
+name: CI
+
+# Every push and pull request (CLAUDE.md, "Commits and releases"): the whole `pnpm check` (formatting, types, lint,
+# tests against PostgreSQL in a service container, the privacy, language and documentation checks), every interface
+# language strictly, on main every README translation strictly, the commit messages of the push, and the previous
+# release on this commit's migrated schema. Nothing here
+# talks to a real diary and no secret is needed.
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    services:
+      # the test database the server tests expect (docker-compose.yml: marksy-postgres-test on 5434)
+      postgres:
+        image: postgres:16.10-bookworm
+        env:
+          POSTGRES_USER: marksy
+          POSTGRES_PASSWORD: marksy
+          POSTGRES_DB: marksy_test
+        ports:
+          - 5434:5432
+        options: >-
+          --health-cmd "pg_isready -U marksy -d marksy_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      TEST_DATABASE_URL: postgres://marksy:marksy@localhost:5434/marksy_test
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+
+      - name: Install
+        run: |
+          corepack enable
+          pnpm install --frozen-lockfile
+
+      - name: Commit messages
+        env:
+          BEFORE: ${{ github.event.before }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          if [ -n "$BASE" ]; then range="$BASE..$HEAD"
+          elif [ -n "$BEFORE" ] && [ "$BEFORE" != "0000000000000000000000000000000000000000" ]; then range="$BEFORE..$HEAD"
+          else range="$(git merge-base origin/main "$HEAD")..$HEAD"; fi
+          pnpm commit:lint --range "$range"
+
+      - name: Check
+        env:
+          # the restore tests run pg_dump and pg_restore inside the service container (the job context exists in
+          # steps only)
+          MARKSY_PG_TOOLS_CONTAINER: ${{ job.services.postgres.id }}
+        run: pnpm check
+
+      - name: Every interface language, strictly
+        run: pnpm i18n:check --strict
+
+      # on a branch the README's translations may lag (warnings in pnpm check); main has them all, current
+      - name: Every README translation, strictly
+        if: github.ref == 'refs/heads/main'
+        run: pnpm docs:check --strict
+
+      # the previous release must still run on the schema this commit migrates to: the updater rolls back that way
+      - name: Migrations keep the previous release working
+        run: pnpm migrations:compat

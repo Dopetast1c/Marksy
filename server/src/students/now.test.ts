@@ -13,7 +13,7 @@ const day = [lesson(1, '08:30', '09:15', 'Физика', '301'), lesson(2, '09:2
 const at = (hhmm: string) => Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3));
 const monday = { date: '2026-10-19', lessons: [lesson(2, '09:25', '10:10'), lesson(1, '08:30', '09:15')] };
 
-describe('«Сейчас»', () => {
+describe('"Now" (nowCard)', () => {
   it('follows the school day: before, lesson, break, done with the next school day', () => {
     expect(nowLine(day, at('08:00'))).toEqual({
       state: 'before',

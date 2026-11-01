@@ -17,7 +17,7 @@ export function compare(scale: GradingScale, a: number, b: number): -1 | 0 | 1 {
   return d > 0 === scale.higherIsBetter ? 1 : -1;
 }
 
-/** "ниже 5" / "хуже 4": strictly worse than the threshold. */
+/** "Below 5" / "Worse than 4" (threshold.below, threshold.worse): strictly worse than the threshold. */
 export function isWorseThan(scale: GradingScale, value: number, threshold: number): boolean {
   return compare(scale, value, threshold) < 0;
 }

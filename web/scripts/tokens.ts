@@ -52,7 +52,7 @@ export function tokensToCss(t: Tokens): string {
   const common = [
     `--font-display: ${t.font.display};`,
     `--font-body: ${t.font.body};`,
-    // every body font by itself, for the samples of Оформление
+    // every body font by itself, for the samples of Appearance (look.title)
     ...Object.entries(t.font.bodyOptions)
       .filter(([k]) => !k.startsWith('$'))
       .map(([k, v]) => `--font-option-${k}: ${v};`),
@@ -159,7 +159,7 @@ function paletteBlocks(t: Tokens): string[] {
   const palettes = Object.entries(t.palette as Record<string, { light: Swatch | null; dark: Swatch | null }>).filter(
     ([k]) => !k.startsWith('$'),
   );
-  // the swatches of Оформление show every palette at once, so each also has its colours under [data-swatch]; the
+  // the swatches of Appearance (look.title) show every palette at once, so each also has its colours under [data-swatch]; the
   // default palette is the theme's own colours
   const base = (c: ColorSet): Swatch => ({
     bg: c.bg as string,

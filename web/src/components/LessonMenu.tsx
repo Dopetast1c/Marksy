@@ -11,8 +11,10 @@ import { BottomSheet } from './BottomSheet';
 import { CheckIcon, OffIcon, PenNoteIcon, UncheckIcon, UndoIcon } from './icons';
 
 // Everything you can do with a lesson (docs/design.md 5.5, 6.5, ux-principles D41): one bottom sheet, always in this
-// order: «Отметить «готово»» / «Снять отметку «готово»», «Добавить задание» / «Изменить задание» (not when only the
-// diary's homework exists), «Урока не будет»; a cancelled lesson offers only «Вернуть урок». A choice closes the sheet
+// order: "Mark as ready" (lessonMenu.ready) / "Remove the ready mark" (lessonMenu.unready), "Add homework"
+// (lessonMenu.addHomework) / "Edit homework" (lessonMenu.editHomework; not when only the diary's homework exists),
+// "Lesson won't take place" (lessonMenu.cancel); a cancelled lesson offers only "Bring the lesson back"
+// (lessonMenu.restore). A choice closes the sheet
 // and the row changes at once (the cache is patched); if the server refuses (the lesson has just passed, no network)
 // the sheet comes back with one line saying so. Homework the diary lacks is typed in a second sheet; who added it is
 // stored, not shown.

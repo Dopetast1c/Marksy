@@ -10,6 +10,7 @@ import { underLimit } from '../http/rate-limit';
 import type { Limiters } from '../http/rate-limit';
 import { route } from '../http/route';
 import { startSession } from '../http/session';
+import { assertSignupOpen } from '../http/signup';
 import { registry } from '../openapi';
 import { buildMe, meResponse } from './me';
 
@@ -47,16 +48,20 @@ export function inviteRoutes(deps: AppDeps, limiters: Limiters): Router {
       tags: ['providers'],
       access: 'public',
       response: z.array(providerInfo),
+      errors: { 403: 'Signed out where signing up is closed (SIGNUP)' },
     },
-    async () =>
-      listProviders({ all: !!deps.allowDemoProviders }).map(({ manifest: m }) => ({
+    async (req) => {
+      // signed out, the list is what the connect screen offers: only where signing up is open
+      await assertSignupOpen(deps, req);
+      return listProviders({ all: !!deps.allowDemoProviders }).map(({ manifest: m }) => ({
         id: m.id,
         name: m.name,
         country: m.country,
         status: m.status,
         roles: m.roles,
         auth: { kind: m.auth.kind, fields: m.auth.fields },
-      })),
+      }));
+    },
   );
 
   route(

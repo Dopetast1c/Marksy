@@ -11,12 +11,13 @@ import { BackIcon } from './icons';
 import { SegmentedControl } from './SegmentedControl';
 
 // The period control of every period screen (docs/design.md 6, ux-principles D2): PeriodBar picks the kind
-// (Неделя / Месяц / Четверть / Год, the term word from the child's term kind), PeriodNav steps through instances. The
+// (Week / Month / Quarter / Year: period.week, period.month, term.*, period.year; the term word from the child's term
+// kind), PeriodNav steps through instances. The
 // navigator is the first line of the body and the only sticky element; it owns the swipe over the body
-// ([data-swipe-body]). The kind and offset are shared by every screen and survive a child switch. Расписание uses the
+// ([data-swipe-body]). The kind and offset are shared by every screen and survive a child switch. Timetable uses the
 // same two controls with its own kinds and instances (days and weeks that also go forward, D2).
 
-/** The kind control: the marks screens pass the child, Расписание its own kinds (День / Неделя) */
+/** The kind control: the marks screens pass the child, Timetable its own kinds (Day / Week: schedule.day, period.week) */
 export function PeriodBar(props: { studentId: string } | { model: KindModel }) {
   if ('model' in props) {
     const { model } = props;
@@ -78,7 +79,7 @@ export interface NavOption {
 }
 
 /**
- * What a navigator shows and does, whoever owns the period: the marks screens (the shared period store) or Расписание
+ * What a navigator shows and does, whoever owns the period: the marks screens (the shared period store) or Timetable
  * (days and weeks that also go forward, D2)
  */
 export interface NavModel {
@@ -98,7 +99,7 @@ type MarksNavProps = {
   accent?: CSSProperties;
 };
 
-/** The navigator of a period screen: the marks screens pass the child, Расписание passes its own model */
+/** The navigator of a period screen: the marks screens pass the child, Timetable passes its own model */
 export function PeriodNav(props: MarksNavProps | { model: NavModel | null }) {
   return 'model' in props ? <NavRow model={props.model} /> : <MarksPeriodNav {...props} />;
 }

@@ -114,7 +114,8 @@ export async function rulesForMember(db: Db, userId: string, familyId: string, r
 }
 
 /**
- * A child came into the family (a new diary, «Следить из своей семьи», a child appearing in a connected account):
+ * A child came into the family (a new diary, "From your own family" (match.follow), a child appearing in a connected
+ * account):
  * every admin and parent sees the child (their default, design.md 7.1) and gets the default rules about them.
  */
 export async function welcomeChild(db: Db, familyId: string, studentId: string): Promise<void> {

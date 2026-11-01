@@ -4,7 +4,7 @@ import { EmptyState } from '../../components/EmptyState';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { useT } from '../../i18n';
 
-// A child screen of a later milestone (Оценки, Предметы M5b, Расписание M5c): the tab exists from the start, so the
+// A child screen of a later milestone (Marks, Subjects M5b, Timetable M5c): the tab exists from the start, so the
 // tab bar never changes (D53), and the screen says it is coming.
 
 export function SoonScreen({ screen }: { screen: 'marks' | 'subjects' | 'schedule' }) {

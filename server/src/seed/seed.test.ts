@@ -41,7 +41,7 @@ describe('seed generator', () => {
     expect(a.marks.every((m) => m.date <= '2026-10-15')).toBe(true);
     expect(a.lessons.some((l) => l.date > '2026-10-15')).toBe(true);
     expect(a.marks.filter((m) => m.date === '2026-10-15').length).toBeGreaterThan(0);
-    // tests ahead are written in the topic only, so the tag «Контрольная» is what finds them
+    // tests ahead are written in the topic only, so the family's test tag is what finds them
     const next = a.lessons.find((l) => l.subject === 'Алгебра' && l.date > '2026-10-15')!;
     expect(next.topic).toMatch(/^К\/р №2/);
     expect(next.lessonType).toBeNull();
@@ -94,7 +94,7 @@ describe('pnpm db:seed', () => {
     expect(await verifyPassword(parent.passwordHash, DEMO_PASSWORD)).toBe(true);
   });
 
-  it('matches the prototype: per-child schools, bells, subgroups and rooms; Марк followed by a second family', async () => {
+  it('matches the prototype: per-child schools, bells, subgroups and rooms; Mark followed by a second family', async () => {
     const r = await seedDemo(db, { now: NOW });
     const kids = await demoStudents(db);
     const milena = kids.find((k) => k.grade === 7)!;
@@ -104,7 +104,7 @@ describe('pnpm db:seed', () => {
     // each child's own bells
     const bells = await db.select().from(bellSchedules);
     expect(bells.map((b) => b.label).sort()).toEqual(['1 смена', '1-е классы']);
-    // Милена's English: her subgroup, room and teacher; Марк's thinner diary has no rooms or subgroups
+    // Milena's English: her subgroup, room and teacher; Mark's thinner diary has no rooms or subgroups
     const [english] = await db
       .select()
       .from(lessons)
@@ -115,7 +115,7 @@ describe('pnpm db:seed', () => {
     const markLessons = await db.select().from(lessons).where(eq(lessons.studentId, mark.id));
     expect(markLessons.every((l) => l.room === null && l.groupLabel === null)).toBe(true);
     expect(markLessons.some((l) => l.teacherName)).toBe(true);
-    // a second household follows Марк only, and the first family was told once
+    // a second household follows Mark only, and the first family was told once
     const links = await db.select().from(familyStudents).where(eq(familyStudents.studentId, mark.id));
     expect(links).toHaveLength(2);
     expect(await db.select().from(familyStudents).where(eq(familyStudents.studentId, milena.id))).toHaveLength(1);
@@ -145,7 +145,7 @@ describe('pnpm db:seed', () => {
     expect(weeks.some((w) => NOW.getTime() - w.verifiedAt.getTime() > 6 * 86_400_000)).toBe(true);
     expect(await db.select().from(apiDriftEvents)).toHaveLength(1);
 
-    // the scheduler takes only accounts with credentials; «Обновить сейчас» and the re-scan say it is a demo
+    // the scheduler takes only accounts with credentials; "Refresh now" (sync.refresh) and the re-scan say it is a demo
     const mama = request.agent(testApp({ now: () => NOW }));
     await mama.post('/api/auth/login').send({ login: DEMO_LOGINS.parent, password: DEMO_PASSWORD });
     expect((await mama.post('/api/sync/run').send({ accountId: full.id })).body).toEqual({

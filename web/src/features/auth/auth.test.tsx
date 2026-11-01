@@ -8,30 +8,30 @@ import { useDevice } from '../../state/store';
 import { fakeApi } from '../../test/fake-api';
 
 beforeAll(() => {
-  initI18n('ru');
+  initI18n('en');
 });
 beforeEach(() => {
   useDevice.setState({ pick: null, alwaysLast: false });
 });
 afterEach(async () => {
-  await i18n.changeLanguage('ru');
+  await i18n.changeLanguage('en');
 });
 
 describe('the login screen', () => {
-  it('connects a diary: the fields the system asks for, «дневник» labels, the consent version; then the shared child', async () => {
+  it('connects a diary: the fields the system asks for, "diary" labels, the consent version; then the shared child', async () => {
     const api = fakeApi();
     const user = userEvent.setup();
     render(<App at="/login" />);
-    await user.click(await screen.findByRole('button', { name: 'Подключить дневник' }));
-    // the system is named in one place; the fields say «дневник»
+    await user.click(await screen.findByRole('button', { name: 'Connect a diary' }));
+    // the system is named in one place; the fields say "diary"
     expect(await screen.findByText('Школьный портал (демо)')).toBeTruthy();
-    expect(screen.getByText(/тестовом режиме/)).toBeTruthy();
-    await user.type(screen.getByLabelText('Логин в дневнике'), 'diary-user');
-    await user.type(screen.getByLabelText('Пароль от дневника'), 'x');
-    await user.type(screen.getByLabelText('Ваш логин в Marksy'), 'parent@example.com');
-    await user.type(screen.getByLabelText('Ваш пароль в Marksy'), 'correct horse battery');
-    await user.type(screen.getByLabelText('Как вас называть в семье'), 'Мама');
-    await user.click(screen.getByRole('button', { name: 'Подключить и создать семью' }));
+    expect(screen.getByText(/supported in a test version/)).toBeTruthy();
+    await user.type(screen.getByLabelText('Diary login'), 'diary-user');
+    await user.type(screen.getByLabelText('Diary password'), 'x');
+    await user.type(screen.getByLabelText('Your Marksy login'), 'parent@example.com');
+    await user.type(screen.getByLabelText('Your Marksy password'), 'correct horse battery');
+    await user.type(screen.getByLabelText('Your name in the family'), 'Мама');
+    await user.click(screen.getByRole('button', { name: 'Connect and create the family' }));
     expect(api.bodies['POST /api/auth/connect']).toEqual({
       providerId: 'demo-full',
       credentials: { login: 'diary-user', password: 'x' },
@@ -39,13 +39,13 @@ describe('the login screen', () => {
       user: { login: 'parent@example.com', password: 'correct horse battery', displayName: 'Мама' },
       consentVersion: CONSENT_VERSION,
     });
-    // a child another family follows: the choice, «Из своей семьи» by default
-    expect(await screen.findByText('Марк уже есть в Marksy')).toBeTruthy();
-    await user.click(screen.getByRole('button', { name: 'Продолжить' }));
+    // a child another family follows: the choice, "From your own family" (match.follow) by default
+    expect(await screen.findByText('Марк is already in Marksy')).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Continue' }));
     await waitFor(() =>
       expect(api.bodies['POST /api/family/accounts/acc-1/matches/kid-shared']).toEqual({ action: 'follow' }),
     );
-    expect(await screen.findByRole('heading', { name: 'С кого начнём?' })).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Who first?' })).toBeTruthy();
   });
 
   it('in a machine translation: the consent opens the English text that counts, the sheet offers the translation form', async () => {
@@ -66,69 +66,74 @@ describe('the login screen', () => {
     expect(form.getAttribute('href')).toMatch(/\/issues\/new\?template=translation\.yml&language=de$/);
   });
 
+  // about Russian on purpose: ru is the reviewed (not machine) translation, so the screen is shown in Russian
   it('in a reviewed language: no line under the consent, no translation form', async () => {
+    const ru = CATALOGS.ru!;
+    await i18n.changeLanguage('ru');
     fakeApi();
     const user = userEvent.setup();
     render(<App at="/login" />);
-    await user.click(await screen.findByRole('button', { name: 'Подключить дневник' }));
-    expect(await screen.findByText(CATALOGS.ru!['connect.consent']!)).toBeTruthy();
-    expect(screen.queryByText(CATALOGS.ru!['connect.consent.machine']!)).toBeNull();
-    await user.click(screen.getByRole('button', { name: 'Язык интерфейса' }));
-    expect(screen.queryByRole('link', { name: /Помочь с переводом/ })).toBeNull();
+    await user.click(await screen.findByRole('button', { name: ru['login.mode.connect']! }));
+    expect(await screen.findByText(ru['connect.consent']!)).toBeTruthy();
+    expect(screen.queryByText(ru['connect.consent.machine']!)).toBeNull();
+    await user.click(screen.getByRole('button', { name: ru['lang.choose']! }));
+    expect(screen.queryByRole('link', { name: new RegExp(ru['lang.help']!) })).toBeNull();
   });
 
   it('a diary that refuses the login is said about the diary', async () => {
     fakeApi({ diaryRefuses: true });
     const user = userEvent.setup();
     render(<App at="/login" />);
-    await user.click(await screen.findByRole('button', { name: 'Подключить дневник' }));
-    await user.type(await screen.findByLabelText('Логин в дневнике'), 'diary-user');
-    await user.type(screen.getByLabelText('Пароль от дневника'), 'x');
-    await user.type(screen.getByLabelText('Ваш логин в Marksy'), 'parent@example.com');
-    await user.type(screen.getByLabelText('Ваш пароль в Marksy'), 'correct horse battery');
-    await user.type(screen.getByLabelText('Как вас называть в семье'), 'Мама');
-    await user.click(screen.getByRole('button', { name: 'Подключить и создать семью' }));
-    expect((await screen.findByRole('alert')).textContent).toBe('Дневник не принял этот логин и пароль.');
+    await user.click(await screen.findByRole('button', { name: 'Connect a diary' }));
+    await user.type(await screen.findByLabelText('Diary login'), 'diary-user');
+    await user.type(screen.getByLabelText('Diary password'), 'x');
+    await user.type(screen.getByLabelText('Your Marksy login'), 'parent@example.com');
+    await user.type(screen.getByLabelText('Your Marksy password'), 'correct horse battery');
+    await user.type(screen.getByLabelText('Your name in the family'), 'Мама');
+    await user.click(screen.getByRole('button', { name: 'Connect and create the family' }));
+    expect((await screen.findByRole('alert')).textContent).toBe('The diary did not accept this login and password.');
   });
 
   it('an invite link: what it is for, then a name and a Marksy login', async () => {
     const api = fakeApi();
     const user = userEvent.setup();
     render(<App at="/join/abc123" />);
-    await user.click(await screen.findByRole('button', { name: 'Продолжить' }));
-    expect(await screen.findByText('Приглашение в семью «Семья»')).toBeTruthy();
-    expect(screen.getByText('родителем · Марк')).toBeTruthy();
-    await user.type(screen.getByLabelText('Как вас называть в семье'), 'Бабушка');
-    await user.type(screen.getByLabelText('Ваш логин в Marksy'), 'gran@example.com');
-    await user.type(screen.getByLabelText('Ваш пароль в Marksy'), 'correct horse battery');
-    await user.click(screen.getByRole('button', { name: 'Войти в семью' }));
+    await user.click(await screen.findByRole('button', { name: 'Continue' }));
+    expect(await screen.findByText('Invite to Семья')).toBeTruthy();
+    expect(screen.getByText('as a parent · Марк')).toBeTruthy();
+    await user.type(screen.getByLabelText('Your name in the family'), 'Бабушка');
+    await user.type(screen.getByLabelText('Your Marksy login'), 'gran@example.com');
+    await user.type(screen.getByLabelText('Your Marksy password'), 'correct horse battery');
+    await user.click(screen.getByRole('button', { name: 'Join the family' }));
     expect(api.bodies['POST /api/invites/ABC123/accept']).toEqual({
       displayName: 'Бабушка',
       login: 'gran@example.com',
       password: 'correct horse battery',
     });
-    expect(await screen.findByRole('heading', { name: 'С кого начнём?' })).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Who first?' })).toBeTruthy();
   });
 
   it('a wrong invite code says so', async () => {
     fakeApi();
     const user = userEvent.setup();
     render(<App at="/login" />);
-    await user.click(await screen.findByRole('button', { name: 'У меня есть код приглашения' }));
-    await user.type(screen.getByLabelText('Код приглашения'), 'ZZZ999');
-    await user.click(screen.getByRole('button', { name: 'Продолжить' }));
-    expect((await screen.findByRole('alert')).textContent).toMatch(/Код приглашения не подошёл/);
+    await user.click(await screen.findByRole('button', { name: 'I have an invite code' }));
+    await user.type(screen.getByLabelText('Invite code'), 'ZZZ999');
+    await user.click(screen.getByRole('button', { name: 'Continue' }));
+    expect((await screen.findByRole('alert')).textContent).toMatch(/This invite code does not work/);
   });
 
+  // the language picker: the screen switches to Russian, so its labels are read from the ru catalog
   it('the language chosen on the login screen becomes the user language after sign-in', async () => {
+    const ru = CATALOGS.ru!;
     const api = fakeApi();
     const user = userEvent.setup();
     render(<App at="/login" />);
-    await user.click(await screen.findByRole('button', { name: 'Язык интерфейса' }));
-    await user.click(screen.getByRole('button', { name: 'English' }));
-    await user.type(await screen.findByLabelText('Marksy login'), 'parent@example.com');
-    await user.type(screen.getByLabelText('Password'), 'correct horse battery');
-    await user.click(screen.getByRole('button', { name: 'Sign in' }));
-    await waitFor(() => expect(api.bodies['PATCH /api/me']).toEqual({ locale: 'en' }));
+    await user.click(await screen.findByRole('button', { name: 'Interface language' }));
+    await user.click(screen.getByRole('button', { name: 'Русский' }));
+    await user.type(await screen.findByLabelText(ru['login.marksyLogin']!), 'parent@example.com');
+    await user.type(screen.getByLabelText(ru['login.password']!), 'correct horse battery');
+    await user.click(screen.getByRole('button', { name: ru['login.submit']! }));
+    await waitFor(() => expect(api.bodies['PATCH /api/me']).toEqual({ locale: 'ru' }));
   });
 });

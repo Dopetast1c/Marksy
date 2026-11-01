@@ -4,8 +4,8 @@ import type { DateRange, HolidayKind, ISODate, LessonType, MarkKind, WorkType } 
 // The fictional school of the demo family (`pnpm db:seed`) and of the demo providers' fixtures, ported from the
 // prototype's buildGrade7, buildGrade1 and SCHOOL (docs/mockups.html). Deterministic: the same `today` always gives
 // the same family. Dates are relative to today, so the demo always has a current week, marks from this morning and
-// tests coming up. School details are per child (ux-principles D51): Милена has the first shift's bells and her own
-// subgroups, Марк the grade 1 bells. Every name, room and time here is invented.
+// tests coming up. School details are per child (ux-principles D51): the grade 7 girl (Milena) has the first shift's
+// bells and her own subgroups, the grade 1 boy (Mark) the grade 1 bells. Every name, room and time here is invented.
 
 export interface SeedLesson {
   key: string;
@@ -78,7 +78,7 @@ export interface SeedCalendar {
   schoolDays: readonly number[];
   year: { label: string; start: ISODate; end: ISODate };
   terms: { index: number; start: ISODate; end: ISODate; note?: string }[];
-  /** the kind names them in the app (Осенние каникулы), as a real diary's type would */
+  /** the kind names them in the app ("Autumn holidays", holiday.name.autumn), as a real diary's type would */
   holidays: (DateRange & { kind: HolidayKind; note?: string })[];
 }
 
@@ -244,9 +244,9 @@ const SCHOOL7 = {
     ],
   },
   subjects: {
-    Алгебра: { teacher: 'Ковалёва Ирина Петровна', room: '305' },
-    Геометрия: { teacher: 'Ковалёва Ирина Петровна', room: '305' },
-    Физика: { teacher: 'Лосев Андрей Викторович', room: '301' },
+    ['Алгебра']: { teacher: 'Ковалёва Ирина Петровна', room: '305' },
+    ['Геометрия']: { teacher: 'Ковалёва Ирина Петровна', room: '305' },
+    ['Физика']: { teacher: 'Лосев Андрей Викторович', room: '301' },
     'Русский язык': { teacher: 'Савченко Ольга Николаевна', room: '204' },
     'Русская литература': { teacher: 'Савченко Ольга Николаевна', room: '204' },
     'Белорусский язык': { teacher: 'Жук Тамара Васильевна', room: '206' },
@@ -259,9 +259,9 @@ const SCHOOL7 = {
     },
     'История Беларуси': { teacher: 'Сидоренко Павел Олегович', room: '210' },
     'Всемирная история': { teacher: 'Сидоренко Павел Олегович', room: '210' },
-    География: { teacher: 'Бондарь Наталья Владимировна', room: '214' },
-    Биология: { teacher: 'Гринько Светлана Аркадьевна', room: '218' },
-    Информатика: { teacher: 'Новиков Денис Александрович', group: '1-я подгруппа', room: '401' },
+    ['География']: { teacher: 'Бондарь Наталья Владимировна', room: '214' },
+    ['Биология']: { teacher: 'Гринько Светлана Аркадьевна', room: '218' },
+    ['Информатика']: { teacher: 'Новиков Денис Александрович', group: '1-я подгруппа', room: '401' },
     'Физическая культура': { teacher: 'Ермаков Виталий Иванович', room: 'спортзал' },
     'Трудовое обучение': { teacher: 'Мельник Галина Ивановна', group: '1-я подгруппа (девочки)', room: '108' },
   } as Record<string, SubjectInfo>,
@@ -320,11 +320,14 @@ const SCHOOL1 = {
   },
   subjects: {
     'Физическая культура': { teacher: 'Ермаков Виталий Иванович', room: 'спортзал' },
-    Музыка: { teacher: 'Кравец Лилия Викторовна', room: '112' },
+    ['Музыка']: { teacher: 'Кравец Лилия Викторовна', room: '112' },
   } as Record<string, SubjectInfo>,
   /** In grade 1 one teacher takes every other subject in the class's own room */
   classTeacher: { teacher: 'Миронова Анна Сергеевна', room: '105' } as SubjectInfo | null,
 };
+
+/** The school's name in the demo-lite fixtures: the demo family's second school (the prototype's CAPS_OTHER) */
+export const DEMO_LITE_SCHOOL_TITLE = 'Гимназия № 2';
 
 interface SubjectInfo {
   teacher: string;
@@ -357,9 +360,9 @@ function subjectsOf(school: School, list: { name: string; slots: [number, number
 
 function hwFor(subject: string, topic: string): string | null {
   const map: Record<string, string | null> = {
-    Алгебра: `№ ${120 + topic.length * 3}, ${160 + topic.length * 2}`,
-    Геометрия: `§ 9, № ${90 + topic.length}`,
-    Физика: '§ 12, упр. 7 (1–3)',
+    ['Алгебра']: `№ ${120 + topic.length * 3}, ${160 + topic.length * 2}`,
+    ['Геометрия']: `§ 9, № ${90 + topic.length}`,
+    ['Физика']: '§ 12, упр. 7 (1–3)',
     'Русский язык': `упр. ${140 + topic.length * 2}, правило с. 68`,
     'Белорусский язык': `пр. ${80 + topic.length}, вывучыць правіла`,
     'Русская литература': 'прочитать главу 5, ответить на вопросы',
@@ -367,9 +370,9 @@ function hwFor(subject: string, topic: string): string | null {
     'Английский язык': 'WB p. 24 ex. 3–4; learn words',
     'История Беларуси': '§ 7, пересказ, даты',
     'Всемирная история': '§ 10, таблица',
-    География: '§ 14, вопросы 1–5',
-    Биология: '§ 11, рисунок в тетради',
-    Информатика: 'написать программу из задания 3',
+    ['География']: '§ 14, вопросы 1–5',
+    ['Биология']: '§ 11, рисунок в тетради',
+    ['Информатика']: 'написать программу из задания 3',
     'Физическая культура': null,
     'Трудовое обучение': null,
   };
@@ -504,7 +507,7 @@ export function generateGrade7(today: ISODate, cal: SeedCalendar): SeedStudent {
       raw = `${v}/${Math.max(4, Math.min(10, v + (r() < 0.5 ? -1 : 1)))}`;
     const comment =
       v <= 4 && r() < 0.6 ? 'Не выполнено задание 3, повторить правило' : v >= 9 && r() < 0.2 ? 'Молодец!' : null;
-    // teachers write tests into the topic, not as a type: the tag «Контрольная» finds them there (design 6.3)
+    // teachers write tests into the topic, not as a type: the family's test tag finds them there (design 6.3)
     if (isTest) l.topic = `К/р «${l.topic}»`;
     marks.push(mark(l, raw, isTest ? 'test' : null, comment));
   }
@@ -529,7 +532,7 @@ export function generateGrade7(today: ISODate, cal: SeedCalendar): SeedStudent {
   pin(before('Физическая культура'), '10', null, 'Молодец!');
   pin(before('Алгебра'), '7', null);
   pin(before('Русский язык'), '6', null);
-  // English has gone without a mark for two weeks: "давно без оценки, могут спросить"
+  // English has gone without a mark for two weeks: "No mark for a while, may be asked" (lesson.signal.call)
   for (let i = marks.length - 1; i >= 0; i--) {
     const m = marks[i]!;
     if (m.subject === 'Английский язык' && daysBetween(m.date, today) < 15) marks.splice(i, 1);
@@ -685,9 +688,9 @@ export interface SeedSession {
 /** Study sessions of the last four weeks before today, after the prototype's demoSessions */
 export function generateSessions(student: SeedStudent, today: ISODate, cal: SeedCalendar): SeedSession[] {
   const bias: Record<string, number> = {
-    Физика: 0.55,
+    ['Физика']: 0.55,
     'Английский язык': 1.3,
-    Алгебра: 1.15,
+    ['Алгебра']: 1.15,
     'Физическая культура': 0,
   };
   const hash = (n: number) => ((n * 9301 + 49297) % 233280) / 233280;

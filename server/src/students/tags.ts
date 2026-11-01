@@ -4,15 +4,16 @@ import type { Db } from '../db/client';
 import { lessons, lessonTagHits, lessonTags } from '../db/schema';
 import type { ChildContext } from './context';
 
-// The family's tags on lessons (docs/design.md 6.3): the тег note on the lesson a hit is due at, «задали» on the one it
-// was set at, and «Обратить внимание» in Расписание for the selected day or week.
+// The family's tags on lessons (docs/design.md 6.3): the tag note on the lesson a hit is due at, "Set: …"
+// (lesson.taggedHomework) on the one it was set at, and "Worth a look" (subject.attention) in Timetable
+// (screen.schedule) for the selected day or week.
 
 export interface TagRef {
   id: string;
   name: string;
   icon: string | null;
   tone: 'normal' | 'important';
-  /** the preset it started as; «test» is «Контрольная», what every "is this a test" asks (CLAUDE.md) */
+  /** the preset it started as; "test" is the test tag, what every "is this a test" asks (CLAUDE.md) */
   presetKey: string | null;
 }
 
@@ -27,7 +28,7 @@ export interface TagHit {
 }
 
 /**
- * The family's tag hits touching a range: due at a lesson of the range, or set at one (for «задали»). Materialised at
+ * The family's tag hits touching a range: due at a lesson of the range, or set at one (for "Set: …", lesson.taggedHomework). Materialised at
  * sync from M6 on; until then the table is empty and every tag surface stays hidden. Only the current family's tags
  * (D54: tags are a household's).
  */

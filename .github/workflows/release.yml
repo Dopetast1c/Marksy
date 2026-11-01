@@ -1,0 +1,174 @@
+name: Release
+
+# A GitHub Release vX.Y.Z (CLAUDE.md, "Commits and releases"): the images built for the tag's commit (images.yml,
+# sha-<commit>) get the tags X.Y.Z and, when this is the newest of each line, X.Y, X and stable, without a rebuild;
+# they are signed with cosign through GitHub's OIDC (keyless; the updater checks that this workflow signed them); the
+# deploy files and the documentation (the README in every language, the English guides) are attached, and a README
+# translation that does not follow the English text stops the release; the last step nudges production through its
+# update hook. The nudge may fail: the host polls the registry anyway.
+#
+# Rehearsal (workflow_dispatch): the same steps on a version you give, into the packages marksy-rehearsal-*, with the
+# files kept as workflow artifacts; no release, no nudge. It proves the tags, the signatures and the bundles before a
+# real release.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Rehearsal version, X.Y.Z (tags go to ghcr.io/dopetast1c/marksy-rehearsal-*)'
+        required: true
+        default: '0.0.1'
+
+permissions:
+  contents: write
+  packages: write
+  id-token: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io/dopetast1c
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+
+      - name: What is released
+        id: what
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+          INPUT: ${{ inputs.version }}
+        run: |
+          if [ -n "$TAG" ]; then
+            version="${TAG#v}"; rehearsal=false; target="marksy"
+            commit="$(git rev-list -n 1 "$TAG")"
+          else
+            version="$INPUT"; rehearsal=true; target="marksy-rehearsal"
+            commit="$(git rev-parse HEAD)"
+          fi
+          echo "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' || { echo "::error::not a version: $version"; exit 1; }
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "rehearsal=$rehearsal" >> "$GITHUB_OUTPUT"
+          echo "target=$target" >> "$GITHUB_OUTPUT"
+          echo "commit=$commit" >> "$GITHUB_OUTPUT"
+          echo "tags=$(node scripts/release.mjs tags "$version")" >> "$GITHUB_OUTPUT"
+
+      # a release ships the README in every language, each one following the English text
+      - name: The README in every language is current
+        run: node scripts/docs-check.mjs --strict
+
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Wait for the images of the commit
+        env:
+          COMMIT: ${{ steps.what.outputs.commit }}
+        run: |
+          for image in server web updater; do
+            for i in $(seq 1 60); do
+              if docker buildx imagetools inspect "$REGISTRY/marksy-$image:sha-$COMMIT" >/dev/null 2>&1; then break; fi
+              if [ "$i" = 60 ]; then echo "::error::no image marksy-$image:sha-$COMMIT after 30 minutes"; exit 1; fi
+              sleep 30
+            done
+          done
+
+      - name: The images carry this version
+        if: steps.what.outputs.rehearsal == 'false'
+        env:
+          COMMIT: ${{ steps.what.outputs.commit }}
+          VERSION: ${{ steps.what.outputs.version }}
+        run: |
+          for image in server web updater; do
+            docker pull -q --platform linux/amd64 "$REGISTRY/marksy-$image:sha-$COMMIT" >/dev/null
+            label="$(docker image inspect --format '{{ index .Config.Labels "org.opencontainers.image.version" }}' "$REGISTRY/marksy-$image:sha-$COMMIT")"
+            if [ "$label" != "$VERSION" ]; then
+              echo "::error::marksy-$image of $COMMIT says $label, not $VERSION: commit chore(release): $VERSION first (pnpm release prepare)"
+              exit 1
+            fi
+          done
+
+      # the version the updater image verifies with (updater/Dockerfile)
+      # v4 of the installer is the one that installs cosign 3
+      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+        with:
+          cosign-release: v3.1.3
+
+      - name: Tag and sign
+        env:
+          COMMIT: ${{ steps.what.outputs.commit }}
+          TARGET: ${{ steps.what.outputs.target }}
+          TAGS: ${{ steps.what.outputs.tags }}
+          VERSION: ${{ steps.what.outputs.version }}
+        # A host finds a release by the server's version tag and installs only signed images: so every image is signed
+        # before it gets a tag, and the server is tagged last, when the others are complete
+        run: |
+          for image in updater web server; do
+            source="$(docker buildx imagetools inspect "$REGISTRY/marksy-$image:sha-$COMMIT" --format '{{ json .Manifest }}' | jq -r .digest)"
+            if [ "$TARGET" = "marksy" ]; then cosign sign --yes "$REGISTRY/marksy-$image@$source"; fi
+            args=""
+            for tag in $TAGS; do args="$args -t $REGISTRY/$TARGET-$image:$tag"; done
+            # shellcheck disable=SC2086
+            docker buildx imagetools create $args "$REGISTRY/marksy-$image@$source"
+            digest="$(docker buildx imagetools inspect "$REGISTRY/$TARGET-$image:$VERSION" --format '{{ json .Manifest }}' | jq -r .digest)"
+            # a copy with another digest (the rehearsal's own packages) is signed as it is
+            if [ "$digest" != "$source" ] || [ "$TARGET" != "marksy" ]; then cosign sign --yes "$REGISTRY/$TARGET-$image@$digest"; fi
+            echo "$TARGET-$image $VERSION: $TAGS, $digest, signed"
+          done
+
+      - name: Deploy and documentation bundles
+        env:
+          VERSION: ${{ steps.what.outputs.version }}
+        run: |
+          mkdir -p out
+          zip -q "out/marksy-deploy-v$VERSION.zip" docker-compose.prod.yml docker-compose.macvlan.yml marksy.sh marksy.ps1 env.example
+          zip -q "out/marksy-docs-v$VERSION.zip" README.md README.*.md docs/running.md docs/adding-a-diary.md docs/locales-status.md LICENSE
+          ls -l out
+
+      - name: Attach to the release
+        if: steps.what.outputs.rehearsal == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: gh release upload "$TAG" out/*.zip --clobber
+
+      - name: Keep the rehearsal's bundles
+        if: steps.what.outputs.rehearsal == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: rehearsal-bundles
+          path: out/*.zip
+
+      # last: a signed nudge so production checks for the release now; polling covers a lost one
+      - name: Nudge production
+        if: steps.what.outputs.rehearsal == 'false'
+        env:
+          HOOK_URL: ${{ secrets.MARKSY_UPDATE_HOOK_URL }}
+          HOOK_SECRET: ${{ secrets.MARKSY_UPDATE_HOOK_SECRET }}
+        run: |
+          if [ -z "$HOOK_URL" ] || [ -z "$HOOK_SECRET" ]; then
+            echo "::warning::no update hook configured; production picks the release up by polling"
+            exit 0
+          fi
+          ts="$(date +%s)"
+          body='{"event":"release"}'
+          sig="$(printf '%s.%s' "$ts" "$body" | openssl dgst -sha256 -hmac "$HOOK_SECRET" -hex | sed 's/^.* //')"
+          if ! curl -fsS --max-time 20 -X POST "$HOOK_URL" \
+            -H "content-type: application/json" \
+            -H "x-marksy-timestamp: $ts" \
+            -H "x-marksy-signature: sha256=$sig" \
+            --data "$body"; then
+            echo "::warning::the update nudge did not go through; production picks the release up by polling"
+          fi

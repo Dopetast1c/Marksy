@@ -142,8 +142,9 @@ export const intlLocale = () => languageOf(i18n.language)?.intl ?? 'en-GB';
  * names when its catalog has them, otherwise Intl's. Never English months in another language.
  */
 /**
- * A month on its own, not in a date (the year strip of Школа): «май», where a date says «25 мая». The language's own
- * names when its catalog has them, otherwise Intl's stand-alone short form.
+ * A month on its own, not in a date (the year strip of School, more.school): the stand-alone form (date.monthAlone.*),
+ * which in some languages differs from the form inside a date (date.monthShort.*; Russian nominative vs genitive). The
+ * language's own names when its catalog has them, otherwise Intl's stand-alone short form.
  */
 export function monthAlone(month: number): string {
   const own = CATALOGS[i18n.language]?.[`date.monthAlone.${month}`];

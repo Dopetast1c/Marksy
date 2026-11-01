@@ -29,6 +29,9 @@ one changes it everywhere in the file and here. The ten machine translations (M5
 
 ## Choices a reviewer should know
 
+- **Russian: the word for Belarusian.** The language and the adjective are «беларуский» / «Беларуская», with one «с»
+  and an «а», not «белорусский». Diary content (subject names) is shown as the diary sends it.
+
 - **No word for a school quarter.** Spanish and Portuguese use «bimestre», French «Période» (the blocks between
   holidays), Romanian «Modul», because the word for a third of the year is taken by the trimester kind. «Période»
   is also French for the generic period, and «Período» Portuguese for the other term kind.

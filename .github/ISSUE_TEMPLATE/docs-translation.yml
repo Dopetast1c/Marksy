@@ -1,0 +1,36 @@
+name: Documentation translation
+description: The README reads wrong in your language
+title: 'README translation: '
+labels: [translation, documentation]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The README in every language except English is a machine translation of the English page. Thank you for making it read well. **No real names, marks or other personal data, in screenshots or in text.**
+  - type: input
+    id: language
+    attributes:
+      label: Language
+      description: The language of the page, for example de, fr or pl.
+    validations:
+      required: true
+  - type: input
+    id: section
+    attributes:
+      label: Section
+      description: The heading of the section, as the page shows it.
+    validations:
+      required: true
+  - type: textarea
+    id: current
+    attributes:
+      label: How it reads now
+    validations:
+      required: true
+  - type: textarea
+    id: correct
+    attributes:
+      label: How it should read
+      description: Your wording. If the meaning differs from the English page, say what you think is wrong.
+    validations:
+      required: true

@@ -1,6 +1,6 @@
 import type { ISODate } from '../model/schemas';
 
-// When a lesson is over (docs/design.md 5.5): one rule for the server and the app, so the ⋯ menu, the «сейчас» tint
+// When a lesson is over (docs/design.md 5.5): one rule for the server and the app, so the ⋯ menu, the "now" tint (lesson.now)
 // and the server's refusal to tick a passed lesson never disagree. A lesson has passed once its end time (from the
 // diary or the child's bells) is reached in the school's time zone; without an end time it counts as passed from the
 // next day. Times are school-local "HH:MM", dates school-local days.
@@ -45,7 +45,7 @@ export function lessonPassed(lesson: { date: ISODate; end: string | null }, at: 
   return lesson.end != null && now.minutes >= clockMinutes(lesson.end);
 }
 
-/** Is the lesson going on at this instant (the «сейчас» tint)? Needs both times. */
+/** Is the lesson going on at this instant (the "now" tint, lesson.now)? Needs both times. */
 export function lessonNow(
   lesson: { date: ISODate; start: string | null; end: string | null },
   at: Date,

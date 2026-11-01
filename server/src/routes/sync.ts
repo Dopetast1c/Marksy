@@ -24,9 +24,10 @@ import { registry } from '../openapi';
 import { readSyncConfig } from '../sync/config';
 import { syncPlanOf, syncPlanOut } from '../sync/status';
 import { visibleStudents } from './me';
+import { mayStartRun } from '../runtime/instance';
 
-// Синхронизация (docs/design.md 9, 10.4): how fresh each diary account of the family is, «загружаем» while a run (the
-// first sync after connecting) is under way, when the next login is allowed; and per child whether it is read through
+// Sync (sync.title; docs/design.md 9, 10.4): how fresh each diary account of the family is, "reading the diary"
+// (sync.status.loading) while a run (the first sync after connecting) is under way, when the next login is allowed; and per child whether it is read through
 // this family's login or another family's, with no detail of the other family. The history of runs for adults.
 
 const accountStatus = z.enum(['loading', 'ok', 'stale', 'paused', 'auth_failed', 'blocked', 'needs_2fa']);
@@ -87,7 +88,7 @@ export function syncRoutes(deps: AppDeps): Router {
               id: z.string(),
               providerId: z.string(),
               providerName: z.string(),
-              /** the diary login, as the family sees it in Семья; null for a student (design.md 7.6) */
+              /** the diary login, as the family sees it in Family (family.title); null for a student (design.md 7.6) */
               label: z.string().nullable(),
               status: accountStatus,
               lastSuccessAt: z.date().nullable(),
@@ -294,13 +295,15 @@ export function syncRoutes(deps: AppDeps): Router {
   };
 
   /**
-   * «Обновить сейчас»: one run of the account, drawing from the same login budget as every other run (design.md 10.4).
+   * "Refresh now" (sync.refresh): one run of the account, drawing from the same login budget as every other run (design.md 10.4).
    * The run goes on after the answer; the answer says whether it starts, and when the next login is allowed if not.
    */
   const refresh = async (userId: string, a: typeof diaryAccounts.$inferSelect) => {
     // a login without credentials is the demo family's (seed/demo-sync.ts): there is nothing to read it with
     if (!a.credentialsEnc) return { started: false, reason: 'demo' as const, retryAt: null };
     const now = deps.now?.() ?? new Date();
+    // switched off on this instance (after a restore, until `marksy sync enable`) or held for an update
+    if (!(await mayStartRun(deps.db, now))) return { started: false, reason: 'off' as const, retryAt: null };
     const interval = (getProvider(a.providerId)?.manifest.limits.minLoginIntervalMinutes ?? 60) * 60_000;
     const last = [a.lastAttemptAt, a.lastLoginAt].filter((d): d is Date => !!d).sort((x, y) => +y - +x)[0];
     const retryAt = last && last.getTime() + interval > now.getTime() ? new Date(last.getTime() + interval) : null;
@@ -325,8 +328,11 @@ export function syncRoutes(deps: AppDeps): Router {
   };
   const refreshOut = z.object({
     started: z.boolean(),
-    /** interval: the login budget; action: the diary refused the login, a new password first; demo: never read */
-    reason: z.enum(['interval', 'action', 'demo']).nullable(),
+    /**
+     * interval: the login budget; action: the diary refused the login, a new password first; demo: never read; off: the
+     * collector is switched off on this instance (after a restore) or held for an update
+     */
+    reason: z.enum(['interval', 'action', 'demo', 'off']).nullable(),
     retryAt: z.date().nullable(),
   });
 
@@ -335,7 +341,7 @@ export function syncRoutes(deps: AppDeps): Router {
     {
       method: 'post',
       path: '/api/sync/run',
-      summary: '«Обновить сейчас»: one run of a diary account within its login budget (admin, parent)',
+      summary: '"Refresh now" (sync.refresh): one run of a diary account within its login budget (admin, parent)',
       tags: ['sync'],
       access: { roles: ['admin', 'parent'] },
       body: z.object({ accountId: z.string().uuid() }),
@@ -354,7 +360,7 @@ export function syncRoutes(deps: AppDeps): Router {
       method: 'post',
       path: '/api/sync/rescan',
       summary:
-        '«Перепроверить»: the weeks of the current term or school year are read again by the next runs, then one run now',
+        '"Check the history again" (sync.rescan.button): the weeks of the current term or school year are read again by the next runs, then one run now',
       tags: ['sync'],
       access: { roles: ['admin', 'parent'] },
       body: z.object({
@@ -426,7 +432,7 @@ export function syncRoutes(deps: AppDeps): Router {
     {
       method: 'post',
       path: '/api/sync/drift/:id/ack',
-      summary: '«Понятно, скрыть» for a change in the diary’s API (admin, parent)',
+      summary: '"Got it, hide" (sync.drift.ack) for a change in the diary’s API (admin, parent)',
       tags: ['sync'],
       access: { roles: ['admin', 'parent'] },
       params: z.object({ id: z.string().uuid() }),

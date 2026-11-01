@@ -11,9 +11,10 @@ import { intlLocale, useT } from '../../i18n';
 import { SUBJECT_COLORS, subjectStyle } from '../../lib/subject-color';
 import { numbers } from '../../lib/numbers';
 
-// «Настройки предмета» (docs/design.md 5.4, 6.6, D32, D45): an entry row in the style of «Итоговые отметки» with one line
-// («цель: итог 8 · цвет: синий»), opening a sheet with the goal for the term (every whole value of the child's scale and
-// «Без цели») and the colour (the twelve swatches and «Авто»). Changes apply at once behind the sheet. The goal is
+// "Subject settings" (subject.settings.title; docs/design.md 5.4, 6.6, D32, D45): an entry row in the style of "Final
+// marks" (finals.title) with one line ("goal: final 8 · colour: Blue", subject.settings.goal, subject.settings.color),
+// opening a sheet with the goal for the term (every whole value of the child's scale and "No goal", subject.goal.none)
+// and the colour (the twelve swatches and "Auto", color.auto.title). Changes apply at once behind the sheet. The goal is
 // offered only where goals apply (terms, finals and a scale whose final can be computed); a class without marks has
 // the colour only.
 
@@ -112,8 +113,8 @@ export function SubjectSettings({
   );
 }
 
-/** The colour of a subject (6.6): the twelve swatches and «Авто», saved at once; the subject screen's settings sheet and
- * Оформление → Цвета предметов both show it */
+/** The colour of a subject (6.6): the twelve swatches and "Auto" (color.auto.title), saved at once; the subject
+ * screen's settings sheet and Appearance (look.title) → Subject colours (look.subjects) both show it */
 export function SubjectColorGrid({
   studentId,
   subject,

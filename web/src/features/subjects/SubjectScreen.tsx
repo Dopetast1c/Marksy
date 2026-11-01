@@ -30,12 +30,14 @@ import { usePeriod } from '../../state/store';
 import { SubjectSettings } from './SubjectSettings';
 import { numbers } from '../../lib/numbers';
 
-// Предмет (docs/design.md 5.4, ux-principles D45): the header and the navigator on a tint of the subject colour, the
-// screen's own controls in it; statistics, charts and mark chips never take it. First what does not depend on the
-// period: «Настройки предмета», «О предмете», «Обратить внимание» (the goal row and the hints, gone with guidance off).
-// Then what follows the period and the filter: StatBlock, Распределение, Динамика, the marks and the teacher's comments
-// of the period. Then «Ближайшие уроки», and under the «Четверть» divider the term strip, which follows neither.
-// A class without marks (D49): the colour only, the tiles Уроков and Заданий, the coming lessons.
+// The subject screen (docs/design.md 5.4, ux-principles D45): the header and the navigator on a tint of the subject
+// colour, the screen's own controls in it; statistics, charts and mark chips never take it. First what does not depend
+// on the period: "Subject settings" (subject.settings.title), "About the subject" (subject.about.title), "Worth a look"
+// (subject.attention; the goal row and the hints, gone with guidance off). Then what follows the period and the
+// filter: StatBlock, Distribution (stat.distribution), Trend (stat.trend), the marks and the teacher's comments of the
+// period. Then "Next lessons" (subject.upcoming), and under the term divider (term.*) the term strip, which follows
+// neither. A class without marks (D49): the colour only, the tiles Lessons and Homework (stat.lessons, stat.homework),
+// the coming lessons.
 
 const SEVERITY = { critical: 'critical', low: 'low', ok: 'neutral', good: 'good' } as const;
 
@@ -224,7 +226,7 @@ export function SubjectScreen() {
                 <SectionHeader
                   title={t(`subject.byTerms.${termKind}`)}
                   note={
-                    // «новый предмет» only when Marksy has last year and the subject was not in it
+                    // "a new subject this year" (subject.newThisYear) only when Marksy has last year and the subject was not in it
                     d.lastYear
                       ? d.lastYear.raw
                         ? t('subject.lastYear', { year: schoolYearLabel(d.lastYear.label), mark: d.lastYear.raw })
@@ -232,7 +234,7 @@ export function SubjectScreen() {
                       : undefined
                   }
                 />
-                {/* the strip opens Итоги (5.3b) */}
+                {/* the strip opens Finals (finals.screen; 5.3b) */}
                 <button
                   type="button"
                   aria-label={t('finals.all')}

@@ -1,7 +1,8 @@
-// «Сейчас» (docs/design.md 4, 5.2): where the child is in their school day, from their own lessons of today (start and
-// end times from the diary or their bells). Data only: the app says «3-й урок, до 10:40», «перемена, дальше 4-й в
-// 10:55», «первый урок в 08:30», «уроки закончились в 13:35»; the card on Главная also names the subject and the room,
-// and after lessons the next school day's first lesson («завтра к 08:00»). A day with no lessons with times has no
+// "Now" (nowCard; docs/design.md 4, 5.2): where the child is in their school day, from their own lessons of today
+// (start and end times from the diary or their bells). Data only: the app says "lesson 3, until 10:40" (now.lesson),
+// "break, lesson 4 at 10:55" (now.break), "first lesson at 08:30" (now.before), "lessons ended at 13:35" (now.done);
+// the card on Home (screen.home) also names the subject and the room, and after lessons the next school day's first
+// lesson ("tomorrow from 08:00", nowCard.tomorrowAt). A day with no lessons with times has no
 // line, and so has any moment outside the school day: from an hour before the first lesson to two hours after the last
 // (ux-principles D52, the same span as the sync window of D55).
 
@@ -33,7 +34,7 @@ const minutes = (t: string) => {
 export function nowLine(
   lessons: readonly TimedLesson[],
   nowMinutes: number,
-  /** the lessons of the next school day, for «завтра к 08:00» */
+  /** the lessons of the next school day, for "tomorrow from 08:00" (nowCard.tomorrowAt) */
   nextDay: { date: string; lessons: readonly TimedLesson[] } | null = null,
 ): NowLine | null {
   const timed = lessons

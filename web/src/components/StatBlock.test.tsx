@@ -5,7 +5,7 @@ import { initI18n } from '../i18n';
 import { StatTiles } from './StatBlock';
 
 beforeAll(() => {
-  initI18n('ru');
+  initI18n('en');
 });
 
 const scale = getScale('by-10');
@@ -24,35 +24,35 @@ const cmp = (
 });
 
 describe('StatTiles: missing data is a state, never a zero (D23)', () => {
-  it('both periods have marks: the value, an arrow and "было"', () => {
+  it('both periods have marks: the value, an arrow and "was" (stat.was)', () => {
     render(<StatTiles scale={scale} comparison={cmp('marks', 'marks', 7.3, 8.4)} count={12} prevCount={15} />);
-    expect(screen.getByText('7,3')).toBeTruthy();
-    expect(screen.getByText('было 8,4')).toBeTruthy();
+    expect(screen.getByText('7.3')).toBeTruthy();
+    expect(screen.getByText('was 8.4')).toBeTruthy();
     expect(screen.getAllByText('↓').length).toBe(2);
   });
 
   it('only this period has marks: no arrow', () => {
     render(<StatTiles scale={scale} comparison={cmp('marks', 'empty', 7.3, null)} count={4} prevCount={0} />);
-    expect(screen.getByText('раньше оценок не было')).toBeTruthy();
+    expect(screen.getByText('no marks before')).toBeTruthy();
     expect(screen.queryByText('↓')).toBeNull();
     expect(screen.queryByText('↑')).toBeNull();
   });
 
   it('nothing before at all (the first term): no arrow, nothing to compare in the tile', () => {
     render(<StatTiles scale={scale} comparison={cmp('marks', 'none', 7.3, null)} count={4} prevCount={null} />);
-    expect(screen.queryByText(/было/)).toBeNull();
+    expect(screen.queryByText(/was/)).toBeNull();
   });
 
-  it('a Monday morning: "—", "пока нет оценок · было", never a drop to 0', () => {
+  it('a Monday morning: "—", "no marks yet · was" (stat.noneYet, stat.was), never a drop to 0', () => {
     render(<StatTiles scale={scale} comparison={cmp('empty', 'marks', null, 8.4)} count={0} prevCount={15} />);
     expect(screen.getByText('—')).toBeTruthy();
-    expect(screen.getByText(/пока нет оценок/)).toBeTruthy();
+    expect(screen.getByText(/no marks yet/)).toBeTruthy();
     expect(screen.queryByText('↓')).toBeNull();
   });
 
-  it('no marks in either: "—" and "оценок нет"', () => {
+  it('no marks in either: "—" and "no marks" (stat.none)', () => {
     render(<StatTiles scale={scale} comparison={cmp('empty', 'empty', null, null)} count={0} prevCount={0} />);
     expect(screen.getByText('—')).toBeTruthy();
-    expect(screen.getByText('оценок нет')).toBeTruthy();
+    expect(screen.getByText('no marks')).toBeTruthy();
   });
 });

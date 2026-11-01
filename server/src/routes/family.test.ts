@@ -52,7 +52,7 @@ describe('family', () => {
   beforeEach(() => resetDb(db));
   afterEach(settle);
 
-  it('Семья shows members, the diary login and the children; never credentials', async () => {
+  it('Family (family.title) shows members, the diary login and the children; never credentials', async () => {
     const agent = agentWith();
     const first = await connectFamily(agent);
     const res = await agent.get('/api/family');
@@ -74,7 +74,7 @@ describe('family', () => {
     expect(first.connect.matches).toEqual([]);
   });
 
-  it('a child another family follows waits for a choice; «Следить из своей семьи» links it and tells them once, without names', async () => {
+  it('a child another family follows waits for a choice; "From your own family" (match.follow) links it and tells them once, without names', async () => {
     const mama = agentWith();
     await connectFamily(mama);
     const { agent: papa, body } = await secondFamily();
@@ -102,7 +102,7 @@ describe('family', () => {
     expect((await db.select().from(alertRules).where(eq(alertRules.userId, papaUser!.id))).length).toBeGreaterThan(0);
   });
 
-  it('«Присоединиться» asks the other family; the admin approves and the login becomes theirs', async () => {
+  it('"Join that family" (match.join) asks the other family; the admin approves and the login becomes theirs', async () => {
     const mama = agentWith();
     const first = await connectFamily(mama);
     const { agent: papa, body } = await secondFamily();
@@ -137,7 +137,7 @@ describe('family', () => {
     await connectFamily(mama);
     const { agent: papa, body } = await secondFamily();
     const shared = body.connect.matches[0]!.studentId;
-    // a parent of Папа's family may not ask to join
+    // a parent of the father's family may not ask to join
     const code = await invite(papa, 'parent');
     const helper = agentWith();
     await helper
@@ -160,7 +160,7 @@ describe('family', () => {
     expect(account!.familyId).toBe(body.family.id);
   });
 
-  it('the family’s «Подсказки» switch is the admin’s; advice shows only when it and the person’s own are on', async () => {
+  it('the family’s tips switch (family.guidance) is the admin’s; advice shows only when it and the person’s own are on', async () => {
     const mama = agentWith();
     await connectFamily(mama);
     expect((await mama.get('/api/family')).body.family.guidance).toBe(true);
@@ -284,7 +284,7 @@ describe('family', () => {
     expect(codes[5]).toBe(429);
   });
 
-  it('«Перестать следить» while a login shows the child: stopped, not served, not re-linked; «Следить снова» brings the history back', async () => {
+  it('"Stop following" (family.child.stop) while a login shows the child: stopped, not served, not re-linked; "Follow again" (family.child.followAgain) brings the history back', async () => {
     const agent = agentWith();
     const first = await connectFamily(agent);
     const child = first.students[0]!.id;
@@ -315,7 +315,7 @@ describe('family', () => {
     expect((await agent.get('/api/auth/me')).body.students.map((s: { id: string }) => s.id)).toContain(child);
   });
 
-  it('«Удалить данные» only for a stopped child no other family follows, after typing the name', async () => {
+  it('"Delete the data" (family.child.delete) only for a stopped child no other family follows, after typing the name', async () => {
     const mama = agentWith();
     const first = await connectFamily(mama);
     const [lonely, shared] = [
@@ -371,7 +371,7 @@ describe('family', () => {
     );
   });
 
-  it('a student sees only themselves and cannot open Семья; the last admin cannot leave', async () => {
+  it('a student sees only themselves and cannot open Family (family.title); the last admin cannot leave', async () => {
     const mama = agentWith();
     const first = await connectFamily(mama);
     const kid = first.students[0]!;

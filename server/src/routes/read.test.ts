@@ -51,7 +51,7 @@ describe('read API', () => {
   });
   afterEach(settle);
 
-  it('«С кого начнём?» in one request: a card per child, the school named when the schools differ', async () => {
+  it('"Who first?" (pick.title) in one request: a card per child, the school named when the schools differ', async () => {
     const mama = await signIn(DEMO_LOGINS.parent);
     const res = await mama.get('/api/students');
     expect(res.status).toBe(200);
@@ -66,7 +66,7 @@ describe('read API', () => {
     expect(next.lessons).toBeGreaterThan(0);
   });
 
-  it('Главная: the comparison and the bands of the child’s scale, the last day, Внимание, the next day', async () => {
+  it('Home (screen.home): the comparison and the bands of the child’s scale, the last day, Attention (screen.events), the next day', async () => {
     const mama = await signIn(DEMO_LOGINS.parent);
     const res = await mama.get(`/api/students/${milena.id}/overview?period=month`);
     expect(res.status).toBe(200);
@@ -91,7 +91,7 @@ describe('read API', () => {
     expect((await mama.get(`/api/students/${milena.id}/overview?period=week&offset=300`)).status).toBe(404);
   });
 
-  it('the last school day with marks does not follow the period; Внимание keeps at most three drops and one rise', async () => {
+  it('the last school day with marks does not follow the period; Attention keeps at most three drops and one rise', async () => {
     const mama = await signIn(DEMO_LOGINS.parent);
     const now = await mama.get(`/api/students/${milena.id}/overview?period=week`);
     const back = await mama.get(`/api/students/${milena.id}/overview?period=week&offset=3`);
@@ -118,7 +118,7 @@ describe('read API', () => {
     expect(noMarks.body.instances.week[0].count).toBeGreaterThan(0);
   });
 
-  it('«Сейчас» and today are the school’s, whatever timezone the server machine is in', async () => {
+  it('"Now" (nowCard) and today are the school’s, whatever timezone the server machine is in', async () => {
     const mama = await signIn(DEMO_LOGINS.parent);
     // 10:00 at the school on Thursday: a lesson is on
     const morning = new Date('2026-10-15T07:00:00Z');
@@ -144,7 +144,7 @@ describe('read API', () => {
     }
   });
 
-  it('Оценки, Предметы, Предмет: marks by day, subjects with the child’s teacher and group, the regular week', async () => {
+  it('Marks, Subjects, the subject screen: marks by day, subjects with the child’s teacher and group, the regular week', async () => {
     const mama = await signIn(DEMO_LOGINS.parent);
     const feed = await mama.get(`/api/students/${milena.id}/marks?period=year&limit=5`);
     expect(feed.status).toBe(200);
@@ -174,7 +174,7 @@ describe('read API', () => {
     expect((await mama.get(`/api/students/${milena.id}/subjects/${markSubject.id}`)).status).toBe(404);
   });
 
-  it('Расписание, Школа, Итоги: rooms, subgroups and end times; bells, terms and holidays; term finals', async () => {
+  it('Timetable, School, Finals (screen.schedule, more.school, finals.screen): rooms, subgroups and end times; bells, terms and holidays; term finals', async () => {
     const mama = await signIn(DEMO_LOGINS.parent);
     const week = await mama.get(`/api/students/${milena.id}/schedule?week=0`);
     expect(week.status).toBe(200);
@@ -198,7 +198,7 @@ describe('read API', () => {
     expect((await papa.get('/api/students')).body.map((c: { id: string }) => c.id)).toEqual([mark.id]);
     for (const path of ['overview', 'marks', 'subjects', 'schedule?week=0', 'events', 'school', 'finals/quarters'])
       expect((await papa.get(`/api/students/${milena.id}/${path}`)).status, path).toBe(404);
-    // Марк is followed by both: a «готово» made by Мама shows her name to her family only
+    // Mark is followed by both: a "Ready" (lesson.ready) made by the mother shows her name to her family only
     const [lesson] = await db.select().from(lessons).where(eq(lessons.studentId, mark.id)).limit(1);
     const [mama] = await db.select().from(users).where(eq(users.login, DEMO_LOGINS.parent));
     await db.insert(lessonPrep).values({ studentId: mark.id, lessonId: lesson!.id, doneAt: NOW, doneBy: mama!.id });
@@ -233,7 +233,7 @@ describe('read API', () => {
       expect((await anon.get(path)).status, path).toBe(401);
   });
 
-  it('a student sees themselves only; Синхронизация shows how fresh the data is', async () => {
+  it('a student sees themselves only; Sync (sync.title) shows how fresh the data is', async () => {
     const kid = await signIn(DEMO_LOGINS.student);
     expect((await kid.get('/api/students')).body.map((c: { id: string }) => c.id)).toEqual([milena.id]);
     expect((await kid.get(`/api/students/${mark.id}/overview`)).status).toBe(404);
@@ -243,7 +243,7 @@ describe('read API', () => {
     expect((await kid.get('/api/sync/runs')).status).toBe(403);
   });
 
-  it('«загружаем» while a run of the family’s diary is under way (the first sync after connecting)', async () => {
+  it('"reading the diary" (sync.status.loading) while a run of the family’s diary is under way (the first sync after connecting)', async () => {
     const [fs] = await db.select().from(familyStudents).where(eq(familyStudents.studentId, milena.id));
     const [account] = await db
       .insert(diaryAccounts)
@@ -361,7 +361,7 @@ describe('teacher comments without a mark (D56)', () => {
     return { id: s!.id, date, lessonId: lesson!.id };
   }
 
-  it('its own row in Оценки (filter only), on the lesson in Расписание, a fact in Внимание for 7 days; never a mark', async () => {
+  it('its own row in Marks (filter only), on the lesson in Timetable, a fact in Attention for 7 days; never a mark', async () => {
     const kid = await childWithComment(1);
     const mama = await signIn(DEMO_LOGINS.parent);
     const feed = (await mama.get(`/api/students/${kid.id}/marks?period=month`)).body.items;
@@ -378,12 +378,12 @@ describe('teacher comments without a mark (D56)', () => {
       .flatMap((d: { lessons: { id: string }[] }) => d.lessons)
       .find((x: { id: string }) => x.id === kid.lessonId);
     expect(l.teacherComment).toBe('Нет домашнего задания');
-    // Предметы with the filter Комментарии says how many each subject has, never "no marks"
+    // Subjects with the filter Comments (filter.comments) says how many each subject has, never "no marks"
     const list = (await mama.get(`/api/students/${kid.id}/subjects?period=month&comments=only`)).body.subjects;
     expect(list.map((r: { comments: number | null }) => r.comments).reduce((a: number, b: number) => a + b, 0)).toBe(1);
   });
 
-  it('after 7 days it leaves Внимание and stays in Оценки', async () => {
+  it('after 7 days it leaves Attention and stays in Marks', async () => {
     const kid = await childWithComment(9);
     const mama = await signIn(DEMO_LOGINS.parent);
     const events = (await mama.get(`/api/students/${kid.id}/events?period=month`)).body.items;

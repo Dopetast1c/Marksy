@@ -3,14 +3,14 @@ import { useMe } from '../api/queries';
 import { useT } from '../i18n';
 import { HomeTabIcon, MarksTabIcon, MoreTabIcon, ScheduleTabIcon, SubjectsTabIcon } from './icons';
 
-// Five bottom tabs (ux-principles D1): Главная, Оценки, Предметы, Расписание, Ещё. The child stays the same when
-// switching tabs; the tab bar never changes with the child (D53): Расписание stays while any child has lessons and is
-// left out only when none has (a child without a timetable gets an empty state there). Ещё needs no child.
+// Five bottom tabs (ux-principles D1): Home, Marks, Subjects, Timetable, More (tabs.*). The child stays the same when
+// switching tabs; the tab bar never changes with the child (D53): Timetable stays while any child has lessons and is
+// left out only when none has (a child without a timetable gets an empty state there). More needs no child.
 
 const TABS = [
-  // Внимание is reached from Главная and belongs to its tab (the prototype's TAB_OF)
+  // Attention (screen.events) is reached from Home and belongs to its tab (the prototype's TAB_OF)
   { key: 'home', path: '', icon: HomeTabIcon, also: /^\/s\/[^/]+(\/events)?$/ },
-  // Итоги is reached from Оценки (and Предметы) and belongs to Оценки
+  // Finals (finals.screen) is reached from Marks (and Subjects) and belongs to Marks
   { key: 'marks', path: '/marks', icon: MarksTabIcon, also: /^\/s\/[^/]+\/(marks|finals)$/ },
   { key: 'subjects', path: '/subjects', icon: SubjectsTabIcon, also: null },
   { key: 'schedule', path: '/schedule', icon: ScheduleTabIcon, also: null },
@@ -41,7 +41,7 @@ export function TabBar({ studentId }: { studentId: string | null }) {
           {t(`tabs.${key}`)}
         </NavLink>
       ))}
-      {/* Школа is reached from Ещё and belongs to its tab */}
+      {/* School (more.school) is reached from More and belongs to its tab */}
       <NavLink to="/more" className={({ isActive }) => look(isActive || /^\/s\/[^/]+\/school$/.test(pathname))}>
         <MoreTabIcon size={22} />
         {t('tabs.more')}

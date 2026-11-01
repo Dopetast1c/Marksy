@@ -3,11 +3,13 @@ import { and, asc, eq, gt } from 'drizzle-orm';
 import type { Request, RequestHandler, Response } from 'express';
 import type { Db } from '../db/client';
 import { memberships, sessions } from '../db/schema';
+import { cookiePath } from '../runtime/network';
 import type { AppDeps, Auth } from './context';
 
 // Sessions (docs/design.md 7.2 step 5, build-plan M3 notes): an httpOnly, SameSite=Lax cookie with a random token,
-// Secure only behind https; the database keeps only the token's SHA-256. 30 days, sliding: a session used again after
-// a day gets its 30 days back. No JWT for a first-party PWA.
+// Secure when the request came over https (decided per request: the same instance answers over http at home and over
+// https through the tunnel), its Path the app's own; the database keeps only the token's SHA-256. 30 days, sliding: a
+// session used again after a day gets its 30 days back. No JWT for a first-party PWA.
 
 export const SESSION_COOKIE = 'marksy_session';
 const TTL_MS = 30 * 86_400_000;
@@ -23,9 +25,12 @@ function readCookie(req: Request, name: string): string | undefined {
   return undefined;
 }
 
+const cookieOptions = (deps: AppDeps, res: Response) =>
+  ({ httpOnly: true, sameSite: 'lax', secure: res.req.secure, path: cookiePath(deps.basePath ?? '') }) as const;
+
 /** Max-Age, not Expires: the browser counts the 30 days on its own clock, whatever this server's clock says */
-function setCookie(res: Response, token: string, secure: boolean) {
-  res.cookie(SESSION_COOKIE, token, { httpOnly: true, sameSite: 'lax', secure, maxAge: TTL_MS, path: '/' });
+function setCookie(deps: AppDeps, res: Response, token: string) {
+  res.cookie(SESSION_COOKIE, token, { ...cookieOptions(deps, res), maxAge: TTL_MS });
 }
 
 /** Signs a person in: a new session in their current family, and the cookie */
@@ -45,13 +50,13 @@ export async function startSession(
     createdAt: now,
     userAgent: who.userAgent?.slice(0, 200) ?? null,
   });
-  setCookie(res, token, deps.secureCookies);
+  setCookie(deps, res, token);
 }
 
 /** Signs this browser out: the session row goes, the cookie is cleared */
 export async function endSession(deps: AppDeps, req: Request, res: Response): Promise<void> {
   if (req.auth) await deps.db.delete(sessions).where(eq(sessions.id, req.auth.sessionId));
-  res.clearCookie(SESSION_COOKIE, { httpOnly: true, sameSite: 'lax', secure: deps.secureCookies, path: '/' });
+  res.clearCookie(SESSION_COOKIE, cookieOptions(deps, res));
 }
 
 /** The role of a person in a family, or their first family when the session has none (or lost it) */
@@ -87,7 +92,7 @@ export function loadSession(deps: AppDeps): RequestHandler {
       if (row.expiresAt.getTime() - now.getTime() < TTL_MS - SLIDE_AFTER_MS) {
         const expiresAt = new Date(now.getTime() + TTL_MS);
         await deps.db.update(sessions).set({ expiresAt }).where(eq(sessions.id, row.id));
-        setCookie(res, token, deps.secureCookies);
+        setCookie(deps, res, token);
       }
       req.auth = { sessionId: row.id, userId: row.userId, ...membership };
       next();

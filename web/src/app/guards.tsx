@@ -10,7 +10,7 @@ import { restoredChild } from '../lib/pick';
 import { useDevice } from '../state/store';
 
 // Who may see what: a session for everything but the login (design.md 7.6), and a picked child for every child
-// screen (design.md 4): «С кого начнём?» comes back after 12 hours away instead of quietly using the last child.
+// screen (design.md 4): "Who first?" (pick.title) comes back after 12 hours away instead of quietly using the last child.
 
 export function RequireAuth() {
   const t = useT();
@@ -34,12 +34,13 @@ export function RequireAuth() {
     else if (!pending && saved !== i18n.language) void setLanguage(saved);
   }, [userId, saved]);
   if (me.isPending) return <EmptyState title={t('app.loading')} />;
-  if (me.isError) return <EmptyState title={t('app.error')} />;
+  // a failed check while the person is known (the server restarts for an update) keeps the app on screen
+  if (me.isError && !me.data) return <EmptyState title={t('app.error')} />;
   if (!me.data) return <Navigate to="/login" replace />;
   return <Outlet />;
 }
 
-/** The child this device continues with, or null when «С кого начнём?» must show */
+/** The child this device continues with, or null when "Who first?" (pick.title) must show */
 export function useContinueChild(): string | null {
   const me = useMe();
   const { pick, alwaysLast } = useDevice();

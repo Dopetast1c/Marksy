@@ -244,7 +244,7 @@ export const familyStudents = pgTable(
     studentId: uuid('student_id')
       .notNull()
       .references(() => students.id, { onDelete: 'cascade' }),
-    /** stopped: «Перестать следить» while a login of the family still shows the child (design.md 7.1) */
+    /** stopped: "Stop following" (family.child.stop) while a login of the family still shows the child (design.md 7.1) */
     status: text('status', { enum: ['active', 'suspended', 'stopped'] })
       .notNull()
       .default('active'),

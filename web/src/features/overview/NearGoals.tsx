@@ -4,8 +4,8 @@ import type { useOverview } from '../../api/queries';
 import { useT } from '../../i18n';
 import { numbers } from '../../lib/numbers';
 
-// «Близко к цели», pinned on a student's Главная (docs/design.md 5.7): the subjects whose goal is one step away this
-// term, with the quickest way there («Алгебра 7,3 → 7,5: ещё 1 × 9»). Advice: the server sends it only with guidance
+// "Close to the goal" (home.nearGoal.*), pinned on a student's Home (docs/design.md 5.7): the subjects whose goal is
+// one step away this term, with the quickest way there ("Algebra 7.3 → 7.5: 1 × 9 more", home.nearGoal.row). Advice: the server sends it only with guidance
 // on, and the card is the student's (a parent has the goal rows on the subject screens).
 
 type NearGoal = NonNullable<NonNullable<ReturnType<typeof useOverview>['data']>['nearGoals']>[number];

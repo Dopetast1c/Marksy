@@ -11,7 +11,7 @@ import type { ChildContext } from './context';
 import { absencesIn, chipOf, factOf, marksIn, refOf, refOrNull, remarksIn, subjectsOf } from './data';
 import { finalsOf, postedOn, termRef } from './finals';
 
-// The feed of Оценки and the timeline of a subject (docs/design.md 5.3, 5.4): marks by day, newest first; in a day the
+// The feed of Marks (screen.marks) and the timeline of a subject (docs/design.md 5.3, 5.4): marks by day, newest first; in a day the
 // finals card, the marks, the absences (quiet rows, never marks), the teacher's comments without a mark (D56), then
 // the changes of the last 14 days.
 
@@ -51,7 +51,7 @@ export const feedItem = registry.register(
       id: z.string(),
       date: z.string(),
       subject: subjectRef.nullable(),
-      /** The diary's code («н»), shown in a dashed frame instead of a chip */
+      /** The diary's code (Russian "n", marks.absentCode), shown in a dashed frame instead of a chip */
       code: z.string().nullable(),
       excused: z.boolean().nullable(),
       lessonId: z.string().nullable(),
@@ -98,7 +98,7 @@ export async function feedItems(
     subjectId?: string | undefined;
     comments: 'all' | 'only' | 'none';
     tags?: string[] | undefined;
-    /** Оценки: absences as quiet rows and the finals card on the day they were posted */
+    /** Marks (screen.marks): absences as quiet rows and the finals card on the day they were posted */
     feed?: boolean;
   },
 ): Promise<FeedItem[]> {

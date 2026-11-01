@@ -1,7 +1,7 @@
 ---
 name: ui-check
 description: Compare an implemented screen with docs/mockups.html and the UX invariants, and list the differences.
-argument-hint: "[screen, e.g. Главная, Оценки, Предмет]"
+argument-hint: "[screen, e.g. Home, Marks, Subject]"
 ---
 
 Check the screen $ARGUMENTS against the reference.

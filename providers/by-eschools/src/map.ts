@@ -98,7 +98,7 @@ const KIND_LABEL: Record<string, string> = {
 };
 
 const nonEmpty = (s: string | null | undefined) => (s && s.trim() ? s : undefined);
-/** The description of a term or a holiday is a note for people ("для учащихся 9 классов …"), kept as it is */
+/** The description of a term or a holiday is a note for people ("for the students of grade 9 …"), kept as it is */
 const noteOf = (a: { description?: string | null }) => {
   const note = nonEmpty(a.description)?.trim();
   return note ? { note } : {};
@@ -284,7 +284,7 @@ export function mapLesson(s: Slot, date: string, check: DriftCheck): Lesson {
 }
 
 /**
- * A lesson_mark with neither a kind nor a mark, only a comment: the teacher's remark on the lesson ("нет домашнего задания";
+ * A lesson_mark with neither a kind nor a mark, only a comment: the teacher's remark on the lesson ("no homework done";
  * api-spec 7.2). No mark is made; the diary says nothing of its tone, so it is neutral.
  */
 function remarkOf(m: LessonMark, s: Slot, date: string): BehaviourEvent {

@@ -51,7 +51,7 @@ const dayOf = async (agent: Agent, studentId: string, date: string) => {
 const lessonIn = async (agent: Agent, studentId: string, date: string, id: string) =>
   (await dayOf(agent, studentId, date)).days.flatMap((d) => d.lessons).find((l) => l.id === id)!;
 
-describe('the lesson menu: «готово», «Урока не будет», own homework', () => {
+describe('the lesson menu: "Ready" (lesson.ready), "Lesson won\'t take place" (lessonMenu.cancel), own homework', () => {
   let milena: { id: string };
   let mark: { id: string };
   /** the first lesson of Milena's next school day, still ahead at NOW */
@@ -79,7 +79,7 @@ describe('the lesson menu: «готово», «Урока не будет», own
   });
   afterEach(settle);
 
-  it('«готово»: who and when, the history kept, ticking twice keeps the first tick', async () => {
+  it('"Ready" (lesson.ready): who and when, the history kept, ticking twice keeps the first tick', async () => {
     const mama = await signIn(DEMO_LOGINS.parent);
     const url = `/api/students/${milena.id}/lessons/${next!.id}/prep`;
     const put = await mama.put(url);
@@ -106,7 +106,7 @@ describe('the lesson menu: «готово», «Урока не будет», own
     const refused = await after.delete(url);
     expect(refused.status).toBe(409);
     expect(refused.body.error.code).toBe('lesson_passed');
-    // a passed lesson keeps only its mark: no пометки to prepare
+    // a passed lesson keeps only its mark: no lesson notes to prepare
     expect((await lessonIn(after, milena.id, next!.date, next!.id)).notes).toBeNull();
     for (const path of ['prep', 'cancel', 'homework']) {
       const res =
@@ -117,7 +117,7 @@ describe('the lesson menu: «готово», «Урока не будет», own
     }
   });
 
-  it('«Урока не будет»: out of the counts, back with «Вернуть урок»; the diary wins once it records the lesson', async () => {
+  it('"Lesson won\'t take place" (lessonMenu.cancel): out of the counts, back with "Bring the lesson back" (lessonMenu.restore); the diary wins once it records the lesson', async () => {
     const mama = await signIn(DEMO_LOGINS.parent);
     const url = `/api/students/${milena.id}/lessons/${next!.id}/cancel`;
     const held = async () =>
@@ -200,7 +200,7 @@ describe('the lesson menu: «готово», «Урока не будет», own
     expect((await mama.put(`/api/students/${milena.id}/lessons/${marksLesson!.id}/prep`)).status).toBe(404);
     // the student is Milena: her brother is not hers to tick
     expect((await kid.put(`/api/students/${mark.id}/lessons/${marksLesson!.id}/prep`)).status).toBe(404);
-    // Марк is followed by both families: a tick from the other family names nobody to this one
+    // Mark is followed by both families: a tick from the other family names nobody to this one
     expect((await papa.put(`/api/students/${mark.id}/lessons/${marksLesson!.id}/prep`)).status).toBe(200);
     expect((await lessonIn(mama, mark.id, marksLesson!.date, marksLesson!.id)).ready!.by).toEqual({
       name: null,
@@ -209,7 +209,7 @@ describe('the lesson menu: «готово», «Урока не будет», own
   });
 });
 
-describe('Расписание: пометки, tags and the navigator’s days', () => {
+describe('Timetable (screen.schedule): lesson notes, tags and the navigator’s days', () => {
   let milena: { id: string };
   let mark: { id: string };
   let next: typeof lessons.$inferSelect | undefined;
@@ -229,7 +229,7 @@ describe('Расписание: пометки, tags and the navigator’s days'
   });
   afterEach(settle);
 
-  it('upcoming lessons carry факты; passed ones none; guidance off drops сигнал and подсказка, keeps the facts', async () => {
+  it('upcoming lessons carry the facts note; passed ones none; guidance off drops the signal and the hint, keeps the facts', async () => {
     const mama = await signIn(DEMO_LOGINS.parent);
     const ahead = (await dayOf(mama, milena.id, next!.date)).days[0]!.lessons;
     expect(ahead.every((l) => l.notes !== null)).toBe(true);
@@ -257,7 +257,7 @@ describe('Расписание: пометки, tags and the navigator’s days'
     expect(markDay.every((l) => l.notes === null)).toBe(true);
   });
 
-  it('tag hits: the тег note, «задали», «Контрольная» as a test and «Обратить внимание»; only this family’s tags', async () => {
+  it('tag hits: the tag note, "Set: …" (lesson.taggedHomework), the test tag as a test and "Worth a look" (subject.attention); only this family’s tags', async () => {
     const mama = await signIn(DEMO_LOGINS.parent);
     const [test] = await db.select().from(lessonTags).where(eq(lessonTags.presetKey, 'test'));
     const [setAt] = await db
@@ -286,11 +286,11 @@ describe('Расписание: пометки, tags and the navigator’s days'
       const source = (await dayOf(mama, milena.id, TODAY)).days[0]!.lessons.find((l) => l.id === setAt.id)!;
       expect(source.setHere).toEqual([expect.objectContaining({ dueDate: next!.date })]);
     }
-    // once cancelled, the lesson leaves «Обратить внимание»
+    // once cancelled, the lesson leaves "Worth a look" (subject.attention)
     await mama.put(`/api/students/${milena.id}/lessons/${next!.id}/cancel`);
     expect((await dayOf(mama, milena.id, next!.date)).attention).toEqual([]);
 
-    // the other family's tag on Марк, the shared child, never reaches this family
+    // the other family's tag on Mark, the shared child, never reaches this family
     const [otherFamily] = await db
       .select({ id: memberships.familyId })
       .from(memberships)
@@ -329,7 +329,7 @@ describe('Расписание: пометки, tags and the navigator’s days'
     expect(res.status).toBe(200);
     expect(res.body.today).toBe(TODAY);
     expect(res.body.weekStart).toEqual(expect.any(Number));
-    // Неделя: every school day of the manifest's calendar is a day of its own, with lessons or without
+    // Week (period.week): every school day of the manifest's calendar is a day of its own, with lessons or without
     const week = await mama.get(`/api/students/${milena.id}/schedule?week=0`);
     const shown = (week.body.days as { date: string }[]).map((d) => new Date(`${d.date}T12:00:00Z`).getUTCDay());
     for (const wd of res.body.schoolDays as number[]) expect(shown).toContain(wd);

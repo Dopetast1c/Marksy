@@ -6,8 +6,9 @@ import { finalsStateText } from '../lib/finals';
 import { todayIn } from '../lib/time';
 import { ChevIcon, SchoolIcon } from './icons';
 
-// The finals entry row on Оценки and Предметы (docs/design.md 5.3): «Итоговые отметки · по четвертям и годам · I четверть
-// идёт, итоги после 31 окт», opening Итоги. While a term's finals are news (posted, the next term not started) the line
+// The finals entry row on Marks (screen.marks) and Subjects (screen.subjects) (docs/design.md 5.3): "Final marks · by
+// quarter and year · Quarter I is on, finals after 31 Oct" (finals.title, finals.scope.*, finals.running), opening
+// Finals (finals.screen). While a term's finals are news (posted, the next term not started) the line
 // says so in the good-news colour; the finals stay on their own screen, never mixed into the current marks. Only where
 // the diary has final marks and the child gets marks.
 

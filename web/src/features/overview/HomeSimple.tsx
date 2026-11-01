@@ -12,10 +12,11 @@ import { dateStyle, useT } from '../../i18n';
 import { todayIn } from '../../lib/time';
 import { NextDay } from './NextDay';
 
-// Главная in simple mode (docs/design.md 5.7, for the youngest): big, few, no analytics. Сегодня with today's marks as
-// large chips; «Не забыть» (the tags due in the next 7 days) comes with tags (M6); the next school day's lessons, each
-// with the large «готово» of simple mode (D41's exception); the sync line. No period control, no statistics, no
-// trends, no advice. The same components as the full Главная, fewer of them.
+// Home (tabs.home) in simple mode (docs/design.md 5.7, for the youngest): big, few, no analytics. Today (day.today)
+// with today's marks as large chips; a "don't forget" block (the tags due in the next 7 days) comes with tags (M6);
+// the next school day's lessons, each with the large "Ready" (lesson.simple.ready) of simple mode (D41's exception);
+// the sync line. No period control, no statistics, no trends, no advice. The same components as the full Home, fewer
+// of them.
 
 export function HomeSimple({ studentId }: { studentId: string }) {
   const t = useT();

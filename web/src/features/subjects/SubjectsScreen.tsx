@@ -25,10 +25,10 @@ import type { SubjectSort } from '../../state/store';
 import { usePeriod, useSubjectSort } from '../../state/store';
 import { numbers } from '../../lib/numbers';
 
-// Предметы (docs/design.md 5.3a): the child's curriculum, every subject whatever the filter. The period control and the
+// Subjects (screen.subjects; docs/design.md 5.3a): the child's curriculum, every subject whatever the filter. The period control and the
 // mark filter in the header, the navigator, the finals entry row, the order (a text button opening a sheet, D32), then
 // one SubjectRow per subject: the last five marks of the filtered kind, the average in its band colour with the
-// arrow and "было" (or «итог I: 8» while a term's finals are news). Subjects without marks in the period say so and
+// arrow and "was" (stat.was) (or "final I: 8", subjects.final, while a term's finals are news). Subjects without marks in the period say so and
 // sort last. A class without marks (D49) lists lessons, homework and the next lesson instead, by the next lesson.
 
 const SORTS: readonly SubjectSort[] = ['alpha', 'weak', 'strong', 'fell', 'rose'];
@@ -85,7 +85,7 @@ export function SubjectsScreen() {
             </span>
           ) : (
             <span className="text-small text-ink3">
-              {/* the filter Комментарии shows the teacher's comments, so the row counts them, short: the chip and the
+              {/* the filter Comments (filter.comments) shows the teacher's comments, so the row counts them, short: the chip and the
                   navigator already say what and when (D56, design 5.3a) */}
               {filter.comments
                 ? r.comments

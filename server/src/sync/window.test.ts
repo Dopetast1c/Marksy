@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { boundWindows, childWindow, formatWindow, unionWindows } from './window';
 import type { ChildDay } from './window';
 
-// Two fictional children of one family (prototype SCHOOL): Милена in the first shift, six lessons; Марк in grade 1
+// Two fictional children of one family (prototype SCHOOL): Milena in the first shift, six lessons; Mark in grade 1
 // with his own bells. Times in local minutes.
 
 const FIRST_SHIFT = [

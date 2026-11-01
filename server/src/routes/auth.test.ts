@@ -53,9 +53,10 @@ describe('auth: connect, login, logout, me', () => {
     expect((await agent.get('/api/auth/me')).body.user.login).toBe('parent@example.com');
   });
 
-  it('Secure cookies behind https', async () => {
-    const res = await request(testApp({ secureCookies: true }))
+  it('Secure cookies behind https, as the trusted proxy says', async () => {
+    const res = await request(testApp())
       .post('/api/auth/connect')
+      .set('X-Forwarded-Proto', 'https')
       .send({
         providerId: 'demo-full',
         credentials: { login: 'diary-user', password: 'x' },
@@ -211,7 +212,7 @@ describe('auth: connect, login, logout, me', () => {
     expect((await agent.patch('/api/me').send({ timezone: 'Mars/Base' })).status).toBe(400);
   });
 
-  it('PATCH /api/me/settings: the person’s own «Подсказки» switch, on until turned off, other settings kept', async () => {
+  it('PATCH /api/me/settings: the person’s own tips switch (more.guidance), on until turned off, other settings kept', async () => {
     const agent = agentWith();
     await connectFamily(agent);
     expect((await agent.get('/api/auth/me')).body.user.guidance).toBe(true);
@@ -231,7 +232,7 @@ describe('auth: connect, login, logout, me', () => {
   });
 });
 
-describe('Оформление', () => {
+describe('Appearance (look.title)', () => {
   beforeEach(() => resetDb(db));
   afterEach(settle);
 

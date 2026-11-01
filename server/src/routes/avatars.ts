@@ -11,7 +11,7 @@ import { loadChild } from '../students/context';
 import { checkImage, EXT } from '../uploads/image';
 import { DEFAULT_UPLOADS_DIR, readUpload, removeUpload, saveUpload } from '../uploads/store';
 
-// A child's avatar (docs/design.md 5.6, 9): the admin and parents set it from Семья; it belongs to the child, so every
+// A child's avatar (docs/design.md 5.6, 9): the admin and parents set it from Family (family.title); it belongs to the child, so every
 // family that follows the child sees the same one (D54). Traits are drawn by the app; a photo is checked and stripped
 // of its metadata on the server (14.1) and served only to those families.
 

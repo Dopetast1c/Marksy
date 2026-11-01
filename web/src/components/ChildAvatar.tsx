@@ -1,5 +1,6 @@
 import type { Schemas } from '../api/client';
 import { useStudent } from '../hooks/useStudent';
+import { appPath } from '../lib/base';
 import { Avatar, defaultTraits } from './Avatar';
 
 // A child's avatar as the family set it (docs/design.md 5.6, D9): the traits drawn by Avatar, or the photo the family
@@ -12,7 +13,7 @@ export function ChildAvatar({ avatar, index, size = 34 }: { avatar: AvatarData; 
   if (avatar?.kind === 'photo')
     return (
       <img
-        src={avatar.url}
+        src={appPath(avatar.url)}
         alt=""
         width={size}
         height={size}
@@ -23,7 +24,7 @@ export function ChildAvatar({ avatar, index, size = 34 }: { avatar: AvatarData; 
   return <Avatar traits={avatar?.kind === 'traits' ? avatar.traits : defaultTraits()} index={index} size={size} />;
 }
 
-/** The avatar of a child this person sees, by id (StudentBar, «С кого начнём?») */
+/** The avatar of a child this person sees, by id (StudentBar, "Who first?" pick.title) */
 export function StudentAvatar({ studentId, index, size }: { studentId: string; index: number; size?: number }) {
   const student = useStudent(studentId);
   return <ChildAvatar avatar={student?.avatar ?? null} index={index} {...(size ? { size } : {})} />;
