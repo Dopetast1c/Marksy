@@ -17,7 +17,7 @@ The order in which Marksy is built with Claude Code, what each milestone must de
 | M5c | Web: Расписание, lesson menu, ready ticks, own homework | `m5c-schedule` | done |
 | M5d | Web: Ещё, Семья, Синхронизация, Оформление | `m5d-more` | done |
 | M5e | Translations: the ten other interface languages | `m5e-i18n` | done |
-| R1 | First release: production runtime, portable data and automatic updates (1.0.0) | `r1-release` | in progress |
+| R1 | First release: production runtime, portable data and automatic updates (1.0.0) | `r1-release` | done |
 | M6 | Tags | `m6-tags` | todo |
 | M7 | Study time | `m7-study` | todo |
 | M8 | PWA: install, offline, service worker | `m8-pwa` | todo |
