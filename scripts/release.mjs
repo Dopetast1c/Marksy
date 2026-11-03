@@ -9,8 +9,8 @@
 import { spawnSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { parseCommit } from './conventional.mjs';
-import { RULE_STARTS_AFTER } from './commit-lint.mjs';
+// node's own modules only: the release workflow runs this without installing the workspace (release.test.mjs)
+import { parseCommit, RULE_STARTS_AFTER } from './conventional.mjs';
 
 export const FIRST_VERSION = '1.0.0';
 const REPO = 'https://github.com/Dopetast1c/Marksy';

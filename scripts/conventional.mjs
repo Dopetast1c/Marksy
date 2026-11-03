@@ -3,6 +3,9 @@
 
 export const TYPES = ['feat', 'fix', 'perf', 'refactor', 'docs', 'test', 'chore', 'ci', 'build'];
 
+/** The commit the rule starts after: main when R1 began; everything before it keeps its old style */
+export const RULE_STARTS_AFTER = '7a5de14416c8a9e0904e1ebac07d81b8a4a3a4ca';
+
 const HEADER = new RegExp(`^(${TYPES.join('|')})(?:\\(([a-z0-9][a-z0-9./-]*)\\))?(!)?: (\\S.*)$`);
 
 /** The message without git's comment lines, trimmed */

@@ -59,7 +59,9 @@ jobs:
           echo "rehearsal=$rehearsal" >> "$GITHUB_OUTPUT"
           echo "target=$target" >> "$GITHUB_OUTPUT"
           echo "commit=$commit" >> "$GITHUB_OUTPUT"
-          echo "tags=$(node scripts/release.mjs tags "$version")" >> "$GITHUB_OUTPUT"
+          tags="$(node scripts/release.mjs tags "$version")"
+          [ -n "$tags" ] || { echo "::error::no image tags for $version"; exit 1; }
+          echo "tags=$tags" >> "$GITHUB_OUTPUT"
 
       # a release ships the README in every language, each one following the English text
       - name: The README in every language is current

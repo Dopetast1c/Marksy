@@ -8,11 +8,10 @@
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
-import { cleanMessage, parseCommit, TYPES } from './conventional.mjs';
+import { cleanMessage, parseCommit, RULE_STARTS_AFTER, TYPES } from './conventional.mjs';
 import { messageProblems } from './language-check.mjs';
 
-/** The commit the rule starts after: main when R1 began; everything before it keeps its old style */
-export const RULE_STARTS_AFTER = '7a5de14416c8a9e0904e1ebac07d81b8a4a3a4ca';
+export { RULE_STARTS_AFTER };
 
 /** Problems of one message, as short English reasons */
 export function lintMessage(message) {

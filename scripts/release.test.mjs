@@ -1,5 +1,27 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { compareVersions, imageTags, nextVersion, releaseNotes } from './release.mjs';
+
+/** Every module a script loads, following its relative imports: what is not node's own or a file of scripts/ */
+function packagesLoaded(file, seen = new Set()) {
+  if (seen.has(file)) return [];
+  seen.add(file);
+  const text = readFileSync(new URL(file, import.meta.url), 'utf8');
+  const out = [];
+  for (const [, spec] of text.matchAll(/^import [^'"]*['"]([^'"]+)['"]/gm)) {
+    if (spec.startsWith('node:')) continue;
+    if (spec.startsWith('./')) out.push(...packagesLoaded(spec, seen));
+    else out.push(spec);
+  }
+  return out;
+}
+
+describe('the scripts the release workflow runs', () => {
+  it('load nothing but node itself: the workflow does not install the workspace', () => {
+    expect(packagesLoaded('./release.mjs')).toEqual([]);
+    expect(packagesLoaded('./docs-check.mjs')).toEqual([]);
+  });
+});
 
 describe('the next version', () => {
   it('a feat raises MINOR and resets PATCH', () => {
