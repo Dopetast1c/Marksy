@@ -52,6 +52,23 @@ export interface DriftReporter {
   report(event: DriftEvent): void;
 }
 
+/**
+ * What reference data a memo entry is (docs/providers.md 4): `calendar` for the school year, its terms, holidays, the
+ * list of weeks and the student's class; `school` for subjects and the school's details. The collector reads it again
+ * by the child's settings (SyncCadence.calendar, SyncCadence.school) and when something shows it changed.
+ */
+export type MemoKind = 'calendar' | 'school';
+
+export interface MemoOptions<T> {
+  /** False when a kept value can no longer serve (a week list that ends before today): it is fetched again */
+  valid?(value: T): boolean;
+  /**
+   * The student's externalId when the value is that student's own (their class, their subjects): it is deleted with
+   * the student and when the account no longer lists them
+   */
+  student?: string;
+}
+
 export interface ProviderContext {
   /** The only way to make requests: serial, delayed, backoff, allow-list. */
   http: HttpClient;
@@ -59,6 +76,13 @@ export interface ProviderContext {
   log: Logger;
   now(): Date;
   drift: DriftReporter;
+  /**
+   * Reference data the provider needs for its requests but the canonical model does not hold (a system's own ids of
+   * weeks or classes), kept between runs per diary account. Returns the kept value while it is fresh for its kind and
+   * `valid`, otherwise calls `fetch` and keeps what it returns. Keep only what the mapper needs, as JSON: no names, no
+   * free text that may carry one. Without a store (tests, the first read) it simply calls `fetch`.
+   */
+  memo<T>(kind: MemoKind, key: string, fetch: () => Promise<T>, opts?: MemoOptions<T>): Promise<T>;
 }
 
 export interface DiaryProvider {
@@ -99,7 +123,7 @@ export interface DiaryProvider {
   getBellSchedule?(session: Session, student: StudentRef, ctx: ProviderContext): Promise<BellSchedule[]>;
   /**
    * The student's own regular week for the current term (capabilities.weekTemplate): only the student's lessons,
-   * never another group's. Called once a day, after the run's lessons; a provider may then also return richer
+   * never another group's. Called with the school's reference data (design.md 10.2), after the run's lessons; a provider may then also return richer
    * subjects from getSubjects (teacher, group, level), which the collector reads again.
    */
   getWeekTemplate?(session: Session, student: StudentRef, ctx: ProviderContext): Promise<WeekTemplate | null>;

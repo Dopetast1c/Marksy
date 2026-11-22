@@ -12,6 +12,7 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
+import type { ChildSyncSettings } from '@marksy/core';
 import { createdAt, id, ts } from './columns';
 
 // Families, people, children and diary accounts (docs/design.md 7.1, 8). The family is the tenant: family-owned rows
@@ -28,11 +29,13 @@ export interface FamilySettings {
   no_school_dates?: string[];
 }
 
-/** The family's number rules for one child, on that child's scale (design.md 6.4, family_students.settings) */
+/** The family's rules for one child (family_students.settings): numbers on the child's scale (design.md 6.4), and how
+ * often the child's diary is read (design.md 10.2) */
 export interface ChildSettings {
   low_mark?: number;
   drop_step?: number;
   call_after?: number;
+  sync?: ChildSyncSettings;
 }
 
 export const families = pgTable('families', {

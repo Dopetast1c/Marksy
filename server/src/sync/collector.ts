@@ -19,6 +19,7 @@ import type {
   DriftEvent,
   ISODate,
   Logger,
+  MemoKind,
   ObservedResponse,
   Transport,
 } from '@marksy/core';
@@ -29,16 +30,29 @@ import { applySchoolDetails, storeBells, storeWeekTemplate } from './details';
 import { massRemovalEndpoint } from './drift-scope';
 import type { SyncErrorClass, SyncRunStats } from '../db/schema';
 import { localTime } from './time';
-import { storeCalendar, storeFinals, storeStudents, storeSubjects, studentRef } from './store-school';
+import { forgetRead, readStampsOf, stampRead } from './cadence';
+import { memoStore } from './memo';
+import { readableStudents } from './readers';
+import {
+  loadCalendar,
+  loadSubjectIds,
+  storeCalendar,
+  storeFinals,
+  storeStudents,
+  storeSubjects,
+  studentRef,
+} from './store-school';
 import type { StoredCalendar, StudentRow } from './store-school';
 import type { OpenedLogin } from './opened';
 import { upsertRange } from './upsert';
 import type { UpsertStats } from './upsert';
 
 // One collector run against one diary account (docs/design.md 10): one login, the account, then per student the
-// calendar and subjects, then the weeks the planner asked for in its order until the request budget is used. Every
-// week is stored in its own transaction and marked verified in sync_coverage, so a run that dies halfway keeps what it
-// finished. The collector never decides whether a run may start; server/src/sync/run.ts does (design 10.4).
+// calendar and subjects, then the weeks the planner asked for in its order until the request budget is used. The
+// account, the calendar and the school's reference data are read only when the children's settings or a change ask
+// for them (RunReads, design.md 10.2); otherwise they come from the database. Every week is stored in its own
+// transaction and marked verified in sync_coverage, so a run that dies halfway keeps what it finished. The collector
+// never decides whether a run may start; server/src/sync/run.ts does (design 10.4).
 
 /** Why a week is fetched; the order of these sets is the order of fetching (design 10.4) */
 export type PlanSet = 'standing' | 'gap' | 'rescan' | 'backfill' | 'manual';
@@ -57,6 +71,18 @@ export interface PlanInput {
   today: ISODate;
 }
 
+/** What one run reads besides its weeks, by the children's settings (design.md 10.2, run.ts) */
+export interface RunReads {
+  /** getAccount(): which children the login shows; otherwise the children stored for the account */
+  account: boolean;
+  /** Which of the children the account reads are read in this run (a scheduled run: those due now); default all */
+  student?(s: StudentRow): boolean;
+  /** This child's calendar (year, terms, holidays, class) is read; otherwise the stored one is used */
+  calendar(s: StudentRow): Promise<boolean> | boolean;
+  /** This child's subjects and school details (bells, regular week, rooms, teachers) are read */
+  school(s: StudentRow): Promise<boolean> | boolean;
+}
+
 export interface CollectorOptions {
   db: Db;
   provider: DiaryProvider;
@@ -72,9 +98,17 @@ export interface CollectorOptions {
   accountOnly?: boolean;
   /** A login opened already (connecting a diary): no second login, no second getAccount() (sync/opened.ts) */
   opened?: OpenedLogin;
+  /**
+   * What this run reads besides its weeks (design.md 10.2). Absent: everything, as a first run does (and the account's
+   * first run always does); what a run leaves out it takes from the database.
+   */
+  reads?: RunReads;
   /** Whether finals are fetched for this student in this run; default: once per local day */
   finalsDue?(input: PlanInput): Promise<boolean> | boolean;
-  /** Whether bells and the regular week are fetched for this student in this run; default: once per local day */
+  /**
+   * Without `reads`: whether bells and the regular week are fetched for this student in this run; default: once per
+   * local day. With `reads` they come with the school's reference data (RunReads.school)
+   */
   detailsDue?(input: PlanInput): Promise<boolean> | boolean;
   transport?: Transport;
   sleep?: (ms: number) => Promise<void>;
@@ -226,32 +260,80 @@ export async function runCollector(opts: CollectorOptions): Promise<CollectorRes
   let students: StudentRow[] = [];
   let failure: unknown;
 
+  /** Children whose school reference data was read in this run, and those a fetched week showed it changed for */
+  const schoolRead = new Set<string>();
+  const unknownSubject = new Set<string>();
+  /** Children whose calendar was read in this run, and those whose current school week came back without lessons */
+  const calendarRead = new Set<string>();
+  const emptyWeek = new Set<string>();
+
   try {
     const session = opts.opened ? opts.opened.session : await run.login(opts.credentials);
-    const info = opts.opened ? opts.opened.info : await provider.getAccount(session, ctx);
-    // every listed child is stored and linked; only those this account is the active source of are read
-    students = (await storeStudents(db, account, info, now())).readable;
-    if (opts.accountOnly) students = [];
     const today = localTime(now(), manifest.timezone).date;
+    const reads = opts.reads;
+    // what this run reads again is decided per child before the account: the class is kept with the calendar
+    const known = reads && !opts.opened ? await readableStudents(db, account.id) : [];
+    const calendarDue = new Map<string, boolean>();
+    const schoolDue = new Map<string, boolean>();
+    if (reads) {
+      for (const s of known) {
+        calendarDue.set(s.id, await reads.calendar(s));
+        schoolDue.set(s.id, await reads.school(s));
+      }
+    }
+    const first = !reads || known.length === 0;
+    const refresh = new Set<MemoKind>();
+    if (first || [...calendarDue.values()].some(Boolean)) refresh.add('calendar');
+    if (first || [...schoolDue.values()].some(Boolean)) refresh.add('school');
+    run.useMemo(memoStore(db, account, refresh, now));
+
+    if (opts.accountOnly || opts.opened || first || reads?.account) {
+      const info = opts.opened ? opts.opened.info : await provider.getAccount(session, ctx);
+      // every listed child is stored and linked; only those this account is the active source of are read
+      students = (await storeStudents(db, account, info, now())).readable;
+    } else students = known;
+    // a child the login shows for the first time is read in full: nothing kept serves them yet
+    if (students.some((s) => !known.some((k) => k.id === s.id))) {
+      refresh.add('calendar');
+      refresh.add('school');
+    }
+    if (opts.accountOnly) students = [];
+    if (reads?.student) students = students.filter((s) => reads.student!(s));
 
     const units: Unit[] = [];
     const finals: { student: StudentRow; stored: StoredCalendar; subjectIds: Map<string, string> }[] = [];
     const details: typeof finals = [];
     const years = new Map<string, { from: ISODate; to: ISODate }>();
-    // bells and the regular week come once a day after the lessons; without them a provider's subjects are complete
+    // bells and the regular week come after the lessons; without them a provider's subjects are complete
     const dailyDetails = caps.bellSchedule || caps.weekTemplate;
     for (const student of students) {
       scope.studentId = student.id;
       const ref = studentRef(student);
-      const calendar = await provider.getCalendar(session, ref, ctx);
-      const stored = await storeCalendar(db, manifest, student, calendar);
-      const subjectIds = await storeSubjects(
-        db,
-        student,
-        stored.schoolYearId,
-        await provider.getSubjects(session, ref, ctx),
-        { details: !dailyDetails },
-      );
+      // a child the account did not list before is read in full
+      const kept = reads && !(calendarDue.get(student.id) ?? true) ? await loadCalendar(db, student.id, today) : null;
+      let calendar: Calendar;
+      let stored: StoredCalendar;
+      if (kept) ({ calendar, stored } = kept);
+      else {
+        calendar = await provider.getCalendar(session, ref, ctx);
+        stored = await storeCalendar(db, manifest, student, calendar);
+        await stampRead(db, student.id, 'calendar', now());
+        calendarRead.add(student.id);
+      }
+      const readSchool = !reads || (schoolDue.get(student.id) ?? true);
+      let subjectIds: Map<string, string>;
+      if (readSchool) {
+        subjectIds = await storeSubjects(
+          db,
+          student,
+          stored.schoolYearId,
+          await provider.getSubjects(session, ref, ctx),
+          { details: !dailyDetails },
+        );
+        schoolRead.add(student.id);
+        // without school details the subjects are all of it
+        if (!dailyDetails) await stampRead(db, student.id, 'school', now());
+      } else subjectIds = await loadSubjectIds(db, student.id, stored.schoolYearId);
       years.set(student.id, { from: calendar.schoolYear.start, to: calendar.schoolYear.end });
       const input: PlanInput = { student, calendar, stored, today };
       units.push(
@@ -260,11 +342,13 @@ export async function runCollector(opts: CollectorOptions): Promise<CollectorRes
       if (caps.finalMarks && (await (opts.finalsDue ?? finalsOncePerDay(db, manifest.timezone, now))(input))) {
         finals.push({ student, stored, subjectIds });
       }
-      if (dailyDetails && (await (opts.detailsDue ?? detailsOncePerDay(db, manifest.timezone, now))(input))) {
-        details.push({ student, stored, subjectIds });
-      }
+      const detailsDue = reads
+        ? readSchool
+        : await (opts.detailsDue ?? detailsOncePerDay(db, manifest.timezone, now))(input);
+      if (dailyDetails && detailsDue) details.push({ student, stored, subjectIds });
     }
     await flushRaw();
+    const currentWeek = weekStartOf(today, manifest.calendar.weekStart);
 
     // the planner's order across students: every student's standing weeks before anyone's gap
     units.sort((a, b) => SET_ORDER.indexOf(a.set) - SET_ORDER.indexOf(b.set));
@@ -278,8 +362,12 @@ export async function runCollector(opts: CollectorOptions): Promise<CollectorRes
       scope.weekStart = u.weeks[0] ?? null;
       const ref = studentRef(u.student);
       let keepBody: boolean;
+      const subjectsBefore = u.subjectIds.size;
       try {
         const lessons = caps.lessons ? await provider.getLessons!(session, ref, u.range, ctx) : [];
+        // the child's school week came back without a lesson: holidays the stored calendar does not know (a quarantine)
+        if (caps.lessons && u.set === 'standing' && u.weeks[0] === currentWeek && lessons.length === 0)
+          emptyWeek.add(u.student.id);
         const marks =
           caps.marksPerLesson === 'none' || caps.unattachedMarks
             ? await provider.getMarks!(session, ref, u.range, ctx)
@@ -300,6 +388,8 @@ export async function runCollector(opts: CollectorOptions): Promise<CollectorRes
           { range: u.range, lessons, marks, attendance, behaviour },
         );
         for (const k of Object.keys(stats) as (keyof UpsertStats)[]) stats[k] += s[k];
+        // a subject the stored list did not know: the school's reference data has changed
+        if (u.subjectIds.size > subjectsBefore) unknownSubject.add(u.student.id);
         if (s.held.length) {
           // the response would have removed all or many records: nothing was removed, the week stays unverified and
           // is asked for again tomorrow (design.md 8, 10.4); the admin hears of the first one (drift)
@@ -382,6 +472,8 @@ export async function runCollector(opts: CollectorOptions): Promise<CollectorRes
         await storeSubjects(db, d.student, d.stored.schoolYearId, await provider.getSubjects(session, ref, ctx), {
           details: true,
         });
+        await stampRead(db, d.student.id, 'school', now());
+        schoolRead.add(d.student.id);
       } catch (err) {
         if (err instanceof ProviderSchemaError) warnings.push('schema details');
         else if (err instanceof ProviderPolicyError && ctx.http.requestCount >= maxRequests) break;
@@ -395,6 +487,14 @@ export async function runCollector(opts: CollectorOptions): Promise<CollectorRes
     for (const student of students) {
       const year = years.get(student.id);
       if (year) await applySchoolDetails(db, student.id, year);
+    }
+    // what the weeks showed has changed is read by the next run (design.md 10.2); a calendar read today already, or a
+    // school read in this run, is not read again for it
+    for (const id of unknownSubject) if (!schoolRead.has(id)) await forgetRead(db, id, 'school');
+    for (const id of emptyWeek) {
+      if (calendarRead.has(id)) continue;
+      const { calendar: at } = await readStampsOf(db, id);
+      if (!at || localTime(at, manifest.timezone).date !== today) await forgetRead(db, id, 'calendar');
     }
   } catch (err) {
     failure = err;

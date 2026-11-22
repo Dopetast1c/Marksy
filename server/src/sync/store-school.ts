@@ -1,6 +1,6 @@
 import { manifestScale } from '@marksy/core';
 import type { AccountInfo, Calendar, FinalMark, ProviderManifest, StudentRef, Subject } from '@marksy/core';
-import { and, eq } from 'drizzle-orm';
+import { and, asc, desc, eq, lte } from 'drizzle-orm';
 import type { Db } from '../db/client';
 import {
   finalMarks,
@@ -19,8 +19,9 @@ import {
 import { dropUnlisted, linkFamily, rebalance } from './sources';
 import { normName } from './upsert';
 
-// Students, school years, terms, holidays, subjects and finals: what a run learns before it fetches any week. Every
-// run refreshes them; ids from the provider stay in external_id.
+// Students, school years, terms, holidays, subjects and finals: what a run learns before it fetches any week. A run
+// reads them again by the child's settings (design.md 10.2) and otherwise loads them from here; ids from the provider
+// stay in external_id.
 
 export type { StudentRow } from './readers';
 export { readableStudents, sourcedStudents } from './readers';
@@ -225,6 +226,56 @@ export async function storeCalendar(
     await tx.update(students).set({ gradingScaleId }).where(eq(students.id, student.id));
     return { schoolYearId, termIds };
   });
+}
+
+/**
+ * The stored calendar of the school year that contains `today` (or the last one that started), as the provider gave
+ * it: what a run uses when it does not read the calendar again (design.md 10.2). Null before the first read.
+ */
+export async function loadCalendar(
+  db: Db,
+  studentId: string,
+  today: string,
+): Promise<{ calendar: Calendar; stored: StoredCalendar } | null> {
+  const [year] = await db
+    .select()
+    .from(schoolYears)
+    .where(and(eq(schoolYears.studentId, studentId), lte(schoolYears.startDate, today)))
+    .orderBy(desc(schoolYears.startDate))
+    .limit(1);
+  if (!year) return null;
+  const t = await db.select().from(terms).where(eq(terms.schoolYearId, year.id)).orderBy(asc(terms.startDate));
+  const h = await db.select().from(holidays).where(eq(holidays.schoolYearId, year.id));
+  const calendar: Calendar = {
+    schoolYear: { externalId: year.externalId, label: year.label, start: year.startDate, end: year.endDate },
+    terms: t.map((x) => ({
+      externalId: x.externalId,
+      kind: x.kind,
+      index: x.index,
+      label: x.label,
+      start: x.startDate,
+      end: x.endDate,
+      ...(x.note && { note: x.note }),
+    })),
+    ...(h.length && {
+      holidays: h.map((x) => ({
+        from: x.startDate,
+        to: x.endDate,
+        ...(x.note && { note: x.note }),
+        ...(x.kind && { kind: x.kind }),
+      })),
+    }),
+  };
+  return { calendar, stored: { schoolYearId: year.id, termIds: new Map(t.map((x) => [x.externalId, x.id])) } };
+}
+
+/** The stored subjects of a child's school year: external id -> subjects.id */
+export async function loadSubjectIds(db: Db, studentId: string, schoolYearId: string): Promise<Map<string, string>> {
+  const rows = await db
+    .select({ id: subjects.id, externalId: subjects.externalId })
+    .from(subjects)
+    .where(and(eq(subjects.studentId, studentId), eq(subjects.schoolYearId, schoolYearId)));
+  return new Map(rows.map((r) => [r.externalId, r.id]));
 }
 
 /** Subject external id -> subjects.id */

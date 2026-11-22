@@ -205,8 +205,13 @@ export interface ProviderContext {
   log: Logger;                 // redacts credentials and tokens automatically
   now(): Date;                 // injectable for tests
   drift: DriftReporter;        // report unknown fields, new enum values, new error shapes
+  // reference data kept between runs per account (below)
+  memo<T>(kind: 'calendar' | 'school', key: string, fetch: () => Promise<T>,
+          opts?: { valid?(v: T): boolean; student?: string }): Promise<T>;
 }
 ```
+
+**Reference data between runs (`ctx.memo`).** Most runs read nothing but the weeks (`design.md` 10.2): the collector takes the calendar and the subjects from its database and calls `getCalendar()`, `getSubjects()` and the school details only when the child's sync mode or a change asks for them. When your requests need something the canonical model does not hold (a system's own id of a week, the student's class id behind a URL), fetch it through `ctx.memo(kind, key, fetch)`: the value is kept per diary account and returned while it is fresh, and fetched again when the collector reads that kind in this run (`calendar` for the year, terms, holidays, week lists and classes; `school` for subjects and school details) or when `valid(value)` says it no longer serves (a week list that ends before today). Keep only what your mapper needs, as JSON: ids, dates, enum values, never a name or a free text that may hold one (the one exception: a calendar's school-wide note on a term or holidays, which the stored calendar keeps as `note` anyway). A value that is one student's own (their class, their subjects) passes `{ student: externalId }`: it is deleted with the student and when the account no longer lists them. Without a store (the conformance suite, a first read) `memo` simply calls `fetch`. A provider that needs nothing beyond the canonical data does not use it.
 
 **Everything is per student.** Every method takes a `StudentRef` and returns that student's data for the current school year: calendar, subjects, lessons, bells, week template. Nothing is shared between the children of a family, even in the same school: classes differ in shift, bells (grade 1 often has its own) and subgroups, and children may attend different schools. Holidays or terms that apply only to some grades are applied by the provider, so each student's calendar is already correct; a remark the provider cannot apply reliably travels as `note`. School-wide catalogues a system may have (rooms, staff, all bell schedules, the whole class's timetable with every subgroup) stay inside the provider: it resolves them into labels on the student's own records.
 
@@ -294,7 +299,7 @@ export interface WeekTemplate {
 }
 ```
 
-**Room, subgroup, teacher and end time of a lesson.** A provider returns lessons as the diary has them and the student's week template once a day; it does not join the two. The server fills a lesson's `room`, `groupLabel` and `teacherName` from the stored template, in this order, and stops at the first match:
+**Room, subgroup, teacher and end time of a lesson.** A provider returns lessons as the diary has them and the student's week template when the collector reads the school's details (design.md 10.2); it does not join the two. The server fills a lesson's `room`, `groupLabel` and `teacherName` from the stored template, in this order, and stops at the first match:
 
 1. weekday, slot and `templateRef` → room, subgroup and teacher;
 2. only `templateRef` (the lesson was moved to another slot) → subgroup and teacher, no room;
@@ -521,8 +526,9 @@ A snapshot test in `packages/core` locks this table for `by-10`: if a change to 
 
 The scheduler is generic and reads the provider's `limits`:
 
-- hourly runs only during each child's school day (an hour before the first lesson to two hours after the last, from the child's timetable and bells; `syncWindow` only when the day's times are unknown), with a random offset; scope: the current week, the next week when the provider has `futureTimetable` (the homework set ahead, read before the weekend) and the previous week, then whatever was missed since the last success, plus final marks once a day (`design.md` 10.4);
-- inside those school-day runs, every week of the current term that was not fetched for six days, for change detection (no evening slot: a provider has nothing to configure for it);
+- at most hourly runs only during each child's school day (an hour before the first lesson to two hours after the last, from the child's timetable and bells; `syncWindow` only when the day's times are unknown), with a random offset; scope: the current week, the next week when the provider has `futureTimetable` (the homework set ahead, read before the weekend) and the previous week, then whatever was missed since the last success, plus final marks, each as often as the child's sync mode asks (`design.md` 10.2, 10.4);
+- the account, the calendar, the subjects and the school details are read once a day (the account) or monthly and on a change (the rest), not in every run; what a provider needs of them between runs it keeps through `ctx.memo` (section 4). Only the settings your capabilities allow are offered to the family (no next week without `futureTimetable`, no finals without `finalMarks`);
+- inside those school-day runs, every week of the current term not fetched for as long as the child's `termRecheck` (a week by default), for change detection (no evening slot: a provider has nothing to configure for it);
 - the collector asks for one `fetchUnit` at a time (a week, or the whole term for `term` providers) and counts each as verified only when it was stored completely; the run stops at `maxRequestsPerRun` and the rest waits for the next run;
 - never more than one `login()` per `minLoginIntervalMinutes` per account, shared by scheduled, manual and re-scan runs;
 - a child listed by several accounts (two parents' logins, possibly in two families) is read through one of them only; the others call `getAccount()` once a school day to confirm they still show the child;

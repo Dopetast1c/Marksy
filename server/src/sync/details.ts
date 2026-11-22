@@ -8,8 +8,8 @@ import { normName } from './upsert';
 import type { StoredCalendar, StudentRow } from './store-school';
 import { subjects } from '../db/schema';
 
-// School details of one child (docs/providers.md 4, design.md 8): bells and the regular week, read once a day and
-// replaced on every read, and what they add to the lessons. A provider returns lessons as the diary has them; the room,
+// School details of one child (docs/providers.md 4, design.md 8): bells and the regular week, read with the school's
+// reference data (design.md 10.2) and replaced on every read, and what they add to the lessons. A provider returns lessons as the diary has them; the room,
 // subgroup and teacher of a lesson come from the child's own regular week, the end time from the bells.
 
 export async function storeBells(db: Db, student: StudentRow, yearId: string, list: BellSchedule[], now: Date) {

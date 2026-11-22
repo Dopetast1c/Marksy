@@ -57,7 +57,9 @@ describe('runSync', () => {
     expect(r).toMatchObject({ outcome: 'ran', status: 'success' });
     const [run] = await runs();
     expect(run).toMatchObject({ kind: 'backfill', trigger: 'schedule', status: 'success' });
-    expect(run!.scope.sets).toMatchObject({ standing: 6, backfill: 2 });
+    // the child with marks: the current, the next and the previous week; the child without marks (noMarks): the
+    // current one only, the previous comes as backfill
+    expect(run!.scope.sets).toMatchObject({ standing: 4, backfill: 3 });
     expect(await account(a.id)).toMatchObject({ lastSuccessAt: at('2025-09-17 22:00'), consecutiveFailures: 0 });
   });
 
@@ -140,25 +142,41 @@ describe('runSync', () => {
     });
   });
 
+  it('an ordinary school-day run is the login and the current week of the children due now', async () => {
+    const a = await setup();
+    // Tuesday 16 Sep: the first run of the day reads everything
+    await sync(a.id, '2025-09-16 08:30');
+    // an hour later: the child with marks is due (hourly), the child without marks only after the lessons; the
+    // account, the calendar, the subjects and the neighbouring weeks were read today already
+    const r = await sync(a.id, '2025-09-16 09:50');
+    expect(r).toMatchObject({ outcome: 'ran', status: 'success', requests: 2 });
+    const [, second] = await runs();
+    expect(second!.kind).toBe('scheduled');
+    expect(second!.scope.student_ids).toHaveLength(1);
+    expect(second!.scope.sets).toEqual({ standing: 1 });
+    // the button reads every child, as their settings ask: the login and each child's current week
+    expect(await sync(a.id, '2025-09-16 11:00', { trigger: 'user:someone' })).toMatchObject({ requests: 3 });
+    expect((await runs())[2]!.scope.student_ids).toHaveLength(2);
+  });
+
   it('catches up a long backlog over several runs, freshest weeks first', async () => {
     const a = await setup();
-    const cap = { config: { maxRequestsPerRun: 16 } };
-    // login, profile, year and subjects per pupil = 6; 6 standing weeks (the previous, the current and the next one,
-    // the demo diary shows lessons ahead); 2 finals; the school details of the day take 3 requests per pupil (bells,
-    // regular week, subjects) and fit into what is left over the first runs
+    const cap = { config: { maxRequestsPerRun: 8 } };
+    // the first run reads the account, each child's calendar and subjects (5 with the login): room for two weeks
     await sync(a.id, '2025-10-15 15:00', cap);
     const weeks = async () => (await db.select().from(syncCoverage)).map((c) => c.weekStart);
-    expect(new Set(await weeks())).toEqual(new Set(['2025-10-13', '2025-10-20', '2025-10-06']));
+    expect(new Set(await weeks())).toEqual(new Set(['2025-10-13', '2025-10-20']));
     // an hour later, outside the window: a catch-up takes the newest missing weeks
     expect(await sync(a.id, '2025-10-15 16:01', cap)).toMatchObject({ status: 'success' });
     expect((await runs())[1]!.kind).toBe('catchup');
     const after2 = new Set(await weeks());
-    expect(after2.has('2025-09-29')).toBe(true);
+    expect(after2.has('2025-10-06')).toBe(true);
     expect(after2.has('2025-09-01')).toBe(false);
-    // every run takes the standing weeks again, so 16 requests leave room for 2 older weeks per run
-    for (const t of ['2025-10-15 17:02', '2025-10-15 18:03', '2025-10-15 19:04']) await sync(a.id, t, cap);
-    // the seven school weeks so far and the next one
-    expect(new Set(await weeks()).size).toBe(8);
+    // the school details still waiting take their share until they are in; then a run is the login and the weeks
+    for (const t of ['2025-10-15 17:02', '2025-10-15 18:03', '2025-10-15 19:04', '2025-10-15 20:05'])
+      await sync(a.id, t, cap);
+    // the seven school weeks so far and the next one of the child with marks, the seven of the child without
+    expect(await weeks()).toHaveLength(15);
     // nothing left: the next evening tick does nothing
     expect(await sync(a.id, '2025-10-15 21:06', cap)).toMatchObject({ decision: { reason: 'outside_window' } });
   });

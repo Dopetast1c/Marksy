@@ -1,5 +1,13 @@
 import { ProviderPolicyError } from '../providers/errors';
-import type { DiaryProvider, DriftEvent, DriftReporter, ProviderContext, Session } from '../providers/types';
+import type {
+  DiaryProvider,
+  DriftEvent,
+  DriftReporter,
+  MemoKind,
+  MemoOptions,
+  ProviderContext,
+  Session,
+} from '../providers/types';
 import { redacting, silentLogger } from './logger';
 import { createThrottledClient } from './throttled-client';
 import type { ThrottledClientOptions } from './throttled-client';
@@ -46,16 +54,27 @@ export function createMemoryDrift(): DriftReporter & { readonly events: readonly
   };
 }
 
+/** Where ctx.memo keeps its values between runs (the server's provider_memo), and which kinds this run reads again */
+export interface MemoStore {
+  load(key: string): Promise<{ kind: MemoKind; value: unknown } | null>;
+  /** `student`: the externalId of the student whose own value this is (MemoOptions.student) */
+  save(kind: MemoKind, key: string, value: unknown, student?: string): Promise<void>;
+  /** The kinds the collector reads again in this run: kept values of these are fetched again once */
+  refresh: ReadonlySet<MemoKind>;
+}
+
 export interface RunContext {
   ctx: ProviderContext;
   drift: ReturnType<typeof createMemoryDrift>;
   /** provider.login, at most once per run */
   login(credentials: Record<string, string>): Promise<Session>;
+  /** Gives ctx.memo its store (a login opened before the collector gets one once the run exists) */
+  useMemo(store: MemoStore | null): void;
 }
 
 export function createRunContext(
   provider: DiaryProvider,
-  options: Omit<ThrottledClientOptions, 'manifest'> & { now?: () => Date } = {},
+  options: Omit<ThrottledClientOptions, 'manifest'> & { now?: () => Date; memo?: MemoStore } = {},
 ): RunContext {
   // whatever logger the server passes, providers only ever see a redacting one
   const log = options.log ? redacting(options.log) : silentLogger;
@@ -64,6 +83,9 @@ export function createRunContext(
   // path: none of them is ever handed to onResponse, which stores bodies
   let inLogin = false;
   const observe = options.onResponse;
+  let store: MemoStore | null = options.memo ?? null;
+  // a key fetched in this run is not fetched again by it, whatever its kind asks
+  const fresh = new Set<string>();
   const ctx: ProviderContext = {
     http: createThrottledClient({
       ...options,
@@ -74,11 +96,24 @@ export function createRunContext(
     log,
     now: options.now ?? (() => new Date()),
     drift,
+    async memo<T>(kind: MemoKind, key: string, fetch: () => Promise<T>, opts: MemoOptions<T> = {}): Promise<T> {
+      if (!store) return fetch();
+      const kept = await store.load(key);
+      const due = store.refresh.has(kind) && !fresh.has(key);
+      if (kept && kept.kind === kind && !due && (opts.valid?.(kept.value as T) ?? true)) return kept.value as T;
+      const value = await fetch();
+      fresh.add(key);
+      await store.save(kind, key, value, opts.student);
+      return value;
+    },
   };
   let loggedIn = false;
   return {
     ctx,
     drift,
+    useMemo(next) {
+      store = next;
+    },
     async login(credentials) {
       if (loggedIn) throw new ProviderPolicyError('One login per run');
       loggedIn = true;

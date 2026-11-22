@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { ProviderPolicyError } from '../providers/errors';
-import type { DiaryProvider } from '../providers/types';
+import type { DiaryProvider, MemoKind } from '../providers/types';
 import { providerManifest } from '../providers/manifest';
 import { sampleManifest } from '../testing/samples';
 import { createAllowList } from './allow-list';
 import { createLogger } from './logger';
 import { createMemoryDrift, createRunContext } from './run-context';
+import type { MemoStore } from './run-context';
 import { createThrottledClient } from './throttled-client';
 import type { ObservedResponse, Transport, TransportRequest } from './throttled-client';
 
@@ -190,6 +191,36 @@ describe('run context', () => {
     expect(lines).toEqual([
       ['login', { password: '[redacted]', nested: { Authorization: '[redacted]', week: 3 }, path: '/me' }],
     ]);
+  });
+
+  it('ctx.memo keeps reference data between runs and reads it again when its kind is due or it no longer serves', async () => {
+    const kept = new Map<string, { kind: MemoKind; value: unknown }>();
+    const store = (refresh: MemoKind[]): MemoStore => ({
+      refresh: new Set(refresh),
+      load: async (key) => kept.get(key) ?? null,
+      save: async (kind, key, value) => void kept.set(key, { kind, value }),
+    });
+    const provider = { manifest: sampleManifest } as unknown as DiaryProvider;
+    let fetched = 0;
+    const weeks = async () => ({ n: ++fetched });
+    // without a store: every call asks
+    const bare = createRunContext(provider);
+    await bare.ctx.memo('calendar', 'weeks', weeks);
+    await bare.ctx.memo('calendar', 'weeks', weeks);
+    expect(fetched).toBe(2);
+    // a run that reads the calendar again asks once, however often the provider wants the value
+    fetched = 0;
+    const first = createRunContext(provider, { memo: store(['calendar']) });
+    await first.ctx.memo('calendar', 'weeks', weeks);
+    expect(await first.ctx.memo('calendar', 'weeks', weeks)).toEqual({ n: 1 });
+    expect(fetched).toBe(1);
+    // the next run reads only the school again: the weeks come from the store
+    const next = createRunContext(provider);
+    next.useMemo(store(['school']));
+    expect(await next.ctx.memo('calendar', 'weeks', weeks)).toEqual({ n: 1 });
+    expect(fetched).toBe(1);
+    // a kept value that no longer serves is read again
+    expect(await next.ctx.memo('calendar', 'weeks', weeks, { valid: () => false })).toEqual({ n: 2 });
   });
 
   it('records each drift once', () => {

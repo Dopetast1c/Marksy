@@ -5,7 +5,7 @@ import {
   ProviderBlockedError,
   ProviderUnavailableError,
 } from '@marksy/core';
-import type { HttpResponse, ProviderContext } from '@marksy/core';
+import type { HttpResponse, MemoKind, MemoStore, ProviderContext } from '@marksy/core';
 import { describe, expect, it } from 'vitest';
 import { byEschools, failure, knownErrorShape } from './index';
 import { readdirSync, readFileSync } from 'node:fs';
@@ -90,6 +90,52 @@ describe('errors', () => {
     const session = await run.login({ login: 'x', password: 'y' });
     await byEschools.getAccount(session, run.ctx);
     expect(seen[1]).toMatchObject({ authorization: 'tok', 'user-agent': byEschools.manifest.network.userAgent });
+  });
+});
+
+describe('reference data kept between runs (ctx.memo)', () => {
+  it('a week of lessons costs one request once the list of weeks is kept; the kept list holds no free text', async () => {
+    const kept = new Map<string, { kind: MemoKind; value: unknown }>();
+    const store = (refresh: MemoKind[]): MemoStore => ({
+      refresh: new Set(refresh),
+      load: async (key) => kept.get(key) ?? null,
+      save: async (kind, key, value) => void kept.set(key, { kind, value }),
+    });
+    const monday = Date.parse('2025-10-12T21:00:00Z'); // 13 October, 00:00 in Minsk
+    const week = {
+      uuid: 'w-1',
+      summary: 'a note',
+      time_activity_id: 'q-1',
+      start_ts: monday,
+      end_ts: monday + 7 * 864e5 - 1,
+    };
+    const student = { externalId: 'p', fullName: 'Pupil', schoolId: 's', classExternalId: 'c' };
+    const range = { from: '2025-10-13', to: '2025-10-19' };
+    const run = async (refresh: MemoKind[]) => {
+      const calls: string[] = [];
+      const r = createRunContext(byEschools, {
+        memo: store(refresh),
+        now: () => new Date('2025-10-15T08:00:00Z'),
+        sleep: async () => undefined,
+        transport: async (req) => {
+          const path = new URL(req.url).pathname;
+          calls.push(path.split('/').at(-1)!);
+          if (req.method === 'POST')
+            return { status: 200, headers: {}, text: '{"auth_token":"t","refresh_token":"r"}' };
+          return { status: 200, headers: {}, text: JSON.stringify(path.endsWith('week_activities') ? [week] : []) };
+        },
+      });
+      const session = await r.login({ login: 'x', password: 'y' });
+      await byEschools.getLessons!(session, student, range, r.ctx);
+      return calls;
+    };
+    // the run that reads the calendar again
+    expect(await run(['calendar'])).toEqual(['parent', 'week_activities', 'lessons']);
+    expect(kept.get('week_activities')?.value).toEqual([
+      { uuid: 'w-1', time_activity_id: 'q-1', start_ts: week.start_ts, end_ts: week.end_ts },
+    ]);
+    // an ordinary run: the login and the week
+    expect(await run([])).toEqual(['parent', 'lessons']);
   });
 });
 

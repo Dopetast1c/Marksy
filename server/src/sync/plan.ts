@@ -1,5 +1,5 @@
-import { addDays, daysBetween, minDate, weekStartOf, weekdayOf } from '@marksy/core';
-import type { DateRange, ISODate } from '@marksy/core';
+import { addDays, daysBetween, minDate, termRecheckDays, weekStartOf, weekdayOf } from '@marksy/core';
+import type { DateRange, ISODate, SyncCadence } from '@marksy/core';
 import type { PlanSet, WeekRequest } from './collector';
 import { localTime, parseWindow } from './time';
 import type { LocalTime } from './time';
@@ -9,8 +9,12 @@ import type { LocalTime } from './time';
 // for a week looks exactly like this to the planner: an old last success and weeks that were never verified.
 
 const DAY_MS = 86_400_000;
-/** A week of the current term verified longer ago than this is fetched again inside the school day (re-scan) */
-export const RESCAN_AGE_DAYS = 6;
+/**
+ * The weeks around today a child's settings decide on (SyncCadence): the previous and the next week and the age at
+ * which a week of the term is read again. EVERY_RUN reads both neighbours in every run and checks the term weekly.
+ */
+export type WeekCadence = Pick<SyncCadence, 'previousWeek' | 'nextWeek' | 'termRecheck'>;
+export const EVERY_RUN: WeekCadence = { previousWeek: 'everyRun', nextWeek: 'everyRun', termRecheck: 'weekly' };
 /**
  * A finished term closes this many days after its end, or earlier once every subject with marks in it has its final
  * (D61). Until then its last weeks keep the stale-week re-check; once closed, no automatic read fetches its weeks.
@@ -68,6 +72,8 @@ export interface WeekContext extends CalendarRules {
   today: ISODate;
   /** Local date of a moment, in the school's time zone */
   localDate(at: Date): ISODate;
+  /** Local minutes of the day of a moment, in the school's time zone */
+  localMinutes(at: Date): number;
   lastSuccessAt: Date | null;
   /** The provider shows lessons ahead (capabilities.futureTimetable): the next school week is a standing week too */
   readsAhead?: boolean;
@@ -161,11 +167,12 @@ function inClosedTerm(w: ISODate, state: StudentPlanState, today: ISODate): bool
  * The stale-week re-check: weeks verified longer ago than the re-scan age, of the current term and of the last weeks
  * of a finished term that has not closed yet (late marks come in its last days). A closed term has none.
  */
-function staleTermWeeks(state: StudentPlanState, weeks: ISODate[], ctx: WeekContext): ISODate[] {
+function staleTermWeeks(state: StudentPlanState, weeks: ISODate[], ctx: WeekContext, days: number | null): ISODate[] {
+  if (days === null) return [];
   const due = (w: ISODate) => {
     const at = state.coverage.get(w);
-    // never verified: that is backfill
-    return !!at && ageDays(at, ctx.now) > RESCAN_AGE_DAYS;
+    // never verified: that is backfill. A little early still counts: a weekly check reads a week again on its weekday
+    return !!at && ageDays(at, ctx.now) > days - 0.5;
   };
   return weeks.filter(
     (w) =>
@@ -178,13 +185,29 @@ function staleTermWeeks(state: StudentPlanState, weeks: ISODate[], ctx: WeekCont
 }
 
 /**
- * The weeks of one student in fetch order: standing (the current week, the next school week where the diary shows
- * lessons ahead, and the previous one), the gap since the last success (newest first), the re-scan of stale weeks
- * (the current term, the last weeks of a finished term until it closes), then the backfill of never-verified weeks.
- * The re-scan has no slot of its own: it fills the school-day runs (design.md 10.2, D55). A verified week of a closed
- * term is in no set (D61), and a week the mass-removal guard held today waits for tomorrow (design.md 8).
+ * Today is the child's last school day of its week (Monday's homework is set on it), or a day without school, whose
+ * one run (aheadDue) is there to read the week school starts again
  */
-export function selectWeeks(state: StudentPlanState, ctx: WeekContext): WeekRequest[] {
+export function lastSchoolDayOfWeek(cal: PlanCalendar, ctx: WeekContext): boolean {
+  if (!isSchoolDay(ctx.today, cal, ctx)) return true;
+  const end = addDays(weekStartOf(ctx.today, ctx.weekStart), 6);
+  for (let d = addDays(ctx.today, 1); d <= end; d = addDays(d, 1)) if (isSchoolDay(d, cal, ctx)) return false;
+  return true;
+}
+
+/**
+ * The weeks of one student in fetch order: standing (the current week, the next school week where the diary shows
+ * lessons ahead, and the previous one, as the child's settings ask), the gap since the last success (newest first),
+ * the re-scan of stale weeks (the current term, the last weeks of a finished term until it closes), then the backfill
+ * of never-verified weeks. The re-scan has no slot of its own: it fills the school-day runs (design.md 10.2, D55). A
+ * verified week of a closed term is in no set (D61), and a week the mass-removal guard held today waits for tomorrow
+ * (design.md 8).
+ */
+export function selectWeeks(
+  state: StudentPlanState,
+  ctx: WeekContext,
+  cadence: WeekCadence = EVERY_RUN,
+): WeekRequest[] {
   const cal = state.calendar;
   const weeks = weeksSoFar(cal, ctx);
   const current = weekStartOf(ctx.today, ctx.weekStart);
@@ -197,13 +220,27 @@ export function selectWeeks(state: StudentPlanState, ctx: WeekContext): WeekRequ
     taken.add(w);
     out.push({ weekStart: w, set });
   };
+  const readToday = (w: ISODate) => {
+    const at = state.coverage.get(w);
+    return !!at && ctx.localDate(at) === ctx.today;
+  };
 
-  // every run reads the next school week too: teachers set Monday's homework on Friday, and no run reads at the
-  // weekend or in the holidays but the one of aheadDue (D55)
-  const next = ctx.readsAhead ? nextSchoolWeek(cal, ctx) : null;
+  // the next school week: teachers set Monday's homework on the last school day, and no run reads at the weekend or
+  // in the holidays but the one of aheadDue (D55); `daily` reads it in the day's first run and every run of that day
+  const next = ctx.readsAhead && cadence.nextWeek !== 'off' ? nextSchoolWeek(cal, ctx) : null;
+  const wantNext =
+    !!next &&
+    (cadence.nextWeek === 'everyRun' ||
+      (cadence.nextWeek === 'daily' && (!readToday(next) || lastSchoolDayOfWeek(cal, ctx))) ||
+      (cadence.nextWeek === 'lastSchoolDay' && lastSchoolDayOfWeek(cal, ctx)));
+  // the previous week for late marks; `off` still reads it once after it ended (the gap below)
+  const previous = addDays(current, -7);
+  const wantPrevious =
+    weeks.includes(previous) &&
+    (cadence.previousWeek === 'everyRun' || (cadence.previousWeek === 'daily' && !readToday(previous)));
   if (weeks.includes(current)) add(current, 'standing');
-  if (next) add(next, 'standing');
-  if (weeks.includes(addDays(current, -7))) add(addDays(current, -7), 'standing');
+  if (next && wantNext) add(next, 'standing');
+  if (wantPrevious) add(previous, 'standing');
 
   // a week is caught up once it was fetched after it ended
   if (ctx.lastSuccessAt) {
@@ -215,7 +252,7 @@ export function selectWeeks(state: StudentPlanState, ctx: WeekContext): WeekRequ
     }
   }
 
-  for (const w of staleTermWeeks(state, weeks, ctx)) add(w, 'rescan');
+  for (const w of staleTermWeeks(state, weeks, ctx, termRecheckDays(cadence.termRecheck))) add(w, 'rescan');
 
   for (const w of weeks) if (!state.coverage.has(w)) add(w, 'backfill');
   return out;
@@ -225,10 +262,14 @@ export function selectWeeks(state: StudentPlanState, ctx: WeekContext): WeekRequ
 export function termBookkeeping(
   state: StudentPlanState,
   ctx: WeekContext,
+  cadence: WeekCadence = EVERY_RUN,
 ): { currentTermId: string | null; currentFresh: boolean } {
   const weeks = weeksSoFar(state.calendar, ctx);
   const current = [...state.calendar.terms].filter((t) => t.start <= ctx.today && t.end >= ctx.today)[0];
-  const stale = current ? staleTermWeeks(state, weeks, ctx).filter((w) => overlaps(w, current)) : [];
+  const days = termRecheckDays(cadence.termRecheck);
+  // a term nobody checks again (termRecheck off) is never "fresh"
+  if (days === null) return { currentTermId: current?.id ?? null, currentFresh: false };
+  const stale = current ? staleTermWeeks(state, weeks, ctx, days).filter((w) => overlaps(w, current)) : [];
   return { currentTermId: current?.id ?? null, currentFresh: !!current && stale.length === 0 };
 }
 
