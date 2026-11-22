@@ -432,7 +432,9 @@ With a pinned channel, or when the updater is stopped:
 ./marksy.sh up
 ```
 
-Take a backup first (`./marksy.sh backup`). The socket guard is updated this way too: the updater replaces every other container, and the guard follows the next time you run `up`.
+Take a backup first (`./marksy.sh backup`). `pull` always asks the registry (`--policy always`): the images keep their channel tag, so a pull of only what is missing would keep the old release. The socket guard is updated this way too: the updater replaces every other container, and the guard follows the next time you run `up`.
+
+`marksy.sh` and `marksy.ps1` live on the host and are not replaced by an update. A command they do not know is passed to the server's command line (`marksy <command>`), so a command a later release adds, such as `diag marks`, works with the files you have.
 
 ## 17. Status and health
 
@@ -495,5 +497,5 @@ Then the manual runs against the real diary from the development computer (`pnpm
 | A backup fails | `./marksy.sh status` shows when; check the free space and the owner of `BACKUP_DIR` (id 1000) |
 | A release is out but not installed | `./marksy.sh update status`: paused, quiet hours, a diary read still running, a refused signature, an attempt that stopped less than an hour ago, or a release rolled back before (`update history`) |
 | `update history` says *rolled_back* | the new release did not start; the previous one runs. `./marksy.sh logs server` shows why; a fixed release installs by itself |
-| `update history` says *refused_signature* | the image was not signed by this project's release workflow; nothing was installed, and it is checked again an hour later. If it stays refused, report it as an issue |
+| `update history` says *refused_signature* | the image was not signed by this project's release workflow, or the signature could not be checked; nothing was installed, and it is checked again an hour later. The reason says which: `x509: certificate signed by unknown authority` was the updater of 1.0.0 and 1.0.1 itself (its image lacked the root certificates cosign needs): install once by hand (*Updating by hand*), later updates come by themselves. If it stays refused otherwise, report it as an issue |
 | The updater says the free space is too low | remove old backups you copied elsewhere, or `docker image prune` |

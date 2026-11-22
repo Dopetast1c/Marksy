@@ -35,7 +35,8 @@ switch ($Command) {
   }
   'up' { NeedEnv; Compose (@('up', '-d') + $Rest) }
   'stop' { NeedEnv; Compose (@('stop') + $Rest) }
-  'pull' { NeedEnv; Compose (@('pull') + $Rest) }
+  # always: the images keep their channel tag (:1), so "pull what is missing" would never fetch a new release
+  'pull' { NeedEnv; Compose (@('pull', '--policy', 'always') + $Rest) }
   'ps' { NeedEnv; Compose @('ps') }
   'logs' { NeedEnv; Compose (@('logs', '--tail', '200', '-f') + $Rest) }
   'status' {
@@ -78,5 +79,7 @@ switch ($Command) {
     elseif ($Rest[0] -eq 'off') { & docker compose --env-file $EnvFile -f docker-compose.prod.yml --profile tunnel stop cloudflared }
     else { Write-Error 'tunnel on|off'; exit 2 }
   }
-  default { Get-Content $PSCommandPath | Select-Object -Skip 0 -First 7 }
+  'help' { Get-Content $PSCommandPath | Select-Object -Skip 0 -First 7 }
+  # any other command is the server's (marksy <command>): a command a later release adds works with this file as it is
+  default { NeedEnv; Compose (@('exec', 'server', 'node', '/app/dist/marksy.mjs', $Command) + $Rest) }
 }
