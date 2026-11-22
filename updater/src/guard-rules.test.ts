@@ -37,12 +37,19 @@ const lookup: GuardLookup = {
           ? { ...project }
           : null,
   serviceContainers: async (p, s) => (p === 'marksy-prod' && s === 'backup' ? [backup1] : []),
-  imageNames: async (id) =>
-    id === 'sha256:aaaaaaaaaaaa'
-      ? [`${PREFIX}server:1`, `${PREFIX}server@sha256:${'1'.repeat(64)}`]
-      : id === 'sha256:bbbbbbbbbbbb'
-        ? ['postgres:16']
-        : null,
+  // Docker resolves a short id to the image's full one
+  image: async (ref) => {
+    const full = (c: string) => `sha256:${c.repeat(64)}`;
+    if (ref === 'sha256:aaaaaaaaaaaa')
+      return { id: full('a'), names: [`${PREFIX}server:1`, `${PREFIX}server@sha256:${'1'.repeat(64)}`] };
+    if (ref === 'sha256:bbbbbbbbbbbb') return { id: full('b'), names: ['postgres:16'] };
+    if (ref === 'sha256:cccccccccccc') return { id: full('c'), names: [] };
+    if (ref === 'sha256:dddddddddddd') return { id: full('d'), names: [] };
+    return null;
+  },
+  // a nameless image the server container still runs (the release before, after the channel tag moved on), by its
+  // full id only
+  imageInUse: async (fullId) => fullId === `sha256:${'c'.repeat(64)}`,
   networkLabels: async (id) =>
     id === 'marksy-prod_edge' || id === 'marksy-prod_docker'
       ? project
@@ -162,6 +169,12 @@ describe('the socket guard', () => {
     expect((await ask('POST', '/images/sha256:aaaaaaaaaaaa/tag', `repo=${PREFIX}server&tag=1`)).allow).toBe(true);
     expect((await ask('POST', '/images/sha256:aaaaaaaaaaaa/tag', 'repo=evil/server&tag=1')).allow).toBe(false);
     expect((await ask('POST', '/images/sha256:bbbbbbbbbbbb/tag', `repo=${PREFIX}server&tag=1`)).allow).toBe(false);
+    // an image with no name left (Docker's containerd store): Marksy's only while a Marksy container runs it
+    expect((await ask('GET', '/images/sha256:cccccccccccc/json')).allow).toBe(true);
+    expect((await ask('POST', '/images/sha256:cccccccccccc/tag', `repo=${PREFIX}server&tag=1`)).allow).toBe(true);
+    expect((await ask('POST', '/images/sha256:cccccccccccc/tag', 'repo=evil/server&tag=1')).allow).toBe(false);
+    expect((await ask('GET', '/images/sha256:dddddddddddd/json')).allow).toBe(false);
+    expect((await ask('DELETE', '/images/sha256:dddddddddddd')).allow).toBe(false);
     expect((await ask('DELETE', `/images/${PREFIX}server:1.0.0`)).allow).toBe(true);
     expect((await ask('DELETE', '/images/postgres:16')).allow).toBe(false);
     expect((await ask('POST', '/images/load')).allow).toBe(false);

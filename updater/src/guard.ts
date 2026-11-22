@@ -26,7 +26,7 @@ function readBody(req: IncomingMessage): Promise<Buffer> {
   });
 }
 
-/** One request to the Docker socket, its whole JSON answer or null on 404 */
+/** One request to the Docker socket, its whole JSON answer or null on 404; any other failure throws (the guard refuses) */
 function dockerJson(socketPath: string, path: string): Promise<unknown> {
   return new Promise((resolve, reject) => {
     const r = request({ socketPath, path, method: 'GET' }, (res) => {
@@ -34,6 +34,9 @@ function dockerJson(socketPath: string, path: string): Promise<unknown> {
       res.on('data', (c: Buffer) => chunks.push(c));
       res.on('end', () => {
         if (res.statusCode === 404) return resolve(null);
+        // an error answer must never pass for an empty one (an image "without names")
+        if (!res.statusCode || res.statusCode >= 300)
+          return reject(new Error(`docker: ${res.statusCode ?? 'no status'}`));
         try {
           resolve(JSON.parse(Buffer.concat(chunks).toString('utf8')));
         } catch (err) {
@@ -54,12 +57,23 @@ export function socketLookup(socketPath: string): GuardLookup {
       } | null;
       return c ? (c.Config?.Labels ?? {}) : null;
     },
-    async imageNames(id) {
+    async image(id) {
       const i = (await dockerJson(socketPath, `/images/${encodeURIComponent(id)}/json`)) as {
+        Id?: string;
         RepoTags?: string[];
         RepoDigests?: string[];
       } | null;
-      return i ? [...(i.RepoTags ?? []), ...(i.RepoDigests ?? [])].filter((n) => !n.startsWith('<none>')) : null;
+      if (!i?.Id) return null;
+      return {
+        id: i.Id,
+        names: [...(i.RepoTags ?? []), ...(i.RepoDigests ?? [])].filter((n) => !n.startsWith('<none>')),
+      };
+    },
+    async imageInUse(fullId) {
+      const filters = JSON.stringify({ label: ['marksy.updatable=true'] });
+      const found = ((await dockerJson(socketPath, `/containers/json?all=1&filters=${encodeURIComponent(filters)}`)) ??
+        []) as { ImageID?: string }[];
+      return found.some((c) => c.ImageID === fullId);
     },
     async networkLabels(id) {
       const n = (await dockerJson(socketPath, `/networks/${encodeURIComponent(id)}`)) as {

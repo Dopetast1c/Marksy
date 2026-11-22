@@ -8,7 +8,8 @@
 //   that a create can never ask for a host path or a setting the operator did not give that service; or as the
 //   updater's own one-off swap container, in its one fixed shape;
 //   connect of such a container to a network of its own compose project;
-//   pull, inspect, tag, remove and list of Marksy images.
+//   pull, inspect, tag, remove and list of Marksy images (an image is Marksy's when all its names are, or when it has
+//   no name left and a Marksy container runs it).
 // Everything else is refused with 403.
 
 export const UPDATABLE = 'marksy.updatable';
@@ -41,7 +42,10 @@ export interface GuardRequest {
 
 export interface GuardLookup {
   containerLabels(id: string): Promise<Record<string, string> | null>;
-  imageNames(id: string): Promise<string[] | null>;
+  /** an image by name or id: its full id and every name it has (none on Docker's containerd store after an untag) */
+  image(ref: string): Promise<{ id: string; names: string[] } | null>;
+  /** whether a container labelled marksy.updatable=true runs the image with exactly this full id */
+  imageInUse(fullId: string): Promise<boolean>;
   networkLabels(id: string): Promise<Record<string, string> | null>;
   /** the updatable containers compose made for one service of one project, stopped ones included */
   serviceContainers(project: string, service: string): Promise<ExistingContainer[]>;
@@ -74,8 +78,13 @@ async function marksyImage(name: string, lookup: GuardLookup, prefix: string): P
   const ref = decodeURIComponent(name);
   if (isMarksyImage(ref, prefix)) return true;
   if (!/^(sha256:)?[a-f0-9]{12,64}$/.test(ref)) return false;
-  const names = await lookup.imageNames(ref);
-  return !!names && names.length > 0 && names.every((n) => isMarksyImage(n, prefix));
+  const found = await lookup.image(ref);
+  if (!found) return false;
+  if (found.names.length) return found.names.every((n) => isMarksyImage(n, prefix));
+  // an image without a name is Marksy's when a Marksy container runs it, matched by its full id: Docker's containerd
+  // store forgets every name of an image once its last tag moves to the next release, and the update still has to
+  // read and re-tag the image the services run (a rollback needs it)
+  return lookup.imageInUse(found.id);
 }
 
 type Spec = Record<string, unknown>;

@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import type { ContainerInspect, Docker, ImageInspect } from './docker';
 import { stateStore } from './history';
 import type { Attempt } from './history';
-import { createUpdater } from './procedure';
+import { createUpdater, keepTag } from './procedure';
 import type { ServerApi, UpdaterConfig } from './procedure';
 import { parseQuietHours } from './quiet';
 import type { Registry } from './registry';
@@ -27,7 +27,18 @@ class FakeDocker implements Docker {
   failPulls = false;
   /** creating a container whose name holds this fails, as a Docker error in the middle of an install */
   failCreate: string | null = null;
+  /**
+   * Docker's containerd store (Docker Desktop) behind the old socket guard: an image pulled by tag knows no registry
+   * digest, so it has no name left once its last tag moves away, and the guard refuses any request about it
+   */
+  forgetful = false;
   private n = 0;
+
+  private guard(ref: string) {
+    const img = this.images.get(ref);
+    if (this.forgetful && img && !img.RepoTags?.length && !img.RepoDigests?.length)
+      throw new Error(`GET /images/${ref}/json: 403 refused by the Marksy socket guard: not a Marksy image`);
+  }
 
   addRegistryImage(img: string, version: string, opts: { behaviour?: Behaviour; proxy?: string } = {}) {
     const digest = `sha256:${(img + version)
@@ -63,6 +74,8 @@ class FakeDocker implements Docker {
       void this.pull(ref);
       const image = this.images.get(this.registryImages.get(ref)!.Id)!;
       void this.tag(image.Id, `${PREFIX}${img}`, '1');
+      // `marksy.sh pull` takes the channel tag: on the containerd store the image is known by that tag only
+      if (this.forgetful) image.RepoDigests = [];
       const id = `c-${s}-${++this.n}`;
       this.containers.set(id, {
         Id: id,
@@ -117,6 +130,7 @@ class FakeDocker implements Docker {
     return c ? structuredClone(c) : null;
   }
   async inspectImage(ref: string) {
+    this.guard(ref);
     const img =
       this.images.get(ref) ??
       [...this.images.values()].find((i) => i.RepoTags?.includes(ref) || i.RepoDigests?.includes(ref));
@@ -133,6 +147,7 @@ class FakeDocker implements Docker {
     this.log.push(`pull ${ref.split('@')[0]!.slice(PREFIX.length)}`);
   }
   async tag(image: string, repo: string, tag: string) {
+    this.guard(image);
     const ref = `${repo}:${tag}`;
     for (const i of this.images.values()) i.RepoTags = (i.RepoTags ?? []).filter((t) => t !== ref);
     const img = this.images.get(image)!;
@@ -405,6 +420,55 @@ describe('the update procedure', () => {
 
   it('a pinned channel never updates', async () => {
     expect((await make({ channel: '1.0.0' }).check('poll'))?.outcome).toBe('up_to_date');
+  });
+
+  it('on a Docker that forgets an untagged image (containerd), the image the services run keeps its version as a name', async () => {
+    docker = new FakeDocker();
+    docker.forgetful = true;
+    for (const v of ['1.0.0', '1.1.0', '1.2.0'])
+      for (const img of ['server', 'web', 'updater'])
+        docker.addRegistryImage(img, v, { proxy: img === 'web' ? 'p1' : undefined });
+    docker.install('1.0.0');
+    const tags = ['1.0.0', '1.1.0'];
+    const r = await make({}, { server: tags, web: tags, updater: tags }).check('poll');
+    expect(r).toMatchObject({ outcome: 'updated', available: '1.1.0' });
+    for (const s of ['server', 'backup', 'web']) expect(docker.serviceImageVersion(s)).toBe('1.1.0');
+    expect(
+      (await docker.inspectImage(`${PREFIX}server:1.0.0`))?.Config.Labels?.['org.opencontainers.image.version'],
+    ).toBe('1.0.0');
+    // the next check reads the running image as always, and so does the next update
+    expect((await make({}, { server: tags, web: tags, updater: tags }).check('poll'))?.outcome).toBe('up_to_date');
+    const next = ['1.1.0', '1.2.0'];
+    expect((await make({}, { server: next, web: next, updater: next }).check('poll'))?.outcome).toBe('updated');
+    expect(docker.serviceImageVersion('server')).toBe('1.2.0');
+  });
+
+  it('on such a Docker a rollback still points the channel tag back at the release before', async () => {
+    docker = new FakeDocker();
+    docker.forgetful = true;
+    for (const img of ['server', 'web', 'updater']) docker.addRegistryImage(img, '1.0.0', { proxy: 'p1' });
+    docker.addRegistryImage('server', '1.3.0', { behaviour: 'unhealthy' });
+    docker.addRegistryImage('web', '1.3.0', { proxy: 'p1' });
+    docker.install('1.0.0');
+    const tags = ['1.0.0', '1.3.0'];
+    const r = await make({}, { server: tags, web: tags, updater: ['1.0.0'] }).check('poll');
+    expect(r?.outcome).toBe('rolled_back');
+    expect(docker.serviceImageVersion('server')).toBe('1.0.0');
+    expect((await docker.inspectImage(`${PREFIX}server:1`))?.Config.Labels?.['org.opencontainers.image.version']).toBe(
+      '1.0.0',
+    );
+    expect((await make({}, { server: tags, web: tags, updater: ['1.0.0'] }).check('poll'))?.outcome).toBe(
+      'rolled_back',
+    );
+  });
+});
+
+describe('the name an outgoing image keeps', () => {
+  it('is its version, or "previous" when it has none or it is the channel tag itself', () => {
+    expect(keepTag('1.0.2', '1')).toBe('1.0.2');
+    expect(keepTag(undefined, '1')).toBe('previous');
+    expect(keepTag('1.0.2', '1.0.2')).toBe('previous');
+    expect(keepTag('not a tag!', '1')).toBe('previous');
   });
 });
 
