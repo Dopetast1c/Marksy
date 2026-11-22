@@ -37,16 +37,19 @@ const lookup: GuardLookup = {
           ? { ...project }
           : null,
   serviceContainers: async (p, s) => (p === 'marksy-prod' && s === 'backup' ? [backup1] : []),
-  imageNames: async (id) =>
-    id === 'sha256:aaaaaaaaaaaa'
-      ? [`${PREFIX}server:1`, `${PREFIX}server@sha256:${'1'.repeat(64)}`]
-      : id === 'sha256:bbbbbbbbbbbb'
-        ? ['postgres:16']
-        : id === 'sha256:cccccccccccc' || id === 'sha256:dddddddddddd'
-          ? []
-          : null,
-  // a nameless image the server container still runs (the release before, after the channel tag moved on)
-  imageInUse: async (id) => id === 'sha256:cccccccccccc',
+  // Docker resolves a short id to the image's full one
+  image: async (ref) => {
+    const full = (c: string) => `sha256:${c.repeat(64)}`;
+    if (ref === 'sha256:aaaaaaaaaaaa')
+      return { id: full('a'), names: [`${PREFIX}server:1`, `${PREFIX}server@sha256:${'1'.repeat(64)}`] };
+    if (ref === 'sha256:bbbbbbbbbbbb') return { id: full('b'), names: ['postgres:16'] };
+    if (ref === 'sha256:cccccccccccc') return { id: full('c'), names: [] };
+    if (ref === 'sha256:dddddddddddd') return { id: full('d'), names: [] };
+    return null;
+  },
+  // a nameless image the server container still runs (the release before, after the channel tag moved on), by its
+  // full id only
+  imageInUse: async (fullId) => fullId === `sha256:${'c'.repeat(64)}`,
   networkLabels: async (id) =>
     id === 'marksy-prod_edge' || id === 'marksy-prod_docker'
       ? project
