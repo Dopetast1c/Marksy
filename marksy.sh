@@ -38,7 +38,8 @@ case "$command" in
     ;;
   up) need_env; compose up -d "$@" ;;
   stop) need_env; compose stop "$@" ;;
-  pull) need_env; compose pull "$@" ;;
+  # always: the images keep their channel tag (:1), so "pull what is missing" would never fetch a new release
+  pull) need_env; compose pull --policy always "$@" ;;
   ps) need_env; compose ps ;;
   logs) need_env; compose logs --tail 200 -f "$@" ;;
   status)
@@ -86,7 +87,9 @@ case "$command" in
       *) echo "tunnel on|off" >&2; exit 2 ;;
     esac
     ;;
-  *)
+  help | -h | --help)
     sed -n '2,9p' "$0"
     ;;
+  # any other command is the server's (marksy <command>): a command a later release adds works with this file as it is
+  *) need_env; compose exec server node /app/dist/marksy.mjs "$command" "$@" ;;
 esac

@@ -26,6 +26,12 @@ FROM cosign-${TARGETARCH} AS cosign
 FROM ${NODE_IMAGE}
 ARG MARKSY_VERSION=0.0.0
 ARG MARKSY_COMMIT=dev
+# cosign is a Go program and trusts only the system's root certificates, which the slim image lacks (Node brings its
+# own): without them it reaches no sigstore server over TLS, and every update is refused as unsigned (1.0.1)
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends ca-certificates \
+  && rm -rf /var/lib/apt/lists/* \
+  && test -s /etc/ssl/certs/ca-certificates.crt
 COPY --from=cosign --chmod=0755 /cosign /usr/local/bin/cosign
 COPY --from=build /src/updater/dist/marksy-updater.mjs /app/marksy-updater.mjs
 RUN printf '#!/bin/sh\nexec node /app/marksy-updater.mjs "$@"\n' > /usr/local/bin/marksy-updater \
