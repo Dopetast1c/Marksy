@@ -3581,7 +3581,7 @@ export interface paths {
                 };
             };
         };
-        /** A photo as the child’s avatar (admin, parent): JPEG, PNG or WebP up to 512 px, metadata removed (14.1) */
+        /** A photo as the child’s avatar (admin, parent): a square JPEG, PNG or WebP up to 512 px, metadata removed (14.1) */
         put: {
             parameters: {
                 query?: never;
@@ -3608,7 +3608,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Not a JPEG, PNG or WebP, or larger than 512 px */
+                /** @description Not a JPEG, PNG or WebP, larger than 512 px, or not square */
                 400: {
                     headers: {
                         [name: string]: unknown;

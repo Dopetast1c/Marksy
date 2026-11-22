@@ -249,6 +249,14 @@ describe('family', () => {
       (await mama.put(`/api/students/${shared}/photo`).set('Content-Type', 'image/jpeg').send(jpegWithGps(800, 800)))
         .status,
     ).toBe(400);
+    // the crop step sends a square: a photo of another shape is refused and the avatar stays as it was
+    const oblong = await mama
+      .put(`/api/students/${shared}/photo`)
+      .set('Content-Type', 'image/jpeg')
+      .send(jpegWithGps(512, 384));
+    expect(oblong.status).toBe(400);
+    expect(oblong.body.error.code).toBe('bad_image');
+    expect((await mama.get(`/api/students/${shared}/photo`)).status).toBe(200);
     expect((await mama.put(`/api/students/${shared}/photo`).send(Buffer.alloc(2_100_000))).status).toBe(413);
     // traits instead: the photo goes, the file too
     await mama.patch(`/api/students/${shared}`).send({ avatar: null });
