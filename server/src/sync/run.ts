@@ -1,14 +1,15 @@
-import type { DiaryProvider, ISODate, Logger, Transport } from '@marksy/core';
+import type { DiaryProvider, ISODate, Logger, SyncCadence, Transport } from '@marksy/core';
 import { getProvider } from '@marksy/registry';
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, max } from 'drizzle-orm';
 import type { Db } from '../db/client';
-import { diaryAccounts, families, syncRuns, termRescans } from '../db/schema';
+import { diaryAccounts, families, finalMarksRaw, studentSources, syncRuns, termRescans } from '../db/schema';
 import type { SyncErrorClass, SyncRunScope, SyncRunStats, SyncRunStatus } from '../db/schema';
 import { decryptCredentials, masterKey } from '../crypto/credentials';
 import { notifyAdmins } from '../notify/admin';
 import type { AdminNotice } from '../notify/admin';
+import { cadenceOf, calendarDue, finalsDue, readStampsOf, readToday, schoolDue } from './cadence';
 import { runCollector } from './collector';
-import type { WeekRequest } from './collector';
+import type { RunReads, WeekRequest } from './collector';
 import { effectiveLimits } from './config';
 import { shownEndpoint } from './drift-scope';
 import type { SyncConfig } from './config';
@@ -18,7 +19,16 @@ import { applyOutcome } from './failures';
 import type { Alert } from './failures';
 import { decideStart, isManual, selectWeeks, termBookkeeping } from './plan';
 import type { GateDecision, Trigger } from './plan';
-import { accountToday, lastAheadOf, planCalendarOf, planState, storedPlanCalendar, weekContext } from './state';
+import {
+  accountToday,
+  finalsInOf,
+  lastAheadOf,
+  planCalendarOf,
+  planState,
+  storedPlanCalendar,
+  weekContext,
+} from './state';
+import type { ChildToday } from './state';
 import { readableStudents, sourcedStudents } from './readers';
 import { rebalanceAccount } from './sources';
 import type { OpenedLogin } from './opened';
@@ -165,7 +175,7 @@ async function runLocked(opts: RunSyncOptions): Promise<RunSyncResult> {
     trigger: opts.trigger,
     account,
     limits,
-    windows: today.windows,
+    windows: today.due,
     weekday: manifest.calendar.schoolDays.includes(local.weekday),
     // an account that reads no child yet (just connected) has everything waiting; a source check has nothing
     backlog: sourceCheck ? false : today.backlog || pupils.length === 0,
@@ -219,7 +229,27 @@ async function runLocked(opts: RunSyncOptions): Promise<RunSyncResult> {
     .set({ lastAttemptAt: started, lastLoginAt: started })
     .where(eq(diaryAccounts.id, account.id));
 
-  return execute(opts, { account, provider, ctx, limits, started, runId, sourceCheck });
+  // a scheduled run reads the children whose day rate makes them due now; any other run (a catch-up, the button)
+  // reads every child the account reads
+  const dueNow =
+    kind === 'scheduled'
+      ? new Set(
+          today.children
+            .filter((c) => c.due && local.minutes >= c.due[0] && local.minutes < c.due[1])
+            .map((c) => c.studentId),
+        )
+      : null;
+  return execute(opts, {
+    account,
+    provider,
+    ctx,
+    limits,
+    started,
+    runId,
+    sourceCheck,
+    children: today.children,
+    dueNow,
+  });
 }
 
 interface Running {
@@ -230,6 +260,37 @@ interface Running {
   started: Date;
   runId: string;
   sourceCheck: boolean;
+  /** What the planner saw before the login: each child's settings and due window (absent for a connect run) */
+  children?: ChildToday[];
+  /** A scheduled run: the children due now; null: every child */
+  dueNow?: Set<string> | null;
+}
+
+/**
+ * What a run reads besides its weeks, by each child's settings (design.md 10.2): the account once a day, the calendar
+ * and the school's reference data when they are due or changed. A child the planner did not see is read in full.
+ */
+async function runReads(db: Db, r: Running): Promise<RunReads> {
+  const { ctx } = r;
+  const settings = new Map((r.children ?? []).map((c) => [c.studentId, c.cadence]));
+  const cadence = async (id: string) => settings.get(id) ?? (await cadenceOf(db, id));
+  const [seen] = await db
+    .select({ at: max(studentSources.lastSeenAt) })
+    .from(studentSources)
+    .where(eq(studentSources.diaryAccountId, r.account.id));
+  return {
+    // which children the login shows: once a school day, so a lost access is noticed within a day (design.md 7.1)
+    account: !readToday(seen?.at ?? null, ctx),
+    ...(r.dueNow && { student: (s) => r.dueNow!.has(s.id) }),
+    async calendar(s) {
+      const cal = await storedPlanCalendar(db, s.id, ctx.today);
+      return calendarDue((await readStampsOf(db, s.id)).calendar, await cadence(s.id), cal, ctx);
+    },
+    async school(s) {
+      const cal = await storedPlanCalendar(db, s.id, ctx.today);
+      return schoolDue((await readStampsOf(db, s.id)).school, await cadence(s.id), cal, ctx);
+    },
+  };
 }
 
 /** The run once its row exists: credentials, the collector, the outcome on the run, the account and the inbox */
@@ -254,9 +315,12 @@ async function execute(opts: RunSyncOptions, r: Running): Promise<RunSyncResult>
     return { outcome: 'ran', runId, status: 'failed', errorClass: null, requests: 0, stats: {} };
   }
 
+  const settings = new Map((r.children ?? []).map((c) => [c.studentId, c.cadence]));
+  const cadence = async (id: string) => settings.get(id) ?? (await cadenceOf(db, id));
   const collected = await runCollector({
     accountOnly: sourceCheck,
     ...(opts.opened && { opened: opts.opened.login }),
+    ...(!opts.opened && !sourceCheck && { reads: await runReads(db, r) }),
     db,
     provider,
     account,
@@ -264,10 +328,18 @@ async function execute(opts: RunSyncOptions, r: Running): Promise<RunSyncResult>
     runId,
     plan: async ({ student, calendar, stored }) => {
       const state = await planState(db, student.id, planCalendarOf(calendar, stored.termIds), ctx);
-      const weeks: WeekRequest[] = selectWeeks(state, ctx);
+      const weeks: WeekRequest[] = selectWeeks(state, ctx, await cadence(student.id));
       planned[student.id] = weeks.map((w) => w.weekStart);
       for (const w of weeks) sets[w.set] = (sets[w.set] ?? 0) + 1;
       return weeks;
+    },
+    finalsDue: async ({ student, calendar, stored }) => {
+      const cal = planCalendarOf(calendar, stored.termIds);
+      const [row] = await db
+        .select({ at: finalMarksRaw.fetchedAt })
+        .from(finalMarksRaw)
+        .where(and(eq(finalMarksRaw.studentId, student.id), eq(finalMarksRaw.schoolYearId, stored.schoolYearId)));
+      return finalsDue(row?.at ?? null, await cadence(student.id), cal, await finalsInOf(db, student.id, cal), ctx);
     },
     stricter: { maxRequestsPerRun: limits.maxRequestsPerRun },
     ...(opts.transport && { transport: opts.transport }),
@@ -315,7 +387,7 @@ async function execute(opts: RunSyncOptions, r: Running): Promise<RunSyncResult>
       params: { endpoint, kind: d.kind, path: d.path },
     });
   }
-  if (collected.status !== 'failed') await recordRescans(db, collected.students, ctx, finished);
+  if (collected.status !== 'failed') await recordRescans(db, collected.students, ctx, finished, cadence);
 
   return {
     outcome: 'ran',
@@ -333,11 +405,12 @@ async function recordRescans(
   list: { id: string }[],
   ctx: ReturnType<typeof weekContext>,
   at: Date,
+  cadence: (studentId: string) => Promise<SyncCadence>,
 ): Promise<void> {
   for (const s of list) {
     const cal = await storedPlanCalendar(db, s.id, ctx.today);
     if (!cal) continue;
-    const book = termBookkeeping(await planState(db, s.id, cal), ctx);
+    const book = termBookkeeping(await planState(db, s.id, cal), ctx, await cadence(s.id));
     if (book.currentTermId && book.currentFresh) {
       await db
         .insert(termRescans)

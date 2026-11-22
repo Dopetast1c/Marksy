@@ -34,9 +34,10 @@ function ctx(nowLocal: string, over: Partial<WeekContext> = {}): WeekContext {
     now,
     today: localTime(now, TZ).date,
     localDate: (d) => localTime(d, TZ).date,
+    localMinutes: (d) => localTime(d, TZ).minutes,
     lastSuccessAt: null,
     ...over,
-  };
+  } as WeekContext;
 }
 
 const state = (
@@ -87,6 +88,54 @@ describe('selectWeeks', () => {
     ]);
     // without lessons ahead in the diary there is nothing to read there
     expect(sets(selectWeeks(state(cov), { ...friday, readsAhead: false }))).not.toContain('standing 2025-10-20');
+  });
+
+  describe("by the child's settings (SyncCadence)", () => {
+    // Wednesday 15 October; the term re-checked last Friday; the neighbours read in this morning's first run
+    const cov = verifiedThrough('2025-10-06')
+      .map(([w]) => [w, '2025-10-10 21:00'] as [string, string])
+      .concat([['2025-10-20', '2025-10-10 21:00']]);
+    const morning: [string, string][] = cov.map(([w]) =>
+      w === '2025-10-06' || w === '2025-10-20' ? [w, '2025-10-15 08:05'] : [w, '2025-10-10 21:00'],
+    );
+    const wednesday = ctx('2025-10-15 11:00', { lastSuccessAt: at('2025-10-15 10:05'), readsAhead: true });
+    const daily = { previousWeek: 'daily', nextWeek: 'daily', termRecheck: 'weekly' } as const;
+
+    it('daily: the previous and the next week in the first run of the day, then the current week alone', () => {
+      expect(sets(selectWeeks(state(cov), wednesday, daily))).toEqual([
+        'standing 2025-10-13',
+        'standing 2025-10-20',
+        'standing 2025-10-06',
+      ]);
+      expect(sets(selectWeeks(state(morning), wednesday, daily))).toEqual(['standing 2025-10-13']);
+    });
+
+    it("the next week in every run of the child's last school day: Monday's homework is set on it", () => {
+      // Saturday is a school day in this calendar: the last of the week
+      const saturday = ctx('2025-10-18 11:00', { lastSuccessAt: at('2025-10-18 10:05'), readsAhead: true });
+      const readToday = morning.map(([w, v]) => [w, w === '2025-10-20' ? '2025-10-18 08:05' : v] as [string, string]);
+      expect(sets(selectWeeks(state(readToday), saturday, daily))).toContain('standing 2025-10-20');
+      const lastDay = { ...daily, nextWeek: 'lastSchoolDay' } as const;
+      expect(sets(selectWeeks(state(cov), wednesday, lastDay))).not.toContain('standing 2025-10-20');
+      expect(sets(selectWeeks(state(readToday), saturday, lastDay))).toContain('standing 2025-10-20');
+    });
+
+    it('off: no next week, and the previous one only once after it ended (the gap)', () => {
+      const off = { previousWeek: 'off', nextWeek: 'off', termRecheck: 'off' } as const;
+      expect(sets(selectWeeks(state(morning), wednesday, off))).toEqual(['standing 2025-10-13']);
+      // the previous week was last read on its Friday, while it was running: read once more, as a gap
+      expect(sets(selectWeeks(state(cov), wednesday, off))).toEqual(['standing 2025-10-13', 'gap 2025-10-06']);
+    });
+
+    it('the term re-check by its age: weekly, every two weeks, never', () => {
+      // a week of the term last read nine days ago
+      const old = morning.map(([w, v]) => [w, w === '2025-09-22' ? '2025-10-06 10:00' : v] as [string, string]);
+      expect(sets(selectWeeks(state(old), wednesday, daily))).toContain('rescan 2025-09-22');
+      const biweekly = { ...daily, termRecheck: 'biweekly' } as const;
+      expect(sets(selectWeeks(state(old), wednesday, biweekly))).not.toContain('rescan 2025-09-22');
+      const never = { ...daily, termRecheck: 'off' } as const;
+      expect(sets(selectWeeks(state(old), wednesday, never))).toEqual(['standing 2025-10-13']);
+    });
   });
 
   it('the next week is the week of the next school day: holiday weeks are skipped, three weeks at most', () => {

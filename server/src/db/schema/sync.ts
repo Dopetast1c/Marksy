@@ -105,6 +105,43 @@ export const termRescans = pgTable(
   (t) => [primaryKey({ columns: [t.termId, t.studentId] })],
 );
 
+/**
+ * When a child's reference data was last read (design.md 10.2): `calendar` (year, terms, holidays, class) and `school`
+ * (subjects and the school's details). The planner reads them again by the child's settings and on a change; a run
+ * that sees one (an unknown subject, a school week without lessons) deletes the row so the next run reads it. One row
+ * per child and kind, replaced; it goes with the child.
+ */
+export const syncReads = pgTable(
+  'sync_reads',
+  {
+    studentId: uuid('student_id')
+      .notNull()
+      .references(() => students.id, { onDelete: 'cascade' }),
+    kind: text('kind', { enum: ['calendar', 'school'] }).notNull(),
+    readAt: ts('read_at').notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.studentId, t.kind] })],
+);
+
+/**
+ * ctx.memo (docs/providers.md 4): reference data a provider needs for its requests and the canonical model does not
+ * hold, such as a system's own ids of weeks and classes, per diary account. The provider keeps only what its mapper
+ * needs, never a name. Replaced on every read; it goes with the account.
+ */
+export const providerMemo = pgTable(
+  'provider_memo',
+  {
+    diaryAccountId: uuid('diary_account_id')
+      .notNull()
+      .references(() => diaryAccounts.id, { onDelete: 'cascade' }),
+    key: text('key').notNull(),
+    kind: text('kind', { enum: ['calendar', 'school'] }).notNull(),
+    value: jsonb('value').notNull(),
+    fetchedAt: ts('fetched_at').notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.diaryAccountId, t.key] })],
+);
+
 /** sync_runs older than the retention limit, compacted to one line per account and day */
 export const syncDaily = pgTable(
   'sync_daily',

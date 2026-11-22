@@ -122,7 +122,8 @@ export async function syncPlanOf(
         break;
       default: {
         // outside the window: today's opens later, or the next school day's
-        const later = windows.find((w) => w[0] > local.minutes);
+        // a child's next read today (its day rate), not only the start of the school day
+        const later = today.due.find((w) => w[0] > local.minutes);
         const day = plan.nextSchoolDay;
         next = later
           ? mk('at', fromLocal(local.date, later[0], manifest.timezone))
@@ -216,9 +217,9 @@ export async function syncPlanOf(
       });
     termsOut.push({ studentId, yearWeeks, yearRequests: cost(yearWeeks, list.length || 1), terms: list });
   }
-  // a run's own requests before a re-check's weeks: login and account, then per child the calendar and subjects (about
-  // four) and the standing weeks (three)
-  const rescanPerRun = Math.max(1, plan.maxRequestsPerRun - 2 - kids.length * 7);
+  // a run's own requests before a re-check's weeks: the login and the account, then per child at most the three
+  // standing weeks (the calendar and the school's reference data are read rarely, design.md 10.2)
+  const rescanPerRun = Math.max(1, plan.maxRequestsPerRun - 2 - kids.length * 3);
 
   const drift = await db
     .select({

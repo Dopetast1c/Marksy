@@ -197,7 +197,7 @@ export const finalWholeResponse = z.looseObject({
 });
 export type FinalWholeResponse = z.infer<typeof finalWholeResponse>;
 
-// --- School details (docs/api-spec.md 6.7a, 6.10), read once a day ---------------------------------------------
+// --- School details (docs/api-spec.md 6.7a, 6.10), read with the school's reference data ------------------------
 
 /** 6.7a: the class's subjects, one row per subject and teaching group, with the teacher (personal data) */
 export const studentSubjectRow = z.looseObject({

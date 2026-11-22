@@ -48,8 +48,9 @@ import type {
 } from './schemas';
 
 // by-eschools: Belarus, diary.e-schools.by (docs/api-spec.md). Read-only, one login per run, every request through
-// ctx.http. The week list, the calendar, classes and subjects are fetched once per session and reused, so a week of
-// lessons costs one request. School details (6.7a, 6.10) are read once a day, when the collector asks for them.
+// ctx.http. The week list, the calendar, classes and subjects are kept between runs (ctx.memo) and read again when the
+// collector asks for their kind, so a week of lessons costs one request. School details (6.7a, 6.10) are read when
+// the collector asks for them (the child's settings, the start of a term).
 
 export const manifest = providerManifest.parse(manifestJson);
 
@@ -149,16 +150,31 @@ async function get(
   return body(res, endpoint, ctx);
 }
 
+/** Only the named fields of an object: what ctx.memo keeps between runs, never a person's id or a free text */
+function pick<T extends object, K extends keyof T>(o: T, keys: readonly K[]): Pick<T, K> {
+  const out = {} as Pick<T, K>;
+  for (const k of keys) if (k in o) out[k] = o[k];
+  return out;
+}
+
+const todayOf = (ctx: ProviderContext) => toISODate(ctx.now().getTime(), manifest.timezone);
+
 async function classOf(session: Session, student: StudentRef, ctx: ProviderContext): Promise<SchoolClass | undefined> {
   const cache = cacheOf(session);
   if (cache.classes.has(student.externalId)) return cache.classes.get(student.externalId);
-  const raw = await get(
-    session,
-    ctx,
-    'classes',
-    `${DIARY}/schools/${seg(student.schoolId ?? '')}/students/${seg(student.externalId)}/classes`,
-  );
-  const cls = currentClass(driftChecker(ctx.drift, 'classes').items(schoolClass, raw, 'classes'));
+  // the class changes with the school year (a new class id every September) or a transfer: kept with the calendar
+  const list = await ctx.memo('calendar', `classes:${student.externalId}`, async () => {
+    const raw = await get(
+      session,
+      ctx,
+      'classes',
+      `${DIARY}/schools/${seg(student.schoolId ?? '')}/students/${seg(student.externalId)}/classes`,
+    );
+    return driftChecker(ctx.drift, 'classes')
+      .items(schoolClass, raw, 'classes')
+      .map((c) => pick(c, ['uuid', 'label', 'level', 'class_number', 'dt_disbanded']));
+  });
+  const cls = currentClass(list as SchoolClass[]);
   cache.classes.set(student.externalId, cls);
   return cls;
 }
@@ -261,26 +277,48 @@ async function schoolDetails(session: Session, student: StudentRef, ctx: Provide
   };
 }
 
+// The school year, its quarters and holidays and the list of weeks are kept between runs (ctx.memo, 'calendar'): a
+// week of lessons is asked for by the week's id, so without the list every run would read it first. A kept list that
+// no longer reaches today (a new school year) is read again.
 async function calendarSources(session: Session, ctx: ProviderContext) {
   const cache = cacheOf(session);
-  cache.year ??= driftChecker(ctx.drift, 'school_year').parse(
-    schoolYearResponse,
-    await get(session, ctx, 'school_year', `${DIARY}/school_year`),
+  const today = todayOf(ctx);
+  cache.year ??= await ctx.memo<SchoolYearResponse>(
+    'calendar',
+    'school_year',
+    async () =>
+      pick(
+        driftChecker(ctx.drift, 'school_year').parse(
+          schoolYearResponse,
+          await get(session, ctx, 'school_year', `${DIARY}/school_year`),
+        ),
+        ['uuid', 'label', 'start_year', 'end_year', 'start_ts', 'end_ts'],
+      ) as SchoolYearResponse,
+    { valid: (y) => dayRange({ start: y.start_ts, end: y.end_ts }, manifest.timezone).to >= today },
   );
-  cache.activities ??= driftChecker(ctx.drift, 'time_activities').items(
-    timeActivity,
-    await get(session, ctx, 'time_activities', `${DIARY}/time_activities`),
-    'time_activities',
+  cache.activities ??= await ctx.memo<TimeActivity[]>('calendar', 'time_activities', async () =>
+    driftChecker(ctx.drift, 'time_activities')
+      .items(timeActivity, await get(session, ctx, 'time_activities', `${DIARY}/time_activities`), 'time_activities')
+      .map((a) => pick(a, ['uuid', 'title', 'description', 'type', 'start_date', 'end_date']) as TimeActivity),
   );
   return { year: cache.year, activities: cache.activities };
 }
 
 async function weeksOf(session: Session, ctx: ProviderContext): Promise<WeekActivity[]> {
   const cache = cacheOf(session);
-  cache.weeks ??= driftChecker(ctx.drift, 'week_activities').items(
-    weekActivity,
-    await get(session, ctx, 'week_activities', `${DIARY}/time_activities/week_activities`),
+  const today = todayOf(ctx);
+  cache.weeks ??= await ctx.memo<WeekActivity[]>(
+    'calendar',
     'week_activities',
+    async () =>
+      driftChecker(ctx.drift, 'week_activities')
+        .items(
+          weekActivity,
+          await get(session, ctx, 'week_activities', `${DIARY}/time_activities/week_activities`),
+          'week_activities',
+        )
+        .map((w) => pick(w, ['uuid', 'time_activity_id', 'start_ts', 'end_ts']) as WeekActivity),
+    { valid: (ws) => ws.some((w) => dayRange({ start: w.start_ts, end: w.end_ts }, manifest.timezone).to >= today) },
   );
   return cache.weeks;
 }
@@ -369,10 +407,17 @@ export const byEschools: DiaryProvider = {
       );
     }
     if (cached) return cached;
-    const path = `${await classPath(session, student, ctx)}/educational_subjects`;
-    const subjects = mapSubjects(
-      await get(session, ctx, 'educational_subjects', path),
-      driftChecker(ctx.drift, 'educational_subjects'),
+    // kept with the school's reference data: the finals of a day that reads no subjects still name them
+    const subjects = await ctx.memo('school', `subjects:${student.externalId}`, async () =>
+      mapSubjects(
+        await get(
+          session,
+          ctx,
+          'educational_subjects',
+          `${await classPath(session, student, ctx)}/educational_subjects`,
+        ),
+        driftChecker(ctx.drift, 'educational_subjects'),
+      ),
     );
     cache.subjects.set(student.externalId, subjects);
     return subjects;

@@ -19,6 +19,7 @@ import {
   students,
   studentSources,
   syncCoverage,
+  syncReads,
   syncRuns,
 } from '../db/schema';
 import { runCollector } from './collector';
@@ -330,6 +331,54 @@ describe('collector', () => {
     });
     expect(result).toMatchObject({ status: 'failed', errorClass: 'auth', requests: 1 });
     expect(await db.select().from(students)).toEqual([]);
+  });
+
+  it('a run that reads no reference data takes it from the database: the login and the weeks only', async () => {
+    const { account } = await createAccount(db, 'demo-full');
+    await collect(account);
+    expect((await db.select().from(syncReads)).map((r) => r.kind).sort()).toEqual([
+      'calendar',
+      'calendar',
+      'school',
+      'school',
+    ]);
+    const log: TransportRequest[] = [];
+    const reads = { account: false, calendar: () => false, school: () => false };
+    const result = await collect(account, { reads, transport: demoFullTransport({ log }), finalsDue: () => false });
+    expect(result.status).toBe('success');
+    // the login and the two weeks of each child
+    expect(result.requests).toBe(5);
+    expect(log.map((r) => new URL(r.url).pathname).filter((p) => !p.includes('/diary'))).toEqual(['/api/v2/auth']);
+    expect(result.students.map((s) => s.externalId)).toEqual(['p-1', 'p-2']);
+    expect(result.verified).toHaveLength(4);
+  });
+
+  it('a lesson of a subject the stored list does not know has the school read by the next run', async () => {
+    const { account } = await createAccount(db, 'demo-full');
+    await collect(account);
+    const reads = { account: false, calendar: () => false, school: () => false };
+    const fixtures = week1((days) => {
+      const lesson = lessonAt(days, '2025-09-09') as unknown as { subject: { code: string; title: string } };
+      lesson.subject = { code: 'astronomy', title: 'Astronomy' };
+    });
+    await collect(account, { reads, fixtures, finalsDue: () => false });
+    const p1 = (await db.select().from(students).where(eq(students.externalId, 'p-1')))[0]!;
+    const left = await db.select().from(syncReads).where(eq(syncReads.studentId, p1.id));
+    expect(left.map((r) => r.kind)).toEqual(['calendar']);
+  });
+
+  it('only the children a run is asked for are read', async () => {
+    const { account } = await createAccount(db, 'demo-full');
+    await collect(account);
+    const reads = {
+      account: false,
+      calendar: () => false,
+      school: () => false,
+      student: (s: { externalId: string }) => s.externalId === 'p-2',
+    };
+    const result = await collect(account, { reads, finalsDue: () => false });
+    expect(result.students.map((s) => s.externalId)).toEqual(['p-2']);
+    expect(result.requests).toBe(3);
   });
 
   it('demo-minimal: unattached marks by term, every week of the year verified with one request', async () => {

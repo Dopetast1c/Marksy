@@ -66,7 +66,7 @@ export async function accountPlan(
     trigger: 'schedule',
     account,
     limits,
-    windows: today.windows,
+    windows: today.due,
     weekday: manifest.calendar.schoolDays.includes(local.weekday),
     backlog: sourceCheck ? false : today.backlog || readable.length === 0,
     waitingFinals: sourceCheck ? false : today.waitingFinals,

@@ -61,8 +61,13 @@ export async function planReport(
         .map(([k, n]) => `${k} ${n}`)
         .join(', ');
       lines.push(`  child ${c.studentId}: today ${local.date} ${w}; weeks waiting: ${sets || 'none stored yet'}`);
+      const k = c.cadence;
+      lines.push(
+        `    reads: ${k.day}, previous ${k.previousWeek}, next ${k.nextWeek}, term ${k.termRecheck}, finals ${k.finals}, school ${k.school}, calendar ${k.calendar}; due ${c.due ? formatWindow(c.due) : 'not again today'}`,
+      );
     }
     lines.push(`  account window today: ${today.windows.map(formatWindow).join(', ') || 'none'}`);
+    lines.push(`  runs may start: ${today.due.map(formatWindow).join(', ') || 'not again today'}`);
     const nsd = nextSchoolDay;
     lines.push(
       `  next school day: ${nsd ? `${nsd.date}${nsd.from != null ? ` from ${hhmm(nsd.from)}` : ''}${nsd.afterHolidays ? ' (after holidays)' : ''}` : 'unknown'}`,

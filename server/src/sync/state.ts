@@ -1,4 +1,4 @@
-import type { Calendar, ISODate, ProviderManifest } from '@marksy/core';
+import type { Calendar, ISODate, ProviderManifest, SyncCadence } from '@marksy/core';
 import { addDays, weekStartOf, weekdayOf } from '@marksy/core';
 import { and, desc, eq, gte, inArray, isNotNull, isNull, lte, ne } from 'drizzle-orm';
 import type { Db } from '../db/client';
@@ -18,6 +18,7 @@ import type { FamilySettings } from '../db/schema';
 import type { PlanSet } from './collector';
 import { aheadDue, hasBacklog, isSchoolDay, selectWeeks, waitsForFinals } from './plan';
 import type { CalendarRules, EffectiveLimits, PlanCalendar, StudentPlanState, WeekContext } from './plan';
+import { cadenceOf, dueWindow } from './cadence';
 import { boundWindows, childWindow, unionWindows } from './window';
 import type { ChildDay, ChildWindow, Window } from './window';
 import { localTime } from './time';
@@ -136,6 +137,7 @@ export function weekContext(
     now,
     today: localTime(now, tz).date,
     localDate: (d) => localTime(d, tz).date,
+    localMinutes: (d) => localTime(d, tz).minutes,
     lastSuccessAt,
     readsAhead: manifest.capabilities.futureTimetable,
   };
@@ -189,14 +191,23 @@ export async function childDayOf(
 export interface ChildToday {
   studentId: string;
   window: ChildWindow;
+  /** The settings the child is read with (cadence.ts) */
+  cadence: SyncCadence;
+  /**
+   * When the child's current week is due today by the child's day rate (cadence.ts dueWindow), inside the school-day
+   * window; null when it is not due again today
+   */
+  due: Window | null;
   /** Weeks waiting per planner set (standing, gap, rescan, post_term, backfill) */
   sets: Partial<Record<PlanSet, number>>;
 }
 
 export interface AccountToday {
   children: ChildToday[];
-  /** The account's window: the union of its children's, bounded by SYNC_WINDOW */
+  /** The account's school day: the union of its children's windows, bounded by SYNC_WINDOW (what Sync shows) */
   windows: Window[];
+  /** When a scheduled run may start: the union of the children's due windows, bounded by SYNC_WINDOW */
+  due: Window[];
   /** An unverified week waits: a catch-up may run */
   backlog: boolean;
   /** A finished term of a child waits for its finals (D61) */
@@ -282,26 +293,30 @@ export async function accountToday(
   for (const studentId of studentIds) {
     const cal = await storedPlanCalendar(db, studentId, ctx.today);
     const window = childWindow(await childDayOf(db, studentId, ctx.today, cal, ctx), limits.standIn);
+    const cadence = await cadenceOf(db, studentId);
     const sets: ChildToday['sets'] = {};
+    let lastRead: Date | null = null;
     if (!cal)
       backlog = true; // nothing stored yet: the first run reads everything
     else {
       const state = await planState(db, studentId, cal, ctx);
-      const weeks = selectWeeks(state, ctx);
+      const weeks = selectWeeks(state, ctx, cadence);
       for (const w of weeks) sets[w.set] = (sets[w.set] ?? 0) + 1;
       if (hasBacklog(weeks)) backlog = true;
-      if (waitsForFinals(state, ctx.today)) waitingFinals = true;
+      if (cadence.finals !== 'off' && waitsForFinals(state, ctx.today)) waitingFinals = true;
       // one run per stretch without school: none since the child's last school day
-      const due = aheadDue(state, ctx);
+      const due = cadence.nextWeek === 'off' ? null : aheadDue(state, ctx);
       if (due && !(aheadOn && aheadOn > due.since)) ahead = true;
+      lastRead = state.coverage.get(weekStartOf(ctx.today, ctx.weekStart)) ?? null;
     }
-    children.push({ studentId, window, sets });
+    const readMinutes = lastRead && ctx.localDate(lastRead) === ctx.today ? ctx.localMinutes(lastRead) : null;
+    children.push({ studentId, window, cadence, due: dueWindow(window.window, cadence.day, readMinutes), sets });
   }
-  const windows = boundWindows(
-    unionWindows(children.flatMap((c) => (c.window.window ? [c.window.window] : []))),
-    limits.envWindow,
-  );
+  const bound = (list: (Window | null)[]) =>
+    boundWindows(unionWindows(list.filter((w): w is Window => !!w)), limits.envWindow);
+  const windows = bound(children.map((c) => c.window.window));
+  const due = bound(children.map((c) => c.due));
   // no child stored yet (just connected): count it as a school day, the backlog runs anyway
   const schoolDay = children.length === 0 || children.some((c) => c.window.source !== 'no_school');
-  return { children, windows, backlog, waitingFinals, ahead, schoolDay };
+  return { children, windows, due, backlog, waitingFinals, ahead, schoolDay };
 }
