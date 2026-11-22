@@ -369,7 +369,7 @@ Then, in this order, and nothing stops before everything is ready:
 5. Only now, right before the install, it takes a backup (section 14), named with both versions. An attempt that stopped earlier took none.
 6. It replaces the server, waits until it is healthy and reports the new version, then the backup service, the web app and, when its configuration changed, the proxy.
 7. If any of them does not become healthy, it puts every old container back, and the previous version runs as before.
-8. It removes old images, but keeps the previous release for a quick way back, and finally replaces itself.
+8. It removes old images, but keeps the previous release for a quick way back (tagged with its version, e.g. `marksy-server:1.4.1`, from the moment the channel tag moves on), and finally replaces itself.
 
 When an attempt does not finish, two rules decide whether it is tried again by itself (`update now` ignores both):
 
@@ -498,4 +498,5 @@ Then the manual runs against the real diary from the development computer (`pnpm
 | A release is out but not installed | `./marksy.sh update status`: paused, quiet hours, a diary read still running, a refused signature, an attempt that stopped less than an hour ago, or a release rolled back before (`update history`) |
 | `update history` says *rolled_back* | the new release did not start; the previous one runs. `./marksy.sh logs server` shows why; a fixed release installs by itself |
 | `update history` says *refused_signature* | the image was not signed by this project's release workflow, or the signature could not be checked; nothing was installed, and it is checked again an hour later. The reason says which: `x509: certificate signed by unknown authority` was the updater of 1.0.0 and 1.0.1 itself (its image lacked the root certificates cosign needs): install once by hand (*Updating by hand*), later updates come by themselves. If it stays refused otherwise, report it as an issue |
+| `update status` says *403 refused by the Marksy socket guard: not a Marksy image* | the updater of 1.0.3 and earlier on Docker's containerd image store (Docker Desktop's default): moving the channel tag to the new release left the image the services still run without any name, and the socket guard then refused every request about it. Nothing was replaced; the previous release runs. Install once by hand (*Updating by hand*): `pull`, then `up`; from 1.0.4 on the outgoing release keeps its version as a tag and the updater does it by itself |
 | The updater says the free space is too low | remove old backups you copied elsewhere, or `docker image prune` |

@@ -100,6 +100,11 @@ const RETRY_LATER: Attempt['outcome'][] = ['failed', 'waiting_collector', 'refus
 
 const short = (digest: string) => digest.replace(/^sha256:/, '').slice(0, 12);
 
+/** The tag that keeps an image the channel tag leaves: its version, or "previous" when it has none usable */
+export function keepTag(version: string | undefined, channelTag: string): string {
+  return version && /^[\w][\w.-]{0,127}$/.test(version) && version !== channelTag ? version : 'previous';
+}
+
 export function createUpdater(cfg: UpdaterConfig, deps: Deps) {
   const { docker, registry, store } = deps;
   const channel = parseChannel(cfg.channel);
@@ -308,13 +313,19 @@ export function createUpdater(cfg: UpdaterConfig, deps: Deps) {
         throw new Abort('failed', `backup: ${errorText(err)}`);
       }
 
-      // 6. the channel's local tag follows the release, so that `docker compose up` keeps it
+      // 6. the channel's local tag follows the release, so that `docker compose up` keeps it. The image it leaves first
+      // gets a name of its own (its version): the services still run it, the replacement and a rollback read and
+      // re-tag it, and Docker's containerd store forgets every name of an image whose last tag moves away, after which
+      // nothing may touch it through the socket guard
       for (const img of IMAGES) {
         const now = ids[img];
         if (!now) continue;
-        const before = (await docker.inspectImage(`${repo(img)}:${localTag}`))?.Id;
+        const old = await docker.inspectImage(`${repo(img)}:${localTag}`);
+        if (old && old.Id !== now.id) {
+          await docker.tag(old.Id, repo(img), keepTag(old.Config.Labels?.[VERSION_LABEL], localTag));
+          moved.push([img, old.Id]);
+        }
         await docker.tag(now.id, repo(img), localTag);
-        if (before && before !== now.id) moved.push([img, before]);
       }
 
       // 7. replace, server first
@@ -349,7 +360,10 @@ export function createUpdater(cfg: UpdaterConfig, deps: Deps) {
       for (const r of [...done].reverse()) {
         await restore(docker, r).catch((e: unknown) => log.error('restore failed', { reason: errorText(e) }));
       }
-      for (const [img, id] of moved) await docker.tag(id, repo(img), localTag).catch(() => undefined);
+      for (const [img, id] of moved)
+        await docker
+          .tag(id, repo(img), localTag)
+          .catch((e: unknown) => log.error('tag back failed', { image: img, reason: errorText(e) }));
       for (const r of done)
         await waitReady(docker, r.oldId, { timeoutMs: cfg.healthTimeoutMs, sleep: deps.sleep, now: deps.now }).catch(
           () => false,

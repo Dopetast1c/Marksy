@@ -61,6 +61,13 @@ export function socketLookup(socketPath: string): GuardLookup {
       } | null;
       return i ? [...(i.RepoTags ?? []), ...(i.RepoDigests ?? [])].filter((n) => !n.startsWith('<none>')) : null;
     },
+    async imageInUse(id) {
+      const filters = JSON.stringify({ label: ['marksy.updatable=true'] });
+      const found = ((await dockerJson(socketPath, `/containers/json?all=1&filters=${encodeURIComponent(filters)}`)) ??
+        []) as { ImageID?: string }[];
+      const bare = (s: string) => s.replace(/^sha256:/, '');
+      return found.some((c) => !!c.ImageID && bare(c.ImageID).startsWith(bare(id)));
+    },
     async networkLabels(id) {
       const n = (await dockerJson(socketPath, `/networks/${encodeURIComponent(id)}`)) as {
         Labels?: Record<string, string>;

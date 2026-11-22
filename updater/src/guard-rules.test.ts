@@ -42,7 +42,11 @@ const lookup: GuardLookup = {
       ? [`${PREFIX}server:1`, `${PREFIX}server@sha256:${'1'.repeat(64)}`]
       : id === 'sha256:bbbbbbbbbbbb'
         ? ['postgres:16']
-        : null,
+        : id === 'sha256:cccccccccccc' || id === 'sha256:dddddddddddd'
+          ? []
+          : null,
+  // a nameless image the server container still runs (the release before, after the channel tag moved on)
+  imageInUse: async (id) => id === 'sha256:cccccccccccc',
   networkLabels: async (id) =>
     id === 'marksy-prod_edge' || id === 'marksy-prod_docker'
       ? project
@@ -162,6 +166,12 @@ describe('the socket guard', () => {
     expect((await ask('POST', '/images/sha256:aaaaaaaaaaaa/tag', `repo=${PREFIX}server&tag=1`)).allow).toBe(true);
     expect((await ask('POST', '/images/sha256:aaaaaaaaaaaa/tag', 'repo=evil/server&tag=1')).allow).toBe(false);
     expect((await ask('POST', '/images/sha256:bbbbbbbbbbbb/tag', `repo=${PREFIX}server&tag=1`)).allow).toBe(false);
+    // an image with no name left (Docker's containerd store): Marksy's only while a Marksy container runs it
+    expect((await ask('GET', '/images/sha256:cccccccccccc/json')).allow).toBe(true);
+    expect((await ask('POST', '/images/sha256:cccccccccccc/tag', `repo=${PREFIX}server&tag=1`)).allow).toBe(true);
+    expect((await ask('POST', '/images/sha256:cccccccccccc/tag', 'repo=evil/server&tag=1')).allow).toBe(false);
+    expect((await ask('GET', '/images/sha256:dddddddddddd/json')).allow).toBe(false);
+    expect((await ask('DELETE', '/images/sha256:dddddddddddd')).allow).toBe(false);
     expect((await ask('DELETE', `/images/${PREFIX}server:1.0.0`)).allow).toBe(true);
     expect((await ask('DELETE', '/images/postgres:16')).allow).toBe(false);
     expect((await ask('POST', '/images/load')).allow).toBe(false);
