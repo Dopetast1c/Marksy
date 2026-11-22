@@ -1,5 +1,7 @@
 // The Docker Engine API the updater uses, through the socket guard (DOCKER_GUARD_URL). Only what an update needs.
 
+import { errorText } from './log';
+
 export interface ContainerSummary {
   Id: string;
   Names: string[];
@@ -95,6 +97,10 @@ export function dockerClient(baseUrl: string): Docker {
       headers: body === undefined ? {} : { 'content-type': 'application/json' },
       body: body === undefined ? undefined : JSON.stringify(body),
       signal: AbortSignal.timeout(timeoutMs),
+    }).catch((err: unknown) => {
+      // the history keeps this text: it names the call, not only "aborted due to timeout"
+      const what = err instanceof Error && err.name === 'TimeoutError' ? `no answer in ${timeoutMs / 1000} s` : err;
+      throw new Error(`${method} ${path.split('?')[0]}: ${errorText(what)}`);
     });
     if (!res.ok && res.status !== 304) {
       const text = await res.text().catch(() => '');
@@ -138,9 +144,13 @@ export function dockerClient(baseUrl: string): Docker {
           : colon > ref.lastIndexOf('/')
             ? [ref.slice(0, colon), ref.slice(colon + 1)]
             : [ref, 'latest'];
-      const res = await call('POST', `/images/create?fromImage=${id(from)}&tag=${id(tag)}`, undefined, 15 * 60_000);
+      // a slow line may need long for a first pull; a pull cut off keeps its finished layers for the next attempt
+      const res = await call('POST', `/images/create?fromImage=${id(from)}&tag=${id(tag)}`, undefined, 45 * 60_000);
       // the answer is a stream of progress lines; an error arrives as one of them with status 200
-      const text = await res.text();
+      const text = await res.text().catch((err: unknown) => {
+        const what = err instanceof Error && err.name === 'TimeoutError' ? 'not finished in 45 min' : errorText(err);
+        throw new Error(`pull ${ref}: ${what}`);
+      });
       for (const line of text.split('\n')) {
         if (!line.trim()) continue;
         try {
