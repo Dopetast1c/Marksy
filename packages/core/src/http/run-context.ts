@@ -57,7 +57,8 @@ export function createMemoryDrift(): DriftReporter & { readonly events: readonly
 /** Where ctx.memo keeps its values between runs (the server's provider_memo), and which kinds this run reads again */
 export interface MemoStore {
   load(key: string): Promise<{ kind: MemoKind; value: unknown } | null>;
-  save(kind: MemoKind, key: string, value: unknown): Promise<void>;
+  /** `student`: the externalId of the student whose own value this is (MemoOptions.student) */
+  save(kind: MemoKind, key: string, value: unknown, student?: string): Promise<void>;
   /** The kinds the collector reads again in this run: kept values of these are fetched again once */
   refresh: ReadonlySet<MemoKind>;
 }
@@ -102,7 +103,7 @@ export function createRunContext(
       if (kept && kept.kind === kind && !due && (opts.valid?.(kept.value as T) ?? true)) return kept.value as T;
       const value = await fetch();
       fresh.add(key);
-      await store.save(kind, key, value);
+      await store.save(kind, key, value, opts.student);
       return value;
     },
   };

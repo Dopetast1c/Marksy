@@ -676,7 +676,8 @@ sync_coverage       student_id, week_start, verified_at, run_id, status (verifie
 term_rescans        term_id, student_id, last_full_rescan_at, post_term_rescan_done (unused since 1.0.1)
 sync_reads          student_id, kind (calendar|school), read_at   PK(student_id, kind)   (when the reference data was
                     last read, 10.2; deleted when a run sees it changed)
-provider_memo       diary_account_id, key, kind (calendar|school), value (jsonb), fetched_at   PK(diary_account_id, key)
+provider_memo       diary_account_id, key, kind (calendar|school), value (jsonb), fetched_at, student_id (a child's own
+                    value, deleted with the child)   PK(diary_account_id, key)
                     (ctx.memo: a provider's own ids between runs, docs/providers.md 4)
 sync_daily          diary_account_id, date, runs, failures, requests   (compacted sync_runs older than 90 days)
 raw_responses       id, sync_run_id, provider_id, endpoint (the allow-list entry the request matched, no ids), params
@@ -1032,7 +1033,7 @@ The schedule above describes the ideal day. Section 10.4 describes what happens 
 | `lesson_tag_hits` | until 30 days after the due date; recomputed hits replace removed ones | the schedule and Внимание look ahead, not back |
 | `bell_schedules`, `week_templates` | replaced on every fetch (with the school's reference data, 10.2); previous school years deleted with the year's compaction | reference data for today and the current term; teacher names inside them are kept only while current |
 | `sync_reads` | one row per child and kind (`calendar`, `school`), replaced; goes with the child | when the reference data was last read, for the planner |
-| `provider_memo` | one row per diary account and key, replaced on every read; goes with the account | a provider's own ids (weeks, classes) and the subjects it needs between runs; no names or free text that may carry one (`docs/providers.md` 4) |
+| `provider_memo` | one row per diary account and key, replaced on every read; goes with the account; a child's own value (their class, their subjects; `student_id`) goes with the child and when the account no longer lists them | a provider's own ids (weeks, classes) and the subjects it needs between runs; no names, and no free text but the calendar's school-wide notes, which `terms.note` and `holidays.note` keep too (`docs/providers.md` 4) |
 | `mark_history` | lifetime of the mark | that is the change detection the product promises |
 | `lessons`, `marks`, `attendance`, `homework_items`, `behaviour_events`, `final_marks` | while at least one family follows the student; older than the shortest `families.settings.retention_years` among those families when one set a limit (14.1; finals by the end of their school year) | the product; the limit is the family's choice |
 | `sync_daily` | while the diary account exists | one small line per account and day |

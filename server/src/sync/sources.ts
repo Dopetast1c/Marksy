@@ -4,6 +4,7 @@ import type { Db } from '../db/client';
 import { diaryAccounts, familyStudents, studentSources, students } from '../db/schema';
 import { welcomeChild } from '../family/rules';
 import { notifyAdmins } from '../notify/admin';
+import { forgetMemoOf } from './memo';
 
 // Who sees a child and through which login (docs/design.md 7.1, 7.2, 10.2; ux-principles D54). Access comes from the
 // diary: a family follows a child while one of its own accounts lists the child; a child is read through one account
@@ -92,6 +93,7 @@ export async function dropUnlisted(db: Db, account: { id: string; familyId: stri
     await db
       .delete(studentSources)
       .where(and(eq(studentSources.studentId, studentId), eq(studentSources.diaryAccountId, account.id)));
+    await forgetMemoOf(db, account.id, studentId);
     const [still] = await db
       .select({ studentId: studentSources.studentId })
       .from(studentSources)

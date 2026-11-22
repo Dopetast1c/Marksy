@@ -62,6 +62,11 @@ export type MemoKind = 'calendar' | 'school';
 export interface MemoOptions<T> {
   /** False when a kept value can no longer serve (a week list that ends before today): it is fetched again */
   valid?(value: T): boolean;
+  /**
+   * The student's externalId when the value is that student's own (their class, their subjects): it is deleted with
+   * the student and when the account no longer lists them
+   */
+  student?: string;
 }
 
 export interface ProviderContext {

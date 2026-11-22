@@ -126,7 +126,8 @@ export const syncReads = pgTable(
 /**
  * ctx.memo (docs/providers.md 4): reference data a provider needs for its requests and the canonical model does not
  * hold, such as a system's own ids of weeks and classes, per diary account. The provider keeps only what its mapper
- * needs, never a name. Replaced on every read; it goes with the account.
+ * needs, never a name. Replaced on every read; it goes with the account, and a child's own value with the child and
+ * when the account no longer lists them.
  */
 export const providerMemo = pgTable(
   'provider_memo',
@@ -138,6 +139,8 @@ export const providerMemo = pgTable(
     kind: text('kind', { enum: ['calendar', 'school'] }).notNull(),
     value: jsonb('value').notNull(),
     fetchedAt: ts('fetched_at').notNull(),
+    /** The child whose own value this is (their class, their subjects): it goes with the child (MemoOptions.student) */
+    studentId: uuid('student_id').references(() => students.id, { onDelete: 'cascade' }),
   },
   (t) => [primaryKey({ columns: [t.diaryAccountId, t.key] })],
 );

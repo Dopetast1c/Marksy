@@ -150,7 +150,11 @@ async function get(
   return body(res, endpoint, ctx);
 }
 
-/** Only the named fields of an object: what ctx.memo keeps between runs, never a person's id or a free text */
+/**
+ * Only the named fields of an object: what ctx.memo keeps between runs, never a person's id or name. The one free text
+ * kept is a calendar item's `description`, the school's note on a term or holidays (api-spec 6.4), which the stored
+ * calendar keeps as well (terms.note, holidays.note)
+ */
 function pick<T extends object, K extends keyof T>(o: T, keys: readonly K[]): Pick<T, K> {
   const out = {} as Pick<T, K>;
   for (const k of keys) if (k in o) out[k] = o[k];
@@ -163,17 +167,22 @@ async function classOf(session: Session, student: StudentRef, ctx: ProviderConte
   const cache = cacheOf(session);
   if (cache.classes.has(student.externalId)) return cache.classes.get(student.externalId);
   // the class changes with the school year (a new class id every September) or a transfer: kept with the calendar
-  const list = await ctx.memo('calendar', `classes:${student.externalId}`, async () => {
-    const raw = await get(
-      session,
-      ctx,
-      'classes',
-      `${DIARY}/schools/${seg(student.schoolId ?? '')}/students/${seg(student.externalId)}/classes`,
-    );
-    return driftChecker(ctx.drift, 'classes')
-      .items(schoolClass, raw, 'classes')
-      .map((c) => pick(c, ['uuid', 'label', 'level', 'class_number', 'dt_disbanded']));
-  });
+  const list = await ctx.memo(
+    'calendar',
+    `classes:${student.externalId}`,
+    async () => {
+      const raw = await get(
+        session,
+        ctx,
+        'classes',
+        `${DIARY}/schools/${seg(student.schoolId ?? '')}/students/${seg(student.externalId)}/classes`,
+      );
+      return driftChecker(ctx.drift, 'classes')
+        .items(schoolClass, raw, 'classes')
+        .map((c) => pick(c, ['uuid', 'label', 'level', 'class_number', 'dt_disbanded']));
+    },
+    { student: student.externalId },
+  );
   const cls = currentClass(list as SchoolClass[]);
   cache.classes.set(student.externalId, cls);
   return cls;
@@ -408,16 +417,20 @@ export const byEschools: DiaryProvider = {
     }
     if (cached) return cached;
     // kept with the school's reference data: the finals of a day that reads no subjects still name them
-    const subjects = await ctx.memo('school', `subjects:${student.externalId}`, async () =>
-      mapSubjects(
-        await get(
-          session,
-          ctx,
-          'educational_subjects',
-          `${await classPath(session, student, ctx)}/educational_subjects`,
+    const subjects = await ctx.memo(
+      'school',
+      `subjects:${student.externalId}`,
+      async () =>
+        mapSubjects(
+          await get(
+            session,
+            ctx,
+            'educational_subjects',
+            `${await classPath(session, student, ctx)}/educational_subjects`,
+          ),
+          driftChecker(ctx.drift, 'educational_subjects'),
         ),
-        driftChecker(ctx.drift, 'educational_subjects'),
-      ),
+      { student: student.externalId },
     );
     cache.subjects.set(student.externalId, subjects);
     return subjects;

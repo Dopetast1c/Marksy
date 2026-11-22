@@ -285,13 +285,18 @@ export async function runCollector(opts: CollectorOptions): Promise<CollectorRes
     const refresh = new Set<MemoKind>();
     if (first || [...calendarDue.values()].some(Boolean)) refresh.add('calendar');
     if (first || [...schoolDue.values()].some(Boolean)) refresh.add('school');
-    run.useMemo(memoStore(db, account.id, refresh, now));
+    run.useMemo(memoStore(db, account, refresh, now));
 
     if (opts.accountOnly || opts.opened || first || reads?.account) {
       const info = opts.opened ? opts.opened.info : await provider.getAccount(session, ctx);
       // every listed child is stored and linked; only those this account is the active source of are read
       students = (await storeStudents(db, account, info, now())).readable;
     } else students = known;
+    // a child the login shows for the first time is read in full: nothing kept serves them yet
+    if (students.some((s) => !known.some((k) => k.id === s.id))) {
+      refresh.add('calendar');
+      refresh.add('school');
+    }
     if (opts.accountOnly) students = [];
     if (reads?.student) students = students.filter((s) => reads.student!(s));
 
