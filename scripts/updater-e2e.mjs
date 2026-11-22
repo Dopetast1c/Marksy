@@ -82,7 +82,14 @@ async function waitFor(what, test, ms) {
 }
 
 const updaterCli = (args) => JSON.parse(compose(['exec', '-T', 'updater', 'marksy-updater', ...args]) || 'null');
-const history = () => updaterCli(['history', '50']) ?? [];
+const history = () => {
+  try {
+    return updaterCli(['history', '50']) ?? [];
+  } catch {
+    // between the old updater and the new one (the self-swap at the end of an update): asked again by waitFor
+    return [];
+  }
+};
 const status = () => {
   try {
     return updaterCli(['status']);
@@ -250,10 +257,11 @@ async function main() {
   check(tNudge !== null && tNudge < 150_000, `1.1.1 running ${tNudge && Math.round(tNudge / 1000)} s after the nudge`);
   check((await serverVersion()) !== '1.2.0', 'channel 1.1 did not take 1.2.0');
   await waitFor('the end of 1.1.1', async () => history().some((a) => a.to === '1.1.1'), 180_000);
+  // the history is read once the updater has replaced itself: during the swap there is none to ask
+  await waitFor('the updater 1.1.1', async () => updaterSettled('1.1.1'), 180_000);
   const h1 = history().findLast((a) => a.to === '1.1.1');
   check(h1?.trigger === 'hook', 'the hook started it');
   console.log(`   downtime of the server: ${h1?.downtimeMs} ms, whole update ${h1?.durationMs} ms`);
-  await waitFor('the updater 1.1.1', async () => updaterSettled('1.1.1'), 180_000);
 
   step('channel 1 picks 1.2.0 up by polling, never 2.0.0');
   channel = '1';
