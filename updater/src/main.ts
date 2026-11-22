@@ -1,5 +1,5 @@
 import { statfs } from 'node:fs/promises';
-import { createServer } from 'node:http';
+import { createServer, request } from 'node:http';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { connect, createServer as createNetServer } from 'node:net';
 import { readSettings } from './config';
@@ -32,24 +32,29 @@ export function onUpdateFailed(a: Attempt): void {
 
 function serverApi(s: Settings): ServerApi {
   const auth = { authorization: `Bearer ${s.internalToken}` };
-  const timeout = () => AbortSignal.timeout(10_000);
+  // the history keeps the error's text: it names the call, not only "aborted due to timeout"
+  const call = (what: string, url: string, init: RequestInit = {}) =>
+    fetch(url, { ...init, signal: AbortSignal.timeout(10_000) }).catch((err: unknown) => {
+      throw new Error(
+        `server ${what}: ${err instanceof Error && err.name === 'TimeoutError' ? 'no answer in 10 s' : errorText(err)}`,
+      );
+    });
   return {
     async hold(minutes) {
-      const res = await fetch(`${s.serverInternalUrl}/internal/hold`, {
+      const res = await call('hold', `${s.serverInternalUrl}/internal/hold`, {
         method: 'POST',
         headers: { ...auth, 'content-type': 'application/json' },
         body: JSON.stringify({ minutes }),
-        signal: timeout(),
       });
-      if (!res.ok) throw new Error(`hold: ${res.status}`);
+      if (!res.ok) throw new Error(`server hold: ${res.status}`);
     },
     async status() {
-      const res = await fetch(`${s.serverInternalUrl}/internal/status`, { headers: auth, signal: timeout() });
-      if (!res.ok) throw new Error(`status: ${res.status}`);
+      const res = await call('status', `${s.serverInternalUrl}/internal/status`, { headers: auth });
+      if (!res.ok) throw new Error(`server status: ${res.status}`);
       return (await res.json()) as Awaited<ReturnType<ServerApi['status']>>;
     },
     async health() {
-      const res = await fetch(`${s.serverUrl}/api/health`, { signal: timeout() });
+      const res = await call('health', `${s.serverUrl}/api/health`);
       return res.ok ? ((await res.json()) as { status: string; version: string; commit: string }) : null;
     },
   };
@@ -279,10 +284,23 @@ async function swap(s: Settings, id: string): Promise<void> {
   else log.info('the updater was replaced by someone else meanwhile; the old one is removed');
 }
 
+// node:http rather than fetch: `update now` answers only when the update has finished, and fetch gives up on any
+// answer that takes longer than five minutes to start ("fetch failed") while the update goes on
 async function control(path: string, method = 'GET'): Promise<void> {
-  const res = await fetch(`http://127.0.0.1:8091${path}`, { method, signal: AbortSignal.timeout(60 * 60_000) });
-  process.stdout.write(`${JSON.stringify(await res.json(), null, 2)}\n`);
-  if (!res.ok) process.exitCode = 1;
+  const { status, body } = await new Promise<{ status: number; body: string }>((resolve, reject) => {
+    const req = request({ host: '127.0.0.1', port: 8091, path, method, timeout: 60 * 60_000 }, (res) => {
+      let text = '';
+      res.setEncoding('utf8');
+      res.on('data', (c: string) => (text += c));
+      res.on('end', () => resolve({ status: res.statusCode ?? 0, body: text }));
+      res.on('error', reject);
+    });
+    req.on('timeout', () => req.destroy(new Error('no answer from the updater in 60 min')));
+    req.on('error', reject);
+    req.end();
+  });
+  process.stdout.write(`${JSON.stringify(JSON.parse(body), null, 2)}\n`);
+  if (status < 200 || status >= 300) process.exitCode = 1;
 }
 
 async function main(argv: string[]): Promise<void> {

@@ -13,7 +13,7 @@
 // Expects the images marksy-server:e2e, marksy-web:e2e and marksy-updater:e2e (built by the workflow) and cosign on
 // PATH. Prints versions, outcomes and timings; the history of the updater is printed at the end.
 import { spawnSync } from 'node:child_process';
-import { createHmac } from 'node:crypto';
+import { createHash, createHmac } from 'node:crypto';
 import { chmodSync, copyFileSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -117,12 +117,14 @@ const psql = (sql) => compose(['exec', '-T', 'postgres', 'psql', '-U', 'marksy',
 
 function build(name, version, extra = '', context = null) {
   const dir = context ?? mkdtempSync(join(work, 'ctx-'));
+  // a full 40-character commit, as the images workflow writes it: the server's health names only the first 12
+  const revision = createHash('sha1').update(version).digest('hex');
   writeFileSync(
     join(dir, 'Dockerfile'),
     [
       `FROM marksy-${name}:e2e`,
-      `ENV MARKSY_VERSION=${version} MARKSY_COMMIT=rev-${version}`,
-      `LABEL org.opencontainers.image.version=${version} org.opencontainers.image.revision=rev-${version}${name === 'web' ? ' marksy.proxy-config=e2e' : ''}`,
+      `ENV MARKSY_VERSION=${version} MARKSY_COMMIT=${revision}`,
+      `LABEL org.opencontainers.image.version=${version} org.opencontainers.image.revision=${revision}${name === 'web' ? ' marksy.proxy-config=e2e' : ''}`,
       extra,
     ].join('\n'),
   );

@@ -105,6 +105,15 @@ export function keepTag(version: string | undefined, channelTag: string): string
   return version && /^[\w][\w.-]{0,127}$/.test(version) && version !== channelTag ? version : 'previous';
 }
 
+/**
+ * Whether the server's /api/health names the commit of the image's revision label. The server reports its commit cut
+ * to 12 characters (server/src/runtime/version.ts) and the label carries all 40, so both are compared at that length.
+ */
+export function sameCommit(reported: string | undefined, revision: string | undefined): boolean {
+  const cut = (s: string | undefined) => (s ?? '').trim().slice(0, 12);
+  return cut(reported) !== '' && cut(reported) === cut(revision);
+}
+
 export function createUpdater(cfg: UpdaterConfig, deps: Deps) {
   const { docker, registry, store } = deps;
   const channel = parseChannel(cfg.channel);
@@ -345,7 +354,7 @@ export function createUpdater(cfg: UpdaterConfig, deps: Deps) {
           sleep: deps.sleep,
           now: deps.now,
           ...(service === 'server' && {
-            check: async () => (await deps.server.health().catch(() => null))?.commit === newRevision,
+            check: async () => sameCommit((await deps.server.health().catch(() => null))?.commit, newRevision),
           }),
         });
         done.push(r.replaced);

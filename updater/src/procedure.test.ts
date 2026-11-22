@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import type { ContainerInspect, Docker, ImageInspect } from './docker';
 import { stateStore } from './history';
 import type { Attempt } from './history';
-import { createUpdater, keepTag } from './procedure';
+import { createUpdater, keepTag, sameCommit } from './procedure';
 import type { ServerApi, UpdaterConfig } from './procedure';
 import { parseQuietHours } from './quiet';
 import type { Registry } from './registry';
@@ -16,6 +16,9 @@ const SERVICES = ['server', 'backup', 'web', 'proxy', 'updater'] as const;
 const IMAGE_OF = { server: 'server', backup: 'server', web: 'web', proxy: 'web', updater: 'updater' } as const;
 
 type Behaviour = 'ok' | 'unhealthy' | 'crash';
+
+/** A release's commit as the images workflow writes it into the revision label: all 40 characters */
+const revisionOf = (version: string) => `c0ffee${version.replace(/\D/g, '')}`.padEnd(40, 'a');
 
 /** A Docker daemon in memory: images by id, containers that become healthy, unhealthy or crash by their image */
 class FakeDocker implements Docker {
@@ -54,7 +57,7 @@ class FakeDocker implements Docker {
         Cmd: img === 'web' ? ['web'] : ['serve'],
         Labels: {
           'org.opencontainers.image.version': version,
-          'org.opencontainers.image.revision': `rev-${version}`,
+          'org.opencontainers.image.revision': revisionOf(version),
           ...(opts.proxy && { 'marksy.proxy-config': opts.proxy }),
         },
       },
@@ -254,7 +257,12 @@ function updater(
   const server: ServerApi = {
     hold: async () => undefined,
     status: async () => ({ version: docker.serviceImageVersion('server')!, commit: '', migrations, sync: { running } }),
-    health: async () => ({ status: 'ok', version: '', commit: `rev-${docker.serviceImageVersion('server')}` }),
+    // what the server says, as server/src/runtime/version.ts says it: the commit cut to 12 characters
+    health: async () => ({
+      status: 'ok',
+      version: '',
+      commit: revisionOf(docker.serviceImageVersion('server')!).slice(0, 12),
+    }),
   };
   return createUpdater(
     {
@@ -469,6 +477,18 @@ describe('the name an outgoing image keeps', () => {
     expect(keepTag(undefined, '1')).toBe('previous');
     expect(keepTag('1.0.2', '1.0.2')).toBe('previous');
     expect(keepTag('not a tag!', '1')).toBe('previous');
+  });
+});
+
+describe('the new server is the release', () => {
+  it('when its health names the first 12 characters of the image revision', () => {
+    const full = 'c5ffd60a1b2c3d4e5f60718293a4b5c6d7e8f901';
+    expect(sameCommit(full.slice(0, 12), full)).toBe(true);
+    expect(sameCommit(full, full)).toBe(true);
+    expect(sameCommit('dev', 'dev')).toBe(true);
+    expect(sameCommit('a302d6a00000', full)).toBe(false);
+    expect(sameCommit('', full)).toBe(false);
+    expect(sameCommit(undefined, undefined)).toBe(false);
   });
 });
 
