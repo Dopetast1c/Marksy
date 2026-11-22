@@ -11,15 +11,38 @@ import type { LocalTime } from './time';
 const DAY_MS = 86_400_000;
 /** A week of the current term verified longer ago than this is fetched again inside the school day (re-scan) */
 export const RESCAN_AGE_DAYS = 6;
-/** Finished terms are fetched once more this long after their end (late finals and edits) */
-export const POST_TERM_DAYS = 14;
+/**
+ * A finished term closes this many days after its end, or earlier once every subject with marks in it has its final
+ * (D61). Until then its last weeks keep the stale-week re-check; once closed, no automatic read fetches its weeks.
+ */
+export const TERM_CLOSE_DAYS = 7;
+/** The last weeks of a finished term that the re-check reads until the term closes: the term's last two weeks */
+export const LAST_WEEKS_DAYS = 14;
 /** How far the next school week is looked for past holidays */
 export const AHEAD_WEEKS = 3;
 
+export interface PlanTerm {
+  id: string;
+  start: ISODate;
+  end: ISODate;
+}
+
 export interface PlanCalendar {
   year: DateRange;
-  terms: { id: string; start: ISODate; end: ISODate }[];
+  terms: PlanTerm[];
   holidays: DateRange[];
+}
+
+/** upcoming, current, finished and waiting for finals (until closesOn), closed (D61) */
+export type TermState = 'upcoming' | 'current' | 'waiting' | 'closed';
+
+/** The day a finished term closes at the latest */
+export const closesOn = (t: PlanTerm): ISODate => addDays(t.end, TERM_CLOSE_DAYS);
+
+export function termState(t: PlanTerm, today: ISODate, finalsIn: ReadonlySet<string>): TermState {
+  if (t.start > today) return 'upcoming';
+  if (t.end >= today) return 'current';
+  return closesOn(t) <= today || finalsIn.has(t.id) ? 'closed' : 'waiting';
 }
 
 export interface CalendarRules {
@@ -33,8 +56,10 @@ export interface StudentPlanState {
   calendar: PlanCalendar;
   /** week_start -> verified_at, verified weeks only */
   coverage: ReadonlyMap<ISODate, Date>;
-  /** term id -> the post-term re-scan is done */
-  postTermDone: ReadonlySet<string>;
+  /** The finished terms where every subject with marks has its final: closed before TERM_CLOSE_DAYS (D61) */
+  finalsIn: ReadonlySet<string>;
+  /** Weeks the mass-removal guard held today (local date): not asked for again before tomorrow (design.md 8) */
+  heldToday?: ReadonlySet<ISODate>;
 }
 
 export interface WeekContext extends CalendarRules {
@@ -124,49 +149,51 @@ function weeksSoFar(cal: PlanCalendar, ctx: WeekContext): ISODate[] {
 
 const ageDays = (verified: Date, now: Date) => (now.getTime() - verified.getTime()) / DAY_MS;
 
-/** Weeks of the current term (or the last one that started) verified longer ago than the re-scan age */
+const overlaps = (w: ISODate, t: PlanTerm) => addDays(w, 6) >= t.start && w <= t.end;
+
+/** A week only closed terms touch: no automatic read fetches it again once it was verified (D61) */
+function inClosedTerm(w: ISODate, state: StudentPlanState, today: ISODate): boolean {
+  const touching = state.calendar.terms.filter((t) => overlaps(w, t));
+  return touching.length > 0 && touching.every((t) => termState(t, today, state.finalsIn) === 'closed');
+}
+
+/**
+ * The stale-week re-check: weeks verified longer ago than the re-scan age, of the current term and of the last weeks
+ * of a finished term that has not closed yet (late marks come in its last days). A closed term has none.
+ */
 function staleTermWeeks(state: StudentPlanState, weeks: ISODate[], ctx: WeekContext): ISODate[] {
-  const term = [...state.calendar.terms]
-    .filter((t) => t.start <= ctx.today)
-    .sort((a, b) => b.start.localeCompare(a.start))[0];
-  if (!term) return [];
-  const inTerm = weeks.filter((w) => addDays(w, 6) >= term.start && w <= term.end);
-  return inTerm.filter((w) => {
+  const due = (w: ISODate) => {
     const at = state.coverage.get(w);
     // never verified: that is backfill
     return !!at && ageDays(at, ctx.now) > RESCAN_AGE_DAYS;
-  });
-}
-
-/** Weeks of terms that ended two weeks ago and were not fetched since */
-function postTermWeeks(state: StudentPlanState, weeks: ISODate[], ctx: WeekContext): ISODate[] {
-  const out: ISODate[] = [];
-  for (const t of state.calendar.terms) {
-    const due = addDays(t.end, POST_TERM_DAYS);
-    if (due > ctx.today || state.postTermDone.has(t.id)) continue;
-    for (const w of weeks) {
-      if (addDays(w, 6) < t.start || w > t.end) continue;
-      const at = state.coverage.get(w);
-      if (at && ctx.localDate(at) < due) out.push(w);
-    }
-  }
-  return out;
+  };
+  return weeks.filter(
+    (w) =>
+      state.calendar.terms.some((t) => {
+        if (!overlaps(w, t)) return false;
+        const s = termState(t, ctx.today, state.finalsIn);
+        return s === 'current' || (s === 'waiting' && w >= addDays(t.end, 1 - LAST_WEEKS_DAYS));
+      }) && due(w),
+  );
 }
 
 /**
  * The weeks of one student in fetch order: standing (the current week, the next school week where the diary shows
- * lessons ahead, and the previous one), the gap since the last success
- * (newest first), the re-scan of the current term's stale weeks, the once-more of finished terms, then the backfill of
- * never-verified weeks. The re-scan has no slot of its own: it fills the school-day runs (design.md 10.2, D55).
+ * lessons ahead, and the previous one), the gap since the last success (newest first), the re-scan of stale weeks
+ * (the current term, the last weeks of a finished term until it closes), then the backfill of never-verified weeks.
+ * The re-scan has no slot of its own: it fills the school-day runs (design.md 10.2, D55). A verified week of a closed
+ * term is in no set (D61), and a week the mass-removal guard held today waits for tomorrow (design.md 8).
  */
 export function selectWeeks(state: StudentPlanState, ctx: WeekContext): WeekRequest[] {
   const cal = state.calendar;
   const weeks = weeksSoFar(cal, ctx);
   const current = weekStartOf(ctx.today, ctx.weekStart);
   const out: WeekRequest[] = [];
-  const taken = new Set<ISODate>();
+  const taken = new Set<ISODate>(state.heldToday ?? []);
   const add = (w: ISODate, set: PlanSet) => {
     if (taken.has(w)) return;
+    // a closed term's weeks are read once if they never were (backfill), never again
+    if (set !== 'backfill' && state.coverage.has(w) && inClosedTerm(w, state, ctx.today)) return;
     taken.add(w);
     out.push({ weekStart: w, set });
   };
@@ -189,31 +216,25 @@ export function selectWeeks(state: StudentPlanState, ctx: WeekContext): WeekRequ
   }
 
   for (const w of staleTermWeeks(state, weeks, ctx)) add(w, 'rescan');
-  for (const w of postTermWeeks(state, weeks, ctx)) add(w, 'post_term');
 
   for (const w of weeks) if (!state.coverage.has(w)) add(w, 'backfill');
   return out;
 }
 
-/**
- * After a run: the finished terms whose post-term re-scan is now complete, and whether the current term has no stale
- * week left (term_rescans.last_full_rescan_at).
- */
+/** After a run: whether the current term has no stale week left (term_rescans.last_full_rescan_at) */
 export function termBookkeeping(
   state: StudentPlanState,
   ctx: WeekContext,
-): { postTermDone: string[]; currentTermId: string | null; currentFresh: boolean } {
+): { currentTermId: string | null; currentFresh: boolean } {
   const weeks = weeksSoFar(state.calendar, ctx);
-  const postTermDone = state.calendar.terms
-    .filter((t) => addDays(t.end, POST_TERM_DAYS) <= ctx.today && !state.postTermDone.has(t.id))
-    .filter((t) => postTermWeeks({ ...state, calendar: { ...state.calendar, terms: [t] } }, weeks, ctx).length === 0)
-    .map((t) => t.id);
   const current = [...state.calendar.terms].filter((t) => t.start <= ctx.today && t.end >= ctx.today)[0];
-  return {
-    postTermDone,
-    currentTermId: current?.id ?? null,
-    currentFresh: current ? staleTermWeeks(state, weeks, ctx).length === 0 : false,
-  };
+  const stale = current ? staleTermWeeks(state, weeks, ctx).filter((w) => overlaps(w, current)) : [];
+  return { currentTermId: current?.id ?? null, currentFresh: !!current && stale.length === 0 };
+}
+
+/** The school weeks of a term up to today (a manual re-check of a finished term reads these, D61) */
+export function termWeeks(cal: PlanCalendar, term: PlanTerm, ctx: WeekContext): ISODate[] {
+  return weeksSoFar(cal, ctx).filter((w) => overlaps(w, term));
 }
 
 /**
@@ -223,8 +244,9 @@ export function termBookkeeping(
 export const hasBacklog = (requests: readonly WeekRequest[]) =>
   requests.some((r) => r.set === 'gap' || r.set === 'backfill');
 
-/** A finished term is due for its once-more (POST_TERM_DAYS after its end) */
-export const hasPostTerm = (requests: readonly WeekRequest[]) => requests.some((r) => r.set === 'post_term');
+/** A finished term of the student still waits for its finals (it has not closed, D61) */
+export const waitsForFinals = (state: StudentPlanState, today: ISODate) =>
+  state.calendar.terms.some((t) => termState(t, today, state.finalsIn) === 'waiting');
 
 // ---------------------------------------------------------------------------------------------------------------
 // May a run start now?
@@ -267,12 +289,12 @@ export interface GateInput {
    * (window.ts). Empty on a day without school for all of them.
    */
   windows: readonly [number, number][];
-  /** Today is a school weekday of the manifest (for the post-term run during holidays) */
+  /** Today is a school weekday of the manifest (for the finals run during holidays) */
   weekday: boolean;
   /** A week never fetched after it ended waits (gap, backfill): a catch-up may run at any hour */
   backlog: boolean;
-  /** A finished term's once-more is due */
-  postTerm: boolean;
+  /** A finished term waits for its finals (it has not closed, D61) */
+  waitingFinals: boolean;
   /**
    * A child's nearest school week was not read since their last school day, and no run of kind ahead has started in
    * this stretch without school (aheadDue, state.ts)
@@ -369,9 +391,11 @@ export function decideStart(input: GateInput): GateDecision {
       : { start: false, reason: 'jitter', record: null };
   }
 
-  // a finished term's once-more that falls into the holidays (no child has a window): one run in the manifest's window
-  // on a weekday, or the year's finals would wait for September
-  if (input.postTerm && input.windows.length === 0 && input.weekday && inside(limits.standIn)) {
+  // a finished term waiting for its finals in the holidays (no child has a window): one run a weekday in the manifest's
+  // window, or the finals (the year's above all) would wait for the next term; it reads the finals and the term's last
+  // weeks, nothing more (D61)
+  const ranToday = localTime(account.lastSuccessAt, input.timeZone).date === local.date;
+  if (input.waitingFinals && !ranToday && input.windows.length === 0 && input.weekday && inside(limits.standIn)) {
     return afterJitter(limits.standIn!)
       ? { start: true, kind: 'rescan' }
       : { start: false, reason: 'jitter', record: null };

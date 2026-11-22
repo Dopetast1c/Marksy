@@ -80,6 +80,12 @@ export const syncCoverage = pgTable(
     verifiedAt: ts('verified_at').notNull(),
     runId: uuid('run_id').references(() => syncRuns.id, { onDelete: 'set null' }),
     status: text('status', { enum: ['verified', 'failed'] }).notNull(),
+    /**
+     * The mass-removal guard held this week (design.md 8): its response would have removed all or many stored records,
+     * so it removed none and stayed unverified. The planner asks for it again at most once a local day. Cleared when
+     * the week is verified.
+     */
+    heldAt: ts('held_at'),
   },
   (t) => [primaryKey({ columns: [t.studentId, t.weekStart] })],
 );

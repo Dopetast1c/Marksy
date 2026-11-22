@@ -170,7 +170,88 @@ describe('collector', () => {
     ]);
   });
 
-  it('marks a vanished mark removed, and restored when it comes back', async () => {
+  it('a week that comes back without its marks keeps them all: held, unverified, mass_removal drift', async () => {
+    const { account } = await createAccount(db, 'demo-full');
+    await collect(account);
+    const before = await db.select().from(marks).where(isNull(marks.removedAt));
+    const later = new Date(NOW.getTime() + 3_600_000);
+    const result = await collect(account, {
+      now: () => later,
+      fixtures: week1((days) => days.forEach((d) => d.lessons.forEach((l) => (l.marks = [])))),
+    });
+    expect(result.stats).toMatchObject({ removed: 0, warnings: ['held 2025-09-08'] });
+    expect(await db.select().from(marks).where(isNull(marks.removedAt))).toHaveLength(before.length);
+    expect(await db.select().from(markEvents).where(eq(markEvents.kind, 'removed'))).toEqual([]);
+    // p-2, whose class has no marks, read the week as usual
+    expect(result.verified.filter((v) => v.weekStart === '2025-09-08')).toHaveLength(1);
+    const held = await db.select().from(syncCoverage).where(eq(syncCoverage.weekStart, '2025-09-08'));
+    expect(held.some((c) => c.heldAt?.getTime() === later.getTime() && c.verifiedAt.getTime() === NOW.getTime())).toBe(
+      true,
+    );
+    expect(await db.select().from(apiDriftEvents).where(eq(apiDriftEvents.kind, 'mass_removal'))).toEqual([
+      expect.objectContaining({ endpoint: `collector:${account.id}`, path: 'marks' }),
+    ]);
+
+    // a week that comes back empty (a closed term in the diary) keeps its lessons as well
+    const empty = await collect(account, {
+      now: () => later,
+      fixtures: week1((days) => days.forEach((d) => d.lessons.splice(0))),
+    });
+    expect(empty.stats).toMatchObject({ removed: 0, warnings: ['held 2025-09-08'] });
+    expect(await db.select().from(lessons).where(isNull(lessons.removedAt))).toHaveLength(13);
+  });
+
+  it('three marks gone from one week at once is a lost response, not an edit: nothing is removed', async () => {
+    const { account } = await createAccount(db, 'demo-full');
+    await collect(account);
+    const result = await collect(account, {
+      fixtures: week1((days) => {
+        let n = 0;
+        for (const d of days)
+          for (const l of d.lessons as { marks: unknown[] }[]) {
+            if (!l.marks.length || n >= 3) continue;
+            n++;
+            l.marks = [];
+          }
+      }),
+    });
+    expect(result.stats).toMatchObject({ removed: 0 });
+    expect(await db.select().from(marks).where(isNull(marks.removedAt))).toHaveLength(9);
+  });
+
+  it('a finished term is frozen, a manual re-check included: nothing goes, new values still come', async () => {
+    const { account } = await createAccount(db, 'demo-full');
+    await collect(account);
+    const [first] = await db.select().from(syncRuns);
+    const firstRun = first!.id;
+    // November: the first quarter (1 September to 31 October) has ended
+    const november = new Date('2025-11-20T09:00:00Z');
+    const result = await collect(account, {
+      now: () => november,
+      plan: () => WEEKS.map((w) => ({ ...w, set: 'manual' as PlanSet })),
+      fixtures: week1((days) => {
+        lessonAt(days, '2025-09-08').marks[0]!.value = '9';
+        lessonAt(days, '2025-09-12').marks = [];
+        days.find((d) => d.date === '2025-09-09')!.lessons.splice(0);
+      }),
+    });
+    expect(result.stats).toMatchObject({ removed: 0, changed: 1 });
+    expect(result.stats.warnings).toBeUndefined();
+    expect(await db.select().from(marks).where(isNull(marks.removedAt))).toHaveLength(9);
+    expect(await db.select().from(lessons).where(isNull(lessons.removedAt))).toHaveLength(13);
+    expect((await db.select().from(marks).where(eq(marks.externalId, 'M-1')))[0]).toMatchObject({ raw: '9' });
+    expect(result.verified.map((v) => v.weekStart)).toContain('2025-09-08');
+    // the response lost frozen records: the week is verified, its kept body stays the earlier, complete one
+    const [p1] = await db.select().from(students).where(eq(students.externalId, 'p-1'));
+    const [week] = await db
+      .select()
+      .from(syncCoverage)
+      .where(and(eq(syncCoverage.studentId, p1!.id), eq(syncCoverage.weekStart, '2025-09-08')));
+    expect(week!.verifiedAt).toEqual(november);
+    expect(week!.runId).toBe(firstRun);
+  });
+
+  it('a single mark deleted in the current term is still removed, and restored when it comes back', async () => {
     const { account } = await createAccount(db, 'demo-full');
     await collect(account);
     const without = await collect(account, { fixtures: week1((days) => (lessonAt(days, '2025-09-12').marks = [])) });

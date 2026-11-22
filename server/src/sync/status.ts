@@ -13,6 +13,9 @@ import {
 } from '../db/schema';
 import { accountPlan } from './account-plan';
 import type { SyncConfig } from './config';
+import { driftVisibleTo, shownEndpoint } from './drift-scope';
+import { closesOn, termState, termWeeks } from './plan';
+import { finalsInOf, storedPlanCalendar } from './state';
 import { fromLocal } from './time';
 
 // Sync (sync.title; docs/design.md 5.6, 10.4): what the state card of one diary account says beyond its last run, from
@@ -43,6 +46,33 @@ export const syncPlanOut = z.object({
   maxRequestsPerRun: z.number(),
   /** the current term's re-scan: the last time every week was checked, the oldest check of a week */
   rescan: z.object({ lastFullAt: z.date().nullable(), oldestVerifiedAt: z.date().nullable() }),
+  /**
+   * Per child the account reads: the terms that have started, with their state (D61: current, waiting for finals until
+   * closesOn, closed), and what "Check the history again" (sync.rescan.button) would read again: school weeks so far and
+   * requests, for a term and for the year
+   */
+  terms: z.array(
+    z.object({
+      studentId: z.string(),
+      yearWeeks: z.number(),
+      yearRequests: z.number(),
+      terms: z.array(
+        z.object({
+          id: z.string(),
+          kind: z.string(),
+          index: z.number(),
+          start: z.string(),
+          end: z.string(),
+          state: z.enum(['current', 'waiting', 'closed']),
+          closesOn: z.string().nullable(),
+          weeks: z.number(),
+          requests: z.number(),
+        }),
+      ),
+    }),
+  ),
+  /** About how many of a re-check's requests one run takes, after its own (login, calendars, standing weeks) */
+  rescanPerRun: z.number(),
   drift: z.array(
     z.object({
       id: z.string(),
@@ -146,6 +176,50 @@ export async function syncPlanOf(
       rescan = { lastFullAt: done[0]?.at ?? null, oldestVerifiedAt: known[0] ?? null };
     }
   }
+  const termsOut: z.infer<typeof syncPlanOut>['terms'] = [];
+  // what one week costs: one request, six for a provider that answers per day; a provider per term reads a term at once
+  const unit = manifest.limits.fetchUnit;
+  const cost = (weeks: number, spans = 1) => (unit === 'term' ? spans : unit === 'day' ? weeks * 6 : weeks);
+  for (const studentId of kids) {
+    const cal = await storedPlanCalendar(db, studentId, plan.ctx.today);
+    if (!cal) continue;
+    const finalsIn = await finalsInOf(db, studentId, cal);
+    const rows = cal.terms.length
+      ? await db
+          .select({ id: terms.id, kind: terms.kind, index: terms.index })
+          .from(terms)
+          .where(
+            inArray(
+              terms.id,
+              cal.terms.map((t) => t.id),
+            ),
+          )
+      : [];
+    const yearWeeks = termWeeks(cal, { id: '', start: cal.year.from, end: cal.year.to }, plan.ctx).length;
+    const list = [...cal.terms]
+      .sort((a, b) => a.start.localeCompare(b.start))
+      .map((t) => ({ t, state: termState(t, plan.ctx.today, finalsIn), row: rows.find((r) => r.id === t.id) }))
+      .filter((x): x is typeof x & { state: 'current' | 'waiting' | 'closed' } => x.state !== 'upcoming' && !!x.row)
+      .map(({ t, state, row }) => {
+        const weeks = termWeeks(cal, t, plan.ctx).length;
+        return {
+          id: t.id,
+          kind: row!.kind,
+          index: row!.index,
+          start: t.start,
+          end: t.end,
+          state,
+          closesOn: state === 'waiting' ? closesOn(t) : null,
+          weeks,
+          requests: cost(weeks),
+        };
+      });
+    termsOut.push({ studentId, yearWeeks, yearRequests: cost(yearWeeks, list.length || 1), terms: list });
+  }
+  // a run's own requests before a re-check's weeks: login and account, then per child the calendar and subjects (about
+  // four) and the standing weeks (three)
+  const rescanPerRun = Math.max(1, plan.maxRequestsPerRun - 2 - kids.length * 7);
+
   const drift = await db
     .select({
       id: apiDriftEvents.id,
@@ -170,6 +244,11 @@ export async function syncPlanOf(
     sets,
     maxRequestsPerRun: plan.maxRequestsPerRun,
     rescan,
-    drift,
+    terms: termsOut,
+    rescanPerRun,
+    // a hold of another account's week is that family's, not an API change (drift-scope.ts)
+    drift: drift
+      .filter((d) => driftVisibleTo(d.endpoint, account.id))
+      .map((d) => ({ ...d, endpoint: shownEndpoint(d.endpoint) })),
   };
 }

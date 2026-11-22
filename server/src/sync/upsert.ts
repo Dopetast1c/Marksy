@@ -1,4 +1,4 @@
-import type { Attendance, BehaviourEvent, DateRange, Lesson, Mark } from '@marksy/core';
+import type { Attendance, BehaviourEvent, DateRange, ISODate, Lesson, Mark } from '@marksy/core';
 import { and, eq, gte, inArray, lte, or, sql } from 'drizzle-orm';
 import type { Db } from '../db/client';
 import {
@@ -15,6 +15,12 @@ import type { MarkDiff } from '../db/schema';
 
 // The upsert rules of docs/design.md 8, applied to one fetched range of one student, whatever the run kind. A range is
 // stored completely or not at all (one transaction), so a week is either verified or untouched.
+//
+// Records accumulate (D61). New records and changed values are always applied; a stored record leaves only when the
+// diary clearly deleted that one record: its date is in no finished term (those are frozen), its lesson came back in
+// this response, and the response does not drop all or many records at once. When it would (a closed term's weeks come
+// back empty, a response without its marks), the unit removes nothing at all and is held: the collector keeps the week
+// unverified, records a mass_removal drift and asks for it again at most once a day.
 
 export type Tx = Parameters<Parameters<Db['transaction']>[0]>[0];
 
@@ -25,6 +31,11 @@ export interface UpsertScope {
   now: Date;
   /** Subject external id -> subjects.id for this student and year; unknown subjects are added on the way */
   subjectIds: Map<string, string>;
+  /**
+   * The end of the last term that finished before today: records dated on or before it are frozen and never removed,
+   * whatever triggered the read (a manual re-check included). Null when no term has finished.
+   */
+  frozenUntil?: ISODate | null;
 }
 
 export interface UpsertStats {
@@ -34,6 +45,60 @@ export interface UpsertStats {
   removed: number;
   restored: number;
 }
+
+/** What one record kind of a unit would remove; applied only when no kind of the unit trips the guard */
+interface Removal {
+  table: GuardedTable;
+  /** Active stored records of the range that are not frozen */
+  stored: number;
+  /** Of these, the ones missing from the response */
+  missing: number;
+  /** Of the missing, the ones the diary clearly deleted (their lesson is in the response) */
+  ids: string[];
+  /** Active frozen records of the range missing from the response: kept */
+  frozenMissing: number;
+}
+
+/** Active records of the range missing from the response, split into what may go and what is frozen */
+function missingOf<T extends { removedAt: Date | null; date: ISODate }>(
+  scope: UpsertScope,
+  range: DateRange,
+  existing: readonly T[],
+  present: (row: T) => boolean,
+) {
+  const active = existing.filter((r) => !r.removedAt && r.date >= range.from && r.date <= range.to);
+  const stored = active.filter((r) => !frozen(scope, r.date));
+  return {
+    stored,
+    gone: stored.filter((r) => !present(r)),
+    frozenMissing: active.filter((r) => frozen(scope, r.date) && !present(r)).length,
+  };
+}
+
+export type GuardedTable = 'lessons' | 'marks' | 'attendance' | 'behaviour';
+
+/**
+ * The mass-removal guard (design.md 8): more missing records than this in one fetched unit, or all of at least two,
+ * and the unit removes nothing. Marks and remarks: one per lesson; a teacher deletes a wrong one at a time, so three
+ * gone from one child's week at once is a response that lost them, not an edit. Lessons: a school day (eight slots)
+ * may be cancelled after the fact, more may not. Absences: a day's worth (six).
+ */
+export const REMOVAL_LIMITS: Record<GuardedTable, number> = { lessons: 8, marks: 2, attendance: 6, behaviour: 2 };
+
+export const tripsGuard = (r: Pick<Removal, 'table' | 'stored' | 'missing'>) =>
+  r.missing > REMOVAL_LIMITS[r.table] || (r.stored >= 2 && r.missing === r.stored);
+
+export interface UpsertResult extends UpsertStats {
+  /** The record kinds that tripped the mass-removal guard; empty when the unit's removals were applied */
+  held: GuardedTable[];
+  /**
+   * Records of a finished term missing from the response (kept, frozen): the response is not a good copy of the week,
+   * so it does not replace the body kept for it (collector.ts, retention.ts)
+   */
+  frozenMissing: number;
+}
+
+const frozen = (scope: UpsertScope, date: ISODate) => !!scope.frozenUntil && date <= scope.frozenUntil;
 
 export interface FetchedRange {
   range: DateRange;
@@ -144,22 +209,16 @@ async function upsertLessons(tx: Tx, scope: UpsertScope, fetched: FetchedRange, 
     stats.lessons++;
   }
 
-  // gone from a re-fetched range under both keys: soft-deleted, never dropped
-  const gone = existing.filter(
-    (l) => !matched.has(l.id) && !l.removedAt && l.date >= fetched.range.from && l.date <= fetched.range.to,
-  );
-  if (gone.length) {
-    await tx
-      .update(lessons)
-      .set({ removedAt: now })
-      .where(
-        inArray(
-          lessons.id,
-          gone.map((l) => l.id),
-        ),
-      );
-  }
-  return lessonIds;
+  // gone from a re-fetched range under both keys: soft-deleted later (applyRemovals), never dropped
+  const { stored, gone, frozenMissing } = missingOf(scope, fetched.range, existing, (l) => matched.has(l.id));
+  const removal: Removal = {
+    table: 'lessons',
+    stored: stored.length,
+    missing: gone.length,
+    ids: gone.map((l) => l.id),
+    frozenMissing,
+  };
+  return { lessonIds, matched, removal };
 }
 
 type MarkRow = typeof marks.$inferSelect;
@@ -178,8 +237,9 @@ async function upsertMarks(
   scope: UpsertScope,
   fetched: FetchedRange,
   lessonIds: Map<string, string>,
+  matchedLessons: ReadonlySet<string>,
   stats: UpsertStats,
-) {
+): Promise<Removal> {
   const { studentId, providerId, now } = scope;
   const all = [...fetched.lessons.flatMap((l) => l.marks), ...fetched.marks];
   const ids = all.map((m) => m.externalId);
@@ -261,33 +321,38 @@ async function upsertMarks(
       .where(eq(marks.id, old.id));
   }
 
-  const gone = existing.filter(
-    (m) => !seen.has(m.externalId) && !m.removedAt && m.date >= fetched.range.from && m.date <= fetched.range.to,
-  );
-  if (gone.length) {
-    await tx
-      .update(marks)
-      .set({ removedAt: now })
-      .where(
-        inArray(
-          marks.id,
-          gone.map((m) => m.id),
-        ),
-      );
-    for (const m of gone) events.push({ studentId, markId: m.id, kind: 'removed', createdAt: now });
-    stats.removed += gone.length;
-  }
   if (events.length) await tx.insert(markEvents).values(events);
+  const { stored, gone, frozenMissing } = missingOf(scope, fetched.range, existing, (m) => seen.has(m.externalId));
+  // the diary clearly deleted this one mark: its lesson came back (without it); a mark without a lesson (a gradebook)
+  // only while the response still has other marks
+  const deleted = gone.filter((m) => (m.lessonId ? matchedLessons.has(m.lessonId) : seen.size > 0));
+  return { table: 'marks', stored: stored.length, missing: gone.length, ids: deleted.map((m) => m.id), frozenMissing };
 }
 
-async function upsertAttendance(tx: Tx, scope: UpsertScope, fetched: FetchedRange, lessonIds: Map<string, string>) {
+/** A missing absence or remark the diary clearly deleted: its lesson came back, or it never had one */
+const clearlyDeleted = (lessonId: string | null, matchedLessons: ReadonlySet<string>) =>
+  !lessonId || matchedLessons.has(lessonId);
+
+async function upsertAttendance(
+  tx: Tx,
+  scope: UpsertScope,
+  fetched: FetchedRange,
+  lessonIds: Map<string, string>,
+  matchedLessons: ReadonlySet<string>,
+): Promise<Removal> {
   const { studentId, providerId, now } = scope;
   const all = [
     ...fetched.lessons.flatMap((l) => (l.attendance ?? []).map((a) => ({ a, source: 'derived' as const }))),
     ...fetched.attendance.map((a) => ({ a, source: 'separate' as const })),
   ];
   const existing = await tx
-    .select({ id: attendance.id, externalId: attendance.externalId, removedAt: attendance.removedAt })
+    .select({
+      id: attendance.id,
+      externalId: attendance.externalId,
+      removedAt: attendance.removedAt,
+      date: attendance.date,
+      lessonId: attendance.lessonId,
+    })
     .from(attendance)
     .where(
       and(
@@ -321,19 +386,32 @@ async function upsertAttendance(tx: Tx, scope: UpsertScope, fetched: FetchedRang
         set: values,
       });
   }
-  const gone = existing.filter((a) => !seen.has(a.externalId) && !a.removedAt).map((a) => a.id);
-  if (gone.length) await tx.update(attendance).set({ removedAt: now }).where(inArray(attendance.id, gone));
+  const { stored, gone, frozenMissing } = missingOf(scope, fetched.range, existing, (a) => seen.has(a.externalId));
+  const ids = gone.filter((a) => clearlyDeleted(a.lessonId, matchedLessons)).map((a) => a.id);
+  return { table: 'attendance', stored: stored.length, missing: gone.length, ids, frozenMissing };
 }
 
 /**
  * Teacher remarks and behaviour events of the range, like attendance: upserted by id, soft-removed when the range no
  * longer has them, back when they return. A comment that changes is kept as it is now.
  */
-async function upsertBehaviour(tx: Tx, scope: UpsertScope, fetched: FetchedRange, lessonIds: Map<string, string>) {
+async function upsertBehaviour(
+  tx: Tx,
+  scope: UpsertScope,
+  fetched: FetchedRange,
+  lessonIds: Map<string, string>,
+  matchedLessons: ReadonlySet<string>,
+): Promise<Removal> {
   const { studentId, providerId, now } = scope;
   const all = [...fetched.lessons.flatMap((l) => l.behaviour ?? []), ...(fetched.behaviour ?? [])];
   const existing = await tx
-    .select({ id: behaviourEvents.id, externalId: behaviourEvents.externalId, removedAt: behaviourEvents.removedAt })
+    .select({
+      id: behaviourEvents.id,
+      externalId: behaviourEvents.externalId,
+      removedAt: behaviourEvents.removedAt,
+      date: behaviourEvents.date,
+      lessonId: behaviourEvents.lessonId,
+    })
     .from(behaviourEvents)
     .where(
       and(
@@ -366,8 +444,29 @@ async function upsertBehaviour(tx: Tx, scope: UpsertScope, fetched: FetchedRange
         set: values,
       });
   }
-  const gone = existing.filter((b) => !seen.has(b.externalId) && !b.removedAt).map((b) => b.id);
-  if (gone.length) await tx.update(behaviourEvents).set({ removedAt: now }).where(inArray(behaviourEvents.id, gone));
+  const { stored, gone, frozenMissing } = missingOf(scope, fetched.range, existing, (b) => seen.has(b.externalId));
+  const ids = gone.filter((b) => clearlyDeleted(b.lessonId, matchedLessons)).map((b) => b.id);
+  return { table: 'behaviour', stored: stored.length, missing: gone.length, ids, frozenMissing };
+}
+
+/** The removals of a unit that tripped no guard: soft-deleted, a 'removed' event per mark */
+async function applyRemovals(tx: Tx, scope: UpsertScope, removals: Removal[], stats: UpsertStats) {
+  const { studentId, now } = scope;
+  for (const r of removals) {
+    if (!r.ids.length) continue;
+    if (r.table === 'lessons') await tx.update(lessons).set({ removedAt: now }).where(inArray(lessons.id, r.ids));
+    if (r.table === 'attendance')
+      await tx.update(attendance).set({ removedAt: now }).where(inArray(attendance.id, r.ids));
+    if (r.table === 'behaviour')
+      await tx.update(behaviourEvents).set({ removedAt: now }).where(inArray(behaviourEvents.id, r.ids));
+    if (r.table === 'marks') {
+      await tx.update(marks).set({ removedAt: now }).where(inArray(marks.id, r.ids));
+      await tx
+        .insert(markEvents)
+        .values(r.ids.map((markId) => ({ studentId, markId, kind: 'removed' as const, createdAt: now })));
+      stats.removed += r.ids.length;
+    }
+  }
 }
 
 /**
@@ -391,18 +490,27 @@ async function dropOverriddenByDiary(tx: Tx, { studentId }: UpsertScope, fetched
 }
 
 /** Store one fetched range of one student: lessons, then marks, absences and remarks pointing at them. */
-export async function upsertRange(db: Db, scope: UpsertScope, fetched: FetchedRange): Promise<UpsertStats> {
+export async function upsertRange(db: Db, scope: UpsertScope, fetched: FetchedRange): Promise<UpsertResult> {
   const stats: UpsertStats = { lessons: 0, new: 0, changed: 0, removed: 0, restored: 0 };
+  let held: GuardedTable[] = [];
+  let frozenMissing = 0;
   // subjects added inside a transaction that rolls back must not stay in the cache
   const subjectIds = new Map(scope.subjectIds);
   await db.transaction(async (tx) => {
     const txScope = { ...scope, subjectIds };
-    const lessonIds = await upsertLessons(tx, txScope, fetched, stats);
-    await upsertMarks(tx, txScope, fetched, lessonIds, stats);
-    await upsertAttendance(tx, txScope, fetched, lessonIds);
-    await upsertBehaviour(tx, txScope, fetched, lessonIds);
+    const { lessonIds, matched, removal } = await upsertLessons(tx, txScope, fetched, stats);
+    const removals = [
+      removal,
+      await upsertMarks(tx, txScope, fetched, lessonIds, matched, stats),
+      await upsertAttendance(tx, txScope, fetched, lessonIds, matched),
+      await upsertBehaviour(tx, txScope, fetched, lessonIds, matched),
+    ];
+    held = removals.filter(tripsGuard).map((r) => r.table);
+    frozenMissing = removals.reduce((n, r) => n + r.frozenMissing, 0);
+    // one kind that lost too much makes the whole response suspect: nothing of the unit is removed
+    if (!held.length) await applyRemovals(tx, txScope, removals, stats);
     await dropOverriddenByDiary(tx, txScope, fetched);
   });
   for (const [k, v] of subjectIds) scope.subjectIds.set(k, v);
-  return stats;
+  return { ...stats, held, frozenMissing };
 }

@@ -10,6 +10,7 @@ import type { AdminNotice } from '../notify/admin';
 import { runCollector } from './collector';
 import type { WeekRequest } from './collector';
 import { effectiveLimits } from './config';
+import { shownEndpoint } from './drift-scope';
 import type { SyncConfig } from './config';
 import { checkOnline } from './connectivity';
 import type { OnlineCheck } from './connectivity';
@@ -168,7 +169,7 @@ async function runLocked(opts: RunSyncOptions): Promise<RunSyncResult> {
     weekday: manifest.calendar.schoolDays.includes(local.weekday),
     // an account that reads no child yet (just connected) has everything waiting; a source check has nothing
     backlog: sourceCheck ? false : today.backlog || pupils.length === 0,
-    postTerm: sourceCheck ? false : today.postTerm,
+    waitingFinals: sourceCheck ? false : today.waitingFinals,
     ahead: sourceCheck ? false : today.ahead,
     schoolDay: today.schoolDay,
     lastOfflineAt: lastOffline?.startedAt ?? null,
@@ -262,7 +263,7 @@ async function execute(opts: RunSyncOptions, r: Running): Promise<RunSyncResult>
     credentials,
     runId,
     plan: async ({ student, calendar, stored }) => {
-      const state = await planState(db, student.id, planCalendarOf(calendar, stored.termIds));
+      const state = await planState(db, student.id, planCalendarOf(calendar, stored.termIds), ctx);
       const weeks: WeekRequest[] = selectWeeks(state, ctx);
       planned[student.id] = weeks.map((w) => w.weekStart);
       for (const w of weeks) sets[w.set] = (sets[w.set] ?? 0) + 1;
@@ -304,13 +305,14 @@ async function execute(opts: RunSyncOptions, r: Running): Promise<RunSyncResult>
     });
   }
   for (const d of collected.newDrift) {
-    opts.log?.warn('api drift', { provider: account.providerId, endpoint: d.endpoint, kind: d.kind, path: d.path });
+    const endpoint = shownEndpoint(d.endpoint);
+    opts.log?.warn('api drift', { provider: account.providerId, endpoint, kind: d.kind, path: d.path });
     await notifyAdmins(db, account.familyId, {
       severity: 'info',
       title: 'notification.drift.title',
       body: 'notification.drift.body',
       eventKey: `drift:${account.providerId}:${d.endpoint}:${d.kind}:${d.path}`,
-      params: { endpoint: d.endpoint, kind: d.kind, path: d.path },
+      params: { endpoint, kind: d.kind, path: d.path },
     });
   }
   if (collected.status !== 'failed') await recordRescans(db, collected.students, ctx, finished);
@@ -325,7 +327,7 @@ async function execute(opts: RunSyncOptions, r: Running): Promise<RunSyncResult>
   };
 }
 
-/** term_rescans: finished post-term re-scans, and when the current term last had no stale week */
+/** term_rescans: when the current term last had no stale week */
 async function recordRescans(
   db: Db,
   list: { id: string }[],
@@ -336,12 +338,6 @@ async function recordRescans(
     const cal = await storedPlanCalendar(db, s.id, ctx.today);
     if (!cal) continue;
     const book = termBookkeeping(await planState(db, s.id, cal), ctx);
-    for (const termId of book.postTermDone) {
-      await db
-        .insert(termRescans)
-        .values({ termId, studentId: s.id, postTermRescanDone: true })
-        .onConflictDoUpdate({ target: [termRescans.termId, termRescans.studentId], set: { postTermRescanDone: true } });
-    }
     if (book.currentTermId && book.currentFresh) {
       await db
         .insert(termRescans)

@@ -1,21 +1,22 @@
 import type { Calendar, ISODate, ProviderManifest } from '@marksy/core';
 import { addDays, weekStartOf, weekdayOf } from '@marksy/core';
-import { and, desc, eq, isNull, lte, ne } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, isNotNull, isNull, lte, ne } from 'drizzle-orm';
 import type { Db } from '../db/client';
 import {
   bellSchedules,
+  finalMarks,
   holidays,
   lessons,
+  marks,
   schoolYears,
   syncCoverage,
   syncRuns,
-  termRescans,
   terms,
   weekTemplates,
 } from '../db/schema';
 import type { FamilySettings } from '../db/schema';
 import type { PlanSet } from './collector';
-import { aheadDue, hasBacklog, hasPostTerm, isSchoolDay, selectWeeks } from './plan';
+import { aheadDue, hasBacklog, isSchoolDay, selectWeeks, waitsForFinals } from './plan';
 import type { CalendarRules, EffectiveLimits, PlanCalendar, StudentPlanState, WeekContext } from './plan';
 import { boundWindows, childWindow, unionWindows } from './window';
 import type { ChildDay, ChildWindow, Window } from './window';
@@ -32,12 +33,51 @@ export async function coverageOf(db: Db, studentId: string): Promise<Map<ISODate
   return new Map(rows.map((r) => [r.weekStart, r.verifiedAt]));
 }
 
-export async function postTermDoneOf(db: Db, studentId: string): Promise<Set<string>> {
+/**
+ * The terms of the calendar where every subject that has marks in the term has its final (any source): such a term
+ * closes before TERM_CLOSE_DAYS (D61). A term without marks never closes early.
+ */
+export async function finalsInOf(db: Db, studentId: string, cal: PlanCalendar): Promise<Set<string>> {
+  const out = new Set<string>();
+  if (!cal.terms.length) return out;
+  const finals = await db
+    .select({ periodId: finalMarks.periodId, subjectId: finalMarks.subjectId })
+    .from(finalMarks)
+    .where(
+      and(
+        eq(finalMarks.studentId, studentId),
+        inArray(
+          finalMarks.periodId,
+          cal.terms.map((t) => t.id),
+        ),
+      ),
+    );
+  if (!finals.length) return out;
+  for (const t of cal.terms) {
+    const withFinal = new Set(finals.filter((f) => f.periodId === t.id).map((f) => f.subjectId));
+    if (!withFinal.size) continue;
+    const marked = await db
+      .selectDistinct({ subjectId: marks.subjectId })
+      .from(marks)
+      .where(
+        and(eq(marks.studentId, studentId), gte(marks.date, t.start), lte(marks.date, t.end), isNull(marks.removedAt)),
+      );
+    if (marked.length && marked.every((m) => withFinal.has(m.subjectId))) out.add(t.id);
+  }
+  return out;
+}
+
+/** The weeks the mass-removal guard held on the school's local today (design.md 8) */
+export async function heldToday(
+  db: Db,
+  studentId: string,
+  ctx: Pick<WeekContext, 'today' | 'localDate'>,
+): Promise<Set<ISODate>> {
   const rows = await db
-    .select({ termId: termRescans.termId })
-    .from(termRescans)
-    .where(and(eq(termRescans.studentId, studentId), eq(termRescans.postTermRescanDone, true)));
-  return new Set(rows.map((r) => r.termId));
+    .select({ weekStart: syncCoverage.weekStart, heldAt: syncCoverage.heldAt })
+    .from(syncCoverage)
+    .where(and(eq(syncCoverage.studentId, studentId), isNotNull(syncCoverage.heldAt)));
+  return new Set(rows.filter((r) => ctx.localDate(r.heldAt!) === ctx.today).map((r) => r.weekStart));
 }
 
 /** The stored calendar, as the planner sees it; null before the first run stored one */
@@ -67,8 +107,19 @@ export function planCalendarOf(calendar: Calendar, termIds: Map<string, string>)
   };
 }
 
-export async function planState(db: Db, studentId: string, calendar: PlanCalendar): Promise<StudentPlanState> {
-  return { calendar, coverage: await coverageOf(db, studentId), postTermDone: await postTermDoneOf(db, studentId) };
+/** `ctx`: today in the school's time zone, to leave out the weeks the guard held today */
+export async function planState(
+  db: Db,
+  studentId: string,
+  calendar: PlanCalendar,
+  ctx?: Pick<WeekContext, 'today' | 'localDate'>,
+): Promise<StudentPlanState> {
+  return {
+    calendar,
+    coverage: await coverageOf(db, studentId),
+    finalsIn: await finalsInOf(db, studentId, calendar),
+    ...(ctx && { heldToday: await heldToday(db, studentId, ctx) }),
+  };
 }
 
 export function weekContext(
@@ -148,7 +199,8 @@ export interface AccountToday {
   windows: Window[];
   /** An unverified week waits: a catch-up may run */
   backlog: boolean;
-  postTerm: boolean;
+  /** A finished term of a child waits for its finals (D61) */
+  waitingFinals: boolean;
   /** A day without school: a child's nearest school week waits and this stretch has had no run of kind ahead yet */
   ahead: boolean;
   /** Some child has school today by their calendar (a weekday of the manifest, not a holiday or a family day off) */
@@ -224,7 +276,7 @@ export async function accountToday(
 ): Promise<AccountToday> {
   const children: ChildToday[] = [];
   let backlog = false;
-  let postTerm = false;
+  let waitingFinals = false;
   let ahead = false;
   const aheadOn = lastAheadAt ? ctx.localDate(lastAheadAt) : null;
   for (const studentId of studentIds) {
@@ -234,11 +286,11 @@ export async function accountToday(
     if (!cal)
       backlog = true; // nothing stored yet: the first run reads everything
     else {
-      const state = await planState(db, studentId, cal);
+      const state = await planState(db, studentId, cal, ctx);
       const weeks = selectWeeks(state, ctx);
       for (const w of weeks) sets[w.set] = (sets[w.set] ?? 0) + 1;
       if (hasBacklog(weeks)) backlog = true;
-      if (hasPostTerm(weeks)) postTerm = true;
+      if (waitsForFinals(state, ctx.today)) waitingFinals = true;
       // one run per stretch without school: none since the child's last school day
       const due = aheadDue(state, ctx);
       if (due && !(aheadOn && aheadOn > due.since)) ahead = true;
@@ -251,5 +303,5 @@ export async function accountToday(
   );
   // no child stored yet (just connected): count it as a school day, the backlog runs anyway
   const schoolDay = children.length === 0 || children.some((c) => c.window.source !== 'no_school');
-  return { children, windows, backlog, postTerm, ahead, schoolDay };
+  return { children, windows, backlog, waitingFinals, ahead, schoolDay };
 }

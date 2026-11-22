@@ -109,9 +109,10 @@ describe('retention janitor', () => {
     ]);
   });
 
-  it('drops raw bodies after 14 days but keeps the one that verified a week of the current term', async () => {
+  it('drops raw bodies after 14 days but keeps the one that verified a week of the current school year', async () => {
     const w = await world();
     const old = await w.run(ago(20));
+    const autumn = await w.run(ago(150));
     const body = {
       providerId: 'demo-full',
       endpoint: 'GET /x',
@@ -124,16 +125,15 @@ describe('retention janitor', () => {
       { ...body, syncRunId: old.id, weekStart: '2026-02-16' },
       { ...body, syncRunId: old.id, weekStart: '2026-02-09' },
       { ...body, syncRunId: old.id, weekStart: null, studentId: null },
+      // a week of a finished term of this school year, verified in October: kept for re-mapping (D61)
+      { ...body, syncRunId: autumn.id, weekStart: '2025-10-06', fetchedAt: ago(150) },
     ]);
-    await db.insert(syncCoverage).values({
-      studentId: w.student.id,
-      weekStart: '2026-02-16',
-      verifiedAt: ago(20),
-      runId: old.id,
-      status: 'verified',
-    });
+    await db.insert(syncCoverage).values([
+      { studentId: w.student.id, weekStart: '2026-02-16', verifiedAt: ago(20), runId: old.id, status: 'verified' },
+      { studentId: w.student.id, weekStart: '2025-10-06', verifiedAt: ago(150), runId: autumn.id, status: 'verified' },
+    ]);
     await applyRetention(db, RETENTION_DEFAULTS, NOW);
-    expect((await db.select().from(rawResponses)).map((r) => r.weekStart)).toEqual(['2026-02-16']);
+    expect((await db.select().from(rawResponses)).map((r) => r.weekStart).sort()).toEqual(['2025-10-06', '2026-02-16']);
   });
 
   it('keeps coverage of the current and the previous school year only', async () => {

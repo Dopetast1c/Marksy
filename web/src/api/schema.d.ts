@@ -3959,7 +3959,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** "Check the history again" (sync.rescan.button): the weeks of the current term or school year are read again by the next runs, then one run now */
+        /** "Check the history again" (sync.rescan.button): the weeks of the current term, of one finished term or of the school year are read again by the next runs, then one run now */
         post: {
             parameters: {
                 query?: never;
@@ -3974,7 +3974,8 @@ export interface paths {
                         accountId: string;
                         studentIds?: string[];
                         /** @enum {string} */
-                        period: "term" | "year";
+                        period: "term" | "year" | "finished";
+                        termIndex?: number;
                     };
                 };
             };
@@ -4777,6 +4778,24 @@ export interface components {
                         /** Format: date-time */
                         oldestVerifiedAt: string | null;
                     };
+                    terms: {
+                        studentId: string;
+                        yearWeeks: number;
+                        yearRequests: number;
+                        terms: {
+                            id: string;
+                            kind: string;
+                            index: number;
+                            start: string;
+                            end: string;
+                            /** @enum {string} */
+                            state: "current" | "waiting" | "closed";
+                            closesOn: string | null;
+                            weeks: number;
+                            requests: number;
+                        }[];
+                    }[];
+                    rescanPerRun: number;
                     drift: {
                         id: string;
                         endpoint: string;

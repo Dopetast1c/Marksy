@@ -3,6 +3,7 @@ import type { Db } from '../db/client';
 import { backgroundJobs } from '../db/schema';
 import type { Logger } from '@marksy/core';
 import { errorSummary } from '../log';
+import { remapStoredFinals, restoreFalseRemovals } from './restore-removals';
 
 // Background jobs (CLAUDE.md, "Migrations"): a change to existing data that would make a migration long, and so a
 // start long and an update's downtime long, runs here instead, after the server answers. A job works in small steps;
@@ -29,7 +30,7 @@ export interface BackgroundJob<C = unknown> {
 }
 
 /** The jobs of this release, oldest first. A job stays listed until every supported release has run it. */
-export const JOBS: BackgroundJob[] = [];
+export const JOBS: BackgroundJob[] = [restoreFalseRemovals as BackgroundJob, remapStoredFinals as BackgroundJob];
 
 /** A failed job is tried again at the next start, this many times in all */
 export const MAX_ATTEMPTS = 5;

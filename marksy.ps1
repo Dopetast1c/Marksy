@@ -2,7 +2,7 @@
 # folder that holds docker-compose.prod.yml and .env.production.
 #   .\marksy.ps1 up | stop | pull | ps | logs [service] | status
 #   .\marksy.ps1 backup | restore <file in BACKUP_DIR> [--without-demo] [--replace --yes]
-#   .\marksy.ps1 sync enable|disable | check-network | connect | tunnel on|off
+#   .\marksy.ps1 sync enable|disable | check-network | connect | tunnel on|off | diag marks
 #   .\marksy.ps1 update status | history [n] | pause | resume | now [--to X.Y.Z]
 #   .\marksy.ps1 init-env [--credentials-key-from <file>] [--tz <zone>] [--show-hook-secret]
 param([Parameter(Position = 0)][string]$Command = 'help', [Parameter(ValueFromRemainingArguments = $true)][string[]]$Rest = @())
@@ -66,6 +66,7 @@ switch ($Command) {
   }
   'sync' { NeedEnv; Compose (@('exec', 'server', 'node', '/app/dist/marksy.mjs', 'sync') + $Rest) }
   'check-network' { NeedEnv; Compose @('exec', 'server', 'node', '/app/dist/marksy.mjs', 'check-network') }
+  'diag' { NeedEnv; Compose (@('exec', 'server', 'node', '/app/dist/marksy.mjs', 'diag') + $Rest) }
   'seed' { NeedEnv; Compose (@('exec', 'server', 'node', '/app/dist/marksy.mjs', 'seed') + $Rest) }
   'connect' {
     NeedEnv
