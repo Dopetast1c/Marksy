@@ -226,6 +226,10 @@ export function createSanitizer(key: Buffer = randomBytes(32)): Sanitizer {
         walk(v, place, { ...ctx, inStudents: ctx.inStudents || key === 'students_for_parent', index: i }),
       );
     }
+    // an absence is a dated fact about a real child (and often about their health): it never reaches a fixture, not
+    // even with a fake id; absences are tested with fictional cases (fixtures/cases/)
+    if (key === 'lesson_mark' && value && typeof value === 'object' && (value as { kind?: unknown }).kind === 'ABSENT')
+      return null;
     if (value && typeof value === 'object') {
       const out: Record<string, unknown> = {};
       const own = (value as { uuid?: unknown }).uuid;

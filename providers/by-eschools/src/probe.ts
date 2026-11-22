@@ -229,9 +229,24 @@ export function shapeOf(value: unknown): string {
   return value.replace(/\d/g, '9').replace(/\p{L}/gu, 'a');
 }
 
+/** One lessons response: counts and enum values only, to compare a week with what the database holds */
+export interface WeekFacts {
+  /** lessons-<student>-w<n> */
+  name: string;
+  /** The first day of the response (a date, not personal) */
+  from: string | null;
+  days: number;
+  slots: number;
+  /** Slots with a lesson_mark (a mark or an absence) */
+  withMark: number;
+  /** lesson_mark.kind -> count */
+  kinds: Record<string, number>;
+}
+
 export interface ProbeFacts {
   /** field -> shape -> count, see shapeOf */
   shapes?: Record<string, Record<string, number>>;
+  perWeek?: WeekFacts[];
   requests: number;
   loginHasRefreshToken: boolean;
   students: number;
@@ -283,6 +298,10 @@ export function report(f: ProbeFacts): string {
     `  subjects ${f.subjects}, lessons ${f.lessons.length}, marks ${marks.length}, absences ${absences.length}`,
     `  final mark cells ${f.finalCells}, mapped finals ${f.finals.length}`,
     `  mark kinds (raw): ${tally(Object.entries(f.rawKinds).flatMap(([k, n]) => Array<string>(n).fill(k)))}`,
+    ...(f.perWeek ?? []).map(
+      (w) =>
+        `  ${w.name} from ${w.from ?? '?'}: ${w.days} days, ${w.slots} slots, ${w.withMark} with lesson_mark (${tally(Object.entries(w.kinds).flatMap(([k, n]) => Array<string>(n).fill(k)))})`,
+    ),
     `  work types (raw): ${tally(Object.entries(f.rawWorkTypes).flatMap(([k, n]) => Array<string>(n).fill(k)))}`,
     `  lesson types (raw): ${tally(Object.entries(f.rawLessonTypes).flatMap(([k, n]) => Array<string>(n).fill(k)))}`,
     '',

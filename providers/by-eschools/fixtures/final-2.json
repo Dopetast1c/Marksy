@@ -1,5 +1,170 @@
 {
-  "marks": {},
-  "behaviour": {},
-  "diary_signature": {}
+  "marks": {
+    "00000000-0000-4000-8000-77ab5b161c9e": {
+      "FIRST_QUARTER": {
+        "uuid": "00000000-0000-4000-8000-f59a2e5895ef",
+        "summary": null,
+        "subject_id": "00000000-0000-4000-8000-77ab5b161c9e",
+        "type": "FIRST_QUARTER",
+        "mark": "3",
+        "kind": "SINGLE"
+      }
+    },
+    "00000000-0000-4000-8000-7d8013799123": {
+      "FIRST_QUARTER": {
+        "uuid": "00000000-0000-4000-8000-a879a1cf3253",
+        "summary": null,
+        "subject_id": "00000000-0000-4000-8000-7d8013799123",
+        "type": "FIRST_QUARTER",
+        "mark": "7",
+        "kind": "SINGLE"
+      }
+    },
+    "00000000-0000-4000-8000-089027bd4e78": {
+      "FIRST_QUARTER": {
+        "uuid": "00000000-0000-4000-8000-acde507cf5b9",
+        "summary": null,
+        "subject_id": "00000000-0000-4000-8000-089027bd4e78",
+        "type": "FIRST_QUARTER",
+        "mark": "7",
+        "kind": "SINGLE"
+      }
+    },
+    "00000000-0000-4000-8000-cfee72a4ee6c": {
+      "FIRST_QUARTER": {
+        "uuid": "00000000-0000-4000-8000-6d98989b06ee",
+        "summary": null,
+        "subject_id": "00000000-0000-4000-8000-cfee72a4ee6c",
+        "type": "FIRST_QUARTER",
+        "mark": "8",
+        "kind": "SINGLE"
+      }
+    },
+    "00000000-0000-4000-8000-791bb215f938": {
+      "FIRST_QUARTER": {
+        "uuid": "00000000-0000-4000-8000-1a14f31a2705",
+        "summary": null,
+        "subject_id": "00000000-0000-4000-8000-791bb215f938",
+        "type": "FIRST_QUARTER",
+        "mark": "3",
+        "kind": "SINGLE"
+      }
+    },
+    "00000000-0000-4000-8000-3b8a82852dfd": {
+      "FIRST_QUARTER": {
+        "uuid": "00000000-0000-4000-8000-035f500a233c",
+        "summary": null,
+        "subject_id": "00000000-0000-4000-8000-3b8a82852dfd",
+        "type": "FIRST_QUARTER",
+        "mark": "4",
+        "kind": "SINGLE"
+      }
+    },
+    "00000000-0000-4000-8000-b5584f116fae": {
+      "FIRST_QUARTER": {
+        "uuid": "00000000-0000-4000-8000-0c24441d1cf7",
+        "summary": null,
+        "subject_id": "00000000-0000-4000-8000-b5584f116fae",
+        "type": "FIRST_QUARTER",
+        "mark": "зач.",
+        "kind": "PASS"
+      }
+    },
+    "00000000-0000-4000-8000-931c10ba1e20": {
+      "FIRST_QUARTER": {
+        "uuid": "00000000-0000-4000-8000-772de3996048",
+        "summary": null,
+        "subject_id": "00000000-0000-4000-8000-931c10ba1e20",
+        "type": "FIRST_QUARTER",
+        "mark": "10",
+        "kind": "SINGLE"
+      }
+    },
+    "00000000-0000-4000-8000-57251814d422": {
+      "FIRST_QUARTER": {
+        "uuid": "00000000-0000-4000-8000-3cf4e5e2795d",
+        "summary": null,
+        "subject_id": "00000000-0000-4000-8000-57251814d422",
+        "type": "FIRST_QUARTER",
+        "mark": "10",
+        "kind": "SINGLE"
+      }
+    },
+    "00000000-0000-4000-8000-87824964cb00": {
+      "FIRST_QUARTER": {
+        "uuid": "00000000-0000-4000-8000-c5f6fdbe6aa3",
+        "summary": null,
+        "subject_id": "00000000-0000-4000-8000-87824964cb00",
+        "type": "FIRST_QUARTER",
+        "mark": "7",
+        "kind": "SINGLE"
+      }
+    },
+    "00000000-0000-4000-8000-57e95f103ed3": {
+      "FIRST_QUARTER": {
+        "uuid": "00000000-0000-4000-8000-93370e19994b",
+        "summary": null,
+        "subject_id": "00000000-0000-4000-8000-57e95f103ed3",
+        "type": "FIRST_QUARTER",
+        "mark": "7",
+        "kind": "SINGLE"
+      }
+    },
+    "00000000-0000-4000-8000-c1bb55420ba4": {
+      "FIRST_QUARTER": {
+        "uuid": "00000000-0000-4000-8000-f7bccccd64a8",
+        "summary": null,
+        "subject_id": "00000000-0000-4000-8000-c1bb55420ba4",
+        "type": "FIRST_QUARTER",
+        "mark": "2",
+        "kind": "SINGLE"
+      }
+    },
+    "00000000-0000-4000-8000-4955b3696325": {
+      "FIRST_QUARTER": {
+        "uuid": "00000000-0000-4000-8000-dca929e86989",
+        "summary": null,
+        "subject_id": "00000000-0000-4000-8000-4955b3696325",
+        "type": "FIRST_QUARTER",
+        "mark": "2",
+        "kind": "SINGLE"
+      }
+    },
+    "00000000-0000-4000-8000-77a4eab457fa": {
+      "FIRST_QUARTER": {
+        "uuid": "00000000-0000-4000-8000-8c9950c98985",
+        "summary": null,
+        "subject_id": "00000000-0000-4000-8000-77a4eab457fa",
+        "type": "FIRST_QUARTER",
+        "mark": "7",
+        "kind": "SINGLE"
+      }
+    },
+    "00000000-0000-4000-8000-0ef27f3ceac2": {
+      "FIRST_QUARTER": {
+        "uuid": "00000000-0000-4000-8000-2454f5db54d9",
+        "summary": null,
+        "subject_id": "00000000-0000-4000-8000-0ef27f3ceac2",
+        "type": "FIRST_QUARTER",
+        "mark": "2",
+        "kind": "SINGLE"
+      }
+    },
+    "00000000-0000-4000-8000-2bb7440f6ac0": {
+      "FIRST_QUARTER": {
+        "uuid": "00000000-0000-4000-8000-ab80c2a69761",
+        "summary": null,
+        "subject_id": "00000000-0000-4000-8000-2bb7440f6ac0",
+        "type": "FIRST_QUARTER",
+        "mark": "2",
+        "kind": "SINGLE"
+      }
+    }
+  },
+  "behaviour": {
+    "FIRST_QUARTER": "[text]"
+  },
+  "diary_signature": {
+    "FIRST_QUARTER": 0
+  }
 }
