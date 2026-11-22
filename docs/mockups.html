@@ -3021,6 +3021,9 @@ function renderSync() {
       <div class="kv"><span>Последняя полная</span><b>вт 13 окт</b></div>
       <div class="kv"><span>Самая старая проверенная неделя</span><b>6 дней назад</b></div>
       <span class="muted small">Учителя могут менять и удалять старые оценки. Недели четверти, которые не сверялись больше 6 дней, сверяются заново в обычных дневных запусках, после свежих недель; изменения попадают в ленту и уведомления. Вечером и в выходные дневник не читается.</span>
+      <div class="kv"><span>Четверть I</span><b style="text-align:right">больше не читается</b></div>
+      <div class="kv"><span>Четверть II</span><b style="text-align:right">идёт</b></div>
+      <span class="muted small">Закончившийся период закрывается через неделю после конца или когда выставлены все итоговые отметки. Закрытый период больше не читается, и из него ничего не удаляется; «Перепроверить историю» прочитает его по запросу.</span>
     </div>
     <div class="card" style="display:flex;flex-direction:column;gap:8px">
       <div class="sect"><h2>API дневника</h2><span class="status warn">1 новое</span></div>
@@ -3031,8 +3034,12 @@ function renderSync() {
     ${state.sync === 'auth' ? '' : '<button class="btn ghost" id="rescanBtn">Перепроверить историю</button>'}
     ${state.rescanOpen ? `<div class="card" style="display:flex;flex-direction:column;gap:10px">
       <span class="label">Кого</span><div class="seg"><button aria-pressed="true">Милена и Марк</button><button aria-pressed="false">Милена</button><button aria-pressed="false">Марк</button></div>
-      <span class="label">Период</span><div class="seg"><button aria-pressed="true">Четверть</button><button aria-pressed="false">Учебный год</button><button aria-pressed="false">Недели…</button></div>
-      <span class="muted small">Дневник отдаёт данные по неделям, а не по предметам, поэтому перепроверка одного предмета стоит столько же запросов, сколько всего периода. Около 14 запросов, запустится в 13:17.</span>
+      <span class="label">Период</span>
+      <div class="kv"><span><b>Четверть II</b> · идёт</span><b>✓</b></div>
+      <div class="kv"><span><b>Четверть I</b> · больше не читается</span><b></b></div>
+      <div class="kv"><span><b>Учебный год</b></span><b></b></div>
+      <b class="small">Снова прочитать: 3 недели, примерно 1 запуск.</b>
+      <span class="muted small">Дневник отдаёт данные по неделям, поэтому перепроверка стоит один запрос на неделю и ребёнка. Следующие запуски прочитают недели, сначала свежие.</span>
       <button class="btn">Поставить в очередь</button>
     </div>` : ''}
     <div class="card" style="display:flex;flex-direction:column;gap:2px">

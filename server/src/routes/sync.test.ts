@@ -10,6 +10,7 @@ import { createAccount } from '../../test/factories';
 import { apiDriftEvents, diaryAccounts, holidays, syncCoverage, syncRuns } from '../db/schema';
 import { readSyncConfig } from '../sync/config';
 import { accountPlan } from '../sync/account-plan';
+import { massRemovalEndpoint } from '../sync/drift-scope';
 import { syncPlanOf } from '../sync/status';
 
 const db = testDb();
@@ -104,6 +105,52 @@ describe('Sync (sync.title)', () => {
     expect(plan.sets.backfill ?? 0).toBeGreaterThan(0);
   });
 
+  it('the terms’ state (D61), and a re-check of one finished term reads only its weeks again', async () => {
+    const november = new Date('2025-11-19T07:00:00Z');
+    const mama = agentWith({ now: () => november });
+    const { connect } = await connectFamily(mama);
+    await settle();
+    const plan = (await mama.get('/api/sync/status')).body.accounts[0].plan;
+    const first = plan.terms[0];
+    // the first quarter ended on 31 October: more than TERM_CLOSE_DAYS ago, so it is closed
+    expect(first.terms[0]).toMatchObject({ index: 1, state: 'closed', closesOn: null, weeks: expect.any(Number) });
+    expect(first.terms[0].weeks).toBeGreaterThan(5);
+    expect(first.terms.at(-1)).toMatchObject({ state: 'current' });
+    expect(first.yearWeeks).toBeGreaterThan(first.terms[0].weeks);
+    expect(plan.rescanPerRun).toBeGreaterThan(0);
+
+    const q1 = first.terms[0] as { start: string; end: string };
+    const covered = async () =>
+      (await db.select().from(syncCoverage)).filter((c) => c.studentId === first.studentId).map((c) => c.weekStart);
+    const before = await covered();
+    const res = await mama
+      .post('/api/sync/rescan')
+      .send({ accountId: connect.accountId, period: 'finished', termIndex: 1, studentIds: [first.studentId] });
+    expect(res.status).toBe(200);
+    expect(res.body.weeks).toBeGreaterThan(0);
+    await settle();
+    const after = await covered();
+    const gone = before.filter((w) => !after.includes(w));
+    expect(gone.length).toBe(res.body.weeks);
+    expect(gone.every((w) => w >= addDays(q1.start, -6) && w <= q1.end)).toBe(true);
+    // a parent who sees one of the children gets that child's terms only
+    const kid = first.studentId as string;
+    const code = (await mama.post('/api/family/invites').send({ role: 'parent', studentIds: [kid] })).body.code;
+    const papa = agentWith({ now: () => november });
+    await papa
+      .post(`/api/invites/${code}/accept`)
+      .send({ login: 'papa@example.com', password: 'correct horse battery', displayName: 'Папа' });
+    const seen = (await papa.get('/api/sync/status')).body.accounts[0].plan;
+    expect(seen.terms.map((c: { studentId: string }) => c.studentId)).toEqual([kid]);
+    expect(plan.terms.length).toBeGreaterThan(1);
+
+    // the current term is not a finished one
+    const current = await mama
+      .post('/api/sync/rescan')
+      .send({ accountId: connect.accountId, period: 'finished', termIndex: first.terms.at(-1).index });
+    expect(current.body.weeks).toBe(0);
+  });
+
   it('a change in the diary’s API: kind and place, never the sample; "Got it, hide" (sync.drift.ack) hides it for the family’s diaries only', async () => {
     const mama = agentWith({ now: () => NOW });
     await connectFamily(mama);
@@ -142,6 +189,22 @@ describe('Sync (sync.title)', () => {
     const { account } = await createAccount(db, 'demo-full');
     const theirsPlan = await syncPlanOf(db, account, getProvider('demo-full')!.manifest, readSyncConfig(), NOW);
     expect(theirsPlan.drift).toEqual([expect.objectContaining({ id: ours!.id })]);
+
+    // a hold of the mass-removal guard is the account's own: its family sees "collector", another family nothing
+    const mine = (await db.select().from(diaryAccounts)).find((a) => a.id !== account.id)!;
+    await db.insert(apiDriftEvents).values({
+      providerId: 'demo-full',
+      endpoint: massRemovalEndpoint(mine.id),
+      kind: 'mass_removal',
+      path: 'marks',
+      firstSeenAt: NOW,
+      lastSeenAt: NOW,
+    });
+    const manifest = getProvider('demo-full')!.manifest;
+    const own = await syncPlanOf(db, mine, manifest, readSyncConfig(), NOW);
+    expect(own.drift).toEqual([expect.objectContaining({ kind: 'mass_removal', endpoint: 'collector' })]);
+    const other = await syncPlanOf(db, account, manifest, readSyncConfig(), NOW);
+    expect(other.drift.map((d) => d.kind)).not.toContain('mass_removal');
   });
 });
 

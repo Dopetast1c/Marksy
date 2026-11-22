@@ -1,5 +1,6 @@
 import { shortDate } from '@marksy/core';
 import { useQueryClient } from '@tanstack/react-query';
+import type { TFunction } from 'i18next';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router';
@@ -10,8 +11,8 @@ import { Frame } from '../../app/Frame';
 import { BottomSheet, SheetOption } from '../../components/BottomSheet';
 import { Button } from '../../components/Field';
 import { BackIcon } from '../../components/icons';
-import { SegmentedControl } from '../../components/SegmentedControl';
 import { dateStyle, intlLocale, useT } from '../../i18n';
+import { roman } from '../../lib/period';
 import { formatTime } from '../../lib/time';
 import { whenText } from '../../lib/when';
 
@@ -23,6 +24,19 @@ import { whenText } from '../../lib/when';
 // to Family, family.title), and the run log. Times are the school's.
 
 type Account = SyncStatus['accounts'][number];
+type Plan = NonNullable<Account['plan']>;
+type TermRow = Plan['terms'][number]['terms'][number];
+
+/** "Quarter I" (period.termN.*) from the term's kind and number */
+const termName = (t: TFunction, x: Pick<TermRow, 'kind' | 'index'>) =>
+  t(`period.termN.${x.kind}`, { roman: roman(x.index) });
+
+/** "in progress", "waiting for finals, closes on 7 Nov", "closed" (sync.term.*, D61) */
+function termStateText(t: TFunction, x: TermRow): string {
+  if (x.state === 'current') return t('sync.term.current');
+  if (x.state === 'waiting' && x.closesOn) return t('sync.term.waiting', { date: shortDate(x.closesOn, dateStyle()) });
+  return t('sync.term.closed');
+}
 
 const TONE: Record<Account['status'], string> = {
   ok: 'text-band-good-fg',
@@ -187,6 +201,20 @@ export function SyncScreen() {
               {p.rescan.oldestVerifiedAt ? at(p.rescan.oldestVerifiedAt, zone) : '—'}
             </Kv>
             <span className="pt-1 text-small text-ink3">{t('sync.rescan.note')}</span>
+            {/* each term's state (D61): in progress, waiting for its finals until it closes, closed */}
+            {p.terms.flatMap((c) =>
+              c.terms.map((x) => (
+                <Kv
+                  key={x.id}
+                  label={p.terms.length > 1 ? `${nameOf(c.studentId)} · ${termName(t, x)}` : termName(t, x)}
+                >
+                  {termStateText(t, x)}
+                </Kv>
+              )),
+            )}
+            {p.terms.some((c) => c.terms.some((x) => x.state !== 'current')) && (
+              <span className="pt-1 text-small text-ink3">{t('sync.term.note')}</span>
+            )}
           </Card>
         )}
         {p && p.drift.length > 0 && (
@@ -305,7 +333,11 @@ export function SyncScreen() {
   );
 }
 
-/** "Check the history again" (sync.rescan.button): whom and which period; the weeks are read again by the next runs (10.4) */
+/**
+ * "Check the history again" (sync.rescan.button): whom and which period (the current term, one finished term, the
+ * school year), with how many weeks that reads again and about how many runs it takes; the weeks are read again by the
+ * next runs (10.4). A finished term's marks are never removed by it, only added to or changed (D61).
+ */
 function RescanSheet({
   account,
   names,
@@ -322,13 +354,35 @@ function RescanSheet({
 }) {
   const t = useT();
   const [who, setWho] = useState<string | null>(null);
-  const [period, setPeriod] = useState<'term' | 'year'>('term');
+  /** term: the current one; a number: that finished term; year: the school year */
+  const [period, setPeriod] = useState<'term' | 'year' | number>('term');
+  const kids = (account.plan?.terms ?? []).filter((c) => !who || c.studentId === who);
+  const finished = new Map<number, TermRow>();
+  for (const c of kids)
+    for (const x of c.terms) if (x.state !== 'current' && !finished.has(x.index)) finished.set(x.index, x);
+  const current = kids.flatMap((c) => c.terms).find((x) => x.state === 'current');
+  // what the choice reads again, for every child chosen
+  const chosen = kids.map((c) =>
+    period === 'year'
+      ? { weeks: c.yearWeeks, requests: c.yearRequests }
+      : (c.terms.find((x) =>
+          period === 'term' ? x.state === 'current' : x.index === period && x.state !== 'current',
+        ) ?? {
+          weeks: 0,
+          requests: 0,
+        }),
+  );
+  const weeks = chosen.reduce((s, x) => s + x.weeks, 0);
+  const requests = chosen.reduce((s, x) => s + x.requests, 0);
+  const runs = requests ? Math.ceil(requests / Math.max(1, account.plan?.rescanPerRun ?? requests)) : 0;
   const go = async () => {
+    const body =
+      typeof period === 'number'
+        ? { accountId: account.id, period: 'finished' as const, termIndex: period }
+        : { accountId: account.id, period };
     try {
       const res = await data(
-        api.POST('/api/sync/rescan', {
-          body: { accountId: account.id, period, ...(who ? { studentIds: [who] } : {}) },
-        }),
+        api.POST('/api/sync/rescan', { body: { ...body, ...(who ? { studentIds: [who] } : {}) } }),
       );
       onDone(res.reason === 'demo' ? t('sync.refresh.demo') : t('sync.rescan.queued', { count: res.weeks }));
     } catch {
@@ -344,15 +398,30 @@ function RescanSheet({
         <SheetOption key={id} title={names(id)} selected={who === id} onSelect={() => setWho(id)} />
       ))}
       <span className="pt-1 text-small text-ink3">{t('sync.rescan.period')}</span>
-      <SegmentedControl
-        label={t('sync.rescan.period')}
-        value={period}
-        onChange={setPeriod}
-        options={[
-          { value: 'term', label: termKind !== 'none' ? t(`term.${termKind}`) : t('sync.rescan.term') },
-          { value: 'year', label: t('sync.rescan.year') },
-        ]}
+      <SheetOption
+        title={current ? termName(t, current) : termKind !== 'none' ? t(`term.${termKind}`) : t('sync.rescan.term')}
+        sub={t('sync.term.current')}
+        selected={period === 'term'}
+        onSelect={() => setPeriod('term')}
       />
+      {[...finished.values()].map((x) => (
+        <SheetOption
+          key={x.index}
+          title={termName(t, x)}
+          sub={termStateText(t, x)}
+          selected={period === x.index}
+          onSelect={() => setPeriod(x.index)}
+        />
+      ))}
+      <SheetOption title={t('sync.rescan.year')} selected={period === 'year'} onSelect={() => setPeriod('year')} />
+      {weeks > 0 && (
+        <span className="pt-1 text-small font-semibold">
+          {t('sync.rescan.estimate', {
+            weeks: t('sync.weeks', { count: weeks }),
+            runs: t('sync.runs', { count: runs }),
+          })}
+        </span>
+      )}
       <span className="text-small text-ink3">{t('sync.rescan.cost')}</span>
       <Button type="button" onClick={() => void go()}>
         {t('sync.rescan.go')}

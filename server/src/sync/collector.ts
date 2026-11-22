@@ -26,6 +26,7 @@ import { and, eq, sql } from 'drizzle-orm';
 import type { Db } from '../db/client';
 import { apiDriftEvents, bellSchedules, finalMarksRaw, rawResponses, syncCoverage, weekTemplates } from '../db/schema';
 import { applySchoolDetails, storeBells, storeWeekTemplate } from './details';
+import { massRemovalEndpoint } from './drift-scope';
 import type { SyncErrorClass, SyncRunStats } from '../db/schema';
 import { localTime } from './time';
 import { storeCalendar, storeFinals, storeStudents, storeSubjects, studentRef } from './store-school';
@@ -40,8 +41,8 @@ import type { UpsertStats } from './upsert';
 // finished. The collector never decides whether a run may start; server/src/sync/run.ts does (design 10.4).
 
 /** Why a week is fetched; the order of these sets is the order of fetching (design 10.4) */
-export type PlanSet = 'standing' | 'gap' | 'rescan' | 'post_term' | 'backfill' | 'manual';
-export const SET_ORDER: readonly PlanSet[] = ['standing', 'manual', 'gap', 'rescan', 'post_term', 'backfill'];
+export type PlanSet = 'standing' | 'gap' | 'rescan' | 'backfill' | 'manual';
+export const SET_ORDER: readonly PlanSet[] = ['standing', 'manual', 'gap', 'rescan', 'backfill'];
 
 export interface WeekRequest {
   weekStart: ISODate;
@@ -124,6 +125,14 @@ interface Unit {
   range: DateRange;
   weeks: ISODate[];
   set: PlanSet;
+  /** The end of the last term that finished before today: nothing dated up to it is removed (upsert.ts) */
+  frozenUntil: ISODate | null;
+}
+
+/** The end of the last term that ended before today, or null (design.md 8: finished terms are frozen) */
+export function frozenUntilOf(terms: readonly { end: ISODate }[], today: ISODate): ISODate | null {
+  const ended = terms.map((t) => t.end).filter((end) => end < today);
+  return ended.length ? ended.reduce((a, b) => (a > b ? a : b)) : null;
 }
 
 const emptyStats = (): UpsertStats => ({ lessons: 0, new: 0, changed: 0, removed: 0, restored: 0 });
@@ -211,6 +220,8 @@ export async function runCollector(opts: CollectorOptions): Promise<CollectorRes
   const { ctx } = run;
   const stats: UpsertStats = emptyStats();
   const warnings: string[] = [];
+  /** Record kinds the mass-removal guard held in this run (design.md 8) */
+  const held = new Set<string>();
   const verified: CollectorResult['verified'] = [];
   let students: StudentRow[] = [];
   let failure: unknown;
@@ -266,6 +277,7 @@ export async function runCollector(opts: CollectorOptions): Promise<CollectorRes
       scope.studentId = u.student.id;
       scope.weekStart = u.weeks[0] ?? null;
       const ref = studentRef(u.student);
+      let keepBody: boolean;
       try {
         const lessons = caps.lessons ? await provider.getLessons!(session, ref, u.range, ctx) : [];
         const marks =
@@ -283,10 +295,26 @@ export async function runCollector(opts: CollectorOptions): Promise<CollectorRes
             schoolYearId: u.stored.schoolYearId,
             subjectIds: u.subjectIds,
             now: now(),
+            frozenUntil: u.frozenUntil,
           },
           { range: u.range, lessons, marks, attendance, behaviour },
         );
         for (const k of Object.keys(stats) as (keyof UpsertStats)[]) stats[k] += s[k];
+        if (s.held.length) {
+          // the response would have removed all or many records: nothing was removed, the week stays unverified and
+          // is asked for again tomorrow (design.md 8, 10.4); the admin hears of the first one (drift)
+          for (const table of s.held) held.add(table);
+          warnings.push(`held ${u.weeks[0]}`);
+          const at = now();
+          for (const weekStart of u.weeks) {
+            await db
+              .insert(syncCoverage)
+              .values({ studentId: u.student.id, weekStart, verifiedAt: at, runId, status: 'failed', heldAt: at })
+              .onConflictDoUpdate({ target: [syncCoverage.studentId, syncCoverage.weekStart], set: { heldAt: at } });
+          }
+          return true;
+        }
+        keepBody = s.frozenMissing > 0;
       } catch (err) {
         // a response that cannot be used at all: the week stays unverified, the rest of the run goes on
         if (err instanceof ProviderSchemaError) {
@@ -306,7 +334,8 @@ export async function runCollector(opts: CollectorOptions): Promise<CollectorRes
           .values({ studentId: u.student.id, weekStart, verifiedAt: at, runId, status: 'verified' })
           .onConflictDoUpdate({
             target: [syncCoverage.studentId, syncCoverage.weekStart],
-            set: { verifiedAt: at, runId, status: 'verified' },
+            // a response that lost frozen records verifies the week but leaves the kept body to the earlier run
+            set: { verifiedAt: at, status: 'verified', heldAt: null, ...(!keepBody && { runId }) },
           });
         verified.push({ studentId: u.student.id, weekStart });
       }
@@ -318,8 +347,15 @@ export async function runCollector(opts: CollectorOptions): Promise<CollectorRes
       if (ctx.http.requestCount + 1 > maxRequests) break;
       scope.studentId = f.student.id;
       scope.weekStart = null;
+      const from = pending.length;
       const list = await provider.getFinalMarks!(session, studentRef(f.student), ctx);
-      await storeFinals(db, f.student, f.stored, f.subjectIds, list, now());
+      // the response itself is kept with the finals, so a mapping fixed later reads it again (mapStoredFinals)
+      const response = pending
+        .slice(from)
+        .map((p) => ({ endpoint: p.endpoint, body: p.body, status: p.status }))
+        .find((p) => p.status === 200 && provider.mapStoredFinals?.(p, { subjects: [], terms: [] }) != null);
+      const raw = response ? { endpoint: response.endpoint, body: response.body } : null;
+      await storeFinals(db, f.student, f.stored, f.subjectIds, list, now(), raw);
       await flushRaw();
     }
     // school details of the day, after the lessons (a provider may need them to tell the child's subgroups): bells, the
@@ -367,7 +403,14 @@ export async function runCollector(opts: CollectorOptions): Promise<CollectorRes
     await flushRaw().catch(() => undefined);
   }
 
-  const newDrift = await storeDrift(db, account.providerId, runId, run.drift.events, now());
+  // a hold is about this account's diary, not the provider's API: its row is the account's own (massRemovalEndpoint),
+  // so another family on the same provider never sees it
+  const heldDrift: DriftEvent[] = [...held].map((path) => ({
+    kind: 'mass_removal',
+    endpoint: massRemovalEndpoint(account.id),
+    path,
+  }));
+  const newDrift = await storeDrift(db, account.providerId, runId, [...run.drift.events, ...heldDrift], now());
   const result: CollectorResult = {
     status: 'success',
     errorClass: null,
@@ -380,7 +423,7 @@ export async function runCollector(opts: CollectorOptions): Promise<CollectorRes
       changed: stats.changed,
       removed: stats.removed,
       restored: stats.restored,
-      drift: run.drift.events.length,
+      drift: run.drift.events.length + heldDrift.length,
       ...(warnings.length && { warnings }),
     },
     students,
@@ -408,7 +451,12 @@ function unitsFor(
 ): Unit[] {
   const year = input.calendar.schoolYear;
   const clip = (r: DateRange): DateRange => ({ from: maxDate(r.from, year.start), to: minDate(r.to, year.end) });
-  const base = { student: input.student, stored: input.stored, subjectIds };
+  const base = {
+    student: input.student,
+    stored: input.stored,
+    subjectIds,
+    frozenUntil: frozenUntilOf(input.calendar.terms, input.today),
+  };
   if (fetchUnit !== 'term') {
     return requests.map((r) => ({
       ...base,

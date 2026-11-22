@@ -12,6 +12,7 @@ import type {
   Mark,
   StudentRef,
   Subject,
+  Term,
   WeekTemplate,
 } from '../model/schemas';
 import type { ProviderManifest } from './manifest';
@@ -29,7 +30,12 @@ export interface Logger {
   error(msg: string, data?: Record<string, unknown>): void;
 }
 
-export type DriftKind = 'unknown_field' | 'missing_field' | 'type_mismatch' | 'new_enum_value' | 'new_error_shape';
+/**
+ * mass_removal is recorded by the collector, not a schema: one fetched week would have removed all or many stored
+ * records at once, so it removed none (docs/design.md 8)
+ */
+export type DriftKind =
+  'unknown_field' | 'missing_field' | 'type_mismatch' | 'new_enum_value' | 'new_error_shape' | 'mass_removal';
 
 /** Something in a response that the schemas did not expect. Recorded, pushed to the admin, never fatal. */
 export interface DriftEvent {
@@ -71,6 +77,15 @@ export interface DiaryProvider {
   getAttendance?(session: Session, student: StudentRef, range: DateRange, ctx: ProviderContext): Promise<Attendance[]>;
   /** capabilities.finalMarks */
   getFinalMarks?(session: Session, student: StudentRef, ctx: ProviderContext): Promise<FinalMark[]>;
+  /**
+   * capabilities.finalMarks, optional: the finals of a stored getFinalMarks response, without a session, so that a
+   * mapping fixed later re-reads what was fetched (final_marks_raw, raw_responses). `endpoint` is the stored response's
+   * endpoint; null when the body is not a final-marks response. Drift is not reported here.
+   */
+  mapStoredFinals?(
+    stored: { endpoint: string; body: unknown },
+    known: { subjects: readonly Subject[]; terms: readonly Term[] },
+  ): FinalMark[] | null;
   /** capabilities.homeworkAssignments */
   getHomework?(session: Session, student: StudentRef, range: DateRange, ctx: ProviderContext): Promise<HomeworkItem[]>;
   /** capabilities.behaviour = 'separate' (with 'derived' the remarks come on Lesson.behaviour) */

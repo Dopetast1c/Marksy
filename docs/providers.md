@@ -164,6 +164,16 @@ export interface DiaryProvider {
   /** Final, current, predicted and target grades per term and year. Optional: omit if the system has none. */
   getFinalMarks?(session: Session, student: StudentRef, ctx: ProviderContext): Promise<FinalMark[]>;
 
+  /**
+   * Optional, with getFinalMarks: the finals of a stored getFinalMarks response, without a session, so that a mapping
+   * fixed later re-reads what was fetched (final_marks_raw, raw_responses). `endpoint` is the stored response's
+   * endpoint (the allow-list entry); return null when the body is not a final-marks response. Report no drift here.
+   */
+  mapStoredFinals?(
+    stored: { endpoint: string; body: unknown },
+    known: { subjects: readonly Subject[]; terms: readonly Term[] },
+  ): FinalMark[] | null;
+
   /** Homework as separate items with due dates (capabilities.homeworkAssignments). */
   getHomework?(session: Session, student: StudentRef, range: DateRange, ctx: ProviderContext): Promise<HomeworkItem[]>;
 
@@ -518,7 +528,8 @@ The scheduler is generic and reads the provider's `limits`:
 - a child listed by several accounts (two parents' logins, possibly in two families) is read through one of them only; the others call `getAccount()` once a school day to confirm they still show the child;
 - strictly serial requests, `requestDelayMs` between them, exponential backoff on 429 / 5xx / network errors, stop after three failures until the next slot;
 - the shared HTTP client refuses any request that does not match `readOnlyAllowList`;
-- the collector keeps every read response for 14 days (`raw_responses`, named by the allow-list entry it matched, so no ids in the name); the login response, and every response that arrives while `login()` runs, is never kept; `redactRaw()` drops the personal fields the mapper does not use before a body is stored.
+- the collector keeps every read response for 14 days (`raw_responses`, named by the allow-list entry it matched, so no ids in the name), and the last good response of every week of the current school year until the year ends; the login response, and every response that arrives while `login()` runs, is never kept; `redactRaw()` drops the personal fields the mapper does not use before a body is stored;
+- a provider only maps what a response holds. What a response lacks is the collector's call (`design.md` 8): a record leaves only when its lesson came back without it, a finished term is frozen, and a week that would lose all or many records at once removes none (`mass_removal` drift, `DriftKind`). A diary that returns closed periods empty, or with fewer records, needs nothing special in the provider.
 
 If your system publishes a rate limit or terms of use, put them in the manifest and in your README. Be more conservative than the limit, not less.
 

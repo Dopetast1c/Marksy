@@ -3384,6 +3384,86 @@
                         "oldestVerifiedAt"
                       ]
                     },
+                    "terms": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "studentId": {
+                            "type": "string"
+                          },
+                          "yearWeeks": {
+                            "type": "number"
+                          },
+                          "yearRequests": {
+                            "type": "number"
+                          },
+                          "terms": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "kind": {
+                                  "type": "string"
+                                },
+                                "index": {
+                                  "type": "number"
+                                },
+                                "start": {
+                                  "type": "string"
+                                },
+                                "end": {
+                                  "type": "string"
+                                },
+                                "state": {
+                                  "type": "string",
+                                  "enum": [
+                                    "current",
+                                    "waiting",
+                                    "closed"
+                                  ]
+                                },
+                                "closesOn": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "weeks": {
+                                  "type": "number"
+                                },
+                                "requests": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "kind",
+                                "index",
+                                "start",
+                                "end",
+                                "state",
+                                "closesOn",
+                                "weeks",
+                                "requests"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "studentId",
+                          "yearWeeks",
+                          "yearRequests",
+                          "terms"
+                        ]
+                      }
+                    },
+                    "rescanPerRun": {
+                      "type": "number"
+                    },
                     "drift": {
                       "type": "array",
                       "items": {
@@ -3432,6 +3512,8 @@
                     "sets",
                     "maxRequestsPerRun",
                     "rescan",
+                    "terms",
+                    "rescanPerRun",
                     "drift"
                   ]
                 }
@@ -9877,7 +9959,7 @@
     },
     "/api/sync/rescan": {
       "post": {
-        "summary": "\"Check the history again\" (sync.rescan.button): the weeks of the current term or school year are read again by the next runs, then one run now",
+        "summary": "\"Check the history again\" (sync.rescan.button): the weeks of the current term, of one finished term or of the school year are read again by the next runs, then one run now",
         "tags": [
           "sync"
         ],
@@ -9907,8 +9989,13 @@
                     "type": "string",
                     "enum": [
                       "term",
-                      "year"
+                      "year",
+                      "finished"
                     ]
+                  },
+                  "termIndex": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0
                   }
                 },
                 "required": [

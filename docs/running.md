@@ -490,6 +490,7 @@ Then the manual runs against the real diary from the development computer (`pnpm
 | A page *Marksy is updating* | the proxy waited 30 seconds for the app; it reloads by itself |
 | The collector is off after a restore | intended: `./marksy.sh sync enable` once no other host reads the diary |
 | `check-network` says the diary host is not reachable | check the internet connection and a VPN on the host (section 10) |
+| Marks or finals seem to be missing | `./marksy.sh diag marks` (`.\marksy.ps1 diag marks`): marks per child and term with how many are removed, removals by day and by the run that made them, finals per term, the kept diary responses and the guard's held weeks. Counts, dates and the first characters of ids only, read-only; paste it into an issue as it is |
 | The phone shows a certificate warning | use the Cloudflare address for the phone (section 9) |
 | A backup fails | `./marksy.sh status` shows when; check the free space and the owner of `BACKUP_DIR` (id 1000) |
 | A release is out but not installed | `./marksy.sh update status`: paused, quiet hours, a diary read still running, a refused signature, an attempt that stopped less than an hour ago, or a release rolled back before (`update history`) |

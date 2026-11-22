@@ -290,17 +290,38 @@ Array of 6 days (Mon to Sat).
 
 `teacher_id` resolves to a name through 6.7a (or the bundle's `employees/{id}/fio`); `lesson_template_id` resolves to the teaching group, teacher and level through 6.10.3 and links the lesson to its timetable slot, room and bell time (6.10.2) [VERIFIED, 2026-10-23]. `start_time` is the only time on a lesson; the end time comes from the bell schedule (6.10.1).
 
-### 6.9 `GET .../classes/{class_uuid}/students/{student}/final/whole` [VERIFIED shape, empty]
+### 6.9 `GET .../classes/{class_uuid}/students/{student}/final/whole` [VERIFIED, 2026-11-22]
 
-No query params. Before the first quarter ends the response is:
+No query params. Before the first quarter's finals are posted the response is:
 
 ```json
 { "marks": {}, "behaviour": {}, "diary_signature": {} }
 ```
 
-From the frontend code, `marks` is a nested map `marks[<key1>][<key2>] = { mark, kind }`, most likely subject id, then period (quarter / year) [UNVERIFIED]. Store the raw JSON and finalise the parser after 2026-10-31 (the last day of Q1), when Q1 marks appear.
+With the first quarter's finals (posted before the quarter's last day; also for a year without marks, where they are pass words) [VERIFIED]:
 
-The parser in `providers/by-eschools/src/map.ts` (`mapFinals`) is provisional and follows that guess: key1 is the subject, key2 is a quarter's `time_activities.uuid` (a term final) or a year-like key (`YEAR`, `annual`, `whole`: the year final). Any other key2 is recorded as drift and skipped, so a wrong guess shows up in the drift list instead of as wrong finals.
+```jsonc
+{
+  "marks": {
+    "<subject_id>": {                  // the subject's uuid, the same id as 6.6 and lessons' subject_id
+      "FIRST_QUARTER": {               // the period key: the term's time_activities title (6.4), not its uuid
+        "uuid": "uuid",                // the final's own id
+        "summary": null,
+        "subject_id": "<subject_id>",
+        "type": "FIRST_QUARTER",       // the period key again
+        "mark": "8",                   // the mark as printed: "8", or the word of a pass mark
+        "kind": "SINGLE"               // SINGLE for a number; PASS, MASTERED, … as in 7 for the other kinds
+      }
+    }
+  },
+  "behaviour": {},
+  "diary_signature": {}
+}
+```
+
+One cell per subject and period. The period key is the term's `time_activities.title` (`FIRST_QUARTER` … `FOURTH_QUARTER`, `FIRST_HALF_YEAR` for half-year terms), which the provider keeps as `Term.label`. The year final's key is not seen yet (the first one comes in June): `YEAR`, `ANNUAL`, `WHOLE_YEAR`, `FINAL` and `YEARLY` are read as the year, anything else is drift [UNVERIFIED for the year]. `mapFinals` (`providers/by-eschools/src/map.ts`) resolves a key to a term by its label, or by its uuid should the diary ever send that; an unknown key is recorded as drift and skipped. Before 1.0.1 the parser expected the term's uuid, so every first-quarter final was dropped as drift (`final.marks.*.period`); `mapStoredFinals` maps the stored response again (D61).
+
+Note on 6.8 [VERIFIED, 2026-11-22]: once a quarter is over, the `lessons` response for its weeks may come back with every day and no slots (`"slots": []`), for a class whose timetable is set per quarter (a class with a half-year timetable still returned its slots). The marks of those weeks are not gone from the diary, only from that response: a closed term's weeks are therefore never read again automatically, and nothing in a finished term is removed by a read (design.md 8, D61).
 
 ### 6.10 Other read endpoints
 

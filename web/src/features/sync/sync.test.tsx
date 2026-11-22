@@ -36,6 +36,38 @@ const account = {
     sets: { standing: 6, rescan: 2 },
     maxRequestsPerRun: 40,
     rescan: { lastFullAt: '2026-10-19T09:00:00Z', oldestVerifiedAt: '2026-10-16T09:00:00Z' },
+    terms: [
+      {
+        studentId: 'kid-milena',
+        yearWeeks: 12,
+        yearRequests: 12,
+        terms: [
+          {
+            id: 't1',
+            kind: 'quarter',
+            index: 1,
+            start: '2026-09-01',
+            end: '2026-10-03',
+            state: 'waiting',
+            closesOn: '2026-10-10',
+            weeks: 9,
+            requests: 9,
+          },
+          {
+            id: 't2',
+            kind: 'quarter',
+            index: 2,
+            start: '2026-10-12',
+            end: '2026-12-24',
+            state: 'current',
+            closesOn: null,
+            weeks: 2,
+            requests: 2,
+          },
+        ],
+      },
+    ],
+    rescanPerRun: 20,
     drift: [
       {
         id: 'd1',
@@ -80,6 +112,24 @@ describe('Sync', () => {
     expect(screen.getByText('about 8 requests: one per week and child, one after another, with pauses')).toBeTruthy();
     expect(screen.getByText('days[].lessons[].extra')).toBeTruthy();
     expect(screen.getByText('scheduled · done · 9 requests')).toBeTruthy();
+    // each term's state (D61): a finished one waits for its final marks until it closes
+    expect(screen.getByText('Quarter I')).toBeTruthy();
+    expect(screen.getByText(/^waiting for final marks until /)).toBeTruthy();
+    expect(screen.getByText('Quarter II')).toBeTruthy();
+    expect(screen.getByText('in progress')).toBeTruthy();
+  });
+
+  it('"Check the history again" for one finished term says how many weeks and runs it takes', async () => {
+    const api = fakeApi({ signedIn: true, syncStatus: { accounts: [account], students: [] } });
+    const user = userEvent.setup();
+    render(<App at="/more/sync" />);
+    await user.click(await screen.findByRole('button', { name: 'Check the history again' }));
+    const sheet = screen.getByRole('dialog');
+    expect(within(sheet).getByText('Reads 2 weeks again: about 1 run.')).toBeTruthy();
+    await user.click(within(sheet).getByRole('button', { name: /^Quarter I\s*waiting/ }));
+    expect(within(sheet).getByText('Reads 9 weeks again: about 1 run.')).toBeTruthy();
+    await user.click(within(sheet).getByRole('button', { name: 'Queue it' }));
+    expect(api.bodies['POST /api/sync/rescan']).toEqual({ accountId: 'acc-1', period: 'finished', termIndex: 1 });
   });
 
   it('"Refresh now" (sync.refresh) within the login budget says when the next login is possible; a refused password leads to Family', async () => {

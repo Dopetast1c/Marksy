@@ -3,11 +3,12 @@ import {
   aheadDue,
   decideStart,
   hasBacklog,
-  hasPostTerm,
   jitterMinutes,
   narrowWindow,
   nextSchoolWeek,
   selectWeeks,
+  termState,
+  waitsForFinals,
 } from './plan';
 import type { EffectiveLimits, GateInput, PlanCalendar, StudentPlanState, WeekContext } from './plan';
 import { localTime } from './time';
@@ -38,10 +39,15 @@ function ctx(nowLocal: string, over: Partial<WeekContext> = {}): WeekContext {
   };
 }
 
-const state = (coverage: [string, string][] = [], postTermDone: string[] = []): StudentPlanState => ({
+const state = (
+  coverage: [string, string][] = [],
+  finalsIn: string[] = [],
+  heldToday: string[] = [],
+): StudentPlanState => ({
   calendar: CAL,
   coverage: new Map(coverage.map(([w, v]) => [w, at(v)])),
-  postTermDone: new Set(postTermDone),
+  finalsIn: new Set(finalsIn),
+  heldToday: new Set(heldToday),
 });
 
 /** Every school week from 1 Sep up to the week of `until`, verified right after it ended */
@@ -182,12 +188,46 @@ describe('selectWeeks', () => {
     expect(hasBacklog(selectWeeks(state(cov), ctx('2025-10-17 10:00', base)))).toBe(false);
   });
 
-  it('fetches a finished term once more two weeks after its end', () => {
-    const cov = verifiedThrough('2025-10-20').map(([w]) => [w, '2025-11-05 10:00'] as [string, string]);
-    const c = ctx('2025-11-10 10:00', { lastSuccessAt: at('2025-11-10 09:00') });
-    expect(sets(selectWeeks(state(cov), c))).toContain('post_term 2025-10-20');
-    expect(hasPostTerm(selectWeeks(state(cov), c))).toBe(true);
-    expect(sets(selectWeeks(state(cov, ['q1']), c))).not.toContain('post_term 2025-10-20');
+  it('a term closes TERM_CLOSE_DAYS after its end, or as soon as all its finals are in (D61)', () => {
+    const q1 = CAL.terms[0]!;
+    const none = new Set<string>();
+    expect(termState(q1, '2025-10-25', none)).toBe('current');
+    expect(termState(q1, '2025-10-26', none)).toBe('waiting');
+    expect(termState(q1, '2025-10-31', none)).toBe('waiting');
+    expect(termState(q1, '2025-11-01', none)).toBe('closed');
+    expect(termState(q1, '2025-10-27', new Set(['q1']))).toBe('closed');
+    expect(termState(CAL.terms[1]!, '2025-10-27', none)).toBe('upcoming');
+  });
+
+  it('a closed term is never planned automatically; a week of it never verified is read once (backfill)', () => {
+    // the weeks of the first term were last read in the holidays, two weeks ago: stale, but the term is closed
+    const cov = verifiedThrough('2025-10-20').map(([w]) => [w, '2025-10-27 10:00'] as [string, string]);
+    const c = ctx('2025-11-12 10:00', { lastSuccessAt: at('2025-11-12 09:00') });
+    expect(sets(selectWeeks(state(cov), c))).toEqual(['standing 2025-11-10', 'standing 2025-11-03']);
+    // the server was off since mid-October: a closed term's week read before it ended is not a gap any more
+    const midweek = cov.map(([w, v]) => [w, w === '2025-10-20' ? '2025-10-22 10:00' : v] as [string, string]);
+    const off = ctx('2025-11-12 10:00', { lastSuccessAt: at('2025-10-22 10:00') });
+    expect(sets(selectWeeks(state(midweek), off))).toEqual(['standing 2025-11-10', 'standing 2025-11-03']);
+    // a closed term's week never verified (a family that connects in November) is read once
+    const missing = cov.filter(([w]) => w !== '2025-09-15');
+    expect(sets(selectWeeks(state(missing), c))).toContain('backfill 2025-09-15');
+  });
+
+  it('a finished term waiting to close keeps the re-check of its last two weeks; its finals close it early', () => {
+    const cov = verifiedThrough('2025-10-20').map(([w]) => [w, '2025-10-20 10:00'] as [string, string]);
+    const holidays = ctx('2025-10-29 10:00', { lastSuccessAt: at('2025-10-28 10:00') });
+    // the last school week is still the previous (standing) week; the one before it is re-checked; September is not
+    expect(sets(selectWeeks(state(cov), holidays))).toEqual(['standing 2025-10-20', 'rescan 2025-10-13']);
+    expect(waitsForFinals(state(cov), '2025-10-29')).toBe(true);
+    // every subject with marks has its final: closed, nothing of it is read again
+    expect(sets(selectWeeks(state(cov, ['q1']), holidays))).toEqual([]);
+    expect(waitsForFinals(state(cov, ['q1']), '2025-10-29')).toBe(false);
+  });
+
+  it('a week the mass-removal guard held today waits for tomorrow, even a standing one', () => {
+    const cov = verifiedThrough('2025-10-06').map(([w]) => [w, '2025-10-10 21:00'] as [string, string]);
+    const c = ctx('2025-10-15 10:00', { lastSuccessAt: at('2025-10-15 09:10') });
+    expect(sets(selectWeeks(state(cov, [], ['2025-10-06']), c))).toEqual(['standing 2025-10-13']);
   });
 });
 
@@ -220,7 +260,7 @@ function gate(nowLocal: string, over: Partial<GateInput> = {}, account: Partial<
     windows: [[480, 840]],
     weekday: true,
     backlog: false,
-    postTerm: false,
+    waitingFinals: false,
     lastOfflineAt: null,
     seed: 'account-1',
     ...over,
@@ -328,11 +368,14 @@ describe('decideStart', () => {
     });
   });
 
-  it('a finished term due in the holidays: one run in the manifest window on a weekday', () => {
-    const holidays = { windows: [] as [number, number][], postTerm: true };
-    const recent = { lastSuccessAt: at('2025-11-03 08:00'), lastAttemptAt: at('2025-11-03 08:00') };
+  it('a finished term waiting for its finals in the holidays: one run a weekday in the manifest window', () => {
+    const holidays = { windows: [] as [number, number][], waitingFinals: true, schoolDay: false };
+    const recent = { lastSuccessAt: at('2025-11-02 08:00'), lastAttemptAt: at('2025-11-02 08:00') };
     expect(gate('2025-11-03 13:40', holidays, recent)).toEqual({ start: true, kind: 'rescan' });
     expect(gate('2025-11-03 18:00', holidays, recent)).toMatchObject({ start: false, reason: 'outside_window' });
+    // once a day: the morning's run read the finals already
+    const today = { lastSuccessAt: at('2025-11-03 09:00'), lastAttemptAt: at('2025-11-03 09:00') };
+    expect(gate('2025-11-03 13:40', holidays, today)).toMatchObject({ start: false, reason: 'outside_window' });
     expect(
       gate(
         '2025-11-02 13:40',

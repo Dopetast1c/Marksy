@@ -5,7 +5,7 @@ import { diaryAccounts, families, syncRuns } from '../db/schema';
 import { effectiveLimits } from './config';
 import type { SyncConfig } from './config';
 import { decideStart } from './plan';
-import type { GateDecision } from './plan';
+import type { GateDecision, WeekContext } from './plan';
 import { readableStudents, sourcedStudents } from './readers';
 import { accountToday, lastAheadOf, nextSchoolDayOf, weekContext } from './state';
 import type { AccountToday, NextSchoolDay } from './state';
@@ -28,6 +28,8 @@ export interface AccountPlan {
   maxRequestsPerRun: number;
   /** The next school day after today, for "next Mon, 9 Nov at 08:13" (more.sync.nextOn) when today's windows are over */
   nextSchoolDay: NextSchoolDay | null;
+  /** The planner's calendar rules and today, as the runs see them */
+  ctx: WeekContext;
 }
 
 export async function accountPlan(
@@ -67,7 +69,7 @@ export async function accountPlan(
     windows: today.windows,
     weekday: manifest.calendar.schoolDays.includes(local.weekday),
     backlog: sourceCheck ? false : today.backlog || readable.length === 0,
-    postTerm: sourceCheck ? false : today.postTerm,
+    waitingFinals: sourceCheck ? false : today.waitingFinals,
     ahead: sourceCheck ? false : today.ahead,
     schoolDay: today.schoolDay,
     lastOfflineAt: lastOffline?.startedAt ?? null,
@@ -83,5 +85,6 @@ export async function accountPlan(
     decision,
     maxRequestsPerRun: limits.maxRequestsPerRun,
     nextSchoolDay,
+    ctx,
   };
 }

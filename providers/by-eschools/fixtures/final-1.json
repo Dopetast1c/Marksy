@@ -1,5 +1,30 @@
 {
-  "marks": {},
-  "behaviour": {},
-  "diary_signature": {}
+  "marks": {
+    "00000000-0000-4000-8000-17fcb17dbf5c": {
+      "FIRST_QUARTER": {
+        "uuid": "00000000-0000-4000-8000-521121fde171",
+        "summary": null,
+        "subject_id": "00000000-0000-4000-8000-17fcb17dbf5c",
+        "type": "FIRST_QUARTER",
+        "mark": "осв.",
+        "kind": "MASTERED"
+      }
+    },
+    "00000000-0000-4000-8000-52dd3ca618c8": {
+      "FIRST_QUARTER": {
+        "uuid": "00000000-0000-4000-8000-2953e81927f5",
+        "summary": null,
+        "subject_id": "00000000-0000-4000-8000-52dd3ca618c8",
+        "type": "FIRST_QUARTER",
+        "mark": "осв.",
+        "kind": "MASTERED"
+      }
+    }
+  },
+  "behaviour": {
+    "FIRST_QUARTER": "[text]"
+  },
+  "diary_signature": {
+    "FIRST_QUARTER": 0
+  }
 }

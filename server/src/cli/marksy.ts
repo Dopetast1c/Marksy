@@ -10,6 +10,7 @@ import { devConnect } from '../family/dev-connect';
 import { errorSummary, log } from '../log';
 import { backupsIn } from '../ops/backup';
 import { backupDaemon } from '../ops/daemon';
+import { diagMarks } from '../ops/diag';
 import { initEnv } from '../ops/init-env';
 import { restoreBackup } from '../ops/restore';
 import { setSyncEnabled } from '../runtime/instance';
@@ -42,6 +43,7 @@ const USAGE = `marksy <command>
   connect [--provider <id>]     connect the diary from DIARY_LOGIN, DIARY_PASSWORD, MARKSY_DEV_EMAIL, MARKSY_DEV_PASSWORD
   seed [--reset]                the fictional demo family, to try Marksy without a diary account
   check-network                 can this container reach each diary's host (DNS and TCP, no login)
+  diag marks                    what happened to the stored marks and finals: counts only, read-only
   healthcheck                   exit 0 when the API answers`;
 
 const flag = (args: string[], name: string) => args.includes(name);
@@ -330,6 +332,19 @@ export async function main(argv: string[]): Promise<number> {
       return cmdSeed(args);
     case 'check-network':
       return cmdCheckNetwork();
+    case 'diag': {
+      if (args[0] !== 'marks') {
+        console.error('marksy diag marks');
+        return 2;
+      }
+      const db = createDb(databaseUrl());
+      try {
+        await diagMarks(db, (line) => console.log(line));
+        return 0;
+      } finally {
+        await db.$client.end();
+      }
+    }
     case 'healthcheck':
       return cmdHealthcheck();
     default:

@@ -3,7 +3,7 @@
 # docker-compose.prod.yml and .env.production. Windows has the same commands in marksy.ps1.
 #   ./marksy.sh up | stop | pull | ps | logs [service] | status
 #   ./marksy.sh backup | restore <file in BACKUP_DIR> [--without-demo] [--replace --yes]
-#   ./marksy.sh sync enable|disable | check-network | connect | tunnel on|off
+#   ./marksy.sh sync enable|disable | check-network | connect | tunnel on|off | diag marks
 #   ./marksy.sh update status | history [n] | pause | resume | now [--to X.Y.Z]
 #   ./marksy.sh init-env [--credentials-key-from <file>] [--tz <zone>] [--show-hook-secret]
 set -eu
@@ -72,6 +72,7 @@ case "$command" in
     ;;
   sync) need_env; compose exec server node /app/dist/marksy.mjs sync "$@" ;;
   check-network) need_env; compose exec server node /app/dist/marksy.mjs check-network ;;
+  diag) need_env; compose exec server node /app/dist/marksy.mjs diag "$@" ;;
   seed) need_env; compose exec server node /app/dist/marksy.mjs seed "$@" ;;
   connect)
     need_env

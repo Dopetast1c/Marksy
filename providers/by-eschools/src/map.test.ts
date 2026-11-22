@@ -1,6 +1,7 @@
 import { createMemoryDrift, driftChecker, ProviderSchemaError } from '@marksy/core';
 import { describe, expect, it } from 'vitest';
 import { toISODate } from './dates';
+import { byEschools } from './index';
 import { currentClass, mapCalendar, mapFinals, mapLessonsResponse, mapLessonsWeek, mapStudent } from './map';
 import timeActivities from '../fixtures/time_activities.json';
 import { lessonsDay, timeActivity } from './schemas';
@@ -384,7 +385,7 @@ describe('lessons and marks', () => {
   });
 });
 
-describe('final marks (provisional shape)', () => {
+describe('final marks (6.9, the verified shape)', () => {
   const subjects = [{ externalId: 's-alg', name: 'Алгебра' }];
   const terms = [
     {
@@ -396,6 +397,40 @@ describe('final marks (provisional shape)', () => {
       end: '2026-10-31',
     },
   ];
+
+  it('a period key is the term’s time_activity title (FIRST_QUARTER), as the diary sends it', () => {
+    const { drift, check } = setup();
+    const cell = (mark: string, kind: string) => ({
+      uuid: 'f-1',
+      summary: null,
+      subject_id: 's-alg',
+      type: 'FIRST_QUARTER',
+      mark,
+      kind,
+    });
+    const finals = mapFinals(
+      { marks: { 's-alg': { FIRST_QUARTER: cell('7', 'SINGLE') }, 's-pe': { FIRST_QUARTER: cell('зач', 'PASS') } } },
+      [...subjects, { externalId: 's-pe', name: 'Физкультура' }],
+      terms,
+      check,
+    );
+    expect(finals.map((f) => [f.subjectExternalId, f.termExternalId, f.raw, f.value, f.kind])).toEqual([
+      ['s-alg', 'q1', '7', 7, 'numeric'],
+      ['s-pe', 'q1', 'зач', null, 'pass'],
+    ]);
+    expect(drift.events).toEqual([]);
+  });
+
+  it('a stored response maps again without a session; another endpoint is not finals', () => {
+    const body = { marks: { 's-alg': { FIRST_QUARTER: { mark: '8', kind: 'SINGLE' } } }, behaviour: {} };
+    const known = { subjects, terms };
+    const endpoint = 'GET /api/v1/education/diary/schools/*/classes/*/students/*/final/whole';
+    expect(byEschools.mapStoredFinals!({ endpoint, body }, known)).toEqual([
+      expect.objectContaining({ subjectExternalId: 's-alg', termExternalId: 'q1', value: 8 }),
+    ]);
+    expect(byEschools.mapStoredFinals!({ endpoint: 'GET /x/lessons', body }, known)).toBeNull();
+    expect(byEschools.mapStoredFinals!({ endpoint, body: [] }, known)).toBeNull();
+  });
 
   it('maps term and year finals, skips unknown periods as drift', () => {
     const { drift, check } = setup();

@@ -435,6 +435,16 @@ export const byEschools: DiaryProvider = {
     return mapFinals(raw, subjects, terms, check);
   },
 
+  mapStoredFinals(stored, known) {
+    if (!/(^|\/)final(\/whole)?$/.test(stored.endpoint)) return null;
+    const check = driftChecker({ report: () => undefined }, 'final');
+    try {
+      return mapFinals(check.parse(finalWholeResponse, stored.body), known.subjects, known.terms, check);
+    } catch {
+      return null;
+    }
+  },
+
   sanitize,
   redactRaw,
 };

@@ -322,12 +322,16 @@ export function mapLessonsResponse(raw: unknown, timeZone: string, check: DriftC
   return mapLessonsWeek(days, timeZone, check);
 }
 
-/** Words of a final-marks period key that mean the whole year (provisional: the populated shape is unverified). */
-const YEAR_KEY = /year|annual|whole|^god$/i;
+/**
+ * Period keys that mean the whole year. The term keys are verified (FIRST_QUARTER, docs/api-spec.md 6.9); the year's
+ * key is not seen yet (the first year final comes in June), so these are the likely words and anything else is drift.
+ */
+const YEAR_KEY = /^(YEAR|ANNUAL|WHOLE_YEAR|FINAL|YEARLY)$/i;
 
 /**
- * final/whole -> FinalMark[]. Provisional (docs/api-spec.md 6.9): marks[subjectId][period] = { mark, kind }, period
- * being a quarter's time_activity uuid or a year key. Unknown periods and cells are reported as drift and skipped.
+ * final/whole -> FinalMark[] (docs/api-spec.md 6.9 [VERIFIED]): marks[subjectId][period] = { uuid, subject_id, type,
+ * mark, kind, summary }, period being the term's time_activity title (FIRST_QUARTER, FIRST_HALF_YEAR), which is the
+ * term's label, or a year key. A time_activity uuid is accepted too. Unknown periods and cells are drift and skipped.
  */
 export function mapFinals(
   raw: FinalWholeResponse,
@@ -336,11 +340,16 @@ export function mapFinals(
   check: DriftCheck,
 ): FinalMark[] {
   const names = new Map(subjects.map((s) => [s.externalId, s.name]));
-  const termIds = new Set(terms.map((t) => t.externalId));
+  const termOf = new Map<string, string>();
+  for (const t of terms) {
+    termOf.set(t.externalId, t.externalId);
+    if (t.label) termOf.set(t.label, t.externalId);
+  }
   const out: FinalMark[] = [];
   for (const [subjectId, periods] of Object.entries(raw.marks)) {
     for (const [period, value] of Object.entries(periods)) {
-      const isTerm = termIds.has(period);
+      const termId = termOf.get(period) ?? null;
+      const isTerm = termId !== null;
       if (!isTerm && !YEAR_KEY.test(period)) {
         check.known(period, [], 'final.marks.*.period');
         continue;
@@ -353,7 +362,7 @@ export function mapFinals(
       out.push({
         subjectExternalId: subjectId,
         subjectName: names.get(subjectId) ?? subjectId,
-        termExternalId: isTerm ? period : null,
+        termExternalId: termId,
         raw: rawMark,
         value: numeric ? Number(rawMark) : null,
         kind: numeric

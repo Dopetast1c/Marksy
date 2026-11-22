@@ -6,6 +6,7 @@ import { dayRange, toISODate } from './dates';
 import { denyValues, writeDenyList } from './deny';
 import { byEschools, manifest, recentWeekRanges, roomFactsOf } from './index';
 import { endpointName, findLeaks, report, reportable, sanitisedRoute, sensitiveValues, shapeOf } from './probe';
+import type { WeekFacts } from './probe';
 import { sanitize } from './sanitize';
 
 // One run of `pnpm probe` (docs/build-plan.md M2, M3a) over any transport: the real network (scripts/probe.ts, a real
@@ -179,21 +180,30 @@ export async function runProbe(o: ProbeRunOptions): Promise<number> {
   if (yearRaw) addShape('school_year.label', yearRaw.label);
   for (const a of (named.find((x) => x.name === 'time_activities')?.raw as { school_year?: unknown }[]) ?? [])
     addShape('time_activities.school_year', a.school_year);
+  const perWeek: WeekFacts[] = [];
   for (const n of named.filter((x) => x.name.startsWith('lessons-'))) {
+    const week: WeekFacts = { name: n.name, from: null, days: 0, slots: 0, withMark: 0, kinds: {} };
     for (const day of n.raw as {
+      date?: unknown;
       slots: { type: string | null; start_time?: unknown; lesson_mark: { kind: string; type: string | null } | null }[];
     }[]) {
+      week.days++;
+      if (week.from === null && typeof day.date === 'number') week.from = toISODate(day.date, manifest.timezone);
       for (const slot of day.slots) {
         addShape('start_time', slot.start_time);
         // enum values only: anything that is not UPPER_SNAKE is counted as "other", never printed
         const count = (m: Record<string, number>, v: unknown) =>
           (m[reportable(String(v))] = (m[reportable(String(v))] ?? 0) + 1);
         count(rawLessonTypes, slot.type);
+        week.slots++;
         if (!slot.lesson_mark) continue;
+        week.withMark++;
+        count(week.kinds, slot.lesson_mark.kind);
         count(rawKinds, slot.lesson_mark.kind);
         count(rawWorkTypes, slot.lesson_mark.type);
       }
     }
+    perWeek.push(week);
   }
   const finalCells = named
     .filter((n) => n.name.startsWith('final-'))
@@ -230,6 +240,7 @@ export async function runProbe(o: ProbeRunOptions): Promise<number> {
       rawWorkTypes,
       rawLessonTypes,
       shapes,
+      perWeek,
       details: perStudent.map((s) => ({
         bellSchedules: s.bellSchedules.length,
         periods: s.bellSchedules.reduce((n, b) => n + b.periods.length, 0),

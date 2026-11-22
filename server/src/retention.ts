@@ -10,7 +10,7 @@ import type { Db } from './db/client';
 export interface RetentionLimits {
   /** sync_runs; older runs are compacted into sync_daily */
   syncRunsDays: number;
-  /** raw_responses, except the last good body per week of the current term */
+  /** raw_responses, except the last good body per week of the current school year */
   rawResponsesDays: number;
   /** mark_events, lesson_prep_events and the notifications inbox */
   eventsDays: number;
@@ -73,34 +73,37 @@ export async function applyRetention(
     report[name] = res.rowCount ?? 0;
   };
 
-  await db.transaction(async (tx) => {
-    const cutoff = days(limits.syncRunsDays);
-    // one line per account and day keeps "how often did this break" after the runs are gone
-    await tx.execute(sql`
-      insert into sync_daily (diary_account_id, date, runs, failures, requests)
-      select diary_account_id, (started_at at time zone 'UTC')::date, count(*),
-             count(*) filter (where status in ('failed', 'partial')), coalesce(sum(requests), 0)
-      from sync_runs where started_at < ${cutoff}
-      group by 1, 2
-      on conflict (diary_account_id, date) do update set
-        runs = sync_daily.runs + excluded.runs,
-        failures = sync_daily.failures + excluded.failures,
-        requests = sync_daily.requests + excluded.requests`);
-    const res = await tx.execute(sql`delete from sync_runs where started_at < ${cutoff}`);
-    report.sync_runs = res.rowCount ?? 0;
-  });
-
-  // the body that verified a week of the current term stays, so a drift fix can re-parse it without a new request
+  // the last good body of every week of the current school year stays (the one that verified the week: a response
+  // that lost frozen records never becomes it, collector.ts), so a mapping fixed later re-reads it offline (D61)
   await run(
     'raw_responses',
     sql`delete from raw_responses r where r.fetched_at < ${days(limits.rawResponsesDays)} and not exists (
       select 1 from sync_coverage c
       join school_years y on y.student_id = c.student_id
-      join terms t on t.school_year_id = y.id
       where c.student_id = r.student_id and c.week_start = r.week_start and c.run_id = r.sync_run_id
-        and t.start_date <= ${now}::date and t.end_date >= ${now}::date
-        and r.week_start between t.start_date - 6 and t.end_date)`,
+        and y.start_date <= ${now}::date and y.end_date >= ${now}::date
+        and r.week_start between y.start_date - 6 and y.end_date)`,
   );
+
+  await db.transaction(async (tx) => {
+    const cutoff = days(limits.syncRunsDays);
+    // a run whose body is still kept stays with it (the body goes with its run): at most one per week of the year
+    const old = sql`started_at < ${cutoff} and not exists (
+      select 1 from raw_responses r where r.sync_run_id = sync_runs.id)`;
+    // one line per account and day keeps "how often did this break" after the runs are gone
+    await tx.execute(sql`
+      insert into sync_daily (diary_account_id, date, runs, failures, requests)
+      select diary_account_id, (started_at at time zone 'UTC')::date, count(*),
+             count(*) filter (where status in ('failed', 'partial')), coalesce(sum(requests), 0)
+      from sync_runs where ${old}
+      group by 1, 2
+      on conflict (diary_account_id, date) do update set
+        runs = sync_daily.runs + excluded.runs,
+        failures = sync_daily.failures + excluded.failures,
+        requests = sync_daily.requests + excluded.requests`);
+    const res = await tx.execute(sql`delete from sync_runs where ${old}`);
+    report.sync_runs = res.rowCount ?? 0;
+  });
   const events = days(limits.eventsDays);
   await run('mark_events', sql`delete from mark_events where created_at < ${events}`);
   await run('lesson_prep_events', sql`delete from lesson_prep_events where at < ${events}`);

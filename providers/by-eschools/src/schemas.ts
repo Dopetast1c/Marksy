@@ -180,7 +180,13 @@ export type LessonsDay = z.infer<typeof lessonsDay>;
  * final/whole. Verified only empty ({ marks: {}, behaviour: {}, diary_signature: {} }); the frontend reads
  * marks[<key1>][<key2>] = { mark, kind }, most likely subject id, then period. Provisional until Q1 finals are seen.
  */
+/** One cell of final/whole (6.9 [VERIFIED]): the period's final of one subject */
 export const finalMarkCell = z.looseObject({
+  uuid: seen,
+  subject_id: seen,
+  /** the period key again (FIRST_QUARTER) */
+  type: seen,
+  summary: seen,
   mark: z.string().nullable().optional(),
   kind: z.string().nullable().optional(),
 });

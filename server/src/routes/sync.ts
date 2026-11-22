@@ -139,7 +139,12 @@ export function syncRoutes(deps: AppDeps): Router {
       const kids = (await visibleStudents(deps.db, m.userId, m.familyId)).map((k) => k.student.id);
       const student = m.role === 'student';
       const visiblePlan = (p: Awaited<ReturnType<typeof syncPlanOf>> | null) =>
-        p && { ...p, windowStudentIds: p.windowStudentIds.filter((id) => kids.includes(id)) };
+        p && {
+          ...p,
+          windowStudentIds: p.windowStudentIds.filter((id) => kids.includes(id)),
+          // a parent who sees some of the family's children gets the terms of those only
+          terms: p.terms.filter((c) => kids.includes(c.studentId)),
+        };
       const active = kids.length
         ? await deps.db
             .select({
@@ -360,14 +365,16 @@ export function syncRoutes(deps: AppDeps): Router {
       method: 'post',
       path: '/api/sync/rescan',
       summary:
-        '"Check the history again" (sync.rescan.button): the weeks of the current term or school year are read again by the next runs, then one run now',
+        '"Check the history again" (sync.rescan.button): the weeks of the current term, of one finished term or of the school year are read again by the next runs, then one run now',
       tags: ['sync'],
       access: { roles: ['admin', 'parent'] },
       body: z.object({
         accountId: z.string().uuid(),
         /** none: every child the login reads */
         studentIds: z.array(z.string().uuid()).optional(),
-        period: z.enum(['term', 'year']),
+        /** term: the current one; finished: the finished term numbered termIndex (each child's own, D61) */
+        period: z.enum(['term', 'year', 'finished']),
+        termIndex: z.number().int().positive().optional(),
       }),
       response: refreshOut.extend({ weeks: z.number() }),
       errors: { 404: 'No such diary account' },
@@ -404,6 +411,7 @@ export function syncRoutes(deps: AppDeps): Router {
           );
         if (!year) continue;
         let from = year.startDate;
+        let to = today;
         if (body.period === 'term') {
           const [term] = await deps.db
             .select()
@@ -411,13 +419,25 @@ export function syncRoutes(deps: AppDeps): Router {
             .where(and(eq(terms.schoolYearId, year.id), lte(terms.startDate, today), gte(terms.endDate, today)));
           if (term) from = term.startDate;
         }
+        if (body.period === 'finished') {
+          // a finished term is read again as it was never read (backfill); nothing of it is removed (D61, design.md 8)
+          const [term] = await deps.db
+            .select()
+            .from(terms)
+            .where(
+              and(eq(terms.schoolYearId, year.id), eq(terms.index, body.termIndex ?? 0), lte(terms.endDate, today)),
+            );
+          if (!term || term.endDate >= today) continue;
+          from = term.startDate;
+          to = term.endDate;
+        }
         const gone = await deps.db
           .delete(syncCoverage)
           .where(
             and(
               eq(syncCoverage.studentId, studentId),
               gte(syncCoverage.weekStart, addDays(from, -6)),
-              lte(syncCoverage.weekStart, today),
+              lte(syncCoverage.weekStart, to),
             ),
           )
           .returning();

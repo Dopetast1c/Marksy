@@ -122,6 +122,16 @@ describe('read-only allow-list (docs/api-spec.md 6.11)', () => {
 describe('sanitize', () => {
   const real = '7d3e2b1a-4c5f-4e6d-9a8b-1c2d3e4f5a6b';
 
+  it('drops an absence: a dated fact about a real child never reaches a fixture', () => {
+    const day = (kind: string) => [
+      { date: 1, slots: [{ lesson_mark: { uuid: real, mark: kind === 'ABSENT' ? 'н' : '8', kind, comment: '' } }] },
+    ];
+    const [absent] = sanitize('lessons-1-w1', day('ABSENT')) as { slots: { lesson_mark: unknown }[] }[];
+    expect(absent!.slots[0]!.lesson_mark).toBeNull();
+    const [mark] = sanitize('lessons-1-w1', day('SINGLE')) as { slots: { lesson_mark: { kind: string } }[] }[];
+    expect(mark!.slots[0]!.lesson_mark.kind).toBe('SINGLE');
+  });
+
   it('gives one real id the same fake id everywhere, and keeps fake ids', () => {
     expect(fakeUuid(real)).toBe(fakeUuid(real));
     expect(fakeUuid(real).startsWith(FAKE_UUID_PREFIX)).toBe(true);
