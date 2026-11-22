@@ -11,6 +11,8 @@ export interface FakeState {
   urls: string[];
   /** request bodies by route, last one wins */
   bodies: Record<string, unknown>;
+  /** pictures uploaded by route (a child's photo), last one wins */
+  uploads?: Record<string, { type: string; size: number }>;
   /** the connected diary refuses the login */
   diaryRefuses?: boolean;
   /** the version /api/health reports; this build's own by default */
@@ -873,6 +875,13 @@ export function fakeApi(start: Partial<FakeState> = {}) {
     if (/^PATCH \/api\/family\/join-requests\//.test(route)) return json(null, 204);
     if (route === 'POST /api/family/invites')
       return json({ code: 'K7M2Q9', url: '/join/K7M2Q9', expiresAt: '2026-10-23T16:12:00Z' }, 201);
+    const kidPhoto = route.match(/^PUT \/api\/students\/([^/]+)\/photo$/);
+    if (kidPhoto) {
+      const sent = await input.blob();
+      state.uploads = { ...state.uploads, [route]: { type: input.headers.get('content-type') ?? '', size: sent.size } };
+      avatars[kidPhoto[1]!] = { kind: 'photo', url: `/api/students/${kidPhoto[1]!}/photo?v=1` };
+      return json({ avatar: avatars[kidPhoto[1]!] });
+    }
     const kidPatch = route.match(/^PATCH \/api\/students\/([^/]+)$/);
     if (kidPatch) {
       const traits = (state.bodies[route] as { avatar: unknown }).avatar;
