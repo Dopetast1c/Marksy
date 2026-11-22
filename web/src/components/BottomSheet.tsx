@@ -4,17 +4,20 @@ import { createPortal } from 'react-dom';
 import { CheckIcon } from './icons';
 
 // Choices with more than four options or with explanations open a bottom sheet, never a native select (ux-principles
-// D32). While a sheet is open the period swipe is off (lib/swipe.ts reads body[data-sheet-open]).
+// D32). While a sheet is open the period swipe is off (lib/swipe.ts reads body[data-sheet-open]). `dialog` keeps the
+// sheet on a phone and makes it a centred dialog on a wider screen (the photo crop, D62).
 
 export function BottomSheet({
   open,
   onClose,
   label,
+  dialog,
   children,
 }: {
   open: boolean;
   onClose: () => void;
   label: string;
+  dialog?: boolean;
   children: ReactNode;
 }) {
   const panel = useRef<HTMLDivElement>(null);
@@ -38,17 +41,20 @@ export function BottomSheet({
   if (!open) return null;
   // rendered at the end of <body>: a sticky parent (the period navigator) must not trap it under the tab bar
   return createPortal(
-    <div className="fixed inset-0 z-30 flex items-end justify-center bg-ink/45" onClick={onClose}>
+    <div
+      className={`fixed inset-0 z-30 flex items-end justify-center bg-ink/45 ${dialog ? 'sm:items-center sm:p-6' : ''}`}
+      onClick={onClose}
+    >
       <div
         ref={panel}
         role="dialog"
         aria-modal="true"
         aria-label={label}
         tabIndex={-1}
-        className="flex max-h-[88%] w-full max-w-[560px] flex-col gap-1.5 overflow-y-auto rounded-t-[24px] bg-surface px-5 pt-2.5 pb-7 outline-none"
+        className={`flex max-h-[88%] w-full max-w-[560px] flex-col gap-1.5 overflow-y-auto rounded-t-[24px] bg-surface px-5 pt-2.5 pb-7 outline-none ${dialog ? 'sm:max-h-full sm:max-w-[440px] sm:rounded-[24px] sm:pt-5 sm:pb-5' : ''}`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mx-auto mb-2.5 h-1 w-10 rounded-pill bg-line" />
+        <div className={`mx-auto mb-2.5 h-1 w-10 rounded-pill bg-line ${dialog ? 'sm:hidden' : ''}`} />
         {children}
       </div>
     </div>,

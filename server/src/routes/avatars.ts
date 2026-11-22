@@ -17,7 +17,7 @@ import { DEFAULT_UPLOADS_DIR, readUpload, removeUpload, saveUpload } from '../up
 
 const id = z.string().uuid();
 
-/** A photo arrives scaled to 512 px by the browser; the server checks it, never trusts it */
+/** A photo arrives as the 512 px square the crop step drew (D62); the server checks it, never trusts it */
 const PHOTO_SIDE = 512;
 const PHOTO_MAX_BYTES = 2_000_000;
 
@@ -58,14 +58,15 @@ export function avatarRoutes(deps: AppDeps): Router {
     {
       method: 'put',
       path: '/api/students/:id/photo',
-      summary: 'A photo as the child’s avatar (admin, parent): JPEG, PNG or WebP up to 512 px, metadata removed (14.1)',
+      summary:
+        'A photo as the child’s avatar (admin, parent): a square JPEG, PNG or WebP up to 512 px, metadata removed (14.1)',
       tags: ['students'],
       access: 'member',
       params: z.object({ id }),
       upload: { maxBytes: PHOTO_MAX_BYTES },
       response: z.object({ avatar: avatarOut }),
       errors: {
-        400: 'Not a JPEG, PNG or WebP, or larger than 512 px',
+        400: 'Not a JPEG, PNG or WebP, larger than 512 px, or not square',
         403: 'A student does not set avatars',
         404: 'No such child',
       },
@@ -74,6 +75,8 @@ export function avatarRoutes(deps: AppDeps): Router {
       const ctx = await loadChild(deps, req, params.id);
       if (ctx.role === 'student') throw new HttpError(403, 'forbidden', 'A student does not set avatars');
       const image = checkImage(upload, { maxBytes: PHOTO_MAX_BYTES, maxSide: PHOTO_SIDE });
+      // the round avatar shows a square: anything else would be cropped again, by the browser, in a way nobody chose
+      if (image.width !== image.height) throw new HttpError(400, 'bad_image', 'A photo avatar must be square');
       const key = await saveUpload(dir, 'avatars', EXT[image.type], image.bytes);
       const stored: StoredAvatar = { kind: 'photo', key, mime: image.mime, bytes: image.bytes.length };
       await deps.db.update(students).set({ avatar: stored }).where(eq(students.id, ctx.student.id));

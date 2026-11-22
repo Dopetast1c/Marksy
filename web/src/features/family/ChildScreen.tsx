@@ -8,18 +8,21 @@ import { useFamily } from '../../api/queries';
 import { Frame } from '../../app/Frame';
 import { Avatar, defaultTraits } from '../../components/Avatar';
 import type { AvatarTraits } from '../../components/Avatar';
+import { BottomSheet } from '../../components/BottomSheet';
 import { ChildAvatar } from '../../components/ChildAvatar';
 import { Button, Field } from '../../components/Field';
 import { BackIcon } from '../../components/icons';
 import { Switch } from '../../components/Switch';
 import { useT } from '../../i18n';
 import { appPath } from '../../lib/base';
+import { PhotoCrop } from './PhotoCrop';
 
 // A child in Family (family.title; docs/design.md 5.6, D9, D54): the avatar, drawn from traits (every option shown
 // already applied to the child's current look) or a photo; for the admin, "Stop following" (family.child.stop),
 // "Follow again" (family.child.followAgain) and "Delete the data" (family.child.delete) (7.1).
-// A photo is scaled to a 512 px square here, in the browser, and the server checks it again and strips its metadata
-// (14.1). The avatar is the child's: every family that follows the child sees the same one.
+// A picked photo opens the crop step (PhotoCrop, D62) before anything is sent: only the square chosen there, drawn as
+// a 512 px JPEG in the browser, is uploaded, and the server checks it again, requires it square and strips its
+// metadata (14.1). The avatar is the child's: every family that follows the child sees the same one.
 
 const OPTIONS = {
   age: ['kid', 'preteen', 'teen', 'adult'],
@@ -31,18 +34,6 @@ const OPTIONS = {
 } as const;
 type Trait = keyof typeof OPTIONS;
 const SWATCH: Partial<Record<Trait, string>> = { skin: 'skin', hair: 'hair', eyes: 'eyes' };
-
-/** A picture as a centred 512 px square JPEG, drawn on a canvas: the photo the server is sent */
-async function squareJpeg(file: File, side = 512): Promise<Blob> {
-  const bitmap = await createImageBitmap(file);
-  const s = Math.min(bitmap.width, bitmap.height);
-  const canvas = document.createElement('canvas');
-  canvas.width = side;
-  canvas.height = side;
-  canvas.getContext('2d')!.drawImage(bitmap, (bitmap.width - s) / 2, (bitmap.height - s) / 2, s, s, 0, 0, side, side);
-  bitmap.close();
-  return new Promise((ok, fail) => canvas.toBlob((b) => (b ? ok(b) : fail(new Error('canvas'))), 'image/jpeg', 0.88));
-}
 
 export function ChildScreen() {
   const t = useT();
@@ -75,20 +66,42 @@ export function ChildScreen() {
   };
   const setTraits = (next: AvatarTraits) =>
     done(() => data(api.PATCH('/api/students/{id}', { ...path, body: { avatar: next } })));
-  const upload = (e: ChangeEvent<HTMLInputElement>) => {
+  // the picked photo waits in the crop step; "Cancel" (crop.cancel) drops it and nothing changes
+  // (each pick has its own number: another photo is a fresh crop step)
+  const [crop, setCrop] = useState<{ file: File; n: number } | null>(null);
+  const [cropError, setCropError] = useState<string | null>(null);
+  const startCrop = (file: File) => {
+    setCropError(null);
+    setCrop((was) => ({ file, n: (was?.n ?? 0) + 1 }));
+  };
+  const pick = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = '';
-    if (!file) return;
-    void done(async () => {
-      const blob = await squareJpeg(file);
+    if (file) startCrop(file);
+  };
+  const closeCrop = () => {
+    if (busy) return;
+    setCrop(null);
+    setCropError(null);
+  };
+  const upload = async (photo: Blob) => {
+    setCropError(null);
+    setBusy(true);
+    try {
       const res = await fetch(appPath(`/api/students/${studentId}/photo`), {
         method: 'PUT',
         headers: { 'Content-Type': 'image/jpeg' },
-        body: blob,
+        body: photo,
         credentials: 'same-origin',
       });
       if (!res.ok) throw new Error(String(res.status));
-    });
+      setCrop(null);
+      await queries.invalidateQueries();
+    } catch {
+      setCropError(t('family.error.failed'));
+    } finally {
+      setBusy(false);
+    }
   };
 
   if (!child)
@@ -122,10 +135,23 @@ export function ChildScreen() {
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
                 className="sr-only"
-                onChange={upload}
+                onChange={pick}
                 disabled={busy}
               />
             </label>
+            <BottomSheet open={!!crop} onClose={closeCrop} label={t('crop.title')} dialog>
+              {crop && (
+                <PhotoCrop
+                  key={crop.n}
+                  file={crop.file}
+                  busy={busy}
+                  error={cropError}
+                  onPick={startCrop}
+                  onCancel={closeCrop}
+                  onDone={(photo) => void upload(photo)}
+                />
+              )}
+            </BottomSheet>
             {avatar && (
               <button
                 type="button"
