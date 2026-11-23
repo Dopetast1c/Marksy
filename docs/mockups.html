@@ -3118,6 +3118,10 @@ function renderAvatarEdit() {
       <div class="menu" style="padding:4px 0"><span class="main"><b>Очки</b></span>${sw(a.glasses).replace('class="switch"', 'class="switch" data-av-glasses="1"')}</div>
     </div>
     <div class="note">Аватар виден всей семье и в уведомлениях. Фото хранится только на вашем сервере.</div>
+    ${/* Reading the diary (design.md 5.6, ux-principles D63): the mode row opens a sheet of the four modes; «Свой» adds a
+         row per setting the provider serves. Марк is a first-grader: his year's default reads once after the lessons */ ''}
+    <div class="list-card"><button class="menu"><span class="ic">${ICONS.sync}</span><span class="main"><b>Чтение дневника</b><span>${st.id === 'm' ? 'Без оценок' : 'С оценками'} · по умолчанию</span></span><span class="chev">${ICONS.chev}</span></button></div>
+    <div class="note">${st.id === 'm' ? 'Около 2 запросов в учебный день · новая оценка появится в тот же день, после уроков' : 'Около 26 запросов в учебный день · новая оценка появится примерно в течение часа'}</div>
     <button class="btn" id="backBtn2">Готово</button>
   </div>`;
 }

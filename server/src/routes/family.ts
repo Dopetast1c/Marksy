@@ -1,3 +1,13 @@
+import {
+  CALENDAR_REFRESH,
+  DAY_RATES,
+  FINALS,
+  NEXT_WEEK,
+  PREVIOUS_WEEK,
+  SCHOOL_REFRESH,
+  SYNC_MODES,
+  TERM_RECHECK,
+} from '@marksy/core';
 import { getProvider } from '@marksy/registry';
 import { and, asc, eq, inArray, ne } from 'drizzle-orm';
 import { Router } from 'express';
@@ -33,10 +43,48 @@ import { avatarOf, avatarOut } from '../students/avatar';
 import { familyPictureKeys, forgetPictures, pictureKeys } from '../uploads/forget';
 import { DEFAULT_UPLOADS_DIR } from '../uploads/store';
 import { studentScale } from '../students/scale';
+import { childSyncView } from '../sync/child-sync';
+import { readSyncConfig } from '../sync/config';
 
 // Family (family.title; docs/design.md 5.6, 7, 9, 14.1): members, diary accounts, the children the family follows,
 // invites, join requests, and the family's data. Names of another family's members never appear: a shared child shows
 // only "Another family follows too" (family.child.shared).
+
+const cadenceShape = {
+  day: z.enum(DAY_RATES),
+  previousWeek: z.enum(PREVIOUS_WEEK),
+  nextWeek: z.enum(NEXT_WEEK),
+  termRecheck: z.enum(TERM_RECHECK),
+  finals: z.enum(FINALS),
+  school: z.enum(SCHOOL_REFRESH),
+  calendar: z.enum(CALENDAR_REFRESH),
+};
+const cadenceOut = registry.register('SyncCadence', z.object(cadenceShape));
+const cadenceIn = z.object(cadenceShape).partial();
+const childSyncOut = registry.register(
+  'ChildSync',
+  z.object({
+    /** null: the default of the child's year (defaultMode), which follows the child into a year with marks */
+    mode: z.enum(SYNC_MODES).nullable(),
+    defaultMode: z.enum(['marks', 'noMarks']),
+    /** this family's settings, resolved */
+    settings: cadenceOut,
+    /** what the child is read with: another family's more frequent choice wins (family.sync.otherFamily) */
+    effective: cadenceOut,
+    /** the settings the child's provider serves, in display order */
+    offered: z.array(z.enum(Object.keys(cadenceShape) as [keyof typeof cadenceShape])),
+    /** the inputs of estimateDay (@marksy/core): the app recomputes the estimate as the settings change */
+    estimate: z.object({
+      windowMinutes: z.number(),
+      intervalMinutes: z.number(),
+      weekRequests: z.number(),
+      schoolDays: z.number(),
+      termWeeks: z.number(),
+      readsAhead: z.boolean(),
+      finalMarks: z.boolean(),
+    }),
+  }),
+);
 
 const role = z.enum(['admin', 'parent', 'student']);
 const id = z.string().uuid();
@@ -398,6 +446,63 @@ export function familyRoutes(deps: AppDeps, limiters: Limiters): Router {
       put('drop_step', s.dropStep);
       put('call_after', s.callAfter);
       await deps.db.update(familyStudents).set({ settings }).where(link);
+    },
+  );
+
+  /** One child's sync mode as this family sees it (child-sync.ts); 404 when the family does not follow the child */
+  const syncViewOf = async (familyId: string, studentId: string) => {
+    const [student] = await deps.db
+      .select({ providerId: students.providerId })
+      .from(students)
+      .where(eq(students.id, studentId));
+    const manifest = student && getProvider(student.providerId)?.manifest;
+    const view =
+      manifest &&
+      (await childSyncView(deps.db, familyId, studentId, manifest, deps.syncConfig ?? readSyncConfig(), now()));
+    if (!view) throw new HttpError(404, 'not_found', 'No such child in this family');
+    return view;
+  };
+
+  route(
+    r,
+    {
+      method: 'get',
+      path: '/api/family/students/:id/sync',
+      summary:
+        "How the diary of one child is read (family.sync.title, design.md 10.2): the family's mode, the settings the provider serves, the estimate's inputs",
+      tags: ['family'],
+      access: adults,
+      params: z.object({ id }),
+      response: childSyncOut,
+      errors: { 404: 'No such child in this family' },
+    },
+    async (req, { params }) => syncViewOf(memberOf(req).familyId, params.id),
+  );
+
+  route(
+    r,
+    {
+      method: 'put',
+      path: '/api/family/students/:id/sync',
+      summary:
+        "The family's sync mode for one child: a preset, custom settings, or null for the default of the child's year (D63)",
+      tags: ['family'],
+      access: adults,
+      params: z.object({ id }),
+      body: z.object({ mode: z.enum(SYNC_MODES).nullable(), custom: cadenceIn.optional() }),
+      response: childSyncOut,
+      errors: { 404: 'No such child in this family' },
+    },
+    async (req, { params, body }) => {
+      const m = memberOf(req);
+      const link = and(eq(familyStudents.familyId, m.familyId), eq(familyStudents.studentId, params.id));
+      const [row] = await deps.db.select({ settings: familyStudents.settings }).from(familyStudents).where(link);
+      if (!row) throw new HttpError(404, 'not_found', 'No such child in this family');
+      const settings = { ...row.settings };
+      if (body.mode === null) delete settings.sync;
+      else settings.sync = body.mode === 'custom' ? { mode: 'custom', custom: body.custom ?? {} } : { mode: body.mode };
+      await deps.db.update(familyStudents).set({ settings }).where(link);
+      return syncViewOf(m.familyId, params.id);
     },
   );
 

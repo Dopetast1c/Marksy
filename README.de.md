@@ -1,4 +1,4 @@
-<!-- source: README.md sha256:7a71e523a772 · machine -->
+<!-- source: README.md sha256:732369165e03 · machine -->
 [English](README.md) · [Русский](README.ru.md) · [Беларуская](README.be.md) · [Українська](README.uk.md) · [Қазақша](README.kk.md) · [Polski](README.pl.md) · **Deutsch** · [Español](README.es.md) · [Português](README.pt.md) · [Français](README.fr.md) · [Nederlands](README.nl.md) · [Română](README.ro.md)
 
 > Diese Seite ist eine maschinelle Übersetzung des englischen README; maßgeblich ist der englische Text. Korrekturen sind willkommen über das Formular [„Übersetzung der Dokumentation“](https://github.com/Dopetast1c/Marksy/issues/new?template=docs-translation.yml).
@@ -108,7 +108,7 @@ Um ein neues System anzubinden, schreibt man einen Provider: ein Manifest (Zugan
 ## Respektvoll von Grund auf
 
 - **Nur lesend.** Marksy liest nur. Der gemeinsame HTTP-Client lehnt jede Anfrage außerhalb der Erlaubnisliste des Providers ab, sodass im Klassenbuch nichts aus Versehen geändert werden kann.
-- **Schonend.** Höchstens eine Anmeldung pro Stunde und Zugang, eine Anfrage nach der anderen mit Pausen, Zurückhaltung bei Fehlern, eine Obergrenze pro Lauf. Die manuelle Aktualisierung teilt sich dasselbe Budget.
+- **Schonend.** Höchstens eine Anmeldung pro Stunde und Zugang, eine Anfrage nach der anderen mit Pausen, Zurückhaltung bei Fehlern, eine Obergrenze pro Lauf. Die manuelle Aktualisierung teilt sich dasselbe Budget. Die Daten jedes Kindes werden so oft gelesen, wie die Familie es wählt (innerhalb einer Stunde in einem Schuljahr mit Noten, einmal nach dem Unterricht in einem Schuljahr ohne), und was sich selten ändert, etwa Fächer, Abschnitte und Klingelzeiten, nur monatlich oder wenn es sich ändert.
 - **Widerstandsfähig.** Jeder Versuch und jede geprüfte Woche wird festgehalten. Ausfälle auf beiden Seiten werden automatisch nachgeholt; nach wiederholten Fehlern pausiert der Abgleich, und die Admin-Person der Familie erhält einmal Bescheid. Ein falsches Passwort stoppt den Abgleich, bis es korrigiert ist, sodass der echte Zugang nie gesperrt wird.
 - **Netzwerkbewusst.** Manche Klassenbuch-Systeme antworten am besten aus ihrer eigenen Region oder ohne VPN. Jeder Provider gibt an, was er vom Netzwerk braucht, und der Collector läuft auf einem Gerät zu Hause, das diese Anforderungen erfüllt: einem PC, einem Mini-PC, einem Raspberry Pi, einem NAS.
 - **Aufgeräumt.** Noten und ihre Geschichte bleiben erhalten, solange das Kind zur Familie gehört; Betriebsdaten (Abgleichsprotokolle, Rohantworten, Ereignis-Feeds) werden Wochen oder Monate aufbewahrt und dann verdichtet. Die Grenzen stehen in `env.example` unter `RETENTION_*`.

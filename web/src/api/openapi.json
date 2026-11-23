@@ -830,6 +830,167 @@
           "students"
         ]
       },
+      "SyncCadence": {
+        "type": "object",
+        "properties": {
+          "day": {
+            "type": "string",
+            "enum": [
+              "hourly",
+              "every2h",
+              "thrice",
+              "afterSchool"
+            ]
+          },
+          "previousWeek": {
+            "type": "string",
+            "enum": [
+              "everyRun",
+              "daily",
+              "off"
+            ]
+          },
+          "nextWeek": {
+            "type": "string",
+            "enum": [
+              "everyRun",
+              "daily",
+              "lastSchoolDay",
+              "off"
+            ]
+          },
+          "termRecheck": {
+            "type": "string",
+            "enum": [
+              "weekly",
+              "biweekly",
+              "monthly",
+              "off"
+            ]
+          },
+          "finals": {
+            "type": "string",
+            "enum": [
+              "termEnd",
+              "weekly",
+              "off"
+            ]
+          },
+          "school": {
+            "type": "string",
+            "enum": [
+              "weekly",
+              "monthly",
+              "onChange"
+            ]
+          },
+          "calendar": {
+            "type": "string",
+            "enum": [
+              "monthly",
+              "onChange"
+            ]
+          }
+        },
+        "required": [
+          "day",
+          "previousWeek",
+          "nextWeek",
+          "termRecheck",
+          "finals",
+          "school",
+          "calendar"
+        ]
+      },
+      "ChildSync": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "marks",
+              "noMarks",
+              "light",
+              "custom",
+              null
+            ]
+          },
+          "defaultMode": {
+            "type": "string",
+            "enum": [
+              "marks",
+              "noMarks"
+            ]
+          },
+          "settings": {
+            "$ref": "#/components/schemas/SyncCadence"
+          },
+          "effective": {
+            "$ref": "#/components/schemas/SyncCadence"
+          },
+          "offered": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "day",
+                "previousWeek",
+                "nextWeek",
+                "termRecheck",
+                "finals",
+                "school",
+                "calendar"
+              ]
+            }
+          },
+          "estimate": {
+            "type": "object",
+            "properties": {
+              "windowMinutes": {
+                "type": "number"
+              },
+              "intervalMinutes": {
+                "type": "number"
+              },
+              "weekRequests": {
+                "type": "number"
+              },
+              "schoolDays": {
+                "type": "number"
+              },
+              "termWeeks": {
+                "type": "number"
+              },
+              "readsAhead": {
+                "type": "boolean"
+              },
+              "finalMarks": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "windowMinutes",
+              "intervalMinutes",
+              "weekRequests",
+              "schoolDays",
+              "termWeeks",
+              "readsAhead",
+              "finalMarks"
+            ]
+          }
+        },
+        "required": [
+          "mode",
+          "defaultMode",
+          "settings",
+          "effective",
+          "offered",
+          "estimate"
+        ]
+      },
       "Family": {
         "type": "object",
         "properties": {
@@ -4775,6 +4936,206 @@
           },
           "404": {
             "description": "This family does not follow the child",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/family/students/{id}/sync": {
+      "get": {
+        "summary": "How the diary of one child is read (family.sync.title, design.md 10.2): the family's mode, the settings the provider serves, the estimate's inputs",
+        "tags": [
+          "family"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChildSync"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such child in this family",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "The family's sync mode for one child: a preset, custom settings, or null for the default of the child's year (D63)",
+        "tags": [
+          "family"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "mode": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "enum": [
+                      "marks",
+                      "noMarks",
+                      "light",
+                      "custom",
+                      null
+                    ]
+                  },
+                  "custom": {
+                    "type": "object",
+                    "properties": {
+                      "day": {
+                        "type": "string",
+                        "enum": [
+                          "hourly",
+                          "every2h",
+                          "thrice",
+                          "afterSchool"
+                        ]
+                      },
+                      "previousWeek": {
+                        "type": "string",
+                        "enum": [
+                          "everyRun",
+                          "daily",
+                          "off"
+                        ]
+                      },
+                      "nextWeek": {
+                        "type": "string",
+                        "enum": [
+                          "everyRun",
+                          "daily",
+                          "lastSchoolDay",
+                          "off"
+                        ]
+                      },
+                      "termRecheck": {
+                        "type": "string",
+                        "enum": [
+                          "weekly",
+                          "biweekly",
+                          "monthly",
+                          "off"
+                        ]
+                      },
+                      "finals": {
+                        "type": "string",
+                        "enum": [
+                          "termEnd",
+                          "weekly",
+                          "off"
+                        ]
+                      },
+                      "school": {
+                        "type": "string",
+                        "enum": [
+                          "weekly",
+                          "monthly",
+                          "onChange"
+                        ]
+                      },
+                      "calendar": {
+                        "type": "string",
+                        "enum": [
+                          "monthly",
+                          "onChange"
+                        ]
+                      }
+                    }
+                  }
+                },
+                "required": [
+                  "mode"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChildSync"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such child in this family",
             "content": {
               "application/json": {
                 "schema": {

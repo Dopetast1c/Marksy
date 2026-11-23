@@ -262,6 +262,13 @@ async function shootApp(browser, base, family, device, dir, log, lang) {
       if (first) {
         await page.goto(`${base}/more/family/child/${first}`);
         await shot('avatar');
+        // "Reading the diary" (family.sync.title, D63): the sheet of the four modes
+        const mode = page.getByRole('button', { name: await say(page, 'family.sync.title') });
+        if (await mode.count()) {
+          await mode.click();
+          await shot('sync-mode');
+          await page.keyboard.press('Escape');
+        }
       }
     }
     for (const [i, kid] of kids.entries()) {

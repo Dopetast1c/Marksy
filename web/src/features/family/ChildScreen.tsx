@@ -15,11 +15,13 @@ import { BackIcon } from '../../components/icons';
 import { Switch } from '../../components/Switch';
 import { useT } from '../../i18n';
 import { appPath } from '../../lib/base';
+import { ChildSync } from './ChildSync';
 import { PhotoCrop } from './PhotoCrop';
 
 // A child in Family (family.title; docs/design.md 5.6, D9, D54): the avatar, drawn from traits (every option shown
 // already applied to the child's current look) or a photo; for the admin, "Stop following" (family.child.stop),
-// "Follow again" (family.child.followAgain) and "Delete the data" (family.child.delete) (7.1).
+// "Follow again" (family.child.followAgain) and "Delete the data" (family.child.delete) (7.1); for a followed child,
+// how often the diary is read (family.sync.title, ChildSync, D63).
 // A picked photo opens the crop step (PhotoCrop, D62) before anything is sent: only the square chosen there, drawn as
 // a 512 px JPEG in the browser, is uploaded, and the server checks it again, requires it square and strips its
 // metadata (14.1). The avatar is the child's: every family that follows the child sees the same one.
@@ -213,6 +215,8 @@ export function ChildScreen() {
           </div>
         </section>
         <p className="m-0 text-small text-ink3">{t('family.child.note')}</p>
+        {/* how often the child's diary is read (D63); a stopped child is not read at all */}
+        {child.status === 'active' && <ChildSync studentId={studentId} name={child.name} />}
         {/* simple mode (5.7) belongs to the child's own login: one switch per student member who is this child */}
         {(view?.members ?? [])
           .filter((m) => m.role === 'student' && m.studentIds.includes(studentId))

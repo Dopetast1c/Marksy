@@ -105,7 +105,7 @@ To connect a new system you write one provider: a manifest (credentials, scale, 
 ## Respectful by design
 
 - **Read-only.** Marksy only reads. The shared HTTP client refuses any request outside the provider's allow-list, so nothing in the diary can be changed by accident.
-- **Gentle.** One sign-in per hour per account at most, one request at a time with pauses, backoff on errors, a cap per run. Manual refresh shares the same budget.
+- **Gentle.** One sign-in per hour per account at most, one request at a time with pauses, backoff on errors, a cap per run. Manual refresh shares the same budget. Each child is read as often as the family chooses (within the hour in a year with marks, once after the lessons in a year without), and what rarely changes, such as subjects, terms and bells, only monthly or when it changes.
 - **Resilient.** Every attempt and every verified week is recorded. Outages on either side are caught up automatically; after repeated failures syncing pauses and the family admin is told once. A wrong password stops syncing until it is fixed, so the real account is never locked.
 - **Network-aware.** Some diary systems answer best from their own region or without a VPN. Each provider declares its network needs, and the collector runs on a machine at home that meets them: a PC, a mini PC, a Raspberry Pi, a NAS.
 - **Tidy.** Marks and their history are kept for as long as the child is in the family; operational data (sync logs, raw responses, event feeds) is kept for weeks or months and then compacted. Limits are in `env.example` under `RETENTION_*`.

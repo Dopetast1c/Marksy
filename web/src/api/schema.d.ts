@@ -982,6 +982,125 @@ export interface paths {
         };
         trace?: never;
     };
+    "/api/family/students/{id}/sync": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** How the diary of one child is read (family.sync.title, design.md 10.2): the family's mode, the settings the provider serves, the estimate's inputs */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ChildSync"];
+                    };
+                };
+                /** @description No session */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such child in this family */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        /** The family's sync mode for one child: a preset, custom settings, or null for the default of the child's year (D63) */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @enum {string|null} */
+                        mode: "marks" | "noMarks" | "light" | "custom" | null;
+                        custom?: {
+                            /** @enum {string} */
+                            day?: "hourly" | "every2h" | "thrice" | "afterSchool";
+                            /** @enum {string} */
+                            previousWeek?: "everyRun" | "daily" | "off";
+                            /** @enum {string} */
+                            nextWeek?: "everyRun" | "daily" | "lastSchoolDay" | "off";
+                            /** @enum {string} */
+                            termRecheck?: "weekly" | "biweekly" | "monthly" | "off";
+                            /** @enum {string} */
+                            finals?: "termEnd" | "weekly" | "off";
+                            /** @enum {string} */
+                            school?: "weekly" | "monthly" | "onChange";
+                            /** @enum {string} */
+                            calendar?: "monthly" | "onChange";
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ChildSync"];
+                    };
+                };
+                /** @description No session */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such child in this family */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/family/students/{id}/follow": {
         parameters: {
             query?: never;
@@ -4253,6 +4372,40 @@ export interface components {
                 role: "admin" | "parent" | "student";
             } | null;
             students: components["schemas"]["StudentSummary"][];
+        };
+        SyncCadence: {
+            /** @enum {string} */
+            day: "hourly" | "every2h" | "thrice" | "afterSchool";
+            /** @enum {string} */
+            previousWeek: "everyRun" | "daily" | "off";
+            /** @enum {string} */
+            nextWeek: "everyRun" | "daily" | "lastSchoolDay" | "off";
+            /** @enum {string} */
+            termRecheck: "weekly" | "biweekly" | "monthly" | "off";
+            /** @enum {string} */
+            finals: "termEnd" | "weekly" | "off";
+            /** @enum {string} */
+            school: "weekly" | "monthly" | "onChange";
+            /** @enum {string} */
+            calendar: "monthly" | "onChange";
+        };
+        ChildSync: {
+            /** @enum {string|null} */
+            mode: "marks" | "noMarks" | "light" | "custom" | null;
+            /** @enum {string} */
+            defaultMode: "marks" | "noMarks";
+            settings: components["schemas"]["SyncCadence"];
+            effective: components["schemas"]["SyncCadence"];
+            offered: ("day" | "previousWeek" | "nextWeek" | "termRecheck" | "finals" | "school" | "calendar")[];
+            estimate: {
+                windowMinutes: number;
+                intervalMinutes: number;
+                weekRequests: number;
+                schoolDays: number;
+                termWeeks: number;
+                readsAhead: boolean;
+                finalMarks: boolean;
+            };
         };
         Family: {
             family: {

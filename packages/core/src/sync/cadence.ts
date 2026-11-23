@@ -138,3 +138,67 @@ export const schoolRefreshDays = (v: SchoolRefresh): number | null => ({ weekly:
 
 /** Days after which the calendar and the class are read again by the clock alone; null: only on a change */
 export const calendarRefreshDays = (v: CalendarRefresh): number | null => ({ monthly: 30, onChange: null })[v];
+
+/** What the estimate of a child's school day needs: the server knows it, the app recomputes as the settings change */
+export interface DayEstimateInput {
+  /** The child's school-day window in minutes (an hour before the first lesson to two hours after the last) */
+  windowMinutes: number;
+  /** The diary's login interval: one run at most per interval */
+  intervalMinutes: number;
+  /** Requests one week costs: 1, or one per school day for a provider that answers per day */
+  weekRequests: number;
+  /** School days in a week */
+  schoolDays: number;
+  /** Weeks of the current term */
+  termWeeks: number;
+  /** The provider shows lessons ahead (capabilities.futureTimetable) */
+  readsAhead: boolean;
+  /** The provider has final marks (capabilities.finalMarks) */
+  finalMarks: boolean;
+}
+
+export interface DayEstimate {
+  /** Runs that read the child on a school day */
+  runs: number;
+  /** Requests to the diary for the child on an ordinary school day: the logins, the weeks, the finals */
+  requests: number;
+  /** About how long a mark given today waits before it shows; null: until the run after the lessons */
+  markWithinMinutes: number | null;
+}
+
+/**
+ * An ordinary school day of one child with these settings (ux-principles D63): the runs, the requests and how soon a
+ * new mark shows. Reference data is left out (a few requests a month), and so is a login shared with a sibling: a
+ * family's total is at most the sum of its children's.
+ */
+export function estimateDay(c: SyncCadence, x: DayEstimateInput): DayEstimate {
+  const days = Math.max(1, x.schoolDays);
+  const step = (gap: number) => Math.max(gap, x.intervalMinutes);
+  const most = Math.max(1, Math.ceil(x.windowMinutes / step(60)));
+  const runs = {
+    hourly: most,
+    every2h: Math.max(1, Math.ceil(x.windowMinutes / step(120))),
+    thrice: Math.min(3, most),
+    afterSchool: 1,
+  }[c.day];
+  const previous = { everyRun: runs, daily: 1, off: 0 }[c.previousWeek];
+  // daily: the first run of the day, and every run of the last school day of the week
+  const next = x.readsAhead
+    ? { everyRun: runs, daily: 1 + (runs - 1) / days, lastSchoolDay: runs / days, off: 0 }[c.nextWeek]
+    : 0;
+  const recheck = termRecheckDays(c.termRecheck);
+  const term = recheck === null ? 0 : (x.termWeeks * 7) / (recheck * days);
+  // an ordinary week reads the finals once (termEnd reads them daily only near a term's end)
+  const finals = x.finalMarks && c.finals !== 'off' ? 1 / days : 0;
+  const weeks = runs + previous + next + term;
+  return {
+    runs,
+    requests: Math.round(runs + weeks * Math.max(1, x.weekRequests) + finals),
+    markWithinMinutes: {
+      hourly: step(60),
+      every2h: step(120),
+      thrice: Math.round(x.windowMinutes / 3),
+      afterSchool: null,
+    }[c.day],
+  };
+}

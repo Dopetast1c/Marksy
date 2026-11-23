@@ -1,4 +1,4 @@
-<!-- source: README.md sha256:7a71e523a772 · machine -->
+<!-- source: README.md sha256:732369165e03 · machine -->
 [English](README.md) · [Русский](README.ru.md) · [Беларуская](README.be.md) · [Українська](README.uk.md) · [Қазақша](README.kk.md) · **Polski** · [Deutsch](README.de.md) · [Español](README.es.md) · [Português](README.pt.md) · [Français](README.fr.md) · [Nederlands](README.nl.md) · [Română](README.ro.md)
 
 > Ta strona jest tłumaczeniem maszynowym angielskiego README; wiążący jest tekst angielski. Poprawki są mile widziane przez formularz [„Tłumaczenie dokumentacji”](https://github.com/Dopetast1c/Marksy/issues/new?template=docs-translation.yml).
@@ -108,7 +108,7 @@ Aby podłączyć nowy system, pisze się jednego providera: manifest (dane logow
 ## Z szacunkiem z założenia
 
 - **Tylko odczyt.** Marksy tylko czyta. Wspólny klient HTTP odrzuca każde zapytanie spoza listy dozwolonych providera, więc w dzienniku nic nie może zostać zmienione przypadkiem.
-- **Delikatnie.** Najwyżej jedno logowanie na godzinę na konto, jedno zapytanie naraz z przerwami, wydłużanie odstępów przy błędach, limit na przebieg. Ręczne odświeżanie korzysta z tej samej puli.
+- **Delikatnie.** Najwyżej jedno logowanie na godzinę na konto, jedno zapytanie naraz z przerwami, wydłużanie odstępów przy błędach, limit na przebieg. Ręczne odświeżanie korzysta z tej samej puli. Dane każdego dziecka są odczytywane tak często, jak wybierze rodzina (w ciągu godziny w roku szkolnym z ocenami, raz po lekcjach w roku bez ocen), a to, co zmienia się rzadko, na przykład przedmioty, okresy i dzwonki, tylko raz w miesiącu albo wtedy, gdy się zmieni.
 - **Odporność.** Każda próba i każdy sprawdzony tydzień są zapisywane. Przerwy po obu stronach są nadrabiane automatycznie; po powtarzających się błędach synchronizacja się wstrzymuje, a administrator rodziny dostaje jedną wiadomość. Błędne hasło zatrzymuje synchronizację do czasu poprawki, więc prawdziwe konto nigdy nie zostaje zablokowane.
 - **Świadomość sieci.** Niektóre systemy dzienników odpowiadają najlepiej z własnego regionu albo bez VPN. Każdy provider deklaruje swoje wymagania sieciowe, a collector działa na domowym urządzeniu, które je spełnia: na PC, mini PC, Raspberry Pi albo NAS.
 - **Porządek.** Oceny i ich historia są przechowywane tak długo, jak dziecko należy do rodziny; dane operacyjne (logi synchronizacji, surowe odpowiedzi, strumienie zdarzeń) są trzymane przez tygodnie lub miesiące, a potem kompaktowane. Limity są w `env.example` pod `RETENTION_*`.

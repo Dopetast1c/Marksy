@@ -1,4 +1,5 @@
-import { getScale } from '@marksy/core';
+import { CADENCE_PRESETS, getScale, mergeCadences, resolveCadence } from '@marksy/core';
+import type { ChildSyncSettings, SyncMode } from '@marksy/core';
 import { vi } from 'vitest';
 
 // A fake of the Marksy API for screen tests: a session flag and fictional data (D16: the demo family's names). Every
@@ -753,6 +754,7 @@ export function fakeApi(start: Partial<FakeState> = {}) {
   let familyGuidance = true;
   let studentUiMode: 'full' | 'simple' = 'full';
   const avatars: Record<string, unknown> = {};
+  const childSync: Record<string, { mode: SyncMode | null; custom?: ChildSyncSettings['custom'] } | undefined> = {};
   const lessonState = { ready: new Set<string>(), cancelled: new Set<string>(), homework: new Map<string, string>() };
   const json = (body: unknown, status = 200) =>
     new Response(status === 204 ? null : JSON.stringify(body, state.noTypes ? untyped : undefined), {
@@ -887,6 +889,35 @@ export function fakeApi(start: Partial<FakeState> = {}) {
       const traits = (state.bodies[route] as { avatar: unknown }).avatar;
       avatars[kidPatch[1]!] = traits ? { kind: 'traits', traits } : null;
       return json({ avatar: avatars[kidPatch[1]!] });
+    }
+    // a child's sync mode (D63): kid-mark is a first-grader whom another family reads three times a day
+    const kidSync = route.match(/^(GET|PUT) \/api\/family\/students\/([^/]+)\/sync$/);
+    if (kidSync) {
+      const [, method, id] = kidSync as [string, string, string];
+      if (method === 'PUT') childSync[id] = state.bodies[route] as (typeof childSync)[string];
+      const chosen = childSync[id];
+      const year = id === 'kid-mark' ? 'noMarks' : 'marks';
+      const settings = resolveCadence(
+        chosen?.mode ? { mode: chosen.mode, custom: chosen.custom } : undefined,
+        year === 'marks',
+      );
+      const other = id === 'kid-mark' ? [{ ...CADENCE_PRESETS.noMarks, day: 'thrice' as const }] : [];
+      return json({
+        mode: chosen?.mode ?? null,
+        defaultMode: year,
+        settings,
+        effective: mergeCadences([settings, ...other]),
+        offered: ['day', 'previousWeek', 'nextWeek', 'termRecheck', 'finals', 'school', 'calendar'],
+        estimate: {
+          windowMinutes: id === 'kid-mark' ? 290 : 585,
+          intervalMinutes: 60,
+          weekRequests: 1,
+          schoolDays: 5,
+          termWeeks: 9,
+          readsAhead: true,
+          finalMarks: true,
+        },
+      });
     }
     if (route === 'POST /api/family/accounts/acc-1/matches/kid-shared') {
       matchesPending = false;

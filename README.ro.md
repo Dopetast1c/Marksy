@@ -1,4 +1,4 @@
-<!-- source: README.md sha256:7a71e523a772 · machine -->
+<!-- source: README.md sha256:732369165e03 · machine -->
 [English](README.md) · [Русский](README.ru.md) · [Беларуская](README.be.md) · [Українська](README.uk.md) · [Қазақша](README.kk.md) · [Polski](README.pl.md) · [Deutsch](README.de.md) · [Español](README.es.md) · [Português](README.pt.md) · [Français](README.fr.md) · [Nederlands](README.nl.md) · **Română**
 
 > Această pagină este o traducere automată a README-ului în engleză, care rămâne textul ce face fe. Corecturile sunt binevenite prin formularul [Traducerea documentației](https://github.com/Dopetast1c/Marksy/issues/new?template=docs-translation.yml).
@@ -108,7 +108,7 @@ Pentru a conecta un sistem nou, scrieți un singur provider: un manifest (date d
 ## Respectuos prin construcție
 
 - **Doar citire.** Marksy doar citește. Clientul HTTP comun refuză orice cerere din afara listei permise a providerului, așa că nimic din catalog nu poate fi schimbat din greșeală.
-- **Blând.** Cel mult o autentificare pe oră pentru fiecare cont, o singură cerere odată, cu pauze, așteptare tot mai lungă la erori, o limită pe rulare. Reîmprospătarea manuală folosește același buget.
+- **Blând.** Cel mult o autentificare pe oră pentru fiecare cont, o singură cerere odată, cu pauze, așteptare tot mai lungă la erori, o limită pe rulare. Reîmprospătarea manuală folosește același buget. Datele fiecărui copil sunt citite cât de des alege familia (în decurs de o oră într-un an școlar cu note, o dată după lecții într-un an școlar fără note), iar ce se schimbă rar, precum materiile, perioadele școlare și programul lecțiilor, doar lunar sau când se schimbă.
 - **Rezistent.** Fiecare încercare și fiecare săptămână verificată sunt înregistrate. Întreruperile de pe oricare parte sunt recuperate automat; după eșecuri repetate, sincronizarea se oprește temporar, iar administratorul familiei este anunțat o singură dată. O parolă greșită oprește sincronizarea până când este corectată, așa că adevăratul cont nu este niciodată blocat.
 - **Atent la rețea.** Unele sisteme de catalog răspund cel mai bine din propria regiune sau fără VPN. Fiecare provider își declară nevoile de rețea, iar colectorul rulează acasă, pe un dispozitiv care le îndeplinește: un PC, un mini PC, un Raspberry Pi, un NAS.
 - **Ordonat.** Notele și istoricul lor sunt păstrate cât timp copilul face parte din familie; datele operaționale (jurnalele de sincronizare, răspunsurile brute, fluxurile de evenimente) sunt păstrate săptămâni sau luni, apoi comprimate. Limitele sunt în `env.example`, la `RETENTION_*`.

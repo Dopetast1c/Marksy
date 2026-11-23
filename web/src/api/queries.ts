@@ -340,6 +340,17 @@ export type FamilyView = Schemas['Family'];
 export const useFamily = (enabled = true) =>
   useQuery({ queryKey: ['family'], queryFn: () => data(api.GET('/api/family')), staleTime: 30_000, enabled });
 
+export type ChildSync = Schemas['ChildSync'];
+
+/** How one child's diary is read (family.sync.title; design.md 10.2, D63): the family's mode and the estimate's inputs */
+export const useChildSync = (studentId: string, enabled = true) =>
+  useQuery({
+    queryKey: ['child-sync', studentId],
+    queryFn: () => data(api.GET('/api/family/students/{id}/sync', { params: { path: { id: studentId } } })),
+    staleTime: 30_000,
+    enabled,
+  });
+
 export type SyncStatus = Schemas['SyncStatus'];
 
 /** The run log of Sync (sync.title; design.md 5.6, 90 days kept) */

@@ -1,4 +1,4 @@
-<!-- source: README.md sha256:7a71e523a772 · machine -->
+<!-- source: README.md sha256:732369165e03 · machine -->
 [English](README.md) · [Русский](README.ru.md) · [Беларуская](README.be.md) · [Українська](README.uk.md) · [Қазақша](README.kk.md) · [Polski](README.pl.md) · [Deutsch](README.de.md) · **Español** · [Português](README.pt.md) · [Français](README.fr.md) · [Nederlands](README.nl.md) · [Română](README.ro.md)
 
 > Esta página es una traducción automática del README en inglés, que es el texto que hace fe. Las correcciones son bienvenidas a través del formulario [Traducción de la documentación](https://github.com/Dopetast1c/Marksy/issues/new?template=docs-translation.yml).
@@ -108,7 +108,7 @@ Para conectar un sistema nuevo se escribe un proveedor: un manifiesto (credencia
 ## Respetuoso por diseño
 
 - **Solo lectura.** Marksy solo lee. El cliente HTTP compartido rechaza cualquier petición fuera de la lista permitida del proveedor, así que nada en la agenda puede cambiarse por accidente.
-- **Discreto.** Como mucho un inicio de sesión por hora y cuenta, una petición cada vez con pausas, espera creciente ante errores, un tope por ejecución. La actualización manual comparte el mismo presupuesto.
+- **Discreto.** Como mucho un inicio de sesión por hora y cuenta, una petición cada vez con pausas, espera creciente ante errores, un tope por ejecución. La actualización manual comparte el mismo presupuesto. Los datos de cada estudiante se leen con la frecuencia que elija la familia (en menos de una hora en un curso con notas, una vez después de clase en un curso sin ellas), y lo que cambia poco, como las asignaturas, los periodos y el horario de timbres, solo una vez al mes o cuando cambia.
 - **Resistente.** Cada intento y cada semana verificada quedan registrados. Las caídas, en cualquiera de los dos lados, se recuperan automáticamente; tras fallos repetidos, la sincronización se pausa y se avisa una vez a quien administra la familia. Una contraseña incorrecta detiene la sincronización hasta que se corrige, así que la cuenta real nunca se bloquea.
 - **Atento a la red.** Algunos sistemas de agenda responden mejor desde su propia región o sin VPN. Cada proveedor declara lo que necesita de la red, y el recolector funciona en una máquina de casa que lo cumple: un PC, un mini PC, una Raspberry Pi, un NAS.
 - **Ordenado.** Las notas y su historial se guardan mientras cada estudiante siga en la familia; los datos operativos (registros de sincronización, respuestas en bruto, flujos de eventos) se guardan semanas o meses y después se compactan. Los límites están en `env.example`, bajo `RETENTION_*`.

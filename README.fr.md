@@ -1,4 +1,4 @@
-<!-- source: README.md sha256:7a71e523a772 · machine -->
+<!-- source: README.md sha256:732369165e03 · machine -->
 [English](README.md) · [Русский](README.ru.md) · [Беларуская](README.be.md) · [Українська](README.uk.md) · [Қазақша](README.kk.md) · [Polski](README.pl.md) · [Deutsch](README.de.md) · [Español](README.es.md) · [Português](README.pt.md) · **Français** · [Nederlands](README.nl.md) · [Română](README.ro.md)
 
 > Cette page est une traduction automatique du README anglais, qui reste le texte de référence. Les corrections sont les bienvenues via le formulaire [Traduction de la documentation](https://github.com/Dopetast1c/Marksy/issues/new?template=docs-translation.yml).
@@ -108,7 +108,7 @@ Pour connecter un nouveau système, on écrit un fournisseur : un manifeste (id
 ## Respectueux par conception
 
 - **Lecture seule.** Marksy ne fait que lire. Le client HTTP partagé refuse toute requête hors de la liste autorisée du fournisseur : rien dans le carnet ne peut être modifié par accident.
-- **Doux.** Au plus une connexion par heure et par compte, une requête à la fois avec des pauses, un ralentissement en cas d’erreur, un plafond par exécution. L’actualisation manuelle partage le même budget.
+- **Doux.** Au plus une connexion par heure et par compte, une requête à la fois avec des pauses, un ralentissement en cas d’erreur, un plafond par exécution. L’actualisation manuelle partage le même budget. Les données de chaque enfant sont lues aussi souvent que la famille le choisit (dans l’heure pendant une année scolaire avec notes, une fois après les cours pendant une année sans notes), et ce qui change rarement, comme les matières, les trimestres et les horaires des cours, seulement une fois par mois ou quand cela change.
 - **Résilient.** Chaque tentative et chaque semaine vérifiée sont enregistrées. Les pannes d’un côté comme de l’autre sont rattrapées automatiquement ; après des échecs répétés, la synchronisation se met en pause et l’admin de la famille reçoit un seul message. Un mauvais mot de passe arrête la synchronisation jusqu’à sa correction, pour que le vrai compte ne soit jamais bloqué.
 - **Attentif au réseau.** Certains systèmes de carnet répondent mieux depuis leur propre région ou sans VPN. Chaque fournisseur déclare ses besoins réseau, et le collecteur tourne sur une machine à la maison qui y répond : un PC, un mini-PC, un Raspberry Pi, un NAS.
 - **Ordonné.** Les notes et leur historique sont conservés tant que l’enfant fait partie de la famille ; les données d’exploitation (journaux de synchronisation, réponses brutes, flux d’événements) sont gardées quelques semaines ou quelques mois, puis compactées. Les limites sont dans `env.example`, sous `RETENTION_*`.

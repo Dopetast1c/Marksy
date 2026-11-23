@@ -1,4 +1,4 @@
-<!-- source: README.md sha256:7a71e523a772 · machine -->
+<!-- source: README.md sha256:732369165e03 · machine -->
 [English](README.md) · [Русский](README.ru.md) · [Беларуская](README.be.md) · [Українська](README.uk.md) · [Қазақша](README.kk.md) · [Polski](README.pl.md) · [Deutsch](README.de.md) · [Español](README.es.md) · **Português** · [Français](README.fr.md) · [Nederlands](README.nl.md) · [Română](README.ro.md)
 
 > Esta página é uma tradução automática do README em inglês, que é o texto que faz fé. As correções são bem-vindas através do formulário [Tradução da documentação](https://github.com/Dopetast1c/Marksy/issues/new?template=docs-translation.yml).
@@ -108,7 +108,7 @@ Para ligar um sistema novo, escreve-se um fornecedor: um manifesto (credenciais,
 ## Respeitador por natureza
 
 - **Só leitura.** O Marksy apenas lê. O cliente HTTP partilhado recusa qualquer pedido fora da lista permitida do fornecedor, por isso nada na caderneta pode ser alterado por engano.
-- **Discreto.** No máximo um início de sessão por hora e por conta, um pedido de cada vez com pausas, espera crescente perante erros, um limite por execução. A atualização manual partilha o mesmo orçamento.
+- **Discreto.** No máximo um início de sessão por hora e por conta, um pedido de cada vez com pausas, espera crescente perante erros, um limite por execução. A atualização manual partilha o mesmo orçamento. Os dados de cada criança são lidos com a frequência que a família escolher (em menos de uma hora num ano letivo com notas, uma vez depois das aulas num ano sem notas), e o que muda raramente, como as disciplinas, os períodos e o horário dos toques, só uma vez por mês ou quando muda.
 - **Resiliente.** Cada tentativa e cada semana verificada ficam registadas. As falhas, de qualquer um dos lados, são recuperadas automaticamente; após falhas repetidas, a sincronização faz uma pausa e é enviado um único aviso a quem administra a família. Uma palavra-passe errada para a sincronização até ser corrigida, por isso a conta real nunca fica bloqueada.
 - **Atento à rede.** Alguns sistemas de caderneta respondem melhor a partir da sua própria região ou sem VPN. Cada fornecedor declara aquilo de que precisa da rede, e o coletor funciona numa máquina em casa que o cumpre: um PC, um mini PC, um Raspberry Pi, um NAS.
 - **Arrumado.** As notas e o seu histórico são guardados enquanto a criança fizer parte da família; os dados operacionais (registos de sincronização, respostas em bruto, fluxos de eventos) são guardados durante semanas ou meses e depois compactados. Os limites estão em `env.example`, em `RETENTION_*`.

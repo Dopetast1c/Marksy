@@ -1,4 +1,4 @@
-<!-- source: README.md sha256:7a71e523a772 · machine -->
+<!-- source: README.md sha256:732369165e03 · machine -->
 [English](README.md) · [Русский](README.ru.md) · [Беларуская](README.be.md) · [Українська](README.uk.md) · [Қазақша](README.kk.md) · [Polski](README.pl.md) · [Deutsch](README.de.md) · [Español](README.es.md) · [Português](README.pt.md) · [Français](README.fr.md) · **Nederlands** · [Română](README.ro.md)
 
 > Deze pagina is een machinevertaling van de Engelse README; de Engelse tekst is bindend. Verbeteringen zijn welkom via het formulier [Vertaling van de documentatie](https://github.com/Dopetast1c/Marksy/issues/new?template=docs-translation.yml).
@@ -108,7 +108,7 @@ Om een nieuw systeem te koppelen schrijf je één provider: een manifest (inlogg
 ## Respectvol ontworpen
 
 - **Alleen lezen.** Marksy leest alleen. De gedeelde HTTP-client weigert elk verzoek buiten de toegestane lijst van de provider, zodat er in het schoolportaal niets per ongeluk kan veranderen.
-- **Behoedzaam.** Hoogstens één keer inloggen per uur per account, één verzoek tegelijk met pauzes, steeds langer wachten bij fouten, een maximum per run. Handmatig vernieuwen deelt hetzelfde budget.
+- **Behoedzaam.** Hoogstens één keer inloggen per uur per account, één verzoek tegelijk met pauzes, steeds langer wachten bij fouten, een maximum per run. Handmatig vernieuwen deelt hetzelfde budget. De gegevens van elk kind worden zo vaak gelezen als het gezin kiest (binnen het uur in een schooljaar met cijfers, één keer na de lessen in een schooljaar zonder), en wat zelden verandert, zoals vakken, periodes en lestijden, alleen maandelijks of wanneer het verandert.
 - **Veerkrachtig.** Elke poging en elke gecontroleerde week wordt vastgelegd. Storingen aan beide kanten worden automatisch ingehaald; na herhaalde mislukkingen pauzeert de synchronisatie en krijgt de beheerder van het gezin één bericht. Een verkeerd wachtwoord stopt de synchronisatie tot het is verbeterd, zodat het echte account nooit wordt geblokkeerd.
 - **Netwerkbewust.** Sommige schoolportalen antwoorden het best vanuit hun eigen regio of zonder VPN. Elke provider geeft zijn netwerkeisen aan, en de collector draait op een machine thuis die daaraan voldoet: een pc, een mini-pc, een Raspberry Pi, een NAS.
 - **Opgeruimd.** Cijfers en hun geschiedenis worden bewaard zolang het kind bij het gezin hoort; operationele gegevens (synchronisatielogs, ruwe antwoorden, gebeurtenissenfeeds) worden weken of maanden bewaard en daarna samengevoegd. De limieten staan in `env.example` onder `RETENTION_*`.
