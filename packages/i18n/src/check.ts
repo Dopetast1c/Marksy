@@ -69,6 +69,18 @@ export function sourceStamps(source: Messages): Record<string, string> {
   return Object.fromEntries([...texts].map(([base, parts]) => [base, hash(parts.join('\n'))]));
 }
 
+/** A catalog's entries by base key (a plain key, or every plural form of one) */
+function byBase(messages: Messages): Map<string, [string, string][]> {
+  const out = new Map<string, [string, string][]>();
+  for (const [key, text] of Object.entries(messages)) {
+    const base = baseOf(key);
+    const list = out.get(base) ?? [];
+    list.push([key, text]);
+    out.set(base, list);
+  }
+  return out;
+}
+
 /** The keys with a length limit (`"tabs.home_comment": "max 11 chars"`) and their limit */
 function limits(source: Messages): Map<string, number> {
   const out = new Map<string, number>();
@@ -87,11 +99,9 @@ export function checkCatalogs(catalogs: Readonly<Record<string, Messages>>, stam
   const sourceGroups = groups(source);
   const current = sourceStamps(source);
   const maxChars = limits(source);
-  const sourceText = (base: string) =>
-    Object.entries(source)
-      .filter(([k]) => k === base || baseOf(k) === base)
-      .map(([, v]) => v)
-      .join(' ');
+  // every catalog indexed once by base key: a scan of the whole catalog per key took seconds at a thousand keys
+  const sourceByBase = byBase(source);
+  const sourceText = (base: string) => (sourceByBase.get(base) ?? []).map(([, v]) => v).join(' ');
 
   for (const [lang, messages] of Object.entries(catalogs)) {
     const report = COMPLETE_LANGUAGES.includes(lang) ? errors : warnings;
@@ -102,6 +112,7 @@ export function checkCatalogs(catalogs: Readonly<Record<string, Messages>>, stam
     }
     const needed = new Intl.PluralRules(lg.intl).resolvedOptions().pluralCategories as string[];
     const own = groups(messages);
+    const ownByBase = byBase(messages);
 
     for (const [base, cats] of sourceGroups) {
       if (!own.has(base)) {
@@ -122,8 +133,7 @@ export function checkCatalogs(catalogs: Readonly<Record<string, Messages>>, stam
         report.push(`${lang}: ${base} is stale, ${SOURCE_LANGUAGE} changed since it was translated`);
       const allowed = placeholders(sourceText(base));
       const max = maxChars.get(base);
-      for (const [key, text] of Object.entries(messages)) {
-        if (key !== base && baseOf(key) !== base) continue;
+      for (const [key, text] of ownByBase.get(base) ?? []) {
         for (const p of placeholders(text)) {
           if (!allowed.has(p)) errors.push(`${lang}: ${key} uses {{${p}}} which ${SOURCE_LANGUAGE} does not have`);
         }
